@@ -1,0 +1,7 @@
+{
+  "name": "Restore-Rebelein LagerApp",
+  "description": "Modern inventory and machine management for SHK professionals featuring AI-assisted workflows.",
+  "requestFramePermissions": [
+    "camera"
+  ]
+}

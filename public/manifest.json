@@ -1,0 +1,17 @@
+{
+  "name": "Rebelein LagerApp",
+  "short_name": "LagerApp",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0f172a",
+  "theme_color": "#0f172a",
+  "description": "Lagerverwaltung für SHK Profis",
+  "icons": [
+    {
+      "src": "/logo.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
