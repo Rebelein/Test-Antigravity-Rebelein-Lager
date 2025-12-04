@@ -9,6 +9,7 @@ import { useTheme } from '../contexts/ThemeContext';
 import { Button, GlassCard } from './UIComponents';
 import { OnboardingTour } from './OnboardingTour';
 import { InstallPrompt } from './InstallPrompt';
+import { useRegisterSW } from 'virtual:pwa-register/react';
 
 interface LayoutProps {
     children: React.ReactNode;
@@ -58,40 +59,32 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
         }
     }, [profile]);
 
-    // --- EFFECT: SERVICE WORKER UPDATE HANDLING ---
-    useEffect(() => {
-        // 1. Listen for the update found event from index.html
-        const handleUpdateAvailable = () => setUpdateAvailable(true);
-        window.addEventListener('sw-update-available', handleUpdateAvailable);
-
-        // 2. ACTIVE CHECK LOGIC (For long-running sessions)
-        const checkForSwUpdate = () => {
-            if ('serviceWorker' in navigator) {
-                navigator.serviceWorker.ready.then((registration) => {
-                    // This triggers the browser to check the server for a new sw.js
-                    registration.update();
+    // --- PWA UPDATE HANDLING ---
+    const {
+        needRefresh: [needRefresh, setNeedRefresh],
+        updateServiceWorker,
+    } = useRegisterSW({
+        onRegistered(r) {
+            console.log('SW Registered:', r);
+            if (r) {
+                // Check for updates every 15 minutes
+                setInterval(() => {
+                    r.update();
                     console.log("Checking for App Updates...");
-                });
+                }, 15 * 60 * 1000);
             }
-        };
+        },
+        onRegisterError(error) {
+            console.log('SW registration error', error);
+        },
+    });
 
-        // Check every 15 minutes
-        const intervalId = setInterval(checkForSwUpdate, 15 * 60 * 1000);
-
-        // Check immediately when the user comes back to the tab (visibility change)
-        const handleVisibilityChange = () => {
-            if (document.visibilityState === 'visible') {
-                checkForSwUpdate();
-            }
-        };
-        document.addEventListener('visibilitychange', handleVisibilityChange);
-
-        return () => {
-            window.removeEventListener('sw-update-available', handleUpdateAvailable);
-            clearInterval(intervalId);
-            document.removeEventListener('visibilitychange', handleVisibilityChange);
-        };
-    }, []);
+    // Sync local state with hook state
+    useEffect(() => {
+        if (needRefresh) {
+            setUpdateAvailable(true);
+        }
+    }, [needRefresh]);
 
     const handleLogout = async () => {
         await signOut();
@@ -116,13 +109,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
 
     // --- ACTION: UPDATE APP ---
     const reloadPage = () => {
-        if ('serviceWorker' in navigator) {
-            navigator.serviceWorker.ready.then(registration => {
-                registration.waiting?.postMessage({ type: 'SKIP_WAITING' });
-            });
-        } else {
-            window.location.reload();
-        }
+        updateServiceWorker(true);
     };
 
     const completeTour = async () => {

@@ -13,7 +13,7 @@ export default defineConfig(({ mode }) => {
     plugins: [
       react(),
       VitePWA({
-        registerType: 'autoUpdate',
+        registerType: 'prompt',
         includeAssets: ['logo.png', 'manifest.json'], // Ensure these are cached
         manifest: {
           name: 'Rebelein LagerApp',
