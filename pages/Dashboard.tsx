@@ -1,14 +1,30 @@
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { GlassCard, StatusBadge, Button } from '../components/UIComponents';
-import { AlertTriangle, Wrench, User, CheckCircle2, FileText, ArrowRight, Grid, Database, X, Play, RefreshCw, Check, Copy, Settings, Factory, Warehouse, Tag, Maximize2, Minimize2, PhoneCall, StickyNote, Save, Undo2, Library, Plus, MessageSquare, Sun, Moon, Monitor, Smartphone } from 'lucide-react';
+import { AlertTriangle, Wrench, User, CheckCircle2, FileText, ArrowRight, Grid, Database, X, Play, RefreshCw, Check, Copy, Settings, Factory, Warehouse, Tag, Maximize2, Minimize2, PhoneCall, StickyNote, Save, Undo2, Library, Plus, MessageSquare, Sun, Moon, Monitor, Smartphone, ShoppingCart, LayoutTemplate } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { initializeDatabase, MANUAL_SETUP_SQL } from '../utils/dbInit';
 import { useAuth } from '../contexts/AuthContext';
 import { useTheme } from '../contexts/ThemeContext';
 import { CommissionDetailModal } from '../components/CommissionDetailModal';
 import { supabase } from '../supabaseClient';
-import { Machine, MachineStatus, Commission } from '../types';
+import { Machine, MachineStatus, Commission, UserProfile } from '../types';
+import { formatDistanceToNow } from 'date-fns';
+import { de } from 'date-fns/locale';
+import { Responsive, WidthProvider } from 'react-grid-layout';
+import 'react-grid-layout/css/styles.css';
+import 'react-resizable/css/styles.css';
+
+const ResponsiveGridLayout = WidthProvider(Responsive);
+
+interface AppEvent {
+    id: string;
+    type: 'machine' | 'commission' | 'order';
+    user_name: string;
+    action: string;
+    details: string;
+    created_at: string;
+}
 
 const Dashboard: React.FC = () => {
     const navigate = useNavigate();
@@ -24,6 +40,7 @@ const Dashboard: React.FC = () => {
     const [draftCommissions, setDraftCommissions] = useState<Commission[]>([]);
     const [readyCommissions, setReadyCommissions] = useState<Commission[]>([]);
     const [returnCommissions, setReturnCommissions] = useState<Commission[]>([]); // New State for Returns
+    const [recentEvents, setRecentEvents] = useState<AppEvent[]>([]);
 
     // Utility States (Modals & UI)
     const [showAppDrawer, setShowAppDrawer] = useState(false);
@@ -40,6 +57,41 @@ const Dashboard: React.FC = () => {
     const [officeNoteInput, setOfficeNoteInput] = useState('');
     const [isOfficeProcessed, setIsOfficeProcessed] = useState(false);
     const [isSavingProcess, setIsSavingProcess] = useState(false);
+
+    // --- LAYOUT STATE ---
+    const defaultLayouts = {
+        lg: [
+            { i: 'machines', x: 0, y: 0, w: 1, h: 4 },
+            { i: 'commissions', x: 1, y: 0, w: 1, h: 4 },
+            { i: 'events', x: 0, y: 4, w: 2, h: 3 }
+        ],
+        md: [
+            { i: 'machines', x: 0, y: 0, w: 1, h: 4 },
+            { i: 'commissions', x: 1, y: 0, w: 1, h: 4 },
+            { i: 'events', x: 0, y: 4, w: 2, h: 3 }
+        ],
+        sm: [
+            { i: 'machines', x: 0, y: 0, w: 1, h: 4 },
+            { i: 'commissions', x: 0, y: 4, w: 1, h: 4 },
+            { i: 'events', x: 0, y: 8, w: 1, h: 4 }
+        ]
+    };
+
+    const [layouts, setLayouts] = useState(() => {
+        const saved = localStorage.getItem('dashboard_layouts');
+        return saved ? JSON.parse(saved) : defaultLayouts;
+    });
+
+    const handleLayoutChange = (layout: any, allLayouts: any) => {
+        setLayouts(allLayouts);
+        localStorage.setItem('dashboard_layouts', JSON.stringify(allLayouts));
+    };
+
+    const resetLayout = () => {
+        setLayouts(defaultLayouts);
+        localStorage.removeItem('dashboard_layouts');
+        window.location.reload();
+    };
 
     // --- DATA FETCHING (Stabilized with useCallback) ---
 
@@ -108,12 +160,79 @@ const Dashboard: React.FC = () => {
         }
     }, []);
 
+    const fetchRecentEvents = useCallback(async () => {
+        try {
+            // Fetch Machine Events
+            const { data: machineEvents } = await supabase
+                .from('machine_events')
+                .select('id, action, details, created_at, profiles(full_name)')
+                .order('created_at', { ascending: false })
+                .limit(10);
+
+            // Fetch Commission Logs
+            const { data: commissionLogs } = await supabase
+                .from('commission_logs')
+                .select('id, action, details, created_at, profiles(full_name)')
+                .order('created_at', { ascending: false })
+                .limit(10);
+
+            // Fetch Recent Orders
+            const { data: recentOrders } = await supabase
+                .from('orders')
+                .select('id, status, created_at, suppliers(name)')
+                .order('created_at', { ascending: false })
+                .limit(10);
+
+            const events: AppEvent[] = [];
+
+            if (machineEvents) {
+                events.push(...machineEvents.map((e: any) => ({
+                    id: e.id,
+                    type: 'machine' as const,
+                    user_name: e.profiles?.full_name || 'Unbekannt',
+                    action: e.action,
+                    details: e.details,
+                    created_at: e.created_at
+                })));
+            }
+
+            if (commissionLogs) {
+                events.push(...commissionLogs.map((e: any) => ({
+                    id: e.id,
+                    type: 'commission' as const,
+                    user_name: e.profiles?.full_name || 'Unbekannt',
+                    action: e.action,
+                    details: e.details,
+                    created_at: e.created_at
+                })));
+            }
+
+            if (recentOrders) {
+                events.push(...recentOrders.map((o: any) => ({
+                    id: o.id,
+                    type: 'order' as const,
+                    user_name: 'System', // Orders don't track user_id yet
+                    action: 'Neue Bestellung',
+                    details: `${o.suppliers?.name || 'Unbekannt'} (${o.status})`,
+                    created_at: o.created_at
+                })));
+            }
+
+            // Sort combined events by date desc
+            events.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+
+            setRecentEvents(events.slice(0, 15));
+        } catch (error) {
+            console.error("Error fetching events:", error);
+        }
+    }, []);
+
     // --- INITIAL LOAD & REALTIME SUBSCRIPTION ---
 
     useEffect(() => {
         const loadInitialData = async () => {
             setIsLoading(true);
-            await Promise.all([fetchMachinesData(), fetchCommissionsData()]);
+            await Promise.all([fetchMachinesData(), fetchCommissionsData(), fetchRecentEvents()]);
             setIsLoading(false);
         };
 
@@ -138,6 +257,30 @@ const Dashboard: React.FC = () => {
                 (payload) => {
                     console.log('Commissions updated (Realtime), refreshing Dashboard...', payload);
                     fetchCommissionsData();
+                }
+            )
+            .on(
+                'postgres_changes',
+                { event: 'INSERT', schema: 'public', table: 'machine_events' },
+                () => {
+                    console.log('New Machine Event, refreshing events...');
+                    fetchRecentEvents();
+                }
+            )
+            .on(
+                'postgres_changes',
+                { event: 'INSERT', schema: 'public', table: 'commission_logs' },
+                () => {
+                    console.log('New Commission Log, refreshing events...');
+                    fetchRecentEvents();
+                }
+            )
+            .on(
+                'postgres_changes',
+                { event: 'INSERT', schema: 'public', table: 'orders' },
+                () => {
+                    console.log('New Order, refreshing events...');
+                    fetchRecentEvents();
                 }
             )
             .subscribe();
@@ -209,6 +352,159 @@ const Dashboard: React.FC = () => {
         setTimeout(() => setSqlCopied(false), 2000);
     };
 
+    // Helper to render Commission Tile Content (to avoid duplication)
+    const renderCommissionTileContent = (isFullscreen: boolean) => (
+        <>
+            <div className="drag-handle cursor-move px-6 py-5 border-b border-gray-200 dark:border-white/10 bg-white/50 dark:bg-white/5 backdrop-blur-xl flex items-center gap-2">
+                <Factory size={20} className="text-emerald-500 dark:text-emerald-400" />
+                <h2 className="text-xl font-bold text-gray-900 dark:text-white flex-1">Kommissionen</h2>
+
+                {/* Add Commission Button */}
+                <button
+                    onClick={() => navigate('/commissions', { state: { openCreateModal: true, returnTo: '/dashboard' } })}
+                    className="p-2 bg-white/50 dark:bg-white/5 rounded-lg text-gray-400 dark:text-white/40 hover:text-gray-900 dark:hover:text-white transition-colors mr-2"
+                    title="Neue Kommission erstellen"
+                >
+                    <Plus size={18} />
+                </button>
+
+                {/* Fullscreen Toggle */}
+                <button onClick={() => setIsCommissionTileFullscreen(!isFullscreen)} className="p-2 bg-white/50 dark:bg-white/5 rounded-lg text-gray-400 dark:text-white/40 hover:text-gray-900 dark:hover:text-white transition-colors mr-2">
+                    {isFullscreen ? <Minimize2 size={18} /> : <Maximize2 size={18} />}
+                </button>
+
+                <button onClick={() => navigate('/commissions')} className="text-gray-400 dark:text-white/40 hover:text-gray-900 dark:hover:text-white"><ArrowRight size={20} /></button>
+            </div>
+
+            <div className="flex-1 grid grid-cols-3 divide-x divide-gray-200 dark:divide-white/10 overflow-hidden">
+                {/* Left: Entwurf (Draft) */}
+                <div className="p-4 flex flex-col gap-3 bg-gradient-to-b from-gray-100 to-transparent dark:from-white/5 dark:to-transparent overflow-hidden">
+                    <div className="flex justify-between items-center mb-2">
+                        <span className="text-sm font-bold text-gray-900 dark:text-white">In Arbeit ({draftCommissions.length})</span>
+                    </div>
+
+                    <div className={`space-y-3 overflow-y-auto ${isFullscreen ? 'max-h-full' : 'h-full'} pr-1 pb-4`}>
+                        {draftCommissions.length === 0 && <div className="text-xs text-white/30 italic">Leer.</div>}
+                        {draftCommissions.map((c: any) => {
+                            // Check for backorders
+                            const hasBackorder = c.commission_items?.some((i: any) => i.is_backorder);
+
+                            return (
+                                <div
+                                    key={c.id}
+                                    onClick={() => setViewingCommission(c)}
+                                    className={`p-3 rounded-xl cursor-pointer transition-all relative group border ${hasBackorder ? 'bg-red-500/10 border-red-500 hover:bg-red-500/20' : 'bg-white/50 dark:bg-white/5 border-gray-200 dark:border-white/10 hover:bg-gray-100 dark:hover:bg-white/10'}`}
+                                >
+                                    <div className="flex justify-between items-start">
+                                        <div className="min-w-0">
+                                            <div className="font-bold text-gray-900 dark:text-white text-sm truncate">{c.name}</div>
+                                            <div className="text-xs text-gray-500 dark:text-white/40 mt-0.5">{c.order_number}</div>
+                                        </div>
+                                        {hasBackorder ? (
+                                            <AlertTriangle size={14} className="text-red-500 dark:text-red-400 group-hover:text-red-400 dark:group-hover:text-red-300 transition-colors" />
+                                        ) : (
+                                            <ArrowRight size={14} className="text-gray-300 dark:text-white/20 group-hover:text-emerald-500 dark:group-hover:text-emerald-400 transition-colors opacity-0 group-hover:opacity-100" />
+                                        )}
+                                    </div>
+                                    {c.notes && <div className="mt-2 text-[10px] text-gray-400 dark:text-white/30 italic truncate">{c.notes}</div>}
+                                    {hasBackorder && (
+                                        <div className="mt-2 text-[9px] font-bold text-red-400 uppercase tracking-wide bg-red-900/30 px-1.5 py-0.5 rounded inline-block">
+                                            Rückstand!
+                                        </div>
+                                    )}
+                                </div>
+                            );
+                        })}
+                    </div>
+                </div>
+
+                {/* Center: Bereitgestellt (Ready) - INTERACTIVE */}
+                <div className="p-4 flex flex-col gap-3 relative overflow-hidden">
+                    <div className="flex justify-between items-center mb-2">
+                        <span className="text-sm font-bold text-emerald-600 dark:text-emerald-400">Bereitgestellt ({readyCommissions.length})</span>
+                    </div>
+
+                    <div className={`space-y-3 overflow-y-auto ${isFullscreen ? 'max-h-full' : 'h-full'} pr-1 pb-10`}>
+                        {readyCommissions.length === 0 && <div className="text-xs text-white/30 italic">Nichts bereitgestellt.</div>}
+                        {readyCommissions.map(c => {
+                            // Needs processing if NOT processed yet
+                            const needsProcessing = !c.is_processed;
+
+                            return (
+                                <div
+                                    key={c.id}
+                                    onClick={() => handleCommissionClick(c)}
+                                    className={`
+                                        p-3 rounded-xl cursor-pointer transition-all relative group border
+                                        ${needsProcessing ? 'bg-emerald-500/10 dark:bg-emerald-500/20 border-emerald-500 animate-border-pulse-green' : 'bg-white/50 dark:bg-white/5 border-emerald-500/30 hover:bg-gray-100 dark:hover:bg-white/10'}
+                                    `}
+                                >
+                                    <div className="flex justify-between items-start">
+                                        <div className="min-w-0 flex-1 pr-2">
+                                            <div className="font-bold text-gray-900 dark:text-white text-sm truncate">{c.name}</div>
+                                            <div className="text-xs text-emerald-600/80 dark:text-emerald-200/60 mt-0.5">{c.order_number}</div>
+                                            {/* Extended info in fullscreen or if processed */}
+                                            {(isFullscreen || c.office_notes) && c.office_notes && (
+                                                <div className="mt-2 p-2 bg-gray-100 dark:bg-black/20 rounded-lg text-xs text-gray-600 dark:text-white/80 flex gap-2 items-start border border-gray-200 dark:border-white/5">
+                                                    <StickyNote size={12} className="shrink-0 mt-0.5 text-amber-500 dark:text-amber-400" />
+                                                    <span className="italic">{c.office_notes}</span>
+                                                </div>
+                                            )}
+                                        </div>
+
+                                        {/* Status Icon */}
+                                        {c.is_processed ? (
+                                            <div className="w-6 h-6 rounded-full bg-gray-200 dark:bg-white/10 text-gray-400 dark:text-white/50 flex items-center justify-center border border-gray-300 dark:border-white/10" title="Vom Büro gesehen">
+                                                <Check size={12} />
+                                            </div>
+                                        ) : (
+                                            <div className="w-6 h-6 rounded-full bg-emerald-500 text-white flex items-center justify-center shadow-lg shadow-emerald-500/40 animate-pulse" title="Neue Bereitstellung!">
+                                                <Check size={12} strokeWidth={3} />
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+                            );
+                        })}
+                    </div>
+                </div>
+
+                {/* Right: Rückgaben (Returns) */}
+                <div className="p-4 flex flex-col gap-3 bg-gradient-to-b from-purple-500/5 to-transparent overflow-hidden">
+                    <div className="flex justify-between items-center mb-2">
+                        <span className="text-sm font-bold text-purple-600 dark:text-purple-400">Rückgaben ({returnCommissions.length})</span>
+                    </div>
+
+                    <div className={`space-y-3 overflow-y-auto ${isFullscreen ? 'max-h-full' : 'h-full'} pr-1 pb-4`}>
+                        {returnCommissions.length === 0 && <div className="text-xs text-gray-400 dark:text-white/30 italic">Keine offenen Rückgaben.</div>}
+                        {returnCommissions.map(c => (
+                            <div
+                                key={c.id}
+                                onClick={() => handleCommissionClick(c)}
+                                className={`p-3 rounded-xl border cursor-pointer transition-all hover:bg-gray-100 dark:hover:bg-white/10 ${c.status === 'ReturnReady' ? 'bg-purple-500/10 dark:bg-purple-500/20 border-purple-500 text-purple-800 dark:text-purple-100' : 'bg-white/50 dark:bg-white/5 border-purple-500/30'}`}
+                            >
+                                <div className="flex justify-between items-start">
+                                    <div className="min-w-0">
+                                        <div className="font-bold text-gray-900 dark:text-white text-sm truncate">{c.name}</div>
+                                        <div className="text-xs text-gray-500 dark:text-white/40 mt-0.5">{c.order_number}</div>
+                                        {c.status === 'ReturnReady' && <div className="mt-2 text-[10px] font-bold text-purple-700 dark:text-purple-300 bg-purple-100 dark:bg-purple-900/40 px-2 py-1 rounded inline-block">ABHOLBEREIT</div>}
+                                        {c.status === 'ReturnPending' && <div className="mt-2 text-[10px] font-bold text-orange-600 dark:text-orange-300 bg-orange-100 dark:bg-orange-900/40 px-2 py-1 rounded inline-block">Wartet auf Lager</div>}
+                                    </div>
+                                    <Undo2 size={14} className="text-purple-500 dark:text-purple-400" />
+                                </div>
+                                {c.office_notes && (
+                                    <div className="mt-2 p-1.5 bg-gray-100 dark:bg-black/20 rounded-lg text-[10px] text-gray-600 dark:text-white/70 border border-gray-200 dark:border-white/5">
+                                        {c.office_notes}
+                                    </div>
+                                )}
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            </div>
+        </>
+    );
+
     return (
         <div className="space-y-6 pb-12">
             {/* HEADER */}
@@ -221,7 +517,7 @@ const Dashboard: React.FC = () => {
                 </div>
                 <div className="flex gap-2">
                     <button
-                        onClick={() => { fetchMachinesData(); fetchCommissionsData(); }}
+                        onClick={() => { fetchMachinesData(); fetchCommissionsData(); fetchRecentEvents(); }}
                         className="p-3 rounded-xl bg-white/5 border border-white/10 text-white/80 hover:text-white hover:bg-white/10 transition-all duration-300 shadow-lg"
                         title="Aktualisieren"
                     >
@@ -236,207 +532,72 @@ const Dashboard: React.FC = () => {
                 </div>
             </header>
 
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
+            {/* --- DASHBOARD GRID --- */}
+            {/* If Commission is Fullscreen, we render it OUTSIDE the grid as a fixed overlay */}
+            {isCommissionTileFullscreen && (
+                <div className="fixed inset-4 z-[100]">
+                    <GlassCard className="flex flex-col p-0 overflow-hidden border-none bg-white/95 dark:bg-gray-900/95 backdrop-blur-xl border border-gray-200 dark:border-white/20 shadow-2xl rounded-3xl h-full">
+                        {/* ... Commission Tile Content (Duplicated/Extracted for reuse would be better, but keeping inline for now) ... */}
+                        {renderCommissionTileContent(true)}
+                    </GlassCard>
+                </div>
+            )}
 
+            <ResponsiveGridLayout
+                className="layout"
+                layouts={layouts}
+                breakpoints={{ lg: 1200, md: 996, sm: 768, xs: 480, xxs: 0 }}
+                cols={{ lg: 2, md: 2, sm: 1, xs: 1, xxs: 1 }}
+                rowHeight={100}
+                onLayoutChange={handleLayoutChange}
+                isDraggable={!isCommissionTileFullscreen}
+                isResizable={!isCommissionTileFullscreen}
+                draggableHandle=".drag-handle"
+            >
                 {/* --- TILE 1: MASCHINENSTATUS --- */}
-                {
-                    !isCommissionTileFullscreen && (
-                        <GlassCard className="flex flex-col min-h-[400px] p-0 overflow-hidden border-none bg-white/80 dark:bg-white/5">
-                            <div className="px-6 py-5 border-b border-gray-200 dark:border-white/10 bg-white/50 dark:bg-white/5 backdrop-blur-xl flex justify-between items-center">
-                                <h2 className="text-xl font-bold text-gray-900 dark:text-white">Maschinenstatus</h2>
-                                <button onClick={() => navigate('/machines')} className="text-gray-400 dark:text-white/40 hover:text-gray-900 dark:hover:text-white"><ArrowRight size={20} /></button>
-                            </div>
-
-                            <div className="flex-1 grid grid-cols-2 divide-x divide-gray-200 dark:divide-white/10">
-                                {/* Left: Verliehen (Rented) */}
-                                <div className="p-4 flex flex-col gap-3">
-                                    <div className="flex justify-between items-center mb-2">
-                                        <span className="text-sm font-bold text-white">Verliehen ({rentedMachines.length})</span>
-                                    </div>
-
-                                    <div className="space-y-3 overflow-y-auto max-h-[350px] pr-1">
-                                        {rentedMachines.length === 0 && <div className="text-xs text-gray-400 dark:text-white/30 italic">Keine Maschinen verliehen.</div>}
-                                        {rentedMachines.map(m => (
-                                            <div key={m.id} onClick={() => navigate('/machines')} className="group cursor-pointer">
-                                                <div className="font-medium text-gray-900 dark:text-white text-sm group-hover:text-emerald-600 dark:group-hover:text-emerald-300 transition-colors truncate">{m.name}</div>
-                                                <div className="flex items-center gap-1.5 mt-1">
-                                                    <User size={12} className="text-amber-500 dark:text-amber-400" />
-                                                    <span className="text-xs text-gray-500 dark:text-white/50 truncate">{m.profiles?.full_name || m.externalBorrower || 'Unbekannt'}</span>
-                                                </div>
-                                            </div>
-                                        ))}
-                                    </div>
-                                </div>
-
-                                {/* Right: Reparatur (Repair) */}
-                                <div className="p-4 flex flex-col gap-3">
-                                    <div className="flex justify-between items-center mb-2">
-                                        <span className="text-sm font-bold text-rose-400">Reparatur ({repairMachines.length})</span>
-                                    </div>
-
-                                    <div className="space-y-3 overflow-y-auto max-h-[350px] pr-1">
-                                        {repairMachines.length === 0 && <div className="text-xs text-gray-400 dark:text-white/30 italic">Keine Defekte.</div>}
-                                        {repairMachines.map(m => (
-                                            <div key={m.id} onClick={() => navigate('/machines')} className="group cursor-pointer">
-                                                <div className="font-medium text-gray-900 dark:text-white text-sm group-hover:text-rose-500 dark:group-hover:text-rose-300 transition-colors truncate">{m.name}</div>
-                                                <div className="flex items-center gap-1.5 mt-1">
-                                                    <Wrench size={12} className="text-rose-500" />
-                                                    <span className="text-xs text-gray-500 dark:text-white/50 truncate italic">{m.notes || 'Keine Notiz'}</span>
-                                                </div>
-                                            </div>
-                                        ))}
-                                    </div>
-                                </div>
-                            </div>
-                        </GlassCard>
-                    )
-                }
-
-                {/* --- TILE 2: KOMMISSIONEN (With Fullscreen Toggle & Returns) --- */}
-                <div className={`${isCommissionTileFullscreen ? 'fixed inset-4 z-[100] lg:col-span-2' : 'relative'}`}>
-                    <GlassCard className={`flex flex-col p-0 overflow-hidden border-none bg-white/80 dark:bg-white/5 h-full ${isCommissionTileFullscreen ? 'bg-white/95 dark:bg-gray-900/95 backdrop-blur-xl border border-gray-200 dark:border-white/20 shadow-2xl rounded-3xl' : 'min-h-[400px]'}`}>
-                        <div className="px-6 py-5 border-b border-gray-200 dark:border-white/10 bg-white/50 dark:bg-white/5 backdrop-blur-xl flex items-center gap-2">
-                            <Factory size={20} className="text-emerald-500 dark:text-emerald-400" />
-                            <h2 className="text-xl font-bold text-gray-900 dark:text-white flex-1">Kommissionen</h2>
-
-                            {/* Add Commission Button */}
-                            <button
-                                onClick={() => navigate('/commissions', { state: { openCreateModal: true, returnTo: '/dashboard' } })}
-                                className="p-2 bg-white/50 dark:bg-white/5 rounded-lg text-gray-400 dark:text-white/40 hover:text-gray-900 dark:hover:text-white transition-colors mr-2"
-                                title="Neue Kommission erstellen"
-                            >
-                                <Plus size={18} />
-                            </button>
-
-                            {/* Fullscreen Toggle */}
-                            <button onClick={() => setIsCommissionTileFullscreen(!isCommissionTileFullscreen)} className="p-2 bg-white/50 dark:bg-white/5 rounded-lg text-gray-400 dark:text-white/40 hover:text-gray-900 dark:hover:text-white transition-colors mr-2">
-                                {isCommissionTileFullscreen ? <Minimize2 size={18} /> : <Maximize2 size={18} />}
-                            </button>
-
-                            <button onClick={() => navigate('/commissions')} className="text-gray-400 dark:text-white/40 hover:text-gray-900 dark:hover:text-white"><ArrowRight size={20} /></button>
+                <div key="machines">
+                    <GlassCard className="flex flex-col h-full p-0 overflow-hidden border-none bg-white/80 dark:bg-white/5">
+                        <div className="drag-handle cursor-move px-6 py-5 border-b border-gray-200 dark:border-white/10 bg-white/50 dark:bg-white/5 backdrop-blur-xl flex justify-between items-center">
+                            <h2 className="text-xl font-bold text-gray-900 dark:text-white">Maschinenstatus</h2>
+                            <button onClick={() => navigate('/machines')} className="text-gray-400 dark:text-white/40 hover:text-gray-900 dark:hover:text-white"><ArrowRight size={20} /></button>
                         </div>
 
-                        <div className="flex-1 grid grid-cols-3 divide-x divide-gray-200 dark:divide-white/10">
-                            {/* Left: Entwurf (Draft) */}
-                            <div className="p-4 flex flex-col gap-3 bg-gradient-to-b from-gray-100 to-transparent dark:from-white/5 dark:to-transparent">
+                        <div className="flex-1 grid grid-cols-2 divide-x divide-gray-200 dark:divide-white/10 overflow-hidden">
+                            {/* Left: Verliehen (Rented) */}
+                            <div className="p-4 flex flex-col gap-3 overflow-hidden">
                                 <div className="flex justify-between items-center mb-2">
-                                    <span className="text-sm font-bold text-gray-900 dark:text-white">In Arbeit ({draftCommissions.length})</span>
+                                    <span className="text-sm font-bold text-white">Verliehen ({rentedMachines.length})</span>
                                 </div>
 
-                                <div className={`space-y-3 overflow-y-auto ${isCommissionTileFullscreen ? 'max-h-full' : 'max-h-[350px]'} pr-1`}>
-                                    {draftCommissions.length === 0 && <div className="text-xs text-white/30 italic">Leer.</div>}
-                                    {draftCommissions.map((c: any) => {
-                                        // Check for backorders
-                                        const hasBackorder = c.commission_items?.some((i: any) => i.is_backorder);
-
-                                        return (
-                                            <div
-                                                key={c.id}
-                                                onClick={() => setViewingCommission(c)}
-                                                className={`p-3 rounded-xl cursor-pointer transition-all relative group border ${hasBackorder ? 'bg-red-500/10 border-red-500 hover:bg-red-500/20' : 'bg-white/50 dark:bg-white/5 border-gray-200 dark:border-white/10 hover:bg-gray-100 dark:hover:bg-white/10'}`}
-                                            >
-                                                <div className="flex justify-between items-start">
-                                                    <div className="min-w-0">
-                                                        <div className="font-bold text-gray-900 dark:text-white text-sm truncate">{c.name}</div>
-                                                        <div className="text-xs text-gray-500 dark:text-white/40 mt-0.5">{c.order_number}</div>
-                                                    </div>
-                                                    {hasBackorder ? (
-                                                        <AlertTriangle size={14} className="text-red-500 dark:text-red-400 group-hover:text-red-400 dark:group-hover:text-red-300 transition-colors" />
-                                                    ) : (
-                                                        <ArrowRight size={14} className="text-gray-300 dark:text-white/20 group-hover:text-emerald-500 dark:group-hover:text-emerald-400 transition-colors opacity-0 group-hover:opacity-100" />
-                                                    )}
-                                                </div>
-                                                {c.notes && <div className="mt-2 text-[10px] text-gray-400 dark:text-white/30 italic truncate">{c.notes}</div>}
-                                                {hasBackorder && (
-                                                    <div className="mt-2 text-[9px] font-bold text-red-400 uppercase tracking-wide bg-red-900/30 px-1.5 py-0.5 rounded inline-block">
-                                                        Rückstand!
-                                                    </div>
-                                                )}
+                                <div className="space-y-3 overflow-y-auto h-full pr-1 pb-4">
+                                    {rentedMachines.length === 0 && <div className="text-xs text-gray-400 dark:text-white/30 italic">Keine Maschinen verliehen.</div>}
+                                    {rentedMachines.map(m => (
+                                        <div key={m.id} onClick={() => navigate('/machines')} className="group cursor-pointer">
+                                            <div className="font-medium text-gray-900 dark:text-white text-sm group-hover:text-emerald-600 dark:group-hover:text-emerald-300 transition-colors truncate">{m.name}</div>
+                                            <div className="flex items-center gap-1.5 mt-1">
+                                                <User size={12} className="text-amber-500 dark:text-amber-400" />
+                                                <span className="text-xs text-gray-500 dark:text-white/50 truncate">{m.profiles?.full_name || m.externalBorrower || 'Unbekannt'}</span>
                                             </div>
-                                        );
-                                    })}
+                                        </div>
+                                    ))}
                                 </div>
                             </div>
 
-                            {/* Center: Bereitgestellt (Ready) - INTERACTIVE */}
-                            <div className="p-4 flex flex-col gap-3 relative">
+                            {/* Right: Reparatur (Repair) */}
+                            <div className="p-4 flex flex-col gap-3 overflow-hidden">
                                 <div className="flex justify-between items-center mb-2">
-                                    <span className="text-sm font-bold text-emerald-600 dark:text-emerald-400">Bereitgestellt ({readyCommissions.length})</span>
+                                    <span className="text-sm font-bold text-rose-400">Reparatur ({repairMachines.length})</span>
                                 </div>
 
-                                <div className={`space-y-3 overflow-y-auto ${isCommissionTileFullscreen ? 'max-h-full' : 'max-h-[350px]'} pr-1 pb-10`}>
-                                    {readyCommissions.length === 0 && <div className="text-xs text-white/30 italic">Nichts bereitgestellt.</div>}
-                                    {readyCommissions.map(c => {
-                                        // Needs processing if NOT processed yet
-                                        const needsProcessing = !c.is_processed;
-
-                                        return (
-                                            <div
-                                                key={c.id}
-                                                onClick={() => handleCommissionClick(c)}
-                                                className={`
-                                        p-3 rounded-xl cursor-pointer transition-all relative group border
-                                        ${needsProcessing ? 'bg-emerald-500/10 dark:bg-emerald-500/20 border-emerald-500 animate-border-pulse-green' : 'bg-white/50 dark:bg-white/5 border-emerald-500/30 hover:bg-gray-100 dark:hover:bg-white/10'}
-                                    `}
-                                            >
-                                                <div className="flex justify-between items-start">
-                                                    <div className="min-w-0 flex-1 pr-2">
-                                                        <div className="font-bold text-gray-900 dark:text-white text-sm truncate">{c.name}</div>
-                                                        <div className="text-xs text-emerald-600/80 dark:text-emerald-200/60 mt-0.5">{c.order_number}</div>
-                                                        {/* Extended info in fullscreen or if processed */}
-                                                        {(isCommissionTileFullscreen || c.office_notes) && c.office_notes && (
-                                                            <div className="mt-2 p-2 bg-gray-100 dark:bg-black/20 rounded-lg text-xs text-gray-600 dark:text-white/80 flex gap-2 items-start border border-gray-200 dark:border-white/5">
-                                                                <StickyNote size={12} className="shrink-0 mt-0.5 text-amber-500 dark:text-amber-400" />
-                                                                <span className="italic">{c.office_notes}</span>
-                                                            </div>
-                                                        )}
-                                                    </div>
-
-                                                    {/* Status Icon */}
-                                                    {c.is_processed ? (
-                                                        <div className="w-6 h-6 rounded-full bg-gray-200 dark:bg-white/10 text-gray-400 dark:text-white/50 flex items-center justify-center border border-gray-300 dark:border-white/10" title="Vom Büro gesehen">
-                                                            <Check size={12} />
-                                                        </div>
-                                                    ) : (
-                                                        <div className="w-6 h-6 rounded-full bg-emerald-500 text-white flex items-center justify-center shadow-lg shadow-emerald-500/40 animate-pulse" title="Neue Bereitstellung!">
-                                                            <Check size={12} strokeWidth={3} />
-                                                        </div>
-                                                    )}
-                                                </div>
+                                <div className="space-y-3 overflow-y-auto h-full pr-1 pb-4">
+                                    {repairMachines.length === 0 && <div className="text-xs text-gray-400 dark:text-white/30 italic">Keine Defekte.</div>}
+                                    {repairMachines.map(m => (
+                                        <div key={m.id} onClick={() => navigate('/machines')} className="group cursor-pointer">
+                                            <div className="font-medium text-gray-900 dark:text-white text-sm group-hover:text-rose-500 dark:group-hover:text-rose-300 transition-colors truncate">{m.name}</div>
+                                            <div className="flex items-center gap-1.5 mt-1">
+                                                <Wrench size={12} className="text-rose-500" />
+                                                <span className="text-xs text-gray-500 dark:text-white/50 truncate italic">{m.notes || 'Keine Notiz'}</span>
                                             </div>
-                                        );
-                                    })}
-                                </div>
-                            </div>
-
-                            {/* Right: Rückgaben (Returns) */}
-                            <div className="p-4 flex flex-col gap-3 bg-gradient-to-b from-purple-500/5 to-transparent">
-                                <div className="flex justify-between items-center mb-2">
-                                    <span className="text-sm font-bold text-purple-600 dark:text-purple-400">Rückgaben ({returnCommissions.length})</span>
-                                </div>
-
-                                <div className={`space-y-3 overflow-y-auto ${isCommissionTileFullscreen ? 'max-h-full' : 'max-h-[350px]'} pr-1`}>
-                                    {returnCommissions.length === 0 && <div className="text-xs text-gray-400 dark:text-white/30 italic">Keine offenen Rückgaben.</div>}
-                                    {returnCommissions.map(c => (
-                                        <div
-                                            key={c.id}
-                                            onClick={() => handleCommissionClick(c)}
-                                            className={`p-3 rounded-xl border cursor-pointer transition-all hover:bg-gray-100 dark:hover:bg-white/10 ${c.status === 'ReturnReady' ? 'bg-purple-500/10 dark:bg-purple-500/20 border-purple-500 text-purple-800 dark:text-purple-100' : 'bg-white/50 dark:bg-white/5 border-purple-500/30'}`}
-                                        >
-                                            <div className="flex justify-between items-start">
-                                                <div className="min-w-0">
-                                                    <div className="font-bold text-gray-900 dark:text-white text-sm truncate">{c.name}</div>
-                                                    <div className="text-xs text-gray-500 dark:text-white/40 mt-0.5">{c.order_number}</div>
-                                                    {c.status === 'ReturnReady' && <div className="mt-2 text-[10px] font-bold text-purple-700 dark:text-purple-300 bg-purple-100 dark:bg-purple-900/40 px-2 py-1 rounded inline-block">ABHOLBEREIT</div>}
-                                                    {c.status === 'ReturnPending' && <div className="mt-2 text-[10px] font-bold text-orange-600 dark:text-orange-300 bg-orange-100 dark:bg-orange-900/40 px-2 py-1 rounded inline-block">Wartet auf Lager</div>}
-                                                </div>
-                                                <Undo2 size={14} className="text-purple-500 dark:text-purple-400" />
-                                            </div>
-                                            {c.office_notes && (
-                                                <div className="mt-2 p-1.5 bg-gray-100 dark:bg-black/20 rounded-lg text-[10px] text-gray-600 dark:text-white/70 border border-gray-200 dark:border-white/5">
-                                                    {c.office_notes}
-                                                </div>
-                                            )}
                                         </div>
                                     ))}
                                 </div>
@@ -444,7 +605,70 @@ const Dashboard: React.FC = () => {
                         </div>
                     </GlassCard>
                 </div>
-            </div>
+
+                {/* --- TILE 2: KOMMISSIONEN --- */}
+                <div key="commissions">
+                    {/* If fullscreen, we render a placeholder here or nothing? RGL needs the item to exist. We render it, but maybe empty or hidden if fullscreen? 
+                        Actually, if we render it hidden, RGL might get confused. 
+                        Let's render the content here normally. If fullscreen is active, this tile stays here but the "Fullscreen" version is on top.
+                    */}
+                    <GlassCard className={`flex flex-col h-full p-0 overflow-hidden border-none bg-white/80 dark:bg-white/5`}>
+                        {renderCommissionTileContent(false)}
+                    </GlassCard>
+                </div>
+
+                {/* --- TILE 3: EREIGNISLISTE --- */}
+                <div key="events">
+                    <GlassCard className="flex flex-col h-full p-0 overflow-hidden border-none bg-white/80 dark:bg-white/5">
+                        <div className="drag-handle cursor-move px-6 py-5 border-b border-gray-200 dark:border-white/10 bg-white/50 dark:bg-white/5 backdrop-blur-xl flex items-center gap-2">
+                            <StickyNote size={20} className="text-blue-500 dark:text-blue-400" />
+                            <h2 className="text-xl font-bold text-gray-900 dark:text-white">Letzte Aktivitäten</h2>
+                        </div>
+
+                        <div className="p-0 overflow-y-auto h-full pb-12">
+                            {recentEvents.length === 0 ? (
+                                <div className="p-8 text-center text-gray-400 dark:text-white/30 italic">
+                                    Noch keine Aktivitäten verzeichnet.
+                                </div>
+                            ) : (
+                                <div className="divide-y divide-gray-200 dark:divide-white/5">
+                                    {recentEvents.map((event) => (
+                                        <div key={`${event.type}-${event.id}`} className="p-4 flex items-start gap-4 hover:bg-gray-50 dark:hover:bg-white/5 transition-colors">
+                                            {/* Icon based on type */}
+                                            <div className={`mt-1 w-8 h-8 rounded-full flex items-center justify-center shrink-0 
+                                                ${event.type === 'machine' ? 'bg-amber-500/10 text-amber-600 dark:text-amber-400' : ''}
+                                                ${event.type === 'commission' ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400' : ''}
+                                                ${event.type === 'order' ? 'bg-purple-500/10 text-purple-600 dark:text-purple-400' : ''}
+                                            `}>
+                                                {event.type === 'machine' && <Wrench size={14} />}
+                                                {event.type === 'commission' && <CheckCircle2 size={14} />}
+                                                {event.type === 'order' && <ShoppingCart size={14} />}
+                                            </div>
+
+                                            <div className="flex-1 min-w-0">
+                                                <div className="flex justify-between items-start">
+                                                    <span className="text-sm font-bold text-gray-900 dark:text-white truncate">
+                                                        {event.user_name}
+                                                    </span>
+                                                    <span className="text-xs text-gray-400 dark:text-white/40 whitespace-nowrap ml-2">
+                                                        {formatDistanceToNow(new Date(event.created_at), { addSuffix: true, locale: de })}
+                                                    </span>
+                                                </div>
+                                                <p className="text-sm text-gray-600 dark:text-white/70 mt-0.5">
+                                                    <span className="font-medium text-gray-500 dark:text-white/50 uppercase text-[10px] tracking-wider mr-2 border border-gray-200 dark:border-white/10 px-1.5 py-0.5 rounded">
+                                                        {event.type === 'machine' ? 'Gerät' : event.type === 'commission' ? 'Kommission' : 'Bestellung'}
+                                                    </span>
+                                                    {event.details}
+                                                </p>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
+                    </GlassCard>
+                </div>
+            </ResponsiveGridLayout>
 
 
             {/* --- UTILITY MODALS (App Drawer & SQL Fix) --- */}
@@ -575,6 +799,22 @@ const Dashboard: React.FC = () => {
                                         >
                                             <div className={`absolute top-1 left-1 w-5 h-5 rounded-full bg-white shadow-sm transition-transform duration-300 ${viewMode === 'desktop' ? 'translate-x-5' : 'translate-x-0'}`} />
                                         </button>
+                                    </div>
+
+                                    {/* Reset Layout */}
+                                    <div className="flex items-center justify-between">
+                                        <div className="flex items-center gap-3">
+                                            <div className="p-2 rounded-lg bg-white/10 text-white/50">
+                                                <LayoutTemplate size={18} />
+                                            </div>
+                                            <div>
+                                                <div className="text-sm font-medium text-gray-900 dark:text-white">Layout zurücksetzen</div>
+                                                <div className="text-xs text-gray-500 dark:text-white/40">Standard wiederherstellen</div>
+                                            </div>
+                                        </div>
+                                        <Button onClick={resetLayout} variant="secondary" className="text-xs py-1 h-8">
+                                            Reset
+                                        </Button>
                                     </div>
                                 </div>
                             </div>
