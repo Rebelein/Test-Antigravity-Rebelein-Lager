@@ -8,7 +8,7 @@
 
   <!-- PWA & Mobile Meta Tags -->
   <meta name="theme-color" content="#0f172a" />
-  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <meta name="apple-mobile-web-app-title" content="LagerApp" />
 
@@ -20,19 +20,6 @@
   <!-- OneSignal SDK -->
   <script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer></script>
 
-  <script src="https://cdn.tailwindcss.com"></script>
-  <script>
-    tailwind.config = {
-      darkMode: 'class',
-      theme: {
-        extend: {
-          fontFamily: {
-            sans: ['Inter', 'sans-serif'],
-          },
-        }
-      }
-    }
-  </script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
@@ -42,74 +29,6 @@
     window.process = window.process || { env: { NODE_ENV: 'production' } };
   </script>
 
-  <style>
-    body {
-      font-family: 'Inter', sans-serif;
-      background-color: #0f172a;
-      /* matches bg-gray-900 */
-      color: white;
-      overflow-x: hidden;
-      /* Prevent scroll from blobs */
-      -webkit-tap-highlight-color: transparent;
-    }
-
-    /* Custom Scrollbar for Glassmorphism feel */
-    ::-webkit-scrollbar {
-      width: 8px;
-    }
-
-    ::-webkit-scrollbar-track {
-      background: transparent;
-    }
-
-    ::-webkit-scrollbar-thumb {
-      background: rgba(255, 255, 255, 0.1);
-      border-radius: 10px;
-    }
-
-    ::-webkit-scrollbar-thumb:hover {
-      background: rgba(255, 255, 255, 0.2);
-    }
-
-    /* Custom Animations */
-    @keyframes slow-pulse {
-
-      0%,
-      100% {
-        opacity: 1;
-      }
-
-      50% {
-        opacity: 0.4;
-      }
-    }
-
-    .animate-pulse-slow {
-      animation: slow-pulse 15s cubic-bezier(0.4, 0, 0.6, 1) infinite;
-    }
-
-    /* Dashboard Alert Pulse - Green Border */
-    @keyframes border-pulse-green {
-      0% {
-        border-color: rgba(16, 185, 129, 0.3);
-        box-shadow: 0 0 0 0 rgba(16, 185, 129, 0);
-      }
-
-      50% {
-        border-color: rgba(16, 185, 129, 1);
-        box-shadow: 0 0 15px 0 rgba(16, 185, 129, 0.3);
-      }
-
-      100% {
-        border-color: rgba(16, 185, 129, 0.3);
-        box-shadow: 0 0 0 0 rgba(16, 185, 129, 0);
-      }
-    }
-
-    .animate-border-pulse-green {
-      animation: border-pulse-green 2.5s infinite;
-    }
-  </style>
   <script type="importmap">
 {
   "imports": {
@@ -128,7 +47,6 @@
   }
 }
 </script>
-  <link rel="stylesheet" href="/index.css">
 </head>
 
 <body>
@@ -136,38 +54,7 @@
   <!-- CRITICAL: Entry point for the React Application -->
   <script type="module" src="./index.tsx"></script>
 
-  <script>
-    if ('serviceWorker' in navigator) {
-      window.addEventListener('load', () => {
-        // Standard App Service Worker
-        navigator.serviceWorker.register('/sw.js').then((reg) => {
-          console.log('App SW registered', reg);
-          if (reg.waiting) emitUpdate();
-          reg.addEventListener('updatefound', () => {
-            const newWorker = reg.installing;
-            newWorker.addEventListener('statechange', () => {
-              if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
-                emitUpdate();
-              }
-            });
-          });
-        }).catch((err) => console.log('App SW failed', err));
 
-        let refreshing = false;
-        navigator.serviceWorker.addEventListener('controllerchange', () => {
-          if (!refreshing) {
-            window.location.reload();
-            refreshing = true;
-          }
-        });
-      });
-    }
-
-    function emitUpdate() {
-      const event = new CustomEvent('sw-update-available');
-      window.dispatchEvent(event);
-    }
-  </script>
 
 </body>
 
