@@ -355,7 +355,7 @@ const Dashboard: React.FC = () => {
     // Helper to render Commission Tile Content (to avoid duplication)
     const renderCommissionTileContent = (isFullscreen: boolean) => (
         <>
-            <div className="drag-handle cursor-move px-6 py-5 border-b border-gray-200 dark:border-white/10 bg-white/50 dark:bg-white/5 backdrop-blur-xl flex items-center gap-2">
+            <div className="drag-handle cursor-move px-6 py-5 border-b border-gray-200 dark:border-white/10 bg-white/50 dark:bg-white/5 backdrop-blur-xl flex items-center gap-2 shrink-0">
                 <Factory size={20} className="text-emerald-500 dark:text-emerald-400" />
                 <h2 className="text-xl font-bold text-gray-900 dark:text-white flex-1">Kommissionen</h2>
 
@@ -378,12 +378,12 @@ const Dashboard: React.FC = () => {
 
             <div className="flex-1 grid grid-cols-3 divide-x divide-gray-200 dark:divide-white/10 overflow-hidden">
                 {/* Left: Entwurf (Draft) */}
-                <div className="p-4 flex flex-col gap-3 bg-gradient-to-b from-gray-100 to-transparent dark:from-white/5 dark:to-transparent overflow-hidden">
-                    <div className="flex justify-between items-center mb-2">
+                <div className="p-4 flex flex-col gap-3 bg-gradient-to-b from-gray-100 to-transparent dark:from-white/5 dark:to-transparent overflow-hidden h-full">
+                    <div className="flex justify-between items-center mb-2 shrink-0">
                         <span className="text-sm font-bold text-gray-900 dark:text-white">In Arbeit ({draftCommissions.length})</span>
                     </div>
 
-                    <div className={`space-y-3 overflow-y-auto ${isFullscreen ? 'max-h-full' : 'h-full'} pr-1 pb-4`}>
+                    <div className={`space-y-3 overflow-y-auto flex-1 min-h-0 pr-1 pb-4`}>
                         {draftCommissions.length === 0 && <div className="text-xs text-white/30 italic">Leer.</div>}
                         {draftCommissions.map((c: any) => {
                             // Check for backorders
@@ -419,12 +419,12 @@ const Dashboard: React.FC = () => {
                 </div>
 
                 {/* Center: Bereitgestellt (Ready) - INTERACTIVE */}
-                <div className="p-4 flex flex-col gap-3 relative overflow-hidden">
-                    <div className="flex justify-between items-center mb-2">
+                <div className="p-4 flex flex-col gap-3 relative overflow-hidden h-full">
+                    <div className="flex justify-between items-center mb-2 shrink-0">
                         <span className="text-sm font-bold text-emerald-600 dark:text-emerald-400">Bereitgestellt ({readyCommissions.length})</span>
                     </div>
 
-                    <div className={`space-y-3 overflow-y-auto ${isFullscreen ? 'max-h-full' : 'h-full'} pr-1 pb-10`}>
+                    <div className={`space-y-3 overflow-y-auto flex-1 min-h-0 pr-1 pb-10`}>
                         {readyCommissions.length === 0 && <div className="text-xs text-white/30 italic">Nichts bereitgestellt.</div>}
                         {readyCommissions.map(c => {
                             // Needs processing if NOT processed yet
@@ -470,12 +470,12 @@ const Dashboard: React.FC = () => {
                 </div>
 
                 {/* Right: Rückgaben (Returns) */}
-                <div className="p-4 flex flex-col gap-3 bg-gradient-to-b from-purple-500/5 to-transparent overflow-hidden">
-                    <div className="flex justify-between items-center mb-2">
+                <div className="p-4 flex flex-col gap-3 bg-gradient-to-b from-purple-500/5 to-transparent overflow-hidden h-full">
+                    <div className="flex justify-between items-center mb-2 shrink-0">
                         <span className="text-sm font-bold text-purple-600 dark:text-purple-400">Rückgaben ({returnCommissions.length})</span>
                     </div>
 
-                    <div className={`space-y-3 overflow-y-auto ${isFullscreen ? 'max-h-full' : 'h-full'} pr-1 pb-4`}>
+                    <div className={`space-y-3 overflow-y-auto flex-1 min-h-0 pr-1 pb-4`}>
                         {returnCommissions.length === 0 && <div className="text-xs text-gray-400 dark:text-white/30 italic">Keine offenen Rückgaben.</div>}
                         {returnCommissions.map(c => (
                             <div
@@ -536,7 +536,7 @@ const Dashboard: React.FC = () => {
             {/* If Commission is Fullscreen, we render it OUTSIDE the grid as a fixed overlay */}
             {isCommissionTileFullscreen && (
                 <div className="fixed inset-4 z-[100]">
-                    <GlassCard className="flex flex-col p-0 overflow-hidden border-none bg-white/95 dark:bg-gray-900/95 backdrop-blur-xl border border-gray-200 dark:border-white/20 shadow-2xl rounded-3xl h-full">
+                    <GlassCard className="flex flex-col p-0 overflow-hidden border-none bg-white/95 dark:bg-gray-900/95 backdrop-blur-xl border border-gray-200 dark:border-white/20 shadow-2xl rounded-3xl h-full" contentClassName="!p-0 flex flex-col h-full">
                         {/* ... Commission Tile Content (Duplicated/Extracted for reuse would be better, but keeping inline for now) ... */}
                         {renderCommissionTileContent(true)}
                     </GlassCard>
@@ -556,20 +556,20 @@ const Dashboard: React.FC = () => {
             >
                 {/* --- TILE 1: MASCHINENSTATUS --- */}
                 <div key="machines">
-                    <GlassCard className="flex flex-col h-full p-0 overflow-hidden border-none bg-white/80 dark:bg-white/5">
-                        <div className="drag-handle cursor-move px-6 py-5 border-b border-gray-200 dark:border-white/10 bg-white/50 dark:bg-white/5 backdrop-blur-xl flex justify-between items-center">
+                    <GlassCard className="flex flex-col h-full p-0 overflow-hidden border-none bg-white/80 dark:bg-white/5" contentClassName="!p-0 flex flex-col h-full">
+                        <div className="drag-handle cursor-move px-6 py-5 border-b border-gray-200 dark:border-white/10 bg-white/50 dark:bg-white/5 backdrop-blur-xl flex justify-between items-center shrink-0">
                             <h2 className="text-xl font-bold text-gray-900 dark:text-white">Maschinenstatus</h2>
                             <button onClick={() => navigate('/machines')} className="text-gray-400 dark:text-white/40 hover:text-gray-900 dark:hover:text-white"><ArrowRight size={20} /></button>
                         </div>
 
                         <div className="flex-1 grid grid-cols-2 divide-x divide-gray-200 dark:divide-white/10 overflow-hidden">
                             {/* Left: Verliehen (Rented) */}
-                            <div className="p-4 flex flex-col gap-3 overflow-hidden">
-                                <div className="flex justify-between items-center mb-2">
+                            <div className="p-4 flex flex-col gap-3 overflow-hidden h-full">
+                                <div className="flex justify-between items-center mb-2 shrink-0">
                                     <span className="text-sm font-bold text-white">Verliehen ({rentedMachines.length})</span>
                                 </div>
 
-                                <div className="space-y-3 overflow-y-auto h-full pr-1 pb-4">
+                                <div className="space-y-3 overflow-y-auto flex-1 min-h-0 pr-1 pb-4">
                                     {rentedMachines.length === 0 && <div className="text-xs text-gray-400 dark:text-white/30 italic">Keine Maschinen verliehen.</div>}
                                     {rentedMachines.map(m => (
                                         <div key={m.id} onClick={() => navigate('/machines')} className="group cursor-pointer">
@@ -584,12 +584,12 @@ const Dashboard: React.FC = () => {
                             </div>
 
                             {/* Right: Reparatur (Repair) */}
-                            <div className="p-4 flex flex-col gap-3 overflow-hidden">
-                                <div className="flex justify-between items-center mb-2">
+                            <div className="p-4 flex flex-col gap-3 overflow-hidden h-full">
+                                <div className="flex justify-between items-center mb-2 shrink-0">
                                     <span className="text-sm font-bold text-rose-400">Reparatur ({repairMachines.length})</span>
                                 </div>
 
-                                <div className="space-y-3 overflow-y-auto h-full pr-1 pb-4">
+                                <div className="space-y-3 overflow-y-auto flex-1 min-h-0 pr-1 pb-4">
                                     {repairMachines.length === 0 && <div className="text-xs text-gray-400 dark:text-white/30 italic">Keine Defekte.</div>}
                                     {repairMachines.map(m => (
                                         <div key={m.id} onClick={() => navigate('/machines')} className="group cursor-pointer">
@@ -612,20 +612,20 @@ const Dashboard: React.FC = () => {
                         Actually, if we render it hidden, RGL might get confused. 
                         Let's render the content here normally. If fullscreen is active, this tile stays here but the "Fullscreen" version is on top.
                     */}
-                    <GlassCard className={`flex flex-col h-full p-0 overflow-hidden border-none bg-white/80 dark:bg-white/5`}>
+                    <GlassCard className={`flex flex-col h-full p-0 overflow-hidden border-none bg-white/80 dark:bg-white/5`} contentClassName="!p-0 flex flex-col h-full">
                         {renderCommissionTileContent(false)}
                     </GlassCard>
                 </div>
 
                 {/* --- TILE 3: EREIGNISLISTE --- */}
                 <div key="events">
-                    <GlassCard className="flex flex-col h-full p-0 overflow-hidden border-none bg-white/80 dark:bg-white/5">
-                        <div className="drag-handle cursor-move px-6 py-5 border-b border-gray-200 dark:border-white/10 bg-white/50 dark:bg-white/5 backdrop-blur-xl flex items-center gap-2">
+                    <GlassCard className="flex flex-col h-full p-0 overflow-hidden border-none bg-white/80 dark:bg-white/5" contentClassName="!p-0 flex flex-col h-full">
+                        <div className="drag-handle cursor-move px-6 py-5 border-b border-gray-200 dark:border-white/10 bg-white/50 dark:bg-white/5 backdrop-blur-xl flex items-center gap-2 shrink-0">
                             <StickyNote size={20} className="text-blue-500 dark:text-blue-400" />
                             <h2 className="text-xl font-bold text-gray-900 dark:text-white">Letzte Aktivitäten</h2>
                         </div>
 
-                        <div className="p-0 overflow-y-auto h-full pb-12">
+                        <div className="p-0 overflow-y-auto flex-1 min-h-0 pb-12">
                             {recentEvents.length === 0 ? (
                                 <div className="p-8 text-center text-gray-400 dark:text-white/30 italic">
                                     Noch keine Aktivitäten verzeichnet.

@@ -8,18 +8,19 @@ interface GlassCardProps extends React.HTMLAttributes<HTMLDivElement> {
   className?: string;
   title?: string;
   action?: React.ReactNode;
+  contentClassName?: string;
 }
 
-export const GlassCard: React.FC<GlassCardProps> = ({ children, className = '', title, action, ...props }) => {
+export const GlassCard: React.FC<GlassCardProps> = ({ children, className = '', title, action, contentClassName = '', ...props }) => {
   return (
-    <div className={`bg-white/80 dark:bg-white/10 backdrop-blur-lg border border-gray-200 dark:border-white/20 rounded-3xl shadow-xl dark:shadow-[0_8px_32px_0_rgba(0,0,0,0.37)] overflow-hidden ${className}`} {...props}>
+    <div className={`bg-white/80 dark:bg-white/10 backdrop-blur-lg border border-gray-200 dark:border-white/20 rounded-3xl shadow-xl dark:shadow-[0_8px_32px_0_rgba(0,0,0,0.37)] overflow-hidden flex flex-col ${className}`} {...props}>
       {(title || action) && (
-        <div className="px-6 py-4 border-b border-gray-200 dark:border-white/10 flex justify-between items-center">
+        <div className="px-6 py-4 border-b border-gray-200 dark:border-white/10 flex justify-between items-center shrink-0">
           {title && <h3 className="text-lg font-semibold bg-clip-text text-transparent bg-gradient-to-r from-emerald-600 to-teal-500 dark:from-emerald-300 dark:to-teal-200">{title}</h3>}
           {action && <div>{action}</div>}
         </div>
       )}
-      <div className="p-6">
+      <div className={`p-6 flex-1 ${contentClassName}`}>
         {children}
       </div>
     </div>
