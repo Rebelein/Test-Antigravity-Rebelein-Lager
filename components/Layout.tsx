@@ -8,6 +8,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { useTheme } from '../contexts/ThemeContext';
 import { Button, GlassCard } from './UIComponents';
 import { OnboardingTour } from './OnboardingTour';
+import { InstallPrompt } from './InstallPrompt';
 
 interface LayoutProps {
     children: React.ReactNode;
@@ -24,9 +25,6 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
 
     // --- NEW FEATURES STATE ---
     const [updateAvailable, setUpdateAvailable] = useState(false);
-    const [showInstallPrompt, setShowInstallPrompt] = useState(false);
-    const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
-    const [isIOS, setIsIOS] = useState(false);
     const [showTour, setShowTour] = useState(false);
 
     // Determine active tab based on current path
@@ -95,44 +93,6 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
         };
     }, []);
 
-    // --- EFFECT: INSTALL PROMPT ---
-    useEffect(() => {
-        // Check if iOS
-        const isIosDevice = /iPad|iPhone|iPod/.test(navigator.userAgent) && !(window as any).MSStream;
-        setIsIOS(isIosDevice);
-
-        // Check if already installed (standalone mode)
-        const isStandalone = window.matchMedia('(display-mode: standalone)').matches || (window.navigator as any).standalone;
-        if (isStandalone) return; // Already installed
-
-        // Chrome/Android Event
-        const handleBeforeInstall = (e: Event) => {
-            e.preventDefault();
-            setDeferredPrompt(e);
-
-            // Check if user has already declined recently
-            const declined = localStorage.getItem('install_declined_timestamp');
-            if (declined) {
-                const diff = Date.now() - parseInt(declined);
-                if (diff < 7 * 24 * 60 * 60 * 1000) return; // Don't ask for 7 days
-            }
-
-            setTimeout(() => setShowInstallPrompt(true), 3000); // Delay prompt
-        };
-
-        window.addEventListener('beforeinstallprompt', handleBeforeInstall);
-
-        // iOS Logic (Manual Check)
-        if (isIosDevice && !isStandalone) {
-            const declined = localStorage.getItem('install_declined_timestamp');
-            if (!declined) {
-                setTimeout(() => setShowInstallPrompt(true), 3000);
-            }
-        }
-
-        return () => window.removeEventListener('beforeinstallprompt', handleBeforeInstall);
-    }, []);
-
     const handleLogout = async () => {
         await signOut();
         navigate('/login');
@@ -163,23 +123,6 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
         } else {
             window.location.reload();
         }
-    };
-
-    // --- ACTION: INSTALL APP ---
-    const installApp = async () => {
-        if (deferredPrompt) {
-            deferredPrompt.prompt();
-            const { outcome } = await deferredPrompt.userChoice;
-            if (outcome === 'accepted') {
-                setShowInstallPrompt(false);
-            }
-            setDeferredPrompt(null);
-        }
-    };
-
-    const dismissInstall = () => {
-        setShowInstallPrompt(false);
-        localStorage.setItem('install_declined_timestamp', Date.now().toString());
     };
 
     const completeTour = async () => {
@@ -232,41 +175,11 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
             {/* --- ONBOARDING TOUR --- */}
             {showTour && <OnboardingTour onComplete={completeTour} />}
 
-            {/* --- INSTALL PROMPT MODAL --- */}
-            {showInstallPrompt && (
-                <div className="fixed inset-0 z-[90] flex items-end sm:items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in">
-                    <GlassCard className="w-full max-w-md relative">
-                        <button onClick={dismissInstall} className="absolute top-3 right-3 text-white/30 hover:text-white"><X size={20} /></button>
-                        <div className="text-center mb-4">
-                            <div className="w-16 h-16 bg-emerald-500/20 rounded-2xl flex items-center justify-center mx-auto mb-3 text-emerald-400 border border-emerald-500/30">
-                                <Download size={32} />
-                            </div>
-                            <h2 className="text-xl font-bold text-white">App installieren</h2>
-                            <p className="text-white/60 text-sm mt-2">
-                                Installiere die LagerApp auf deinem Home-Bildschirm für schnelleren Zugriff und Vollbild-Modus.
-                            </p>
-                        </div>
+            {/* --- ONBOARDING TOUR --- */}
+            {showTour && <OnboardingTour onComplete={completeTour} />}
 
-                        {isIOS ? (
-                            <div className="bg-white/5 rounded-xl p-4 text-sm text-white/80 mb-4 border border-white/10">
-                                <ol className="list-decimal list-inside space-y-2">
-                                    <li>Tippe unten auf <strong>Teilen</strong> <Share size={14} className="inline mx-1" /></li>
-                                    <li>Scrolle runter und wähle <strong>Zum Home-Bildschirm</strong></li>
-                                    <li>Tippe oben rechts auf <strong>Hinzufügen</strong></li>
-                                </ol>
-                            </div>
-                        ) : (
-                            <Button onClick={installApp} className="w-full bg-emerald-600 hover:bg-emerald-500 mb-3">
-                                Jetzt installieren
-                            </Button>
-                        )}
-
-                        <button onClick={dismissInstall} className="w-full py-2 text-xs text-white/40 hover:text-white">
-                            Vielleicht später
-                        </button>
-                    </GlassCard>
-                </div>
-            )}
+            {/* --- INSTALL PROMPT --- */}
+            <InstallPrompt />
 
             {/* ============================================================================
           DESKTOP SIDEBAR
