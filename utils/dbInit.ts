@@ -313,6 +313,12 @@ BEGIN
         IF NOT EXISTS (SELECT 1 FROM pg_publication_tables WHERE pubname = 'supabase_realtime' AND tablename = 'profiles') THEN
             ALTER PUBLICATION supabase_realtime ADD TABLE profiles;
         END IF;
+        IF NOT EXISTS (SELECT 1 FROM pg_publication_tables WHERE pubname = 'supabase_realtime' AND tablename = 'commission_events') THEN
+            ALTER PUBLICATION supabase_realtime ADD TABLE commission_events;
+        END IF;
+        IF NOT EXISTS (SELECT 1 FROM pg_publication_tables WHERE pubname = 'supabase_realtime' AND tablename = 'order_events') THEN
+            ALTER PUBLICATION supabase_realtime ADD TABLE order_events;
+        END IF;
     EXCEPTION WHEN OTHERS THEN
         NULL;
     END;
