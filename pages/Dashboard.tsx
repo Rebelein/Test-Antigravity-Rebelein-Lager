@@ -24,6 +24,7 @@ interface AppEvent {
     action: string;
     details: string;
     created_at: string;
+    entity_name: string; // NEW: To show WHICH item was affected
 }
 
 const Dashboard: React.FC = () => {
@@ -165,21 +166,21 @@ const Dashboard: React.FC = () => {
             // Fetch Machine Events
             const { data: machineEvents } = await supabase
                 .from('machine_events')
-                .select('id, action, details, created_at, profiles(full_name)')
+                .select('id, action, details, created_at, profiles(full_name), machines(name)')
                 .order('created_at', { ascending: false })
                 .limit(10);
 
-            // Fetch Commission Logs
-            const { data: commissionLogs } = await supabase
-                .from('commission_logs')
-                .select('id, action, details, created_at, profiles(full_name)')
+            // Fetch Commission Events
+            const { data: commissionEvents } = await supabase
+                .from('commission_events')
+                .select('id, action, details, created_at, profiles(full_name), commission_name')
                 .order('created_at', { ascending: false })
                 .limit(10);
 
-            // Fetch Recent Orders
-            const { data: recentOrders } = await supabase
-                .from('orders')
-                .select('id, status, created_at, suppliers(name)')
+            // Fetch Order Events
+            const { data: orderEvents } = await supabase
+                .from('order_events')
+                .select('id, action, details, created_at, profiles(full_name), orders(supplier, commission_number)')
                 .order('created_at', { ascending: false })
                 .limit(10);
 
@@ -192,29 +193,32 @@ const Dashboard: React.FC = () => {
                     user_name: e.profiles?.full_name || 'Unbekannt',
                     action: e.action,
                     details: e.details,
-                    created_at: e.created_at
+                    created_at: e.created_at,
+                    entity_name: e.machines?.name || 'Unbekanntes Gerät'
                 })));
             }
 
-            if (commissionLogs) {
-                events.push(...commissionLogs.map((e: any) => ({
+            if (commissionEvents) {
+                events.push(...commissionEvents.map((e: any) => ({
                     id: e.id,
                     type: 'commission' as const,
                     user_name: e.profiles?.full_name || 'Unbekannt',
                     action: e.action,
                     details: e.details,
-                    created_at: e.created_at
+                    created_at: e.created_at,
+                    entity_name: e.commission_name || 'Unbekannte Kommission'
                 })));
             }
 
-            if (recentOrders) {
-                events.push(...recentOrders.map((o: any) => ({
-                    id: o.id,
+            if (orderEvents) {
+                events.push(...orderEvents.map((e: any) => ({
+                    id: e.id,
                     type: 'order' as const,
-                    user_name: 'System', // Orders don't track user_id yet
-                    action: 'Neue Bestellung',
-                    details: `${o.suppliers?.name || 'Unbekannt'} (${o.status})`,
-                    created_at: o.created_at
+                    user_name: e.profiles?.full_name || 'System',
+                    action: e.action,
+                    details: e.details,
+                    created_at: e.created_at,
+                    entity_name: e.orders ? `${e.orders.supplier}${e.orders.commission_number ? ` (${e.orders.commission_number})` : ''}` : 'Unbekannte Bestellung'
                 })));
             }
 
@@ -269,17 +273,17 @@ const Dashboard: React.FC = () => {
             )
             .on(
                 'postgres_changes',
-                { event: 'INSERT', schema: 'public', table: 'commission_logs' },
+                { event: 'INSERT', schema: 'public', table: 'commission_events' },
                 () => {
-                    console.log('New Commission Log, refreshing events...');
+                    console.log('New Commission Event, refreshing events...');
                     fetchRecentEvents();
                 }
             )
             .on(
                 'postgres_changes',
-                { event: 'INSERT', schema: 'public', table: 'orders' },
+                { event: 'INSERT', schema: 'public', table: 'order_events' },
                 () => {
-                    console.log('New Order, refreshing events...');
+                    console.log('New Order Event, refreshing events...');
                     fetchRecentEvents();
                 }
             )
@@ -657,6 +661,9 @@ const Dashboard: React.FC = () => {
                                                 <p className="text-sm text-gray-600 dark:text-white/70 mt-0.5">
                                                     <span className="font-medium text-gray-500 dark:text-white/50 uppercase text-[10px] tracking-wider mr-2 border border-gray-200 dark:border-white/10 px-1.5 py-0.5 rounded">
                                                         {event.type === 'machine' ? 'Gerät' : event.type === 'commission' ? 'Kommission' : 'Bestellung'}
+                                                    </span>
+                                                    <span className="font-bold text-gray-900 dark:text-white mr-1">
+                                                        {event.entity_name}:
                                                     </span>
                                                     {event.details}
                                                 </p>
