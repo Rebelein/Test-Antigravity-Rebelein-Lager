@@ -139,7 +139,7 @@ export const GlassModal: React.FC<GlassModalProps> = ({ isOpen, onClose, childre
   return (
     <div className="fixed inset-0 z-[150] flex items-center justify-center p-4 bg-black/40 backdrop-blur-md animate-in fade-in duration-200">
       <div className={`w-full max-w-2xl animate-in zoom-in-95 duration-200 ${className}`}>
-        <GlassCard className="flex flex-col max-h-[85vh] overflow-hidden p-0 shadow-2xl">
+        <GlassCard className="flex flex-col max-h-[85vh] overflow-hidden p-0 shadow-2xl !bg-white/95 dark:!bg-gray-900/95">
           {children}
         </GlassCard>
       </div>
