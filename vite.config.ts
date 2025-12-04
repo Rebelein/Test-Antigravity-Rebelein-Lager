@@ -14,7 +14,7 @@ export default defineConfig(({ mode }) => {
       react(),
       VitePWA({
         registerType: 'autoUpdate',
-        includeAssets: ['logo.svg', 'manifest.json'], // Ensure these are cached
+        includeAssets: ['logo.png', 'manifest.json'], // Ensure these are cached
         manifest: {
           name: 'Rebelein LagerApp',
           short_name: 'LagerApp',
@@ -22,9 +22,9 @@ export default defineConfig(({ mode }) => {
           theme_color: '#0f172a',
           icons: [
             {
-              src: 'logo.svg',
-              sizes: 'any',
-              type: 'image/svg+xml',
+              src: 'logo.png',
+              sizes: '512x512',
+              type: 'image/png',
               purpose: 'any maskable'
             }
           ]
