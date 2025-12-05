@@ -319,6 +319,12 @@ BEGIN
         IF NOT EXISTS (SELECT 1 FROM pg_publication_tables WHERE pubname = 'supabase_realtime' AND tablename = 'order_events') THEN
             ALTER PUBLICATION supabase_realtime ADD TABLE order_events;
         END IF;
+        IF NOT EXISTS (SELECT 1 FROM pg_publication_tables WHERE pubname = 'supabase_realtime' AND tablename = 'articles') THEN
+            ALTER PUBLICATION supabase_realtime ADD TABLE articles;
+        END IF;
+        IF NOT EXISTS (SELECT 1 FROM pg_publication_tables WHERE pubname = 'supabase_realtime' AND tablename = 'machine_events') THEN
+            ALTER PUBLICATION supabase_realtime ADD TABLE machine_events;
+        END IF;
     EXCEPTION WHEN OTHERS THEN
         NULL;
     END;

@@ -1,5 +1,6 @@
 
 import React, { useState, useEffect, useRef, useMemo } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { GlassCard, Button, GlassInput, GlassSelect, StatusBadge, GlassModal } from '../components/UIComponents';
 import { supabase } from '../supabaseClient';
 import { useAuth } from '../contexts/AuthContext';
@@ -1225,71 +1226,90 @@ const Commissions: React.FC = () => {
                 </div>
 
                 {!isCollapsed && (
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 animate-in slide-in-from-top-2">
-                        {items.map(comm => {
-                            const hasItemBackorder = comm.commission_items?.some((i: any) => i.is_backorder);
+                    <motion.div
+                        className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4"
+                        initial="hidden"
+                        animate="visible"
+                        variants={{
+                            hidden: { opacity: 0 },
+                            visible: {
+                                opacity: 1,
+                                transition: {
+                                    staggerChildren: 0.05
+                                }
+                            }
+                        }}
+                    >
+                        <AnimatePresence mode='popLayout'>
+                            {items.map(comm => {
+                                const hasItemBackorder = comm.commission_items?.some((i: any) => i.is_backorder);
 
-                            return (
-                                <GlassCard
-                                    key={comm.id}
-                                    onClick={() => handleOpenPrepare(comm)}
-                                    className={`cursor-pointer group relative h-full flex flex-col ${hasItemBackorder ? 'bg-red-500/10 hover:bg-red-500/20 border-red-500/50' : 'hover:bg-white/10'}`}
-                                >
-                                    <div className={`absolute top-0 left-0 w-1 h-full ${hasItemBackorder ? 'bg-red-500' : (statusKey === 'ready' ? 'bg-emerald-400' : statusKey === 'preparing' ? 'bg-gray-400' : statusKey === 'returnReady' ? 'bg-purple-400' : statusKey === 'returnPending' ? 'bg-orange-400' : 'bg-white/60')}`} />
-                                    <div className="flex justify-between items-start pl-3 flex-1">
-                                        <div className="flex-1 min-w-0">
-                                            <div className="flex items-start justify-between">
-                                                <h3 className={`text-lg font-bold truncate pr-2 ${hasItemBackorder ? 'text-white' : 'text-white'}`}>{comm.name}</h3>
-                                                {hasItemBackorder && <AlertTriangle size={16} className="text-red-500 shrink-0" />}
+                                return (
+                                    <motion.div
+                                        key={comm.id}
+                                        layout
+                                        initial={{ opacity: 0, scale: 0.9 }}
+                                        animate={{ opacity: 1, scale: 1 }}
+                                        exit={{ opacity: 0, scale: 0.9 }}
+                                        onClick={() => handleOpenPrepare(comm)}
+                                        className={`cursor-pointer group relative h-full flex flex-col rounded-3xl overflow-hidden border backdrop-blur-lg shadow-lg transition-all ${hasItemBackorder ? 'bg-red-500/10 hover:bg-red-500/20 border-red-500/50' : 'bg-white/10 hover:bg-white/20 border-white/20 hover:border-white/30'}`}
+                                    >
+                                        <div className={`absolute top-0 left-0 w-1 h-full ${hasItemBackorder ? 'bg-red-500' : (statusKey === 'ready' ? 'bg-emerald-400' : statusKey === 'preparing' ? 'bg-gray-400' : statusKey === 'returnReady' ? 'bg-purple-400' : statusKey === 'returnPending' ? 'bg-orange-400' : 'bg-white/60')}`} />
+                                        <div className="flex justify-between items-start p-4 pl-5 flex-1">
+                                            <div className="flex-1 min-w-0">
+                                                <div className="flex items-start justify-between">
+                                                    <h3 className={`text-lg font-bold truncate pr-2 ${hasItemBackorder ? 'text-white' : 'text-white'}`}>{comm.name}</h3>
+                                                    {hasItemBackorder && <AlertTriangle size={16} className="text-red-500 shrink-0" />}
+                                                </div>
+
+                                                <div className="flex flex-wrap items-center gap-2 mt-2">
+                                                    {comm.order_number && (
+                                                        <span className="px-2.5 py-0.5 rounded-full text-xs font-medium border bg-blue-500/20 text-blue-300 border-blue-500/30">
+                                                            {comm.order_number}
+                                                        </span>
+                                                    )}
+                                                    {comm.notes && (
+                                                        <span className="px-2.5 py-0.5 rounded-full text-xs font-medium border bg-white/10 text-white/70 border-white/10 max-w-[150px] truncate">
+                                                            {comm.notes}
+                                                        </span>
+                                                    )}
+                                                    {comm.commission_items?.map((item: any) => {
+                                                        // Visual indicator for item backorder directly on tile
+                                                        const isBo = item.is_backorder;
+
+                                                        if (item.type === 'Stock' && item.article) {
+                                                            return (
+                                                                <span key={item.id} className={`px-2.5 py-0.5 rounded-full text-xs font-medium border flex items-center gap-1 max-w-[200px] truncate ${isBo ? 'bg-red-500/20 text-red-200 border-red-500/40' : 'bg-emerald-500/10 text-emerald-300 border-emerald-500/20'}`}>
+                                                                    {item.amount > 1 && <span className="opacity-70 text-[10px]">{item.amount}x</span>}
+                                                                    {item.article.name}
+                                                                    {isBo && item.notes && <span className="text-[9px] opacity-70 ml-1 italic">{item.notes}</span>}
+                                                                </span>
+                                                            );
+                                                        }
+                                                        if (item.type === 'External') {
+                                                            return (
+                                                                <span key={item.id} className={`px-2.5 py-0.5 rounded-full text-xs font-medium border max-w-[200px] truncate ${isBo ? 'bg-red-500/20 text-red-200 border-red-500/40' : 'bg-purple-500/10 text-purple-300 border-purple-500/20'}`}>
+                                                                    {item.custom_name}{item.external_reference ? `: ${item.external_reference}` : ''}
+                                                                    {isBo && item.notes && <span className="text-[9px] opacity-70 ml-1 italic">{item.notes}</span>}
+                                                                </span>
+                                                            );
+                                                        }
+                                                        return null;
+                                                    })}
+                                                </div>
                                             </div>
-
-                                            <div className="flex flex-wrap items-center gap-2 mt-2">
-                                                {comm.order_number && (
-                                                    <span className="px-2.5 py-0.5 rounded-full text-xs font-medium border bg-blue-500/20 text-blue-300 border-blue-500/30">
-                                                        {comm.order_number}
-                                                    </span>
-                                                )}
-                                                {comm.notes && (
-                                                    <span className="px-2.5 py-0.5 rounded-full text-xs font-medium border bg-white/10 text-white/70 border-white/10 max-w-[150px] truncate">
-                                                        {comm.notes}
-                                                    </span>
-                                                )}
-                                                {comm.commission_items?.map((item: any) => {
-                                                    // Visual indicator for item backorder directly on tile
-                                                    const isBo = item.is_backorder;
-
-                                                    if (item.type === 'Stock' && item.article) {
-                                                        return (
-                                                            <span key={item.id} className={`px-2.5 py-0.5 rounded-full text-xs font-medium border flex items-center gap-1 max-w-[200px] truncate ${isBo ? 'bg-red-500/20 text-red-200 border-red-500/40' : 'bg-emerald-500/10 text-emerald-300 border-emerald-500/20'}`}>
-                                                                {item.amount > 1 && <span className="opacity-70 text-[10px]">{item.amount}x</span>}
-                                                                {item.article.name}
-                                                                {isBo && item.notes && <span className="text-[9px] opacity-70 ml-1 italic">{item.notes}</span>}
-                                                            </span>
-                                                        );
-                                                    }
-                                                    if (item.type === 'External') {
-                                                        return (
-                                                            <span key={item.id} className={`px-2.5 py-0.5 rounded-full text-xs font-medium border max-w-[200px] truncate ${isBo ? 'bg-red-500/20 text-red-200 border-red-500/40' : 'bg-purple-500/10 text-purple-300 border-purple-500/20'}`}>
-                                                                {item.custom_name}{item.external_reference ? `: ${item.external_reference}` : ''}
-                                                                {isBo && item.notes && <span className="text-[9px] opacity-70 ml-1 italic">{item.notes}</span>}
-                                                            </span>
-                                                        );
-                                                    }
-                                                    return null;
-                                                })}
+                                            <div className="flex flex-col items-end gap-2">
+                                                <div className="flex gap-2">
+                                                    <button onClick={(e) => handleEditCommission(comm, e)} className="p-2 bg-white/5 hover:bg-white/20 rounded-full text-white/60 hover:text-white transition-colors"><Edit2 size={16} /></button>
+                                                    <button onClick={(e) => requestDelete(comm.id, comm.name, 'trash', e)} className="p-2 bg-white/5 hover:bg-white/20 rounded-full text-white/60 hover:text-rose-400 transition-colors"><Trash2 size={16} /></button>
+                                                </div>
                                             </div>
                                         </div>
-                                        <div className="flex flex-col items-end gap-2">
-                                            <div className="flex gap-2">
-                                                <button onClick={(e) => handleEditCommission(comm, e)} className="p-2 bg-white/5 hover:bg-white/20 rounded-full text-white/60 hover:text-white transition-colors"><Edit2 size={16} /></button>
-                                                <button onClick={(e) => requestDelete(comm.id, comm.name, 'trash', e)} className="p-2 bg-white/5 hover:bg-white/20 rounded-full text-white/60 hover:text-rose-400 transition-colors"><Trash2 size={16} /></button>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </GlassCard>
-                            );
-                        })}
-                    </div>
+                                    </motion.div>
+                                );
+                            })}
+                        </AnimatePresence>
+                    </motion.div>
                 )}
             </div>
         );

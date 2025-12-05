@@ -1,29 +1,61 @@
-
 import React from 'react';
-import { ChevronDown } from 'lucide-react';
+import { ChevronDown, X } from 'lucide-react';
+import { motion, AnimatePresence, HTMLMotionProps } from 'framer-motion';
+import { clsx, type ClassValue } from 'clsx';
+import { twMerge } from 'tailwind-merge';
+
+// --- Utility ---
+function cn(...inputs: ClassValue[]) {
+  return twMerge(clsx(inputs));
+}
 
 // --- Glass Card ---
-interface GlassCardProps extends React.HTMLAttributes<HTMLDivElement> {
+interface GlassCardProps extends HTMLMotionProps<"div"> {
   children: React.ReactNode;
   className?: string;
   title?: string;
   action?: React.ReactNode;
   contentClassName?: string;
+  variant?: 'default' | 'subtle' | 'prominent';
 }
 
-export const GlassCard: React.FC<GlassCardProps> = ({ children, className = '', title, action, contentClassName = '', ...props }) => {
+export const GlassCard: React.FC<GlassCardProps> = ({
+  children,
+  className = '',
+  title,
+  action,
+  contentClassName = '',
+  variant = 'default',
+  ...props
+}) => {
+  const variants = {
+    default: "bg-white/5 border-white/10",
+    subtle: "bg-white/0 border-white/5",
+    prominent: "bg-white/10 border-white/20 shadow-[0_8px_32px_0_rgba(0,0,0,0.37)]"
+  };
+
   return (
-    <div className={`bg-white/80 dark:bg-white/10 backdrop-blur-lg border border-gray-200 dark:border-white/20 rounded-3xl shadow-xl dark:shadow-[0_8px_32px_0_rgba(0,0,0,0.37)] overflow-hidden flex flex-col ${className}`} {...props}>
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.5, ease: "easeOut" }}
+      className={cn(
+        "backdrop-blur-xl border rounded-3xl overflow-hidden flex flex-col",
+        variants[variant],
+        className
+      )}
+      {...props}
+    >
       {(title || action) && (
-        <div className="px-6 py-4 border-b border-gray-200 dark:border-white/10 flex justify-between items-center shrink-0">
-          {title && <h3 className="text-lg font-semibold bg-clip-text text-transparent bg-gradient-to-r from-emerald-600 to-teal-500 dark:from-emerald-300 dark:to-teal-200">{title}</h3>}
+        <div className="px-6 py-4 border-b border-white/10 flex justify-between items-center shrink-0">
+          {title && <h3 className="text-lg font-semibold bg-clip-text text-transparent bg-gradient-to-r from-emerald-300 to-teal-200">{title}</h3>}
           {action && <div>{action}</div>}
         </div>
       )}
-      <div className={`p-6 flex-1 ${contentClassName}`}>
+      <div className={cn("p-6 flex-1", contentClassName)}>
         {children}
       </div>
-    </div>
+    </motion.div>
   );
 };
 
@@ -34,21 +66,27 @@ interface GlassInputProps extends React.InputHTMLAttributes<HTMLInputElement> {
 
 export const GlassInput: React.FC<GlassInputProps> = ({ icon, className = '', ...props }) => {
   return (
-    <div className="relative w-full">
+    <div className="relative w-full group">
       {icon && (
-        <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400 dark:text-white/50">
+        <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-white/50 group-focus-within:text-emerald-400 transition-colors duration-300">
           {icon}
         </div>
       )}
       <input
-        className={`w-full bg-gray-50 dark:bg-white/5 border border-gray-200 dark:border-white/10 rounded-xl py-3 ${icon ? 'pl-10' : 'pl-4'} pr-4 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-teal-500/50 focus:border-transparent transition-all duration-300 ${className}`}
+        className={cn(
+          "w-full bg-white/5 border border-white/10 rounded-xl py-3 pr-4 text-white placeholder-white/30",
+          "focus:outline-none focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500/50 focus:bg-white/10",
+          "transition-all duration-300",
+          icon ? 'pl-10' : 'pl-4',
+          className
+        )}
         {...props}
       />
     </div>
   );
 };
 
-// --- Glass Select (NEW) ---
+// --- Glass Select ---
 interface GlassSelectProps extends React.SelectHTMLAttributes<HTMLSelectElement> {
   icon?: React.ReactNode;
 }
@@ -57,26 +95,24 @@ export const GlassSelect: React.FC<GlassSelectProps> = ({ icon, children, classN
   return (
     <div className="relative w-full group">
       {icon && (
-        <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400 dark:text-white/50 group-hover:text-gray-600 dark:group-hover:text-white/80 transition-colors">
+        <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-white/50 group-hover:text-white/80 transition-colors">
           {icon}
         </div>
       )}
       <select
-        className={`
-            w-full bg-gray-50 dark:bg-white/5 border border-gray-200 dark:border-white/10 rounded-xl py-3 
-            ${icon ? 'pl-10' : 'pl-4'} pr-10 
-            text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-white/40 
-            focus:outline-none focus:ring-2 focus:ring-teal-500/50 focus:border-transparent 
-            transition-all duration-300 appearance-none cursor-pointer
-            hover:bg-gray-100 dark:hover:bg-white/10
-            ${className}
-        `}
+        className={cn(
+          "w-full bg-white/5 border border-white/10 rounded-xl py-3 pr-10 text-white placeholder-white/40",
+          "focus:outline-none focus:ring-2 focus:ring-emerald-500/50 focus:border-transparent",
+          "transition-all duration-300 appearance-none cursor-pointer",
+          "hover:bg-white/10",
+          icon ? 'pl-10' : 'pl-4',
+          className
+        )}
         {...props}
       >
         {children}
       </select>
-      {/* Custom Chevron */}
-      <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400 dark:text-white/50 group-hover:text-gray-600 dark:group-hover:text-white transition-colors">
+      <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-white/50 group-hover:text-white transition-colors">
         <ChevronDown size={16} />
       </div>
     </div>
@@ -84,28 +120,43 @@ export const GlassSelect: React.FC<GlassSelectProps> = ({ icon, children, classN
 };
 
 // --- Gradient Button ---
-interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
-  variant?: 'primary' | 'secondary' | 'danger';
+interface ButtonProps extends HTMLMotionProps<"button"> {
+  variant?: 'primary' | 'secondary' | 'danger' | 'ghost';
   icon?: React.ReactNode;
+  isLoading?: boolean;
+  disabled?: boolean;
 }
 
-export const Button: React.FC<ButtonProps> = ({ children, variant = 'primary', icon, className = '', ...props }) => {
-  const baseStyles = "flex items-center justify-center gap-2 px-6 py-3 rounded-xl font-medium transition-all duration-300 active:scale-95 backdrop-blur-md shadow-lg";
-
+export const Button: React.FC<ButtonProps> = ({ children, variant = 'primary', icon, className = '', isLoading, disabled, ...props }) => {
   const variants = {
-    primary: "bg-gradient-to-r from-emerald-500/90 to-teal-600/90 hover:from-emerald-500 hover:to-teal-600 text-white border border-white/10 shadow-lg shadow-emerald-500/20",
-    secondary: "bg-gray-100 dark:bg-white/10 hover:bg-gray-200 dark:hover:bg-white/20 text-gray-700 dark:text-white border border-gray-200 dark:border-white/10",
-    danger: "bg-red-500/10 dark:bg-red-500/20 hover:bg-red-500/20 dark:hover:bg-red-500/40 text-red-600 dark:text-red-200 border border-red-500/20 dark:border-red-500/30"
+    primary: "bg-gradient-to-r from-emerald-500 to-teal-600 text-white border border-white/20 shadow-lg shadow-emerald-500/20 hover:shadow-emerald-500/40",
+    secondary: "bg-white/10 hover:bg-white/20 text-white border border-white/10",
+    danger: "bg-red-500/20 hover:bg-red-500/30 text-red-200 border border-red-500/30",
+    ghost: "bg-transparent hover:bg-white/5 text-white/70 hover:text-white border-transparent"
   };
 
   return (
-    <button
-      className={`${baseStyles} ${variants[variant]} ${className}`}
+    <motion.button
+      whileHover={{ scale: 1.02 }}
+      whileTap={{ scale: 0.98 }}
+      className={cn(
+        "flex items-center justify-center gap-2 px-6 py-3 rounded-xl font-medium transition-colors duration-300 backdrop-blur-md",
+        variants[variant],
+        className,
+        (isLoading || disabled) && "opacity-50 cursor-not-allowed pointer-events-none"
+      )}
+      disabled={isLoading || disabled}
       {...props}
     >
-      {icon && <span className="w-5 h-5">{icon}</span>}
-      {children}
-    </button>
+      {isLoading ? (
+        <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+      ) : (
+        <>
+          {icon && <span className="w-5 h-5 flex items-center justify-center">{icon}</span>}
+          {children}
+        </>
+      )}
+    </motion.button>
   );
 };
 
@@ -120,30 +171,66 @@ export const StatusBadge: React.FC<{ status: string, type: 'success' | 'warning'
   };
 
   return (
-    <span className={`px-3 py-1 rounded-full text-xs font-medium border ${colors[type]}`}>
+    <span className={cn("px-3 py-1 rounded-full text-xs font-medium border backdrop-blur-sm", colors[type])}>
       {status}
     </span>
   );
 };
 
-// --- Glass Modal (NEW) ---
-interface GlassModalProps {
+// --- Animated Modal (Replaces GlassModal) ---
+interface AnimatedModalProps {
   isOpen: boolean;
   onClose: () => void;
   children: React.ReactNode;
   className?: string;
+  title?: string;
 }
 
-export const GlassModal: React.FC<GlassModalProps> = ({ isOpen, onClose, children, className = '' }) => {
-  if (!isOpen) return null;
-
+export const AnimatedModal: React.FC<AnimatedModalProps> = ({ isOpen, onClose, children, className = '', title }) => {
   return (
-    <div className="fixed inset-0 z-[150] flex items-center justify-center p-4 bg-black/40 backdrop-blur-md animate-in fade-in duration-200">
-      <div className={`w-full max-w-2xl animate-in zoom-in-95 duration-200 ${className}`}>
-        <GlassCard className="flex flex-col max-h-[85vh] overflow-hidden p-0 shadow-2xl !bg-white/95 dark:!bg-gray-900/95">
-          {children}
-        </GlassCard>
-      </div>
-    </div>
+    <AnimatePresence>
+      {isOpen && (
+        <>
+          {/* Backdrop */}
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={onClose}
+            className="fixed inset-0 z-[150] bg-black/60 backdrop-blur-md flex items-center justify-center p-4"
+          />
+
+          {/* Modal Content */}
+          <div className="fixed inset-0 z-[151] flex items-center justify-center p-4 pointer-events-none">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 20 }}
+              transition={{ type: "spring", duration: 0.5, bounce: 0.3 }}
+              className={cn(
+                "w-full max-w-2xl pointer-events-auto",
+                "bg-[#121212]/90 backdrop-blur-2xl border border-white/10 rounded-3xl shadow-2xl overflow-hidden flex flex-col max-h-[85vh]",
+                className
+              )}
+            >
+              {title && (
+                <div className="px-6 py-4 border-b border-white/10 flex justify-between items-center shrink-0">
+                  <h3 className="text-lg font-semibold text-white">{title}</h3>
+                  <button onClick={onClose} className="p-2 rounded-full hover:bg-white/10 text-white/50 hover:text-white transition-colors">
+                    <X size={20} />
+                  </button>
+                </div>
+              )}
+              <div className="p-0 overflow-y-auto custom-scrollbar">
+                {children}
+              </div>
+            </motion.div>
+          </div>
+        </>
+      )}
+    </AnimatePresence>
   );
 };
+
+// Export GlassModal for backward compatibility, but alias it to AnimatedModal
+export const GlassModal = AnimatedModal;

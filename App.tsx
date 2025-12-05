@@ -16,6 +16,7 @@ import ShelfEditor from './pages/ShelfEditor';
 import Login from './pages/Login';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { ThemeProvider } from './contexts/ThemeContext';
+import { NotificationProvider } from './contexts/NotificationContext';
 import { Loader2 } from 'lucide-react';
 import { initializeDatabase } from './utils/dbInit';
 
@@ -85,28 +86,30 @@ const App: React.FC = () => {
 
   return (
     <AuthProvider>
-      <ThemeProvider>
-        <HashRouter>
-          <Routes>
-            <Route path="/login" element={<Login />} />
+      <NotificationProvider>
+        <ThemeProvider>
+          <HashRouter>
+            <Routes>
+              <Route path="/login" element={<Login />} />
 
-            <Route element={<ProtectedRoute />}>
-              <Route path="/" element={<Navigate to="/dashboard" replace />} />
-              <Route path="/dashboard" element={<Dashboard />} />
-              <Route path="/inventory" element={<Inventory />} />
-              <Route path="/machines" element={<Machines />} />
-              <Route path="/orders" element={<Orders />} />
-              <Route path="/stocktaking" element={<Stocktaking />} />
-              <Route path="/audit" element={<StockAudit />} />
-              <Route path="/warehouses" element={<Warehouses />} />
-              <Route path="/suppliers" element={<Suppliers />} />
-              <Route path="/labels" element={<Labels />} />
-              <Route path="/commissions" element={<Commissions />} />
-              <Route path="/shelf-editor" element={<ShelfEditor />} />
-            </Route>
-          </Routes>
-        </HashRouter>
-      </ThemeProvider>
+              <Route element={<ProtectedRoute />}>
+                <Route path="/" element={<Navigate to="/dashboard" replace />} />
+                <Route path="/dashboard" element={<Dashboard />} />
+                <Route path="/inventory" element={<Inventory />} />
+                <Route path="/machines" element={<Machines />} />
+                <Route path="/orders" element={<Orders />} />
+                <Route path="/stocktaking" element={<Stocktaking />} />
+                <Route path="/audit" element={<StockAudit />} />
+                <Route path="/warehouses" element={<Warehouses />} />
+                <Route path="/suppliers" element={<Suppliers />} />
+                <Route path="/labels" element={<Labels />} />
+                <Route path="/commissions" element={<Commissions />} />
+                <Route path="/shelf-editor" element={<ShelfEditor />} />
+              </Route>
+            </Routes>
+          </HashRouter>
+        </ThemeProvider>
+      </NotificationProvider>
     </AuthProvider>
   );
 };

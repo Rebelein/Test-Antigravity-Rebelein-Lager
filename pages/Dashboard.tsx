@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import { GlassCard, StatusBadge, Button } from '../components/UIComponents';
-import { AlertTriangle, Wrench, User, CheckCircle2, FileText, ArrowRight, Grid, Database, X, Play, RefreshCw, Check, Copy, Settings, Factory, Warehouse, Tag, Maximize2, Minimize2, PhoneCall, StickyNote, Save, Undo2, Library, Plus, MessageSquare, Sun, Moon, Monitor, Smartphone, ShoppingCart, LayoutTemplate } from 'lucide-react';
+import { GlassCard, StatusBadge, Button, GlassModal } from '../components/UIComponents';
+import { AlertTriangle, Wrench, User, CheckCircle2, FileText, ArrowRight, Grid, Database, X, Play, RefreshCw, Check, Copy, Settings, Factory, Warehouse, Tag, Maximize2, Minimize2, PhoneCall, StickyNote, Save, Undo2, Library, Plus, MessageSquare, Monitor, Smartphone, ShoppingCart, LayoutTemplate } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { initializeDatabase, MANUAL_SETUP_SQL } from '../utils/dbInit';
 import { useAuth } from '../contexts/AuthContext';
@@ -30,7 +30,7 @@ interface AppEvent {
 const Dashboard: React.FC = () => {
     const navigate = useNavigate();
     const { profile } = useAuth();
-    const { theme, toggleTheme, viewMode, toggleViewMode } = useTheme();
+    const { viewMode, toggleViewMode } = useTheme();
 
     const [isLoading, setIsLoading] = useState(true);
 
@@ -365,6 +365,7 @@ const Dashboard: React.FC = () => {
 
                 {/* Add Commission Button */}
                 <button
+                    onMouseDown={(e) => e.stopPropagation()}
                     onClick={() => navigate('/commissions', { state: { openCreateModal: true, returnTo: '/dashboard' } })}
                     className="p-2 bg-white/50 dark:bg-white/5 rounded-lg text-gray-400 dark:text-white/40 hover:text-gray-900 dark:hover:text-white transition-colors mr-2"
                     title="Neue Kommission erstellen"
@@ -373,11 +374,21 @@ const Dashboard: React.FC = () => {
                 </button>
 
                 {/* Fullscreen Toggle */}
-                <button onClick={() => setIsCommissionTileFullscreen(!isFullscreen)} className="p-2 bg-white/50 dark:bg-white/5 rounded-lg text-gray-400 dark:text-white/40 hover:text-gray-900 dark:hover:text-white transition-colors mr-2">
+                <button
+                    onMouseDown={(e) => e.stopPropagation()}
+                    onClick={() => setIsCommissionTileFullscreen(!isFullscreen)}
+                    className="p-2 bg-white/50 dark:bg-white/5 rounded-lg text-gray-400 dark:text-white/40 hover:text-gray-900 dark:hover:text-white transition-colors mr-2"
+                >
                     {isFullscreen ? <Minimize2 size={18} /> : <Maximize2 size={18} />}
                 </button>
 
-                <button onClick={() => navigate('/commissions')} className="text-gray-400 dark:text-white/40 hover:text-gray-900 dark:hover:text-white"><ArrowRight size={20} /></button>
+                <button
+                    onMouseDown={(e) => e.stopPropagation()}
+                    onClick={() => navigate('/commissions')}
+                    className="text-gray-400 dark:text-white/40 hover:text-gray-900 dark:hover:text-white"
+                >
+                    <ArrowRight size={20} />
+                </button>
             </div>
 
             <div className="flex-1 grid grid-cols-3 divide-x divide-gray-200 dark:divide-white/10 overflow-hidden">
@@ -563,7 +574,13 @@ const Dashboard: React.FC = () => {
                     <GlassCard className="flex flex-col h-full p-0 overflow-hidden border-none bg-white/80 dark:bg-white/5" contentClassName="!p-0 flex flex-col h-full">
                         <div className="drag-handle cursor-move px-6 py-5 border-b border-gray-200 dark:border-white/10 bg-white/50 dark:bg-white/5 backdrop-blur-xl flex justify-between items-center shrink-0">
                             <h2 className="text-xl font-bold text-gray-900 dark:text-white">Maschinenstatus</h2>
-                            <button onClick={() => navigate('/machines')} className="text-gray-400 dark:text-white/40 hover:text-gray-900 dark:hover:text-white"><ArrowRight size={20} /></button>
+                            <button
+                                onMouseDown={(e) => e.stopPropagation()}
+                                onClick={() => navigate('/machines')}
+                                className="text-gray-400 dark:text-white/40 hover:text-gray-900 dark:hover:text-white"
+                            >
+                                <ArrowRight size={20} />
+                            </button>
                         </div>
 
                         <div className="flex-1 grid grid-cols-2 divide-x divide-gray-200 dark:divide-white/10 overflow-hidden">
@@ -757,120 +774,97 @@ const Dashboard: React.FC = () => {
             }
 
             {/* APP DRAWER MODAL */}
-            {
-                showAppDrawer && (
-                    <div className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/80 backdrop-blur-md animate-in fade-in duration-200">
-                        <div className="w-full sm:max-w-md bg-white dark:bg-[#121212] border-t sm:border border-gray-200 dark:border-white/10 rounded-t-3xl sm:rounded-3xl shadow-2xl p-6 animate-in slide-in-from-bottom-10 sm:slide-in-from-bottom-0 sm:zoom-in-95">
-                            <div className="flex justify-between items-center mb-6">
-                                <h2 className="text-xl font-bold text-gray-900 dark:text-white">Apps & Funktionen</h2>
-                                <button onClick={() => setShowAppDrawer(false)} className="p-2 rounded-full bg-gray-100 dark:bg-white/5 hover:bg-gray-200 dark:hover:bg-white/10 text-gray-500 dark:text-white/60 hover:text-gray-900 dark:hover:text-white"><X size={20} /></button>
-                            </div>
+            <GlassModal
+                isOpen={showAppDrawer}
+                onClose={() => setShowAppDrawer(false)}
+                title="Apps & Funktionen"
+            >
+                <div className="p-6 space-y-8">
 
-                            {/* --- DESIGN & ANSICHT SECTION --- */}
-                            <div className="mb-8 p-4 rounded-2xl bg-gray-50 dark:bg-white/5 border border-gray-200 dark:border-white/5">
-                                <h3 className="text-xs font-bold text-gray-400 dark:text-white/40 uppercase tracking-wider mb-4">Design & Ansicht</h3>
-                                <div className="space-y-4">
-                                    {/* Theme Toggle */}
-                                    <div className="flex items-center justify-between">
-                                        <div className="flex items-center gap-3">
-                                            <div className={`p-2 rounded-lg ${theme === 'light' ? 'bg-amber-100 text-amber-600' : 'bg-white/10 text-white/50'}`}>
-                                                <Sun size={18} />
-                                            </div>
-                                            <div>
-                                                <div className="text-sm font-medium text-gray-900 dark:text-white">Erscheinungsbild</div>
-                                                <div className="text-xs text-gray-500 dark:text-white/40">{theme === 'dark' ? 'Dunkler Modus' : 'Heller Modus'}</div>
-                                            </div>
-                                        </div>
-                                        <button
-                                            onClick={toggleTheme}
-                                            className={`relative w-12 h-7 rounded-full transition-colors duration-300 ${theme === 'dark' ? 'bg-emerald-500' : 'bg-gray-300'}`}
-                                        >
-                                            <div className={`absolute top-1 left-1 w-5 h-5 rounded-full bg-white shadow-sm transition-transform duration-300 ${theme === 'dark' ? 'translate-x-5' : 'translate-x-0'}`} />
-                                        </button>
+                    {/* --- DESIGN & ANSICHT SECTION --- */}
+                    <div className="mb-8 p-4 rounded-2xl bg-white/5 border border-white/5">
+                        <h3 className="text-xs font-bold text-white/40 uppercase tracking-wider mb-4">Design & Ansicht</h3>
+                        <div className="space-y-4">
+                            {/* View Mode Toggle */}
+                            <div className="flex items-center justify-between">
+                                <div className="flex items-center gap-3">
+                                    <div className={`p-2 rounded-lg ${viewMode === 'desktop' ? 'bg-blue-100 text-blue-600' : 'bg-white/10 text-white/50'}`}>
+                                        <Monitor size={18} />
                                     </div>
-
-                                    {/* View Mode Toggle */}
-                                    <div className="flex items-center justify-between">
-                                        <div className="flex items-center gap-3">
-                                            <div className={`p-2 rounded-lg ${viewMode === 'desktop' ? 'bg-blue-100 text-blue-600' : 'bg-white/10 text-white/50'}`}>
-                                                <Monitor size={18} />
-                                            </div>
-                                            <div>
-                                                <div className="text-sm font-medium text-gray-900 dark:text-white">Desktop Modus</div>
-                                                <div className="text-xs text-gray-500 dark:text-white/40">{viewMode === 'desktop' ? 'Aktiviert (Full HD)' : 'Standard (Tablet)'}</div>
-                                            </div>
-                                        </div>
-                                        <button
-                                            onClick={toggleViewMode}
-                                            className={`relative w-12 h-7 rounded-full transition-colors duration-300 ${viewMode === 'desktop' ? 'bg-emerald-500' : 'bg-gray-300'}`}
-                                        >
-                                            <div className={`absolute top-1 left-1 w-5 h-5 rounded-full bg-white shadow-sm transition-transform duration-300 ${viewMode === 'desktop' ? 'translate-x-5' : 'translate-x-0'}`} />
-                                        </button>
-                                    </div>
-
-                                    {/* Reset Layout */}
-                                    <div className="flex items-center justify-between">
-                                        <div className="flex items-center gap-3">
-                                            <div className="p-2 rounded-lg bg-white/10 text-white/50">
-                                                <LayoutTemplate size={18} />
-                                            </div>
-                                            <div>
-                                                <div className="text-sm font-medium text-gray-900 dark:text-white">Layout zurücksetzen</div>
-                                                <div className="text-xs text-gray-500 dark:text-white/40">Standard wiederherstellen</div>
-                                            </div>
-                                        </div>
-                                        <Button onClick={resetLayout} variant="secondary" className="text-xs py-1 h-8">
-                                            Reset
-                                        </Button>
+                                    <div>
+                                        <div className="text-sm font-medium text-white">Desktop Modus</div>
+                                        <div className="text-xs text-white/40">{viewMode === 'desktop' ? 'Aktiviert (Full HD)' : 'Standard (Tablet)'}</div>
                                     </div>
                                 </div>
+                                <button
+                                    onClick={toggleViewMode}
+                                    className={`relative w-12 h-7 rounded-full transition-colors duration-300 ${viewMode === 'desktop' ? 'bg-emerald-500' : 'bg-gray-300'}`}
+                                >
+                                    <div className={`absolute top-1 left-1 w-5 h-5 rounded-full bg-white shadow-sm transition-transform duration-300 ${viewMode === 'desktop' ? 'translate-x-5' : 'translate-x-0'}`} />
+                                </button>
                             </div>
 
-                            <div className="grid grid-cols-3 gap-4 mb-8">
-                                {/* App: Warehouses */}
-                                <button onClick={() => navigate('/warehouses')} className="flex flex-col items-center gap-2 group">
-                                    <div className="w-16 h-16 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center group-hover:bg-emerald-500/20 transition-colors">
-                                        <Warehouse size={28} className="text-emerald-400" />
+                            {/* Reset Layout */}
+                            <div className="flex items-center justify-between">
+                                <div className="flex items-center gap-3">
+                                    <div className="p-2 rounded-lg bg-white/10 text-white/50">
+                                        <LayoutTemplate size={18} />
                                     </div>
-                                    <span className="text-xs text-white/70 group-hover:text-white text-center">Lagerorte</span>
-                                </button>
-
-                                {/* App: Suppliers */}
-                                <button onClick={() => navigate('/suppliers')} className="flex flex-col items-center gap-2 group">
-                                    <div className="w-16 h-16 rounded-2xl bg-purple-500/10 border border-purple-500/20 flex items-center justify-center group-hover:bg-purple-500/20 transition-colors">
-                                        <Factory size={28} className="text-purple-400" />
+                                    <div>
+                                        <div className="text-sm font-medium text-gray-900 dark:text-white">Layout zurücksetzen</div>
+                                        <div className="text-xs text-gray-500 dark:text-white/40">Standard wiederherstellen</div>
                                     </div>
-                                    <span className="text-xs text-white/70 group-hover:text-white text-center">Lieferanten</span>
-                                </button>
-
-                                {/* App: Labels */}
-                                <button onClick={() => navigate('/labels')} className="flex flex-col items-center gap-2 group">
-                                    <div className="w-16 h-16 rounded-2xl bg-blue-500/10 border border-blue-500/20 flex items-center justify-center group-hover:bg-blue-500/20 transition-colors">
-                                        <Tag size={28} className="text-blue-400" />
-                                    </div>
-                                    <span className="text-xs text-white/70 group-hover:text-white text-center">Etiketten</span>
-                                </button>
-
-                                {/* App: Shelf Editor (NEW) */}
-                                <button onClick={() => navigate('/shelf-editor')} className="flex flex-col items-center gap-2 group">
-                                    <div className="w-16 h-16 rounded-2xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center group-hover:bg-amber-500/20 transition-colors">
-                                        <Library size={28} className="text-amber-400" />
-                                    </div>
-                                    <span className="text-xs text-white/70 group-hover:text-white text-center">Regal-Editor</span>
-                                </button>
-
-                                {/* App: Database */}
-                                <button onClick={() => setShowSqlModal(true)} className="flex flex-col items-center gap-2 group">
-                                    <div className="w-16 h-16 rounded-2xl bg-gray-700/30 border border-white/10 flex items-center justify-center group-hover:bg-gray-700/50 transition-colors">
-                                        <Database size={28} className="text-gray-300" />
-                                    </div>
-                                    <span className="text-xs text-white/70 group-hover:text-white text-center">System</span>
-                                </button>
+                                </div>
+                                <Button onClick={resetLayout} variant="secondary" className="text-xs py-1 h-8">
+                                    Reset
+                                </Button>
                             </div>
                         </div>
                     </div>
-                )
-            }
+
+                    <div className="grid grid-cols-3 gap-4 mb-8">
+                        {/* App: Warehouses */}
+                        <button onClick={() => navigate('/warehouses')} className="flex flex-col items-center gap-2 group">
+                            <div className="w-16 h-16 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center group-hover:bg-emerald-500/20 transition-colors">
+                                <Warehouse size={28} className="text-emerald-400" />
+                            </div>
+                            <span className="text-xs text-white/70 group-hover:text-white text-center">Lagerorte</span>
+                        </button>
+
+                        {/* App: Suppliers */}
+                        <button onClick={() => navigate('/suppliers')} className="flex flex-col items-center gap-2 group">
+                            <div className="w-16 h-16 rounded-2xl bg-purple-500/10 border border-purple-500/20 flex items-center justify-center group-hover:bg-purple-500/20 transition-colors">
+                                <Factory size={28} className="text-purple-400" />
+                            </div>
+                            <span className="text-xs text-white/70 group-hover:text-white text-center">Lieferanten</span>
+                        </button>
+
+                        {/* App: Labels */}
+                        <button onClick={() => navigate('/labels')} className="flex flex-col items-center gap-2 group">
+                            <div className="w-16 h-16 rounded-2xl bg-blue-500/10 border border-blue-500/20 flex items-center justify-center group-hover:bg-blue-500/20 transition-colors">
+                                <Tag size={28} className="text-blue-400" />
+                            </div>
+                            <span className="text-xs text-white/70 group-hover:text-white text-center">Etiketten</span>
+                        </button>
+
+                        {/* App: Shelf Editor (NEW) */}
+                        <button onClick={() => navigate('/shelf-editor')} className="flex flex-col items-center gap-2 group">
+                            <div className="w-16 h-16 rounded-2xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center group-hover:bg-amber-500/20 transition-colors">
+                                <Library size={28} className="text-amber-400" />
+                            </div>
+                            <span className="text-xs text-white/70 group-hover:text-white text-center">Regal-Editor</span>
+                        </button>
+
+                        {/* App: Database */}
+                        <button onClick={() => setShowSqlModal(true)} className="flex flex-col items-center gap-2 group">
+                            <div className="w-16 h-16 rounded-2xl bg-gray-700/30 border border-white/10 flex items-center justify-center group-hover:bg-gray-700/50 transition-colors">
+                                <Database size={28} className="text-gray-300" />
+                            </div>
+                            <span className="text-xs text-white/70 group-hover:text-white text-center">System</span>
+                        </button>
+                    </div>
+                </div>
+            </GlassModal>
 
             {/* SQL Manual Fix Modal */}
             {
