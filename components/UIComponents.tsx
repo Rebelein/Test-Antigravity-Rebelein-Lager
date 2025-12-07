@@ -221,7 +221,7 @@ export const AnimatedModal: React.FC<AnimatedModalProps> = ({ isOpen, onClose, c
                   </button>
                 </div>
               )}
-              <div className="p-0 overflow-y-auto custom-scrollbar">
+              <div className="p-0 overflow-y-auto custom-scrollbar flex-1 h-full">
                 {children}
               </div>
             </motion.div>

@@ -1951,22 +1951,7 @@ const Commissions: React.FC = () => {
                 </div>
             </GlassModal>
 
-            {/* ATTACHMENT VIEWER MODAL */}
-            <GlassModal isOpen={!!viewingAttachment} onClose={() => setViewingAttachment(null)} className="max-w-4xl h-[90vh]">
-                <div className="flex flex-col h-full bg-gray-900 rounded-2xl overflow-hidden">
-                    <div className="p-3 border-b border-white/10 flex justify-between items-center bg-white/5">
-                        <h3 className="text-white font-bold flex items-center gap-2"><FileText size={18} /> Anhang Vorschau</h3>
-                        <button onClick={() => setViewingAttachment(null)} className="p-2 hover:bg-white/10 rounded-full text-white"><X size={20} /></button>
-                    </div>
-                    <div className="flex-1 overflow-auto bg-black p-4 flex items-center justify-center">
-                        {viewingAttachment?.startsWith('data:application/pdf') ? (
-                            <iframe src={viewingAttachment} className="w-full h-full border-none rounded-lg" title="PDF Vorschau" />
-                        ) : (
-                            <img src={viewingAttachment || ''} className="max-w-full max-h-full object-contain rounded-lg" alt="Anhang" />
-                        )}
-                    </div>
-                </div>
-            </GlassModal>
+
 
             {/* DETAIL MODAL */}
             <GlassModal isOpen={showPrepareModal && !!activeCommission} onClose={handleClosePrepare} className="max-w-3xl h-[90vh]">
@@ -2182,6 +2167,23 @@ const Commissions: React.FC = () => {
                         </div>
                     </div>
                 )}
+            </GlassModal>
+
+            {/* ATTACHMENT VIEWER MODAL (Moved to end for Z-Index) */}
+            <GlassModal isOpen={!!viewingAttachment} onClose={() => setViewingAttachment(null)} className="max-w-[95vw] h-[95vh] max-h-[95vh]">
+                <div className="flex flex-col h-full bg-gray-900 rounded-2xl overflow-hidden">
+                    <div className="p-3 border-b border-white/10 flex justify-between items-center bg-white/5">
+                        <h3 className="text-white font-bold flex items-center gap-2"><FileText size={18} /> Anhang Vorschau</h3>
+                        <button onClick={() => setViewingAttachment(null)} className="p-2 hover:bg-white/10 rounded-full text-white"><X size={20} /></button>
+                    </div>
+                    <div className="flex-1 overflow-auto bg-black p-4 flex items-center justify-center">
+                        {viewingAttachment?.startsWith('data:application/pdf') ? (
+                            <iframe src={viewingAttachment} className="w-full h-full border-none rounded-lg" title="PDF Vorschau" />
+                        ) : (
+                            <img src={viewingAttachment || ''} className="max-w-full max-h-full object-contain rounded-lg" alt="Anhang" />
+                        )}
+                    </div>
+                </div>
             </GlassModal>
 
         </div>
