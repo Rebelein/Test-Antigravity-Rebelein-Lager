@@ -1,4 +1,3 @@
-
 import React, { useEffect } from 'react';
 import { HashRouter, Routes, Route, Navigate, Outlet } from 'react-router-dom';
 import Layout from './components/Layout';
@@ -19,6 +18,7 @@ import { ThemeProvider } from './contexts/ThemeContext';
 import { NotificationProvider } from './contexts/NotificationContext';
 import { Loader2 } from 'lucide-react';
 import { initializeDatabase } from './utils/dbInit';
+import { ReloadPrompt } from './components/ReloadPrompt';
 
 // Protected Route Wrapper
 const ProtectedRoute = () => {
@@ -110,7 +110,8 @@ const App: React.FC = () => {
           </HashRouter>
         </ThemeProvider>
       </NotificationProvider>
-    </AuthProvider>
+      <ReloadPrompt />
+    </AuthProvider >
   );
 };
 
