@@ -1,14 +1,17 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { GlassCard, Button, GlassInput, GlassSelect, StatusBadge } from '../components/UIComponents';
+import { AddArticleModal } from '../components/AddArticleModal';
 import { Article, Order, OrderItem, Supplier, OrderProposal, WarehouseType, Warehouse } from '../types';
 import { ShoppingCart, CheckCircle2, Loader2, Send, Copy, FileDown, Check, X, ClipboardList, Truck, Search, Box, Barcode, MapPin, Plus, Minus, PackageCheck, ArrowDownToLine, ChevronDown, ChevronUp, Clock, AlertTriangle, Archive, FileText, Sparkles, Upload, Trash2, Link as LinkIcon, Wand2, Eye, Warehouse as WarehouseIcon, RefreshCw, HardHat } from 'lucide-react';
 import { supabase } from '../supabaseClient';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { GoogleGenAI, Type } from "@google/genai";
 
 const Orders: React.FC = () => {
+    const navigate = useNavigate();
     const { profile, user } = useAuth();
-    const [activeTab, setActiveTab] = useState<'proposals' | 'pending' | 'commission' | 'completed'>('proposals');
+    const [activeTab, setActiveTab] = useState<'proposals' | 'pending' | 'commission' | 'completed' | 'import'>('proposals');
 
     // Badge Counts State
     const [badgeCounts, setBadgeCounts] = useState({ proposals: 0, pending: 0, commission: 0, completed: 0 });
@@ -62,11 +65,28 @@ const Orders: React.FC = () => {
     const [manualScannedItems, setManualScannedItems] = useState<{ sku: string, name: string, quantity: number, foundArticle?: Article, isFound: boolean }[]>([]);
     const manualFileInputRef = useRef<HTMLInputElement>(null);
 
+    // --- NEW: DRAG & DROP STATE ---
+    const [isDragging, setIsDragging] = useState(false);
+
+    // --- IMPORT TAB STATE ---
+    const [importCandidates, setImportCandidates] = useState<any[]>([]);
+    const [loadingImport, setLoadingImport] = useState(false);
+
+    // --- ADD ARTICLE MODAL STATE (FOR IMPORT) ---
+    const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+    const [importDataForModal, setImportDataForModal] = useState<Partial<Article> & { orderItemId: string } | null>(null);
+    const [suppliers, setSuppliers] = useState<Supplier[]>([]); // Need full supplier list for modal
+
+
     useEffect(() => {
         fetchProposals();
         fetchPendingOrders();
         fetchCompletedOrders();
+        fetchPendingOrders();
+        fetchCompletedOrders();
         fetchManualWarehouses();
+        fetchImportCandidates();
+        fetchSuppliers();
     }, [profile?.primary_warehouse_id]);
 
     // Clean up old completed orders on mount
@@ -109,6 +129,83 @@ const Orders: React.FC = () => {
         const { data } = await supabase.from('warehouses').select('*').order('name');
         if (data) setManualWarehouses(data as Warehouse[]);
     };
+
+    const fetchImportCandidates = async () => {
+        setLoadingImport(true);
+        try {
+            const cutoffDate = new Date();
+            cutoffDate.setDate(cutoffDate.getDate() - 30);
+
+            // Fetch order items without article_id from the last 30 days
+            const { data, error } = await supabase
+                .from('order_items')
+                .select('id, custom_sku, custom_name, created_at, orders(supplier, date)')
+                .is('article_id', null)
+                .gte('created_at', cutoffDate.toISOString())
+                .order('created_at', { ascending: false });
+
+            if (error) throw error;
+
+            if (data) {
+                // Deduplicate by custom_sku + custom_name
+                const uniqueMap = new Map<string, any>();
+                data.forEach((item: any) => {
+                    const key = `${item.custom_sku || ''}-${item.custom_name}`;
+                    if (!uniqueMap.has(key)) {
+                        uniqueMap.set(key, {
+                            id: item.id,
+                            name: item.custom_name,
+                            sku: item.custom_sku,
+                            supplier: item.orders?.supplier,
+                            date: item.orders?.date,
+                            createdAt: item.created_at
+                        });
+                    }
+                });
+                setImportCandidates(Array.from(uniqueMap.values()));
+            }
+        } catch (e) {
+            console.error("Error fetching import candidates", e);
+        } finally {
+            setLoadingImport(false);
+        }
+    };
+
+    const fetchSuppliers = async () => {
+        const { data } = await supabase.from('suppliers').select('*').order('name');
+        if (data) setSuppliers(data as Supplier[]);
+    };
+
+    const handleOpenImportModal = (item: any) => {
+        setImportDataForModal({
+            orderItemId: item.id,
+            name: item.name,
+            sku: item.sku,
+            // Pre-fill supplier if name matches
+            supplier: item.supplier,
+            // Default location
+            location: 'Lager'
+        });
+        setIsAddModalOpen(true);
+    };
+
+    const handleImportSuccess = async (newArticleId: string) => {
+        if (!importDataForModal) return;
+
+        // Link the order item to the new article
+        // This ensures it doesn't show up in the import list anymore (which filters by article_id IS NULL)
+        try {
+            await supabase.from('order_items').update({ article_id: newArticleId }).eq('id', importDataForModal.orderItemId);
+
+            // Remove from local list to avoid refetch
+            setImportCandidates(prev => prev.filter(c => c.id !== importDataForModal.orderItemId));
+
+            alert("Artikel erfolgreich angelegt und verknüpft!");
+        } catch (e: any) {
+            alert("Fehler beim Verknüpfen: " + e.message);
+        }
+    };
+
 
     const fetchProposals = async () => {
         setLoadingProposals(true);
@@ -302,6 +399,33 @@ const Orders: React.FC = () => {
             const reader = new FileReader();
             reader.onload = (ev) => setManualAiPreview(ev.target?.result as string);
             reader.readAsDataURL(file);
+        }
+    };
+
+    const handleDragOver = (e: React.DragEvent) => {
+        e.preventDefault();
+        e.stopPropagation();
+        setIsDragging(true);
+    };
+
+    const handleDragLeave = (e: React.DragEvent) => {
+        e.preventDefault();
+        e.stopPropagation();
+        setIsDragging(false);
+    };
+
+    const handleDrop = (e: React.DragEvent) => {
+        e.preventDefault();
+        e.stopPropagation();
+        setIsDragging(false);
+
+        if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+            const file = e.dataTransfer.files[0];
+            const event = {
+                target: { files: [file] }
+            } as unknown as React.ChangeEvent<HTMLInputElement>;
+
+            handleManualFileSelect(event);
         }
     };
 
@@ -767,6 +891,7 @@ const Orders: React.FC = () => {
                     <Send size={16} /> Vorschläge
                     {badgeCounts.proposals > 0 && <span className="bg-emerald-500 text-white text-[10px] px-1.5 rounded-full">{badgeCounts.proposals}</span>}
                 </button>
+
                 <button onClick={() => setActiveTab('pending')} className={`flex-1 px-4 py-2 rounded-lg text-sm font-medium transition-all whitespace-nowrap flex items-center justify-center gap-2 ${activeTab === 'pending' ? 'bg-white/10 text-white shadow' : 'text-white/50'}`}>
                     <Clock size={16} /> Offen
                     {badgeCounts.pending > 0 && <span className="bg-blue-500 text-white text-[10px] px-1.5 rounded-full">{badgeCounts.pending}</span>}
@@ -777,6 +902,10 @@ const Orders: React.FC = () => {
                 </button>
                 <button onClick={() => setActiveTab('completed')} className={`flex-1 px-4 py-2 rounded-lg text-sm font-medium transition-all whitespace-nowrap flex items-center justify-center gap-2 ${activeTab === 'completed' ? 'bg-white/10 text-white shadow' : 'text-white/50'}`}>
                     <CheckCircle2 size={16} /> Erledigt
+                </button>
+                <button onClick={() => setActiveTab('import')} className={`flex-1 px-4 py-2 rounded-lg text-sm font-medium transition-all whitespace-nowrap flex items-center justify-center gap-2 ${activeTab === 'import' ? 'bg-white/10 text-white shadow' : 'text-white/50'}`}>
+                    <Plus size={16} className="text-emerald-400" /> Import
+                    {importCandidates.length > 0 && <span className="bg-emerald-500 text-white text-[10px] px-1.5 rounded-full">{importCandidates.length}</span>}
                 </button>
             </div>
 
@@ -808,6 +937,48 @@ const Orders: React.FC = () => {
                                 </div>
                             ))
                         )
+                    )}
+                </div>
+            )}
+
+            {/* --- CONTENT: IMPORT CANDIDATES --- */}
+            {activeTab === 'import' && (
+                <div className="space-y-4">
+                    <div className="text-xs text-white/30 text-center mb-4">
+                        Artikel aus Bestellungen der letzten 30 Tage, die noch nicht im Lagerbestand sind.
+                    </div>
+                    {loadingImport ? <Loader2 className="animate-spin text-blue-400 mx-auto" /> : (
+                        importCandidates.map((item, idx) => (
+                            <GlassCard
+                                key={idx}
+                                className="flex flex-col gap-3 group border-emerald-500/20 bg-emerald-500/5"
+                            >
+                                <div className="flex justify-between items-start">
+                                    <div>
+                                        <h3 className="font-bold text-white flex items-center gap-2">
+                                            {item.name || 'Unbenannt'}
+                                        </h3>
+                                        <p className="text-xs text-white/50">
+                                            {item.sku ? <span className="font-mono bg-white/10 px-1 rounded mr-2">{item.sku}</span> : null}
+                                            {item.supplier} • {new Date(item.date).toLocaleDateString()}
+                                        </p>
+                                    </div>
+                                    <Button
+                                        onClick={() => handleOpenImportModal(item)}
+                                        className="bg-emerald-600 hover:bg-emerald-500 h-8 text-xs"
+                                        icon={<Plus size={14} />}
+                                    >
+                                        Übernehmen
+                                    </Button>
+
+                                </div>
+                            </GlassCard>
+                        ))
+                    )}
+                    {!loadingImport && importCandidates.length === 0 && (
+                        <div className="text-center text-white/30 py-8 border border-dashed border-white/10 rounded-xl">
+                            Keine importierbaren Artikel gefunden.
+                        </div>
                     )}
                 </div>
             )}
@@ -1041,6 +1212,18 @@ const Orders: React.FC = () => {
                 </div>
             )}
 
+            {/* ADD ARTICLE MODAL FOR IMPORT */}
+            <AddArticleModal
+                isOpen={isAddModalOpen}
+                onClose={() => setIsAddModalOpen(false)}
+                onSaveSuccess={handleImportSuccess}
+                initialData={importDataForModal || undefined}
+                mode="add"
+                warehouses={manualWarehouses}
+                suppliers={suppliers}
+                existingCategories={[]}
+            />
+
             {/* --- MODAL: MANUAL ORDER WIZARD (RE-DESIGNED SINGLE PAGE) --- */}
             {showManualModal && (
                 <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/90 backdrop-blur-md animate-in fade-in">
@@ -1121,7 +1304,13 @@ const Orders: React.FC = () => {
                                     <div className="text-sm text-white/60 text-center">Dokument scannen (Lieferschein / Bestellung)</div>
                                     <div
                                         onClick={() => manualFileInputRef.current?.click()}
-                                        className="border-2 border-dashed border-white/10 rounded-2xl h-40 flex flex-col items-center justify-center cursor-pointer hover:border-emerald-500/50 hover:bg-white/5 transition-all bg-black/20"
+                                        onDragOver={handleDragOver}
+                                        onDragLeave={handleDragLeave}
+                                        onDrop={handleDrop}
+                                        className={`border-2 border-dashed rounded-2xl h-40 flex flex-col items-center justify-center cursor-pointer transition-all ${isDragging
+                                            ? 'border-emerald-500 bg-emerald-500/10 scale-[1.02]'
+                                            : 'border-white/10 hover:border-emerald-500/50 hover:bg-white/5 bg-black/20'
+                                            }`}
                                     >
                                         {manualAiFile ? (
                                             manualAiFile.type.startsWith('image/') && manualAiPreview ? (

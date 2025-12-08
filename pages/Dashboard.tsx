@@ -58,6 +58,7 @@ const Dashboard: React.FC = () => {
     const [officeNoteInput, setOfficeNoteInput] = useState('');
     const [isOfficeProcessed, setIsOfficeProcessed] = useState(false);
     const [isSavingProcess, setIsSavingProcess] = useState(false);
+    const [mobileTab, setMobileTab] = useState<'draft' | 'ready' | 'returns'>('draft');
 
     // --- LAYOUT STATE ---
     const defaultLayouts = {
@@ -391,9 +392,34 @@ const Dashboard: React.FC = () => {
                 </button>
             </div>
 
-            <div className="flex-1 grid grid-cols-3 divide-x divide-gray-200 dark:divide-white/10 overflow-hidden">
+            {/* Mobile Tabs */}
+            <div className="flex md:hidden border-b border-gray-200 dark:border-white/10 shrink-0">
+                <button
+                    onClick={() => setMobileTab('draft')}
+                    className={`flex-1 py-3 text-xs font-bold uppercase tracking-wide transition-colors relative ${mobileTab === 'draft' ? 'text-gray-900 dark:text-white' : 'text-gray-400 dark:text-white/40'}`}
+                >
+                    In Arbeit
+                    {mobileTab === 'draft' && <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-emerald-500" />}
+                </button>
+                <button
+                    onClick={() => setMobileTab('ready')}
+                    className={`flex-1 py-3 text-xs font-bold uppercase tracking-wide transition-colors relative ${mobileTab === 'ready' ? 'text-emerald-600 dark:text-emerald-400' : 'text-gray-400 dark:text-white/40'}`}
+                >
+                    Bereit
+                    {mobileTab === 'ready' && <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-emerald-500" />}
+                </button>
+                <button
+                    onClick={() => setMobileTab('returns')}
+                    className={`flex-1 py-3 text-xs font-bold uppercase tracking-wide transition-colors relative ${mobileTab === 'returns' ? 'text-purple-600 dark:text-purple-400' : 'text-gray-400 dark:text-white/40'}`}
+                >
+                    Rückgabe
+                    {mobileTab === 'returns' && <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-purple-500" />}
+                </button>
+            </div>
+
+            <div className="flex-1 block md:grid md:grid-cols-3 md:divide-x divide-gray-200 dark:divide-white/10 overflow-hidden relative">
                 {/* Left: Entwurf (Draft) */}
-                <div className="p-4 flex flex-col gap-3 bg-gradient-to-b from-gray-100 to-transparent dark:from-white/5 dark:to-transparent overflow-hidden h-full">
+                <div className={`p-4 flex-col gap-3 bg-gradient-to-b from-gray-100 to-transparent dark:from-white/5 dark:to-transparent overflow-hidden h-full ${mobileTab === 'draft' ? 'flex' : 'hidden md:flex'}`}>
                     <div className="flex justify-between items-center mb-2 shrink-0">
                         <span className="text-sm font-bold text-gray-900 dark:text-white">In Arbeit ({draftCommissions.length})</span>
                     </div>
@@ -409,8 +435,8 @@ const Dashboard: React.FC = () => {
                                     key={c.id}
                                     onClick={() => setViewingCommission(c)}
                                     className={`p-3 rounded-xl cursor-pointer transition-all relative group border ${hasBackorder ? 'bg-red-500/10 border-red-500 hover:bg-red-500/20' :
-                                            c.status === 'Preparing' ? 'bg-amber-500/10 border-amber-500/50 hover:bg-amber-500/20' : // NEW YELLOW STYLE
-                                                'bg-white/50 dark:bg-white/5 border-gray-200 dark:border-white/10 hover:bg-gray-100 dark:hover:bg-white/10'
+                                        c.status === 'Preparing' ? 'bg-amber-500/10 border-amber-500/50 hover:bg-amber-500/20' : // NEW YELLOW STYLE
+                                            'bg-white/50 dark:bg-white/5 border-gray-200 dark:border-white/10 hover:bg-gray-100 dark:hover:bg-white/10'
                                         }`}
                                 >
                                     <div className="flex justify-between items-start">
@@ -437,7 +463,7 @@ const Dashboard: React.FC = () => {
                 </div>
 
                 {/* Center: Bereitgestellt (Ready) - INTERACTIVE */}
-                <div className="p-4 flex flex-col gap-3 relative overflow-hidden h-full">
+                <div className={`p-4 flex-col gap-3 relative overflow-hidden h-full ${mobileTab === 'ready' ? 'flex' : 'hidden md:flex'}`}>
                     <div className="flex justify-between items-center mb-2 shrink-0">
                         <span className="text-sm font-bold text-emerald-600 dark:text-emerald-400">Bereitgestellt ({readyCommissions.length})</span>
                     </div>
@@ -488,7 +514,7 @@ const Dashboard: React.FC = () => {
                 </div>
 
                 {/* Right: Rückgaben (Returns) */}
-                <div className="p-4 flex flex-col gap-3 bg-gradient-to-b from-purple-500/5 to-transparent overflow-hidden h-full">
+                <div className={`p-4 flex-col gap-3 bg-gradient-to-b from-purple-500/5 to-transparent overflow-hidden h-full ${mobileTab === 'returns' ? 'flex' : 'hidden md:flex'}`}>
                     <div className="flex justify-between items-center mb-2 shrink-0">
                         <span className="text-sm font-bold text-purple-600 dark:text-purple-400">Rückgaben ({returnCommissions.length})</span>
                     </div>

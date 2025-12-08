@@ -8,7 +8,7 @@ import { useAuth } from '../contexts/AuthContext';
 import {
     Search, Plus, Loader2, Check, X, Link as LinkIcon, Sparkles, Edit, Trash2, ExternalLink, History, Minus, Image as ImageIcon, Hash, Wand2, Globe, Clipboard, FileImage, Printer, Layers, Type as TypeIcon, ListChecks, Copy, CheckSquare, Square, Paperclip, User, ChevronDown, ArrowUpDown, MapPin, Building2, Star, MoreHorizontal, CheckCircle2
 } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { GoogleGenAI, Type } from "@google/genai";
 
 interface StockMovement {
@@ -33,6 +33,7 @@ interface ReusableImage {
 const Inventory: React.FC = () => {
     const { profile, user, loading: authLoading, updateWarehousePreference, toggleCategoryCollapse } = useAuth();
     const navigate = useNavigate();
+    const location = useLocation();
 
     const [articles, setArticles] = useState<Article[]>([]);
     const [warehouses, setWarehouses] = useState<Warehouse[]>([]);
@@ -186,7 +187,60 @@ const Inventory: React.FC = () => {
             document.removeEventListener("mousedown", handleClickOutside);
             window.removeEventListener("scroll", handleScroll, true);
         };
+        return () => {
+            document.removeEventListener("mousedown", handleClickOutside);
+            window.removeEventListener("scroll", handleScroll, true);
+        };
     }, [contextMenu]);
+
+    // --- HANDLE IMPORT FROM ORDERS ---
+    useEffect(() => {
+        if (location.state && location.state.openAdd && location.state.importData) {
+            const data = location.state.importData;
+
+            // Clean up name/sku
+            const name = data.name || '';
+            const sku = data.sku || '';
+            const supplierName = data.supplier || '';
+
+            // Open Modal Cleanly
+            setIsEditMode(false);
+            setEditingId(null);
+            resetModalForm();
+
+            // Set Initial Data
+            setNewArticle(prev => ({
+                ...prev,
+                name: name,
+                location: 'Lager' // Default as requested
+            }));
+
+            if (sku) {
+                setTempSkus([{ sku: sku, isPreferred: true }]);
+            }
+
+            if (supplierName) {
+                const sObj = suppliers.find(s => s.name === supplierName);
+                if (sObj) {
+                    setTempSuppliers([{
+                        supplierId: sObj.id,
+                        supplierName: sObj.name,
+                        supplierSku: '',
+                        url: '',
+                        isPreferred: true
+                    }]);
+                } else {
+                    // Add as temporary supplier reference if logic allows, or just ignore if supplier must exist in DB
+                    // For now we only pre-fill if supplier matches
+                }
+            }
+
+            setIsAddModalOpen(true);
+
+            // Clear state to prevent reopen on refresh (optional but good practice)
+            window.history.replaceState({}, document.title);
+        }
+    }, [location.state, suppliers]); // Depend on suppliers to match name
 
     // --- GLOBAL SCAN DETECTION ---
     useEffect(() => {
@@ -982,6 +1036,8 @@ const Inventory: React.FC = () => {
 
     const handlePrintLabel = (article: Article) => { setContextMenu(null); navigate('/labels'); };
 
+
+
     // --- SORTING HELPER ---
     const sortArticles = (a: Article, b: Article) => {
         const dir = sortConfig.direction === 'asc' ? 1 : -1;
@@ -1005,6 +1061,31 @@ const Inventory: React.FC = () => {
     const currentWarehouseId = viewMode === 'primary' ? profile?.primary_warehouse_id : profile?.secondary_warehouse_id;
     const currentWarehouse = warehouses.find(w => w.id === currentWarehouseId);
     const contextMenuArticle = contextMenu ? articles.find(a => a.id === contextMenu.id) : null;
+
+    const handleEditNavigate = (direction: 'prev' | 'next') => {
+        if (!isEditMode) return;
+        const flatArticles = Object.values(groupedArticles).flat();
+        const currentIndex = flatArticles.findIndex(a => a.id === editingId);
+        if (currentIndex === -1) return;
+
+        const newIndex = direction === 'next'
+            ? (currentIndex + 1) % flatArticles.length
+            : (currentIndex - 1 + flatArticles.length) % flatArticles.length;
+
+        openEditArticleModal(flatArticles[newIndex]);
+    };
+
+    useEffect(() => {
+        const handleKeyDown = (e: KeyboardEvent) => {
+            if (!isAddModalOpen) return;
+            if (isEditMode) {
+                if (e.key === 'ArrowRight') handleEditNavigate('next');
+                if (e.key === 'ArrowLeft') handleEditNavigate('prev');
+            }
+        };
+        window.addEventListener('keydown', handleKeyDown);
+        return () => window.removeEventListener('keydown', handleKeyDown);
+    }, [isAddModalOpen, isEditMode, editingId, groupedArticles]);
 
     if (loading || authLoading) return <div className="flex flex-col items-center justify-center h-[60vh] text-white/50"><Loader2 size={40} className="animate-spin mb-4 text-emerald-400" /><p>Lade Lagerbestand...</p></div>;
 
@@ -1252,7 +1333,27 @@ const Inventory: React.FC = () => {
             {/* ADD/EDIT MODAL */}
             {isAddModalOpen && (
                 <div className="fixed inset-0 z-[100] flex items-center justify-center sm:p-4 bg-black/80 backdrop-blur-md overflow-hidden">
-                    <div className="w-full h-full sm:h-auto sm:max-h-[90vh] max-w-2xl bg-[#1a1d24] border-0 sm:border border-white/10 sm:rounded-2xl shadow-2xl flex flex-col">
+                    {/* Edit Navigation Logic */}
+                    {isEditMode && Object.values(groupedArticles).flat().length > 1 && (
+                        <>
+                            <button
+                                onClick={(e) => { e.stopPropagation(); handleEditNavigate('prev'); }}
+                                className="absolute left-2 sm:left-6 top-1/2 -translate-y-1/2 z-[110] p-3 rounded-full bg-black/50 text-white/50 hover:bg-emerald-500/20 hover:text-emerald-400 hover:scale-110 transition-all backdrop-blur-sm group hidden sm:block"
+                                title="Vorheriger Artikel (Pfeil Links)"
+                            >
+                                <ChevronDown size={32} className="rotate-90 relative right-0.5" />
+                            </button>
+                            <button
+                                onClick={(e) => { e.stopPropagation(); handleEditNavigate('next'); }}
+                                className="absolute right-2 sm:right-6 top-1/2 -translate-y-1/2 z-[110] p-3 rounded-full bg-black/50 text-white/50 hover:bg-emerald-500/20 hover:text-emerald-400 hover:scale-110 transition-all backdrop-blur-sm group hidden sm:block"
+                                title="Nächster Artikel (Pfeil Rechts)"
+                            >
+                                <ChevronDown size={32} className="-rotate-90 relative left-0.5" />
+                            </button>
+                        </>
+                    )}
+
+                    <div className="w-full h-full sm:h-auto sm:max-h-[90vh] max-w-2xl bg-[#1a1d24] border-0 sm:border border-white/10 sm:rounded-2xl shadow-2xl flex flex-col relative z-10">
                         <div className="p-4 sm:p-6 border-b border-white/10 flex justify-between items-center bg-white/5 sticky top-0 z-10 backdrop-blur-xl shrink-0">
                             <div className="flex items-center gap-3"><h2 className="text-xl font-bold text-white">{isEditMode ? 'Artikel bearbeiten' : 'Neuer Artikel'}</h2><button onClick={openAiScanModal} className="flex items-center gap-2 bg-gradient-to-r from-purple-500 to-blue-500 hover:from-purple-400 hover:to-blue-400 text-white text-xs font-bold px-3 py-1.5 rounded-full shadow-lg shadow-purple-500/20 transition-all transform hover:scale-105"><Sparkles size={12} /><span>KI-Scan</span></button></div><button onClick={() => setIsAddModalOpen(false)} className="p-2 rounded-full hover:bg-white/5 text-white/60 hover:text-white"><X size={20} /></button>
                         </div>
@@ -1299,7 +1400,7 @@ const Inventory: React.FC = () => {
                 </div>
             )}
 
-            {/* REUSE IMAGE MODAL */}
+            {/* ARTICLE DETAIL MODAL */}
             {isImageReuseModalOpen && (
                 <div className="fixed inset-0 z-[120] flex items-center justify-center p-4 bg-black/90 backdrop-blur-md animate-in fade-in zoom-in-95">
                     <GlassCard className="w-full max-w-3xl flex flex-col h-[80vh] p-0 overflow-hidden">
@@ -1436,113 +1537,184 @@ const Inventory: React.FC = () => {
 
             {/* ARTICLE DETAIL MODAL */}
             {isDetailModalOpen && viewingArticle && (
-                <div className="fixed inset-0 z-[100] flex items-center justify-center p-0 sm:p-4 bg-black/80 backdrop-blur-md animate-in fade-in zoom-in-95">
-                    <div className="w-full h-full sm:h-auto sm:max-h-[90vh] sm:max-w-2xl flex flex-col bg-[#1a1d24] border border-white/10 sm:rounded-2xl shadow-2xl overflow-hidden">
-                        {/* Header */}
-                        <div className="shrink-0 p-5 border-b border-white/10 bg-gradient-to-b from-white/10 to-white/5 flex justify-between items-start">
-                            <div>
-                                <h2 className="text-xl font-bold text-white line-clamp-2 leading-snug">{viewingArticle.name}</h2>
-                                <div className="flex items-center gap-2 mt-1">
-                                    <span className={`px-2 py-0.5 rounded text-xs font-bold border ${viewingArticle.stock >= viewingArticle.targetStock ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30' : 'bg-rose-500/20 text-rose-300 border-rose-500/30'}`}>
-                                        {viewingArticle.stock >= viewingArticle.targetStock ? 'Bestand OK' : 'Unterbestand'}
-                                    </span>
-                                    {viewingArticle.onOrderDate && <span className="px-2 py-0.5 rounded text-xs font-bold bg-blue-500/20 text-blue-300 border border-blue-500/30">Bestellt</span>}
-                                </div>
-                            </div>
-                            <button onClick={() => setIsDetailModalOpen(false)} className="p-2 rounded-full bg-black/20 hover:bg-black/40 text-white/60 hover:text-white transition-colors"><X size={20} /></button>
+                <ArticleDetailModal
+                    article={viewingArticle}
+                    onClose={() => setIsDetailModalOpen(false)}
+                    onEdit={() => { setIsDetailModalOpen(false); openEditArticleModal(viewingArticle); }}
+                    onNavigate={(direction) => {
+                        const flatArticles = Object.values(groupedArticles).flat();
+                        const currentIndex = flatArticles.findIndex(a => a.id === viewingArticle.id);
+                        if (currentIndex === -1) return;
+
+                        const newIndex = direction === 'next'
+                            ? (currentIndex + 1) % flatArticles.length
+                            : (currentIndex - 1 + flatArticles.length) % flatArticles.length;
+
+                        const newArticle = flatArticles[newIndex];
+                        setViewingArticle(newArticle);
+                        fetchHistory(newArticle.id);
+                    }}
+                    hasNavigation={Object.values(groupedArticles).flat().length > 1}
+                />
+            )}
+        </div>
+    );
+};
+
+// --- SUBCOMPONENTS ---
+
+const ArticleDetailModal = ({ article, onClose, onEdit, onNavigate, hasNavigation }: { article: Article, onClose: () => void, onEdit: () => void, onNavigate: (dir: 'prev' | 'next') => void, hasNavigation: boolean }) => {
+    const navigate = useNavigate();
+    const [history, setHistory] = useState<any[]>([]);
+    const [loading, setLoading] = useState(false);
+    const [copiedField, setCopiedField] = useState<string | null>(null);
+
+    useEffect(() => {
+        const load = async () => {
+            setLoading(true);
+            try {
+                const { data } = await supabase.from('stock_movements').select('*, profiles:user_id (full_name)').eq('article_id', article.id).order('created_at', { ascending: false }).limit(5);
+                if (data) setHistory(data);
+            } catch (e) { console.error(e); } finally { setLoading(false); }
+        };
+        load();
+    }, [article.id]);
+
+    useEffect(() => {
+        const handleKeyDown = (e: KeyboardEvent) => {
+            if (e.key === 'ArrowRight') onNavigate('next');
+            if (e.key === 'ArrowLeft') onNavigate('prev');
+            if (e.key === 'Escape') onClose();
+        };
+        window.addEventListener('keydown', handleKeyDown);
+        return () => window.removeEventListener('keydown', handleKeyDown);
+    }, [onNavigate, onClose]);
+
+    const handleCopy = (text: string, field: string) => {
+        if (!text || text === '-') return;
+        navigator.clipboard.writeText(text);
+        setCopiedField(field);
+        setTimeout(() => setCopiedField(null), 2000);
+    };
+
+    return (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-0 sm:p-4 bg-black/80 backdrop-blur-md animate-in fade-in zoom-in-95" onClick={onClose}>
+            <div className="w-full h-full sm:h-auto sm:max-h-[90vh] sm:max-w-2xl flex flex-col bg-[#1a1d24] border border-white/10 sm:rounded-2xl shadow-2xl overflow-hidden relative" onClick={e => e.stopPropagation()}>
+
+                {/* Navigation Arrows */}
+                {hasNavigation && (
+                    <>
+                        <button onClick={(e) => { e.stopPropagation(); onNavigate('prev'); }} className="absolute left-2 top-1/2 -translate-y-1/2 z-20 p-3 rounded-full bg-black/30 text-white/50 hover:bg-emerald-500/20 hover:text-emerald-400 hover:scale-110 transition-all backdrop-blur-sm group">
+                            <ChevronDown size={32} className="rotate-90 relative right-0.5" />
+                        </button>
+                        <button onClick={(e) => { e.stopPropagation(); onNavigate('next'); }} className="absolute right-2 top-1/2 -translate-y-1/2 z-20 p-3 rounded-full bg-black/30 text-white/50 hover:bg-emerald-500/20 hover:text-emerald-400 hover:scale-110 transition-all backdrop-blur-sm group">
+                            <ChevronDown size={32} className="-rotate-90 relative left-0.5" />
+                        </button>
+                    </>
+                )}
+
+                {/* Header */}
+                <div className="shrink-0 p-5 border-b border-white/10 bg-gradient-to-b from-white/10 to-white/5 flex justify-between items-start pl-16 pr-16 text-center sm:text-left relative">
+                    <div className="mx-auto sm:mx-0">
+                        <h2 className="text-xl font-bold text-white line-clamp-2 leading-snug">{article.name}</h2>
+                        <div className="flex items-center justify-center sm:justify-start gap-2 mt-1">
+                            <span className={`px-2 py-0.5 rounded text-xs font-bold border ${article.stock >= article.targetStock ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30' : 'bg-rose-500/20 text-rose-300 border-rose-500/30'}`}>
+                                {article.stock >= article.targetStock ? 'Bestand OK' : 'Unterbestand'}
+                            </span>
+                            {article.onOrderDate && <span className="px-2 py-0.5 rounded text-xs font-bold bg-blue-500/20 text-blue-300 border border-blue-500/30">Bestellt</span>}
                         </div>
+                    </div>
+                    <button onClick={onClose} className="absolute right-4 top-4 p-2 rounded-full bg-black/20 hover:bg-black/40 text-white/60 hover:text-white transition-colors"><X size={20} /></button>
+                </div>
 
-                        {/* Scrollable Content */}
-                        <div className="flex-1 overflow-y-auto p-5 space-y-6 min-h-0">
-                            {/* Image Section */}
-                            <div className="w-full h-48 sm:h-64 rounded-2xl bg-black/40 border border-white/10 overflow-hidden relative group">
-                                <img src={viewingArticle.image || `https://picsum.photos/seed/${viewingArticle.id}/400/300`} className="w-full h-full object-contain p-4 group-hover:scale-105 transition-transform duration-500" />
+                {/* Scrollable Content */}
+                <div className="flex-1 overflow-y-auto p-5 space-y-6 min-h-0">
+                    {/* Image Section */}
+                    <div className="w-full h-48 sm:h-64 rounded-2xl bg-black/40 border border-white/10 overflow-hidden relative group">
+                        <img src={article.image || `https://picsum.photos/seed/${article.id}/400/300`} className="w-full h-full object-contain p-4 group-hover:scale-105 transition-transform duration-500" />
+                    </div>
+
+                    {/* Stats Grid */}
+                    <div className="grid grid-cols-2 gap-4">
+                        <div className="bg-white/5 rounded-xl p-4 border border-white/5">
+                            <div className="text-white/40 text-xs font-medium mb-1">Lagerbestand</div>
+                            <div className="flex items-baseline gap-1">
+                                <span className={`text-3xl font-bold ${article.stock < article.targetStock ? 'text-rose-400' : 'text-emerald-400'}`}>{article.stock}</span>
+                                <span className="text-white/30 text-sm">/ {article.targetStock} Soll</span>
                             </div>
-
-                            {/* Stats Grid */}
-                            <div className="grid grid-cols-2 gap-4">
-                                <div className="bg-white/5 rounded-xl p-4 border border-white/5">
-                                    <div className="text-white/40 text-xs font-medium mb-1">Lagerbestand</div>
-                                    <div className="flex items-baseline gap-1">
-                                        <span className={`text-3xl font-bold ${viewingArticle.stock < viewingArticle.targetStock ? 'text-rose-400' : 'text-emerald-400'}`}>{viewingArticle.stock}</span>
-                                        <span className="text-white/30 text-sm">/ {viewingArticle.targetStock} Soll</span>
-                                    </div>
-                                    {/* Simple Progress Bar */}
-                                    <div className="w-full h-1.5 bg-white/10 rounded-full mt-2 overflow-hidden">
-                                        <div className={`h-full rounded-full ${viewingArticle.stock < viewingArticle.targetStock ? 'bg-rose-500' : 'bg-emerald-500'}`} style={{ width: `${Math.min((viewingArticle.stock / (viewingArticle.targetStock || 1)) * 100, 100)}%` }}></div>
-                                    </div>
-                                </div>
-                                <div className="bg-white/5 rounded-xl p-4 border border-white/5">
-                                    <div className="text-white/40 text-xs font-medium mb-1">Lagerort</div>
-                                    <div className="text-lg font-bold text-white">{viewingArticle.location || '-'}</div>
-                                    <div className="text-sm text-white/50 mt-1 flex items-center gap-1"><Layers size={12} /> {viewingArticle.category}</div>
-                                </div>
+                            <div className="w-full h-1.5 bg-white/10 rounded-full mt-2 overflow-hidden">
+                                <div className={`h-full rounded-full ${article.stock < article.targetStock ? 'bg-rose-500' : 'bg-emerald-500'}`} style={{ width: `${Math.min((article.stock / (article.targetStock || 1)) * 100, 100)}%` }}></div>
                             </div>
+                        </div>
+                        <div className="bg-white/5 rounded-xl p-4 border border-white/5">
+                            <div className="text-white/40 text-xs font-medium mb-1">Lagerort</div>
+                            <div className="text-lg font-bold text-white">{article.location || '-'}</div>
+                            <div className="text-sm text-white/50 mt-1 flex items-center gap-1"><Layers size={12} /> {article.category}</div>
+                        </div>
+                    </div>
 
-                            {/* Detail List */}
-                            <div className="space-y-3">
-                                <h3 className="text-xs font-bold text-white/40 uppercase tracking-wider px-1">Stammdaten</h3>
-                                <div className="bg-white/5 rounded-xl border border-white/10 divide-y divide-white/5">
-                                    <div className="p-3 flex justify-between text-sm"><span className="text-white/50">Hersteller-Nr.</span><span className="text-white font-mono">{viewingArticle.sku || '-'}</span></div>
-                                    <div className="p-3 flex justify-between text-sm"><span className="text-white/50">EAN / GTIN</span><span className="text-white font-mono">{viewingArticle.ean || '-'}</span></div>
-                                    <div className="p-3 flex justify-between text-sm"><span className="text-white/50">Lieferant</span><span className="text-white">{viewingArticle.supplier || '-'}</span></div>
+                    {/* Detail List */}
+                    <div className="space-y-3">
+                        <h3 className="text-xs font-bold text-white/40 uppercase tracking-wider px-1">Stammdaten</h3>
+                        <div className="bg-white/5 rounded-xl border border-white/10 divide-y divide-white/5">
+                            <div className="p-3 flex justify-between text-sm"><span className="text-white/50">Hersteller-Nr.</span><span className="text-white font-mono">{article.sku || '-'}</span></div>
+                            <div className="p-3 flex justify-between text-sm"><span className="text-white/50">EAN / GTIN</span><span className="text-white font-mono">{article.ean || '-'}</span></div>
+                            <div className="p-3 flex justify-between text-sm"><span className="text-white/50">Lieferant</span><span className="text-white">{article.supplier || '-'}</span></div>
 
-                                    <div
-                                        onClick={() => handleCopy(viewingArticle.supplierSku || '', 'supplierSku')}
-                                        className={`p-3 flex justify-between text-sm cursor-pointer transition-colors ${copiedField === 'supplierSku' ? 'bg-emerald-500/10' : 'hover:bg-white/5'}`}
-                                    >
-                                        <span className="text-white/50">Lieferant Art-Nr.</span>
-                                        <span className={`font-mono flex items-center gap-2 ${copiedField === 'supplierSku' ? 'text-emerald-400' : 'text-white'}`}>
-                                            {viewingArticle.supplierSku || '-'}
-                                            {viewingArticle.supplierSku && (
-                                                copiedField === 'supplierSku' ? <Check size={14} /> : <Copy size={14} className="opacity-50" />
-                                            )}
-                                        </span>
-                                    </div>
-
-                                    {viewingArticle.productUrl && (
-                                        <div className="p-3 flex justify-between text-sm">
-                                            <span className="text-white/50">Produkt-Link</span>
-                                            <a href={viewingArticle.productUrl} target="_blank" rel="noopener noreferrer" className="text-blue-400 hover:underline flex items-center gap-1">
-                                                Öffnen <ExternalLink size={12} />
-                                            </a>
-                                        </div>
+                            <div
+                                onClick={() => handleCopy(article.supplierSku || '', 'supplierSku')}
+                                className={`p-3 flex justify-between text-sm cursor-pointer transition-colors ${copiedField === 'supplierSku' ? 'bg-emerald-500/10' : 'hover:bg-white/5'}`}
+                            >
+                                <span className="text-white/50">Lieferant Art-Nr.</span>
+                                <span className={`font-mono flex items-center gap-2 ${copiedField === 'supplierSku' ? 'text-emerald-400' : 'text-white'}`}>
+                                    {article.supplierSku || '-'}
+                                    {article.supplierSku && (
+                                        copiedField === 'supplierSku' ? <Check size={14} /> : <Copy size={14} className="opacity-50" />
                                     )}
-                                </div>
+                                </span>
                             </div>
 
-                            {/* History Section */}
-                            <div>
-                                <h3 className="text-xs font-bold text-white/40 uppercase tracking-wider px-1 mb-3 flex justify-between items-center">
-                                    <span>Verlauf (Letzte 5)</span>
-                                    {historyLoading && <Loader2 className="animate-spin w-3 h-3" />}
-                                </h3>
-                                <div className="space-y-2">
-                                    {articleHistory.length === 0 && !historyLoading && <div className="text-center text-white/20 py-4 text-xs italic">Keine Bewegungen.</div>}
-                                    {articleHistory.map(move => (
-                                        <div key={move.id} className="bg-white/5 p-3 rounded-xl border border-white/5 flex justify-between items-center">
-                                            <div>
-                                                <div className="text-xs text-white/30 mb-0.5">{new Date(move.created_at).toLocaleDateString()} • {new Date(move.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</div>
-                                                <div className="text-sm text-white">{move.reference || 'Manuelle Buchung'}</div>
-                                                <div className="text-[10px] text-white/40 flex items-center gap-1"><User size={10} /> {move.profiles?.full_name || 'Unbekannt'}</div>
-                                            </div>
-                                            <div className={`font-bold font-mono ${move.amount > 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
-                                                {move.amount > 0 ? '+' : ''}{move.amount}
-                                            </div>
-                                        </div>
-                                    ))}
+                            {article.productUrl && (
+                                <div className="p-3 flex justify-between text-sm">
+                                    <span className="text-white/50">Produkt-Link</span>
+                                    <a href={article.productUrl} target="_blank" rel="noopener noreferrer" className="text-blue-400 hover:underline flex items-center gap-1">
+                                        Öffnen <ExternalLink size={12} />
+                                    </a>
                                 </div>
-                            </div>
+                            )}
                         </div>
+                    </div>
 
-                        {/* Footer Actions */}
-                        <div className="shrink-0 p-4 border-t border-white/10 bg-black/20 flex gap-3">
-                            <Button variant="secondary" onClick={() => handlePrintLabel(viewingArticle)} className="flex-1" icon={<Printer size={16} />}>Etikett</Button>
-                            <Button variant="secondary" onClick={() => { setIsDetailModalOpen(false); openEditArticleModal(viewingArticle); }} className="flex-1" icon={<Edit size={16} />}>Bearbeiten</Button>
+                    {/* History Section */}
+                    <div>
+                        <h3 className="text-xs font-bold text-white/40 uppercase tracking-wider px-1 mb-3 flex justify-between items-center">
+                            <span>Verlauf (Letzte 5)</span>
+                            {loading && <Loader2 className="animate-spin w-3 h-3" />}
+                        </h3>
+                        <div className="space-y-2">
+                            {history.length === 0 && !loading && <div className="text-center text-white/20 py-4 text-xs italic">Keine Bewegungen.</div>}
+                            {history.map(move => (
+                                <div key={move.id} className="bg-white/5 p-3 rounded-xl border border-white/5 flex justify-between items-center">
+                                    <div>
+                                        <div className="text-xs text-white/30 mb-0.5">{new Date(move.created_at).toLocaleDateString()} • {new Date(move.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</div>
+                                        <div className="text-sm text-white">{move.reference || 'Manuelle Buchung'}</div>
+                                        <div className="text-[10px] text-white/40 flex items-center gap-1"><User size={10} /> {move.profiles?.full_name || 'Unbekannt'}</div>
+                                    </div>
+                                    <div className={`font-bold font-mono ${move.amount > 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
+                                        {move.amount > 0 ? '+' : ''}{move.amount}
+                                    </div>
+                                </div>
+                            ))}
                         </div>
                     </div>
                 </div>
-            )}
+
+                {/* Footer Actions */}
+                <div className="shrink-0 p-4 border-t border-white/10 bg-black/20 flex gap-3 z-30 relative">
+                    <Button variant="secondary" onClick={() => navigate('/labels')} className="flex-1" icon={<Printer size={16} />}>Etikett</Button>
+                    <Button variant="secondary" onClick={onEdit} className="flex-1" icon={<Edit size={16} />}>Bearbeiten</Button>
+                </div>
+            </div>
         </div>
     );
 };
