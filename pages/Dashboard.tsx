@@ -408,7 +408,10 @@ const Dashboard: React.FC = () => {
                                 <div
                                     key={c.id}
                                     onClick={() => setViewingCommission(c)}
-                                    className={`p-3 rounded-xl cursor-pointer transition-all relative group border ${hasBackorder ? 'bg-red-500/10 border-red-500 hover:bg-red-500/20' : 'bg-white/50 dark:bg-white/5 border-gray-200 dark:border-white/10 hover:bg-gray-100 dark:hover:bg-white/10'}`}
+                                    className={`p-3 rounded-xl cursor-pointer transition-all relative group border ${hasBackorder ? 'bg-red-500/10 border-red-500 hover:bg-red-500/20' :
+                                            c.status === 'Preparing' ? 'bg-amber-500/10 border-amber-500/50 hover:bg-amber-500/20' : // NEW YELLOW STYLE
+                                                'bg-white/50 dark:bg-white/5 border-gray-200 dark:border-white/10 hover:bg-gray-100 dark:hover:bg-white/10'
+                                        }`}
                                 >
                                     <div className="flex justify-between items-start">
                                         <div className="min-w-0">

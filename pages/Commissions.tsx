@@ -1175,6 +1175,16 @@ const Commissions: React.FC = () => {
         if (!error) {
             setCommItems(prev => prev.map(i => i.id === itemId ? { ...i, is_picked: newVal } : i));
 
+            // NEW: Auto-switch from Draft to Preparing on first pick
+            if (newVal === true && activeCommission?.status === 'Draft') {
+                await supabase.from('commissions').update({ status: 'Preparing' }).eq('id', activeCommission.id);
+
+                setActiveCommission(prev => prev ? { ...prev, status: 'Preparing' } : null);
+                setCommissions(prev => prev.map(c => c.id === activeCommission.id ? { ...c, status: 'Preparing' } : c));
+
+                await logCommissionEvent(activeCommission.id, activeCommission.name, 'status_change', 'Status automatisch auf "In Vorbereitung" gesetzt (Erster Artikel gepickt)');
+            }
+
             if (newVal === false && activeCommission?.status === 'Ready') {
                 await supabase.from('commissions').update({ status: 'Preparing' }).eq('id', activeCommission.id);
 
@@ -1252,9 +1262,17 @@ const Commissions: React.FC = () => {
                                         animate={{ opacity: 1, scale: 1 }}
                                         exit={{ opacity: 0, scale: 0.9 }}
                                         onClick={() => handleOpenPrepare(comm)}
-                                        className={`cursor-pointer group relative h-full flex flex-col rounded-3xl overflow-hidden border backdrop-blur-lg shadow-lg transition-all ${hasItemBackorder ? 'bg-red-500/10 hover:bg-red-500/20 border-red-500/50' : 'bg-white/10 hover:bg-white/20 border-white/20 hover:border-white/30'}`}
+                                        className={`cursor-pointer group relative h-full flex flex-col rounded-3xl overflow-hidden border backdrop-blur-lg shadow-lg transition-all ${hasItemBackorder ? 'bg-red-500/10 hover:bg-red-500/20 border-red-500/50' :
+                                            statusKey === 'preparing' ? 'bg-amber-500/10 hover:bg-amber-500/20 border-amber-500/50' : // NEW YELLOW STYLE
+                                                'bg-white/10 hover:bg-white/20 border-white/20 hover:border-white/30'
+                                            }`}
                                     >
-                                        <div className={`absolute top-0 left-0 w-1 h-full ${hasItemBackorder ? 'bg-red-500' : (statusKey === 'ready' ? 'bg-emerald-400' : statusKey === 'preparing' ? 'bg-gray-400' : statusKey === 'returnReady' ? 'bg-purple-400' : statusKey === 'returnPending' ? 'bg-orange-400' : 'bg-white/60')}`} />
+                                        <div className={`absolute top-0 left-0 w-1 h-full ${hasItemBackorder ? 'bg-red-500' :
+                                            (statusKey === 'ready' ? 'bg-emerald-400' :
+                                                statusKey === 'preparing' ? 'bg-amber-400' : // NEW YELLOW BAR
+                                                    statusKey === 'returnReady' ? 'bg-purple-400' :
+                                                        statusKey === 'returnPending' ? 'bg-orange-400' : 'bg-white/60')}`}
+                                        />
                                         <div className="flex justify-between items-start p-4 pl-5 flex-1">
                                             <div className="flex-1 min-w-0">
                                                 <div className="flex items-start justify-between">
@@ -1444,7 +1462,7 @@ const Commissions: React.FC = () => {
                     {activeTab === 'active' && (
                         <>
                             {renderCategory("Bereitgestellt", 'ready', commissions.filter(c => c.status === 'Ready'), 'text-emerald-400')}
-                            {renderCategory("In Vorbereitung", 'preparing', commissions.filter(c => c.status === 'Preparing'), 'text-gray-400')}
+                            {renderCategory("In Vorbereitung", 'preparing', commissions.filter(c => c.status === 'Preparing'), 'text-amber-400')}
                             {renderCategory("Entwürfe", 'draft', commissions.filter(c => c.status === 'Draft'), 'text-white/60')}
                         </>
                     )}
