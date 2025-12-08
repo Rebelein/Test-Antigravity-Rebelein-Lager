@@ -7,7 +7,7 @@ import { GoogleGenAI, Type } from "@google/genai";
 import {
     Plus, Loader2, Check, X, Link as LinkIcon, Sparkles, Edit, Trash2, ExternalLink,
     Image as ImageIcon, Hash, Wand2, Globe, Clipboard, FileImage, Layers, Type as TypeIcon,
-    Paperclip, ChevronDown, CheckCircle2, Star
+    Paperclip, ChevronDown, CheckCircle2, Star, AlertTriangle
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
@@ -42,6 +42,14 @@ export const AddArticleModal: React.FC<AddArticleModalProps> = ({
     const [newArticle, setNewArticle] = useState<Partial<Article>>({
         name: '', ean: '', category: '', stock: 0, targetStock: 0, location: '', image: ''
     });
+
+    // Duplicate Check State
+    const [showDuplicateWarning, setShowDuplicateWarning] = useState(false);
+    const [duplicateConfirmation, setDuplicateConfirmation] = useState<{
+        isOpen: boolean;
+        onConfirm: () => void;
+        message: string;
+    } | null>(null);
 
     // Helper State
     const [isSubmitting, setIsSubmitting] = useState(false);
@@ -284,8 +292,69 @@ export const AddArticleModal: React.FC<AddArticleModalProps> = ({
     };
 
     // --- SAVE LOGIC ---
-    const handleSaveArticle = async () => {
+    const handleSaveArticle = async (force: boolean = false) => {
         if (!defaultWarehouseId) { alert("Kein Ziellager definiert."); return; }
+
+        // DUPLICATE CHECK
+        if (!force) {
+            setIsSubmitting(true);
+            const checks: Promise<{ type: string, value: string, id: string } | null>[] = [];
+
+            // 1. Name Check
+            if (newArticle.name) {
+                checks.push(
+                    supabase
+                        .from('articles')
+                        .select('id, name')
+                        .eq('warehouse_id', defaultWarehouseId)
+                        .ilike('name', newArticle.name)
+                        .maybeSingle()
+                        .then(({ data }) => data ? { type: 'Name', value: data.name, id: data.id } : null)
+                );
+            }
+
+            // 2. Main SKU Check (Check against 'sku' column)
+            // We check if ANY of the new SKUs exist as a primary 'sku' in the DB
+            const checkSkus = tempSkus.map(s => s.sku).filter(Boolean);
+            if (checkSkus.length > 0) {
+                checks.push(
+                    supabase
+                        .from('articles')
+                        .select('id, sku')
+                        .in('sku', checkSkus) // Check if existing Primary SKU matches any new SKU
+                        .maybeSingle() // Just finding one is enough to warn
+                        .then(({ data }) => data ? { type: 'Hersteller-Nr.', value: data.sku, id: data.id } : null)
+                );
+            }
+
+            // 3. Supplier SKU Check
+            const checkSupSkus = tempSuppliers.map(s => s.supplierSku).filter(Boolean);
+            if (checkSupSkus.length > 0) {
+                checks.push(
+                    supabase
+                        .from('article_suppliers')
+                        .select('article_id, supplier_sku')
+                        .in('supplier_sku', checkSupSkus)
+                        .maybeSingle()
+                        .then(({ data }) => data ? { type: 'Lieferanten-Art.Nr.', value: data.supplier_sku, id: data.article_id } : null)
+                );
+            }
+
+            const results = await Promise.all(checks);
+            setIsSubmitting(false);
+
+            const match = results.find(r => r !== null && r.id !== initialData?.id);
+
+            if (match) {
+                setDuplicateConfirmation({
+                    isOpen: true,
+                    onConfirm: () => handleSaveArticle(true),
+                    message: `Ein Artikel mit ${match.type === 'Name' ? 'dem Namen' : 'der ' + match.type} "${match.value}" existiert bereits.`
+                });
+                return;
+            }
+        }
+
         setIsSubmitting(true);
         try {
             const primarySup = tempSuppliers.find(s => s.isPreferred) || tempSuppliers[0];
@@ -420,7 +489,7 @@ export const AddArticleModal: React.FC<AddArticleModalProps> = ({
                     </div>
                     <div className="p-4 sm:p-6 border-t border-white/10 flex justify-end gap-3 bg-gray-900/95 sm:bg-black/20 rounded-none sm:rounded-b-2xl sticky bottom-0 z-10 backdrop-blur-xl shrink-0">
                         <Button variant="secondary" onClick={onClose}>Abbrechen</Button>
-                        <Button onClick={handleSaveArticle} disabled={isSubmitting} className="min-w-[120px]">{isSubmitting ? <Loader2 className="animate-spin" /> : 'Speichern'}</Button>
+                        <Button onClick={() => handleSaveArticle()} disabled={isSubmitting} className="min-w-[120px]">{isSubmitting ? <Loader2 className="animate-spin" /> : 'Speichern'}</Button>
                     </div>
                 </div>
             </div>
@@ -489,6 +558,40 @@ export const AddArticleModal: React.FC<AddArticleModalProps> = ({
                                     ))}
                                 </div>
                             )}
+                        </div>
+                    </GlassCard>
+                </div>
+            )}
+
+            {/* DUPLICATE WARNING MODAL */}
+            {duplicateConfirmation && duplicateConfirmation.isOpen && (
+                <div className="fixed inset-0 z-[150] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in zoom-in-95">
+                    <GlassCard className="w-full max-w-sm p-6 border-l-4 border-l-amber-500 flex flex-col gap-4 shadow-2xl">
+                        <div className="flex items-start gap-3">
+                            <div className="p-2 bg-amber-500/10 rounded-full text-amber-500 shrink-0">
+                                <AlertTriangle size={24} />
+                            </div>
+                            <div>
+                                <h3 className="text-lg font-bold text-white">Artikel existiert bereits!</h3>
+                                <p className="text-sm text-white/60 mt-1">
+                                    {duplicateConfirmation.message}
+                                </p>
+                                <p className="text-sm text-white/60 mt-2">
+                                    Möchtest du ihn trotzdem als Duplikat anlegen?
+                                </p>
+                            </div>
+                        </div>
+                        <div className="flex justify-end gap-3 mt-2">
+                            <Button variant="secondary" onClick={() => setDuplicateConfirmation(null)} className="text-xs">Abbrechen</Button>
+                            <Button
+                                onClick={() => {
+                                    setDuplicateConfirmation(null);
+                                    duplicateConfirmation.onConfirm();
+                                }}
+                                className="bg-amber-600 hover:bg-amber-500 text-white border-none text-xs"
+                            >
+                                Trotzdem anlegen
+                            </Button>
                         </div>
                     </GlassCard>
                 </div>
