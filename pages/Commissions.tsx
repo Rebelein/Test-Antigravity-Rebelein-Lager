@@ -1643,7 +1643,7 @@ const Commissions: React.FC = () => {
 
             {/* CREATE / EDIT MODAL */}
             <GlassModal isOpen={showCreateModal} onClose={handleCloseCreateModal} className="max-w-5xl h-[90vh]">
-                <div className="flex flex-col sm:flex-row h-full overflow-hidden">
+                <div className="flex flex-col sm:flex-row h-auto sm:h-full sm:overflow-hidden">
                     <div className="shrink-0 sm:flex-1 flex flex-col border-b sm:border-b-0 sm:border-r border-gray-200 dark:border-white/10 min-w-0">
                         <div className="p-6 border-b border-gray-200 dark:border-white/10 bg-gray-50/50 dark:bg-white/5">
                             <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-2">{isEditMode ? 'Kommission bearbeiten' : 'Neue Kommission erstellen'}</h2>

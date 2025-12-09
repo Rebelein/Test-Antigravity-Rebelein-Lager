@@ -31,7 +31,7 @@ export const GlassCard: React.FC<GlassCardProps> = ({
   const variants = {
     default: "bg-white/5 border-white/10",
     subtle: "bg-white/0 border-white/5",
-    prominent: "bg-white/10 border-white/20 shadow-[0_8px_32px_0_rgba(0,0,0,0.37)]"
+    prominent: "bg-white/10 border-white/20 shadow-[0_4px_16px_0_rgba(0,0,0,0.25)]" // Reduced shadow
   };
 
   return (
@@ -40,7 +40,7 @@ export const GlassCard: React.FC<GlassCardProps> = ({
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5, ease: "easeOut" }}
       className={cn(
-        "backdrop-blur-xl border rounded-3xl overflow-hidden flex flex-col",
+        "backdrop-blur-md border rounded-3xl overflow-hidden flex flex-col will-change-transform", // Reduced blur xl->md
         variants[variant],
         className
       )}
@@ -208,8 +208,8 @@ export const AnimatedModal: React.FC<AnimatedModalProps> = ({ isOpen, onClose, c
               exit={{ opacity: 0, scale: 0.95, y: 20 }}
               transition={{ type: "spring", duration: 0.5, bounce: 0.3 }}
               className={cn(
-                "w-full max-w-2xl pointer-events-auto",
-                "bg-[#121212]/90 backdrop-blur-2xl border border-white/10 rounded-3xl shadow-2xl overflow-hidden flex flex-col max-h-[85vh]",
+                "w-full max-w-2xl pointer-events-auto will-change-transform",
+                "bg-[#121212]/90 backdrop-blur-lg border border-white/10 rounded-3xl shadow-2xl overflow-hidden flex flex-col max-h-[85vh]", // Reduced blur 2xl->lg
                 className
               )}
             >
