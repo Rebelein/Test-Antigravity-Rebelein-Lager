@@ -220,6 +220,39 @@ const Stocktaking: React.FC = () => {
             return;
         }
 
+        // --- NEW: SMART COMMISSION CHECK (Contains Order Number) ---
+        // Checks if the scanned text *contains* a known commission number (Vorgangsnummer)
+        try {
+            const { data: commissions } = await supabase
+                .from('commissions')
+                .select('id, order_number, supplier_order_number')
+                .not('status', 'in', '("Withdrawn","ReturnComplete")'); // Only active commissions
+
+            if (commissions) {
+                const matchedCommission = commissions.find(c => {
+                    // Check Order Number (Internal)
+                    if (c.order_number && c.order_number.length > 4 && decodedText.includes(c.order_number)) {
+                        return true;
+                    }
+                    // Check Supplier Order Number (External)
+                    if (c.supplier_order_number && c.supplier_order_number.length > 4 && decodedText.includes(c.supplier_order_number)) {
+                        return true;
+                    }
+                    return false;
+                });
+
+                if (matchedCommission) {
+                    console.log("Smart Match Commission:", matchedCommission);
+                    toast.success("Kommission erkannt!");
+                    await stopScanner();
+                    navigate('/commissions', { state: { openCommissionId: matchedCommission.id } });
+                    return;
+                }
+            }
+        } catch (e) {
+            console.warn("Smart Scan Check failed", e);
+        }
+
         // Article Lookup
         try {
             const { data } = await supabase.from('articles').select('*')
