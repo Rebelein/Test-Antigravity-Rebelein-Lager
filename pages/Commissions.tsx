@@ -5,8 +5,9 @@ import { GlassCard, Button, GlassInput, GlassSelect, StatusBadge, GlassModal } f
 import { supabase } from '../supabaseClient';
 import { useAuth } from '../contexts/AuthContext';
 import { Commission, CommissionItem, Article, Supplier, CommissionEvent } from '../types';
-import { ClipboardCheck, Plus, Search, Package, Truck, CheckCircle2, Printer, X, Loader2, History, Trash2, Box, ExternalLink, Check, ShoppingCart, Minus, ChevronDown, Edit2, Save, AlertTriangle, RotateCcw, Tag, Clock, Undo2, MapPin, PenTool, Layers, ArrowRight, Paperclip, Eye, FileText, Clipboard, MessageSquare } from 'lucide-react';
+import { ClipboardCheck, Plus, Search, Package, Truck, CheckCircle2, Printer, X, Loader2, History, Trash2, Box, ExternalLink, Check, ShoppingCart, Minus, ChevronDown, Edit2, Save, AlertTriangle, RotateCcw, Tag, Clock, Undo2, MapPin, PenTool, Layers, ArrowRight, Paperclip, Eye, FileText, Clipboard, MessageSquare, BoxSelect } from 'lucide-react';
 import { useLocation, useNavigate } from 'react-router-dom';
+import { CommissionCleanupModal } from '../components/CommissionCleanupModal';
 
 type CommissionTab = 'active' | 'returns' | 'withdrawn' | 'trash';
 type PrintTab = 'queue' | 'history';
@@ -57,6 +58,9 @@ const Commissions: React.FC = () => {
     const [globalSearchTerm, setGlobalSearchTerm] = useState('');
     const [searchResults, setSearchResults] = useState<ExtendedCommission[]>([]);
     const [isSearching, setIsSearching] = useState(false);
+
+    // --- CLEANUP MODAL STATE ---
+    const [showCleanupModal, setShowCleanupModal] = useState(false);
 
     // --- DELETE CONFIRMATION STATE ---
     const [deleteTarget, setDeleteTarget] = useState<{ id: string, name: string, mode: 'trash' | 'permanent' } | null>(null);
@@ -1359,6 +1363,7 @@ const Commissions: React.FC = () => {
                     <div className="flex gap-2">
                         <Button icon={<Search size={18} />} variant="secondary" onClick={() => setShowSearchModal(true)} className="px-4" />
                         <Button icon={<History size={18} />} variant="secondary" onClick={handleOpenHistory} className="px-4" />
+                        <Button icon={<BoxSelect size={18} />} variant="secondary" onClick={() => { console.log('Cleanup Clicked!'); setShowCleanupModal(true); }} className="px-4 bg-orange-500/10 text-orange-400 hover:bg-orange-500 hover:text-white border-orange-500/20" title="Regal aufräumen / Abgleich"></Button>
                         <Button icon={<Plus size={18} />} onClick={openCreateModal}>Neu</Button>
                     </div>
                 </div>
@@ -2195,6 +2200,13 @@ const Commissions: React.FC = () => {
                 </div>
             </GlassModal>
 
+            {/* NEW: CLEANUP MODAL */}
+            <CommissionCleanupModal
+                isOpen={showCleanupModal}
+                onClose={() => setShowCleanupModal(false)}
+                onCleanupComplete={() => { fetchCommissions(); }}
+            />
+
             {/* CONFIRM WITHDRAW MODAL */}
             <GlassModal isOpen={showConfirmWithdrawModal} onClose={() => setShowConfirmWithdrawModal(false)} className="max-w-sm">
                 <div className="p-6">
@@ -2241,9 +2253,9 @@ const Commissions: React.FC = () => {
                 <div className="flex flex-col h-full bg-gray-900 rounded-2xl overflow-hidden">
                     <div className="p-3 border-b border-white/10 flex justify-between items-center bg-white/5">
                         <h3 className="text-white font-bold flex items-center gap-2"><FileText size={18} /> Anhang Vorschau</h3>
-                        <button onClick={() => setViewingAttachment(null)} className="p-2 hover:bg-white/10 rounded-full text-white"><X size={20} /></button>
+                        <button onClick={() => setViewingAttachment(null)} className="p-2 hover:bg-white/10 rounded-full text-white/60 hover:text-white"><X size={20} /></button>
                     </div>
-                    <div className="flex-1 overflow-auto bg-black p-4 flex items-center justify-center">
+                    <div className="flex-1 bg-black p-4 overflow-auto flex items-center justify-center">
                         {viewingAttachment?.startsWith('data:application/pdf') ? (
                             <iframe src={viewingAttachment} className="w-full h-full border-none rounded-lg" title="PDF Vorschau" />
                         ) : (

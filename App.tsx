@@ -55,7 +55,7 @@ const App: React.FC = () => {
 
   // Vibe Coding: Auto-Init Database on App Start
   useEffect(() => {
-    initializeDatabase(true);
+    // initializeDatabase(true); // Manuell ausgeführt, Auto-Init deaktiviert um Fehler zu vermeiden
   }, []);
 
   // --- ONESIGNAL INITIALIZATION ---
