@@ -302,7 +302,7 @@ const Labels: React.FC = () => {
 
             if (isLocation) {
                 const loc = item as GroupedLocation;
-                loc.articles.slice(0, 3).forEach(a => {
+                loc.articles.slice(0, 4).forEach(a => {
                     const bcVal = a.supplierSku || a.sku || a.ean || '0000';
                     const bcUrl = `https://bwipjs-api.metafloor.com/?bcid=code128&text=${encodeURIComponent(bcVal)}&scale=2&height=5&includetext=false`;
                     promises.push(loadImg(bcUrl));
@@ -345,8 +345,8 @@ const Labels: React.FC = () => {
                         const fontSizeList = 8 * config.fontSizeScale * scale;
                         const fontSizeSub = 6 * config.fontSizeScale * scale;
 
-                        // Show up to 3 items because of barcode space
-                        const maxItems = 3;
+                        // Show up to 4 items because of barcode space
+                        const maxItems = 4;
                         const itemsToShow = loc.articles.slice(0, maxItems);
 
                         itemsToShow.forEach((a, index) => {
@@ -365,7 +365,7 @@ const Labels: React.FC = () => {
                                 // Limit width
                                 const maxBcW = textWidth * 0.8;
                                 const finalW = Math.min(bcW, maxBcW);
-                                const finalH = bcH * (finalW / bcW);
+                                const finalH = bcH * (finalW / bcW) * 0.7; // Reduce height scale slightly
 
                                 ctx.drawImage(bcImg, margin + (2 * scale), cursorY, finalW, finalH);
                                 cursorY += finalH;
@@ -497,17 +497,17 @@ const Labels: React.FC = () => {
                 // NEW: Use composite key for unique QR
                 qrData = `LOC:${loc.category}::${loc.locationName}`;
 
-                // List items: Max 3 because of barcode space
-                const itemsToShow = loc.articles.slice(0, 3);
+                // List items: Max 4
+                const itemsToShow = loc.articles.slice(0, 4);
                 const listHtml = itemsToShow.map(a => {
                     const bcVal = a.supplierSku || a.sku || a.ean || '0000';
-                    const bcUrl = `https://bwipjs-api.metafloor.com/?bcid=code128&text=${encodeURIComponent(bcVal)}&scale=2&height=4&includetext=false`;
+                    const bcUrl = `https://bwipjs-api.metafloor.com/?bcid=code128&text=${encodeURIComponent(bcVal)}&scale=2&height=3&includetext=false`;
 
-                    return `<div style="margin-bottom: 2mm; line-height: 1.1;">
-                      <div style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-weight: bold; color: #000;">• ${a.name}</div>
+                    return `<div style="margin-bottom: 1.5mm; line-height: 1;">
+                      <div style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-weight: bold; color: #000; font-size: 0.9em;">• ${a.name}</div>
                       <!-- Barcode Image -->
-                      <img src="${bcUrl}" crossorigin="anonymous" style="height: 5mm; max-width: 90%; margin-top: 0.5mm; display: block;" />
-                      <div style="font-size: 0.5em; color: #777; margin-top: 0; padding-left: 1px;">${a.supplierSku || a.sku}</div>
+                      <img src="${bcUrl}" crossorigin="anonymous" style="height: 3.5mm; max-width: 90%; margin-top: 0.2mm; display: block;" />
+                      <div style="font-size: 0.45em; color: #777; margin-top: 0; padding-left: 1px;">${a.supplierSku || a.sku}</div>
                    </div>`;
                 }).join('');
 
@@ -592,11 +592,12 @@ const Labels: React.FC = () => {
                     display: flex;
                     flex-wrap: wrap;
                     align-content: flex-start;
-                    gap: 2mm;
+                    align-content: flex-start;
+                    gap: 0; /* No gap between labels */
                 }
 
                 .label-wrapper {
-                    border: 1px dashed #ccc;
+                    border: 1px solid black; /* Black border for cutting */
                     box-sizing: border-box;
                     background: white;
                     position: relative;
@@ -625,7 +626,7 @@ const Labels: React.FC = () => {
 
                 @media print {
                     body { background: none; }
-                    .label-wrapper { border-color: #eee; }
+                    .label-wrapper { border-color: black; } /* Ensure black border prints */
                 }
             </style>
         </head>
