@@ -64,6 +64,7 @@ const Commissions: React.FC = () => {
     // --- HISTORY MODAL STATE ---
     const [showHistoryModal, setShowHistoryModal] = useState(false);
     const [historyLogs, setHistoryLogs] = useState<CommissionEvent[]>([]);
+    const [localHistoryLogs, setLocalHistoryLogs] = useState<CommissionEvent[]>([]); // NEW: Local history for modal
     const [historySearch, setHistorySearch] = useState('');
     const [loadingHistory, setLoadingHistory] = useState(false);
 
@@ -371,6 +372,22 @@ const Commissions: React.FC = () => {
             console.error("History fetch failed", err);
         } finally {
             setLoadingHistory(false);
+        }
+    };
+
+    // NEW: Fetch history for a specific commission
+    const fetchCommissionSpecificHistory = async (commissionId: string) => {
+        try {
+            const { data, error } = await supabase
+                .from('commission_events')
+                .select('*, profiles(full_name)')
+                .eq('commission_id', commissionId)
+                .order('created_at', { ascending: false });
+
+            if (error) throw error;
+            setLocalHistoryLogs(data || []);
+        } catch (err) {
+            console.error("Local history fetch failed", err);
         }
     };
 
@@ -843,6 +860,7 @@ const Commissions: React.FC = () => {
         setActiveCommission(comm);
         setLabelDataChanged(false); // Reset tracking
         await fetchCommissionItems(comm.id);
+        fetchCommissionSpecificHistory(comm.id); // NEW: Load history
         setShowPrepareModal(true);
     };
 
@@ -2128,6 +2146,37 @@ const Commissions: React.FC = () => {
                                         </div>
                                     </div>
                                 ))}
+                            </div>
+
+                            {/* --- HISTORY SECTION --- */}
+                            <div className="mt-8 border-t border-gray-200 dark:border-white/10 pt-6">
+                                <div className="flex items-center gap-2 mb-4">
+                                    <History size={18} className="text-gray-400 dark:text-white/50" />
+                                    <h3 className="text-lg font-bold text-gray-900 dark:text-white">Verlauf</h3>
+                                </div>
+
+                                <div className="bg-gray-50 dark:bg-black/20 rounded-xl p-4 max-h-60 overflow-y-auto space-y-3">
+                                    {localHistoryLogs.length === 0 ? (
+                                        <div className="text-center text-sm text-gray-400 dark:text-white/30 italic py-2">Noch keine Einträge vorhanden.</div>
+                                    ) : (
+                                        localHistoryLogs.map((log) => (
+                                            <div key={log.id} className="flex gap-3 text-sm">
+                                                <div className="min-w-[120px] text-gray-500 dark:text-white/40 text-xs mt-0.5">
+                                                    {new Date(log.created_at).toLocaleString('de-DE', { dateStyle: 'short', timeStyle: 'short' })}
+                                                </div>
+                                                <div className="flex-1">
+                                                    <div className="flex items-center gap-2">
+                                                        <span className="font-semibold text-gray-700 dark:text-white/90">
+                                                            {log.profiles?.full_name?.split(' ')[0] || 'Unbekannt'}
+                                                        </span>
+                                                        <span className="text-gray-400 dark:text-white/30 text-xs">•</span>
+                                                        <span className="text-gray-600 dark:text-white/70">{log.details}</span>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        ))
+                                    )}
+                                </div>
                             </div>
                         </div>
                     </div>
