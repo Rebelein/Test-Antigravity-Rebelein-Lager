@@ -1,5 +1,7 @@
 import React, { useEffect } from 'react';
 import { HashRouter, Routes, Route, Navigate, Outlet } from 'react-router-dom';
+import { MotionConfig } from 'framer-motion';
+import { useIsMobile } from './hooks/useIsMobile';
 import Layout from './components/Layout';
 import Dashboard from './pages/Dashboard';
 import Inventory from './pages/Inventory';
@@ -58,6 +60,8 @@ const App: React.FC = () => {
     // initializeDatabase(true); // Manuell ausgeführt, Auto-Init deaktiviert um Fehler zu vermeiden
   }, []);
 
+  const isMobile = useIsMobile();
+
   // --- ONESIGNAL INITIALIZATION ---
   useEffect(() => {
     if (typeof window !== 'undefined') {
@@ -85,33 +89,35 @@ const App: React.FC = () => {
   }, []);
 
   return (
-    <AuthProvider>
-      <NotificationProvider>
-        <ThemeProvider>
-          <HashRouter>
-            <Routes>
-              <Route path="/login" element={<Login />} />
+    <MotionConfig transition={isMobile ? { duration: 0 } : undefined}>
+      <AuthProvider>
+        <NotificationProvider>
+          <ThemeProvider>
+            <HashRouter>
+              <Routes>
+                <Route path="/login" element={<Login />} />
 
-              <Route element={<ProtectedRoute />}>
-                <Route path="/" element={<Navigate to="/dashboard" replace />} />
-                <Route path="/dashboard" element={<Dashboard />} />
-                <Route path="/inventory" element={<Inventory />} />
-                <Route path="/machines" element={<Machines />} />
-                <Route path="/orders" element={<Orders />} />
-                <Route path="/stocktaking" element={<Stocktaking />} />
-                <Route path="/audit" element={<StockAudit />} />
-                <Route path="/warehouses" element={<Warehouses />} />
-                <Route path="/suppliers" element={<Suppliers />} />
-                <Route path="/labels" element={<Labels />} />
-                <Route path="/commissions" element={<Commissions />} />
-                <Route path="/shelf-editor" element={<ShelfEditor />} />
-              </Route>
-            </Routes>
-          </HashRouter>
-        </ThemeProvider>
-      </NotificationProvider>
-      <ReloadPrompt />
-    </AuthProvider >
+                <Route element={<ProtectedRoute />}>
+                  <Route path="/" element={<Navigate to="/dashboard" replace />} />
+                  <Route path="/dashboard" element={<Dashboard />} />
+                  <Route path="/inventory" element={<Inventory />} />
+                  <Route path="/machines" element={<Machines />} />
+                  <Route path="/orders" element={<Orders />} />
+                  <Route path="/stocktaking" element={<Stocktaking />} />
+                  <Route path="/audit" element={<StockAudit />} />
+                  <Route path="/warehouses" element={<Warehouses />} />
+                  <Route path="/suppliers" element={<Suppliers />} />
+                  <Route path="/labels" element={<Labels />} />
+                  <Route path="/commissions" element={<Commissions />} />
+                  <Route path="/shelf-editor" element={<ShelfEditor />} />
+                </Route>
+              </Routes>
+            </HashRouter>
+          </ThemeProvider>
+        </NotificationProvider>
+        <ReloadPrompt />
+      </AuthProvider >
+    </MotionConfig>
   );
 };
 
