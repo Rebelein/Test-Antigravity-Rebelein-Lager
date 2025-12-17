@@ -176,7 +176,7 @@ CREATE TABLE public.commissions (
     order_number TEXT, -- Project Number
     name TEXT NOT NULL, -- Project Name
     notes TEXT,
-    status TEXT CHECK (status IN ('Draft', 'Preparing', 'Ready', 'Withdrawn', 'ReturnPending', 'ReturnReady', 'ReturnComplete')) DEFAULT 'Draft',
+    status TEXT CHECK (status IN ('Draft', 'Preparing', 'Ready', 'Withdrawn', 'ReturnPending', 'ReturnReady', 'ReturnComplete', 'Missing')) DEFAULT 'Draft',
     warehouse_id UUID REFERENCES public.warehouses(id), -- Usually Main Warehouse
     needs_label BOOLEAN DEFAULT FALSE, -- Print Queue Flag
     supplier_id UUID REFERENCES public.suppliers(id), -- Optional: If direct order

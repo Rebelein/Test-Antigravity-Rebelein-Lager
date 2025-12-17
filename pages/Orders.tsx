@@ -1001,7 +1001,7 @@ const Orders: React.FC = () => {
                                     <p className="text-xs text-white/50">{new Date(order.date).toLocaleDateString()} • {order.warehouseName}</p>
                                     {order.supplierOrderNumber && <p className="text-xs text-white/30 font-mono mt-1">Auftrag: {order.supplierOrderNumber}</p>}
                                 </div>
-                                <StatusBadge status={translateStatus(order.status)} type={order.status === 'PartiallyReceived' ? 'warning' : 'neutral'} />
+                                <StatusBadge status={order.status} />
                             </div>
 
                             <div className="flex flex-wrap gap-1.5 mt-1">
@@ -1048,7 +1048,7 @@ const Orders: React.FC = () => {
                                         <p className="text-xs text-white/50">{new Date(order.date).toLocaleDateString()} • {order.warehouseName}</p>
                                     </div>
                                     <div className="flex items-center gap-2">
-                                        <StatusBadge status={translateStatus(order.status)} type="success" />
+                                        <StatusBadge status={order.status} />
                                         <button onClick={(e) => handleDeleteOrder(order.id, e)} className="p-1 hover:text-red-400 text-white/30"><Trash2 size={16} /></button>
                                     </div>
                                 </div>
@@ -1082,7 +1082,7 @@ const Orders: React.FC = () => {
                                     </h3>
                                     <p className="text-xs text-white/50">{new Date(order.date).toLocaleDateString()} • {order.warehouseName}</p>
                                 </div>
-                                <StatusBadge status={translateStatus(order.status)} type="info" />
+                                <StatusBadge status={order.status} />
                             </div>
 
                             <div className="flex flex-wrap gap-1.5 mt-1">

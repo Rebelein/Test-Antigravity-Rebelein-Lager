@@ -196,7 +196,7 @@ export const CommissionCleanupModal: React.FC<CommissionCleanupModalProps> = ({ 
 
     const handleCleanup = async (idsToCleanup: string[], keepOpen = false) => {
         if (idsToCleanup.length === 0) return;
-        if (!keepOpen && !confirm(`${idsToCleanup.length} Kommissionen als 'Entnommen' markieren?`)) return;
+        if (!keepOpen && !confirm(`${idsToCleanup.length} Kommissionen als 'Vermisst' markieren?`)) return;
 
         setLoading(true);
         try {
@@ -206,8 +206,8 @@ export const CommissionCleanupModal: React.FC<CommissionCleanupModalProps> = ({ 
             const { error } = await supabase
                 .from('commissions')
                 .update({
-                    status: 'Withdrawn',
-                    withdrawn_at: now
+                    status: 'Missing',
+                    // withdrawn_at: now // Do not set withdrawn_at for missing items
                 })
                 .in('id', idsToCleanup);
 
@@ -219,9 +219,9 @@ export const CommissionCleanupModal: React.FC<CommissionCleanupModalProps> = ({ 
                 .map(c => ({
                     commission_id: c.id,
                     commission_name: c.name,
-                    user_id: (supabase.auth.getUser() as any)?.id, // Ideally pass user from props context, but this works if authenticated
+                    user_id: (supabase.auth.getUser() as any)?.id,
                     action: 'status_change',
-                    details: 'Automatisch auf "Entnommen" gesetzt durch Aufräum-Scan (Vermisst)'
+                    details: 'Automatisch auf "Vermisst" gesetzt durch Aufräum-Scan'
                 }));
 
             // We need user ID for logs.
@@ -385,9 +385,9 @@ export const CommissionCleanupModal: React.FC<CommissionCleanupModalProps> = ({ 
                                                     <button
                                                         onClick={() => handleCleanup([c.id], true)}
                                                         className="p-2 bg-rose-500/20 text-rose-400 hover:bg-rose-500 hover:text-white rounded-lg transition-colors border border-rose-500/30"
-                                                        title="Nur diese Kommission ausbuchen"
+                                                        title="Als Vermisst markieren"
                                                     >
-                                                        <Trash2 size={16} />
+                                                        <AlertTriangle size={16} />
                                                     </button>
                                                 </div>
                                             </div>
@@ -409,9 +409,9 @@ export const CommissionCleanupModal: React.FC<CommissionCleanupModalProps> = ({ 
                                 onClick={() => handleCleanup(missingCommissions.map(c => c.id), false)}
                                 disabled={missingCommissions.length === 0 || loading}
                                 className="w-full bg-rose-600 hover:bg-rose-500 py-3"
-                                icon={loading ? <Loader2 className="animate-spin" /> : <Trash2 size={18} />}
+                                icon={loading ? <Loader2 className="animate-spin" /> : <AlertTriangle size={18} />}
                             >
-                                {missingCommissions.length} Vermisste entnehmen
+                                {missingCommissions.length} als Vermisst markieren
                             </Button>
                             <Button variant="secondary" onClick={() => setStep('scan')} className="w-full">
                                 <RotateCcw size={16} className="mr-2" /> Scan fortsetzen

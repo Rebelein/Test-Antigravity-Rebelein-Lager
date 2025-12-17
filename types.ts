@@ -19,23 +19,23 @@ export interface Machine {
 }
 
 export interface MachineEvent {
-    id: string;
-    machine_id: string;
-    user_id: string;
-    action: 'rented' | 'returned' | 'transfer' | 'defect' | 'repaired' | 'reserved';
-    details: string;
-    created_at: string;
-    profiles?: { full_name: string };
+  id: string;
+  machine_id: string;
+  user_id: string;
+  action: 'rented' | 'returned' | 'transfer' | 'defect' | 'repaired' | 'reserved';
+  details: string;
+  created_at: string;
+  profiles?: { full_name: string };
 }
 
 export interface MachineReservation {
-    id: string;
-    machine_id: string;
-    user_id: string;
-    start_date: string;
-    end_date: string;
-    note?: string;
-    profiles?: { full_name: string };
+  id: string;
+  machine_id: string;
+  user_id: string;
+  start_date: string;
+  end_date: string;
+  note?: string;
+  profiles?: { full_name: string };
 }
 
 export interface ManufacturerSku {
@@ -63,7 +63,7 @@ export interface Article {
   category: string;
   price: number;
   supplier?: string; // Legacy/Primary supplier name
-  warehouseId?: string; 
+  warehouseId?: string;
   ean?: string;
   supplierSku?: string; // Legacy/Primary supplier SKU
   productUrl?: string;
@@ -133,7 +133,7 @@ export interface UserProfile {
 // --- COMMISSION MODULE TYPES ---
 
 // Updated Status to include Return Flow
-export type CommissionStatus = 'Draft' | 'Preparing' | 'Ready' | 'Withdrawn' | 'ReturnPending' | 'ReturnReady' | 'ReturnComplete';
+export type CommissionStatus = 'Draft' | 'Preparing' | 'Ready' | 'Withdrawn' | 'ReturnPending' | 'ReturnReady' | 'ReturnComplete' | 'Missing';
 
 export interface Commission {
   id: string;
@@ -183,14 +183,14 @@ export interface CommissionEvent {
 export type NavRoute = 'dashboard' | 'inventory' | 'machines' | 'orders' | 'stocktaking' | 'warehouses' | 'audit' | 'commissions';
 
 export interface OrderProposal {
-    warehouseId: string;
-    warehouseName: string;
-    supplier: string;
-    supplierId?: string;
-    csvFormat?: string;
-    articles: {
-        article: Article;
-        missingAmount: number;
-    }[];
-    totalItems: number;
+  warehouseId: string;
+  warehouseName: string;
+  supplier: string;
+  supplierId?: string;
+  csvFormat?: string;
+  articles: {
+    article: Article;
+    missingAmount: number;
+  }[];
+  totalItems: number;
 }

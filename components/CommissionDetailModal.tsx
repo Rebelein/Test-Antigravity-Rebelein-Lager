@@ -38,22 +38,7 @@ export const CommissionDetailModal: React.FC<CommissionDetailModalProps> = ({ co
                 <div>
                     <div className="flex items-center gap-3 mb-2">
                         <h2 className="text-2xl font-bold text-gray-900 dark:text-white">{commission.name}</h2>
-                        {(() => {
-                            const getStatusDetails = (status: string) => {
-                                switch (status) {
-                                    case 'Draft': return { label: 'Entwurf', type: 'neutral' as const };
-                                    case 'Preparing': return { label: 'In Vorbereitung', type: 'warning' as const };
-                                    case 'Ready': return { label: 'Bereitgestellt', type: 'success' as const };
-                                    case 'Withdrawn': return { label: 'Abgeholt', type: 'info' as const };
-                                    case 'ReturnPending': return { label: 'Retoure Angemeldet', type: 'warning' as const };
-                                    case 'ReturnReady': return { label: 'Retoure Abholbereit', type: 'success' as const };
-                                    case 'ReturnComplete': return { label: 'Retoure Abgeschlossen', type: 'neutral' as const };
-                                    default: return { label: status, type: 'neutral' as const };
-                                }
-                            };
-                            const details = getStatusDetails(commission.status);
-                            return <StatusBadge status={details.label} type={details.type} />;
-                        })()}
+                        <StatusBadge status={commission.status} />
                     </div>
                     <div className="text-sm text-gray-500 dark:text-white/50 flex items-center gap-4">
                         <span className="flex items-center gap-1.5"><FileText size={14} /> {commission.order_number || 'Keine Vorgangsnr.'}</span>

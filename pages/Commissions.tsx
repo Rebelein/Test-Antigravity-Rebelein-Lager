@@ -5,11 +5,11 @@ import { GlassCard, Button, GlassInput, GlassSelect, StatusBadge, GlassModal } f
 import { supabase } from '../supabaseClient';
 import { useAuth } from '../contexts/AuthContext';
 import { Commission, CommissionItem, Article, Supplier, CommissionEvent } from '../types';
-import { ClipboardCheck, Plus, Search, Package, Truck, CheckCircle2, Printer, X, Loader2, History, Trash2, Box, ExternalLink, Check, ShoppingCart, Minus, ChevronDown, Edit2, Save, AlertTriangle, RotateCcw, Tag, Clock, Undo2, MapPin, PenTool, Layers, ArrowRight, Paperclip, Eye, FileText, Clipboard, MessageSquare, BoxSelect } from 'lucide-react';
+import { ClipboardCheck, Plus, Search, Package, Truck, CheckCircle2, Printer, X, Loader2, History, Trash2, Box, ExternalLink, Check, ShoppingCart, Minus, ChevronDown, Edit2, Save, AlertTriangle, RotateCcw, Tag, Clock, Undo2, MapPin, PenTool, Layers, ArrowRight, Paperclip, Eye, FileText, Clipboard, MessageSquare, BoxSelect, LogOut } from 'lucide-react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { CommissionCleanupModal } from '../components/CommissionCleanupModal';
 
-type CommissionTab = 'active' | 'returns' | 'withdrawn' | 'trash';
+type CommissionTab = 'active' | 'returns' | 'withdrawn' | 'trash' | 'missing';
 type PrintTab = 'queue' | 'history';
 
 // Extended type for UI
@@ -296,6 +296,7 @@ const Commissions: React.FC = () => {
             case 'ReturnPending': return 'Retoure (Angemeldet)';
             case 'ReturnReady': return 'Retoure (Abholbereit)';
             case 'ReturnComplete': return 'Retoure (Erledigt)';
+            case 'Missing': return 'VERMISST';
             default: return status;
         }
     };
@@ -332,6 +333,8 @@ const Commissions: React.FC = () => {
                 query = query.is('deleted_at', null);
             } else if (activeTab === 'withdrawn') {
                 query = query.is('deleted_at', null);
+            } else if (activeTab === 'missing') {
+                query = query.is('deleted_at', null).eq('status', 'Missing');
             } else if (activeTab === 'trash') {
                 query = query.not('deleted_at', 'is', null);
             }
@@ -1369,6 +1372,7 @@ const Commissions: React.FC = () => {
                 </div>
                 <div className="flex gap-2 p-1 bg-black/20 rounded-xl w-full sm:w-fit border border-white/5 overflow-x-auto">
                     <button onClick={() => setActiveTab('active')} className={`flex-1 px-4 py-2 rounded-lg text-sm font-medium transition-all whitespace-nowrap ${activeTab === 'active' ? 'bg-white/10 text-white shadow' : 'text-white/50'}`}>Aktive</button>
+                    <button onClick={() => setActiveTab('missing')} className={`flex-1 px-4 py-2 rounded-lg text-sm font-medium transition-all whitespace-nowrap ${activeTab === 'missing' ? 'bg-white/10 text-white shadow' : 'text-white/50'}`}>Vermisst</button>
                     <button onClick={() => setActiveTab('withdrawn')} className={`flex-1 px-4 py-2 rounded-lg text-sm font-medium transition-all whitespace-nowrap ${activeTab === 'withdrawn' ? 'bg-white/10 text-white shadow' : 'text-white/50'}`}>Entnommen</button>
                     <button onClick={() => setActiveTab('trash')} className={`flex-1 px-4 py-2 rounded-lg text-sm font-medium transition-all whitespace-nowrap flex items-center gap-2 ${activeTab === 'trash' ? 'bg-white/10 text-white shadow' : 'text-white/50'}`}>
                         <Trash2 size={14} /> Papierkorb
@@ -1495,6 +1499,60 @@ const Commissions: React.FC = () => {
                         <>
                             {renderCategory("Abholbereit (Warten auf Großhändler)", 'returnReady', commissions.filter(c => c.status === 'ReturnReady'), 'text-purple-400')}
                             {renderCategory("Angemeldet (Muss ins Regal)", 'returnPending', commissions.filter(c => c.status === 'ReturnPending'), 'text-orange-400')}
+                        </>
+                    )}
+
+                    {/* MISSING TAB */}
+                    {activeTab === 'missing' && (
+                        <>
+                            <div className="text-xs text-rose-300/60 uppercase tracking-wider font-bold mb-4 flex items-center gap-2">
+                                <AlertTriangle size={14} /> Kommissionen, die beim Aufräumen nicht gefunden wurden
+                            </div>
+                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 animate-in slide-in-from-top-2">
+                                {commissions.map(comm => (
+                                    <GlassCard key={comm.id} className="cursor-pointer border-rose-500/30 bg-rose-500/5 hover:bg-rose-500/10 h-full flex flex-col group">
+                                        <div className="flex justify-between items-start pl-3 flex-1">
+                                            <div className="flex-1 min-w-0">
+                                                <h3 className="text-lg font-bold text-rose-200">{comm.name}</h3>
+                                                <span className="inline-block mt-1 px-2.5 py-0.5 rounded-full text-xs font-medium border bg-white/10 text-white/50 border-white/10">
+                                                    {comm.order_number || '---'}
+                                                </span>
+                                                <div className="text-xs text-rose-400/70 mt-2 italic">
+                                                    Vermisst seit dem letzten Scan
+                                                </div>
+                                            </div>
+                                            <div className="flex flex-col gap-2">
+                                                <button
+                                                    onClick={async (e) => {
+                                                        e.stopPropagation();
+                                                        if (confirm("Als 'Entnommen' markieren?")) {
+                                                            await supabase.from('commissions').update({ status: 'Withdrawn', withdrawn_at: new Date().toISOString() }).eq('id', comm.id);
+                                                            fetchCommissions();
+                                                        }
+                                                    }}
+                                                    className="p-2 bg-rose-500/20 hover:bg-rose-500 text-rose-300 hover:text-white rounded-lg transition-colors border border-rose-500/30"
+                                                    title="Als Entnommen markieren"
+                                                >
+                                                    <LogOut size={16} />
+                                                </button>
+                                                <button
+                                                    onClick={async (e) => {
+                                                        e.stopPropagation();
+                                                        if (confirm("Wieder als 'Bereit' markieren (Gefunden)?")) {
+                                                            await supabase.from('commissions').update({ status: 'Ready' }).eq('id', comm.id);
+                                                            fetchCommissions();
+                                                        }
+                                                    }}
+                                                    className="p-2 bg-emerald-500/20 hover:bg-emerald-500 text-emerald-300 hover:text-white rounded-lg transition-colors border border-emerald-500/30"
+                                                    title="Wiederherstellen (Gefunden)"
+                                                >
+                                                    <CheckCircle2 size={16} />
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </GlassCard>
+                                ))}
+                            </div>
                         </>
                     )}
 

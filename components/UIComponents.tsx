@@ -161,18 +161,56 @@ export const Button: React.FC<ButtonProps> = ({ children, variant = 'primary', i
 };
 
 // --- Badge ---
-export const StatusBadge: React.FC<{ status: string, type: 'success' | 'warning' | 'danger' | 'neutral' | 'info' }> = ({ status, type }) => {
-  const colors = {
-    success: "bg-emerald-500/20 text-emerald-300 border-emerald-500/30",
-    warning: "bg-amber-500/20 text-amber-300 border-amber-500/30",
-    danger: "bg-rose-500/20 text-rose-300 border-rose-500/30",
-    neutral: "bg-blue-500/20 text-blue-300 border-blue-500/30",
-    info: "bg-cyan-500/20 text-cyan-300 border-cyan-500/30",
+export const StatusBadge: React.FC<{ status: string, size?: 'sm' | 'md' }> = ({ status, size = 'md' }) => {
+  const getStyle = (s: string) => {
+    switch (s) {
+      case 'Ready':
+      case 'ReturnReady':
+      case 'ReturnComplete':
+      case 'Withdrawn':
+      case 'Received':
+        return "bg-emerald-500/20 text-emerald-300 border-emerald-500/30";
+      case 'Preparing':
+      case 'ReturnPending':
+      case 'PartiallyReceived':
+      case 'Ordered':
+        return "bg-amber-500/20 text-amber-300 border-amber-500/30";
+      case 'ReadyForPickup':
+        return "bg-sky-500/20 text-sky-300 border-sky-500/30";
+      case 'Draft':
+        return "bg-blue-500/20 text-blue-300 border-blue-500/30";
+      case 'Missing':
+        return "bg-rose-500/20 text-rose-300 border-rose-500/30";
+      default:
+        return "bg-white/10 text-white/50 border-white/10";
+    }
+  };
+
+  const translate = (s: string) => {
+    switch (s) {
+      case 'Draft': return 'Entwurf';
+      case 'Preparing': return 'In Arbeit';
+      case 'Ready': return 'Bereit';
+      case 'Withdrawn': return 'Abgeschlossen';
+      case 'ReturnPending': return 'Retoure (Angemeldet)';
+      case 'ReturnReady': return 'Retoure (Abholbereit)';
+      case 'ReturnComplete': return 'Retoure (Erledigt)';
+      case 'Missing': return 'VERMISST';
+      case 'Ordered': return 'Bestellt';
+      case 'PartiallyReceived': return 'Teilw. Erhalten';
+      case 'Received': return 'Erhalten';
+      case 'ReadyForPickup': return 'Abholbereit';
+      default: return s;
+    }
   };
 
   return (
-    <span className={cn("px-3 py-1 rounded-full text-xs font-medium border backdrop-blur-sm", colors[type])}>
-      {status}
+    <span className={cn(
+      "rounded-full font-medium border backdrop-blur-sm flex items-center justify-center",
+      getStyle(status),
+      size === 'sm' ? "px-2 py-0.5 text-[10px]" : "px-3 py-1 text-xs"
+    )}>
+      {translate(status)}
     </span>
   );
 };
