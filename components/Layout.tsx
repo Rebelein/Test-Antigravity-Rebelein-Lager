@@ -23,7 +23,16 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
     const { signOut, profile, isConnected, checkConnection, markTourSeen } = useAuth();
 
     // Sidebar State for Desktop
-    const [isSidebarPinned, setIsSidebarPinned] = useState(false);
+    const [isSidebarPinned, setIsSidebarPinned] = useState(() => {
+        // Vibe Coding: Persist sidebar state
+        const saved = localStorage.getItem('sidebar-pinned');
+        return saved === 'true';
+    });
+
+    // Save sidebar state to local storage whenever it changes
+    useEffect(() => {
+        localStorage.setItem('sidebar-pinned', isSidebarPinned.toString());
+    }, [isSidebarPinned]);
 
     // --- NEW FEATURES STATE ---
     const [updateAvailable, setUpdateAvailable] = useState(false);
