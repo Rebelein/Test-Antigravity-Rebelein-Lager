@@ -304,6 +304,70 @@ END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
 -- Trigger for new user signup
-CREATE OR REPLACE TRIGGER on_auth_user_created
   AFTER INSERT ON auth.users
   FOR EACH ROW EXECUTE PROCEDURE public.handle_new_user();
+
+-- ============================================================================
+-- 16. KEY CATEGORIES
+-- ============================================================================
+
+CREATE TABLE public.key_categories (
+    id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
+    name TEXT NOT NULL,
+    color TEXT NOT NULL,
+    created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- RLS Policies for Key Categories
+ALTER TABLE public.key_categories ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Key categories are viewable by everyone." ON public.key_categories FOR SELECT USING (true);
+CREATE POLICY "Authenticated users can manage key categories." ON public.key_categories FOR ALL USING (auth.role() = 'authenticated');
+
+
+-- ============================================================================
+-- 17. KEYS (Schlüsselkasten)
+-- ============================================================================
+
+CREATE TABLE public.keys (
+    id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
+    slot_number INTEGER UNIQUE NOT NULL, -- Platznummer
+    name TEXT NOT NULL, -- Bezeichnung
+    address TEXT, -- Objektadresse
+    status TEXT CHECK (status IN ('Available', 'InUse', 'Lost')) DEFAULT 'Available',
+    holder_id UUID REFERENCES public.profiles(id), -- Aktueller Besitzer (falls interner User)
+    holder_name TEXT, -- Fallback / manueller Name (falls externer Kunde)
+    owner TEXT, -- Eigentümer / Kunde
+    notes TEXT,
+    category_id UUID REFERENCES public.key_categories(id) ON DELETE SET NULL, -- Kategorie / Farbleitsystem
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- RLS Policies für Keys (Berechtigungen)
+ALTER TABLE public.keys ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Keys are viewable by everyone." ON public.keys FOR SELECT USING (true);
+CREATE POLICY "Authenticated users can manage keys." ON public.keys FOR ALL USING (auth.role() = 'authenticated');
+
+
+-- ============================================================================
+-- 18. KEY EVENTS (Logbuch / Historie)
+-- ============================================================================
+
+CREATE TABLE public.key_events (
+    id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
+    key_id UUID REFERENCES public.keys(id) ON DELETE CASCADE,
+    user_id UUID REFERENCES public.profiles(id), -- Der User, der die Aktion durchführt
+    action TEXT NOT NULL, -- 'checkout', 'checkin', 'create', 'update', 'delete'
+    details TEXT,
+    created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- RLS Policies für Key Events
+ALTER TABLE public.key_events ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Key events are viewable by everyone." ON public.key_events FOR SELECT USING (true);
+CREATE POLICY "Authenticated users can manage key events." ON public.key_events FOR ALL USING (auth.role() = 'authenticated');
+
+-- Hinweis: Realtime ist standardmäßig für alle Tabellen aktiv, wenn "supabase_realtime" als FOR ALL TABLES definiert ist.
+-- Falls nicht, müssten die folgenden Zeilen einkommentiert werden:
+-- ALTER PUBLICATION supabase_realtime ADD TABLE public.keys;
+-- ALTER PUBLICATION supabase_realtime ADD TABLE public.key_events;

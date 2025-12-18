@@ -14,7 +14,9 @@ import Suppliers from './pages/Suppliers';
 import Labels from './pages/Labels';
 import Commissions from './pages/Commissions';
 import ShelfEditor from './pages/ShelfEditor';
+import Keys from './pages/Keys';
 import Login from './pages/Login';
+import PrintProtocol from './pages/PrintProtocol';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { ThemeProvider } from './contexts/ThemeContext';
 import { NotificationProvider } from './contexts/NotificationContext';
@@ -57,33 +59,43 @@ const App: React.FC = () => {
 
   // Vibe Coding: Auto-Init Database on App Start
   useEffect(() => {
-    // initializeDatabase(true); // Manuell ausgeführt, Auto-Init deaktiviert um Fehler zu vermeiden
+    initializeDatabase(true);
   }, []);
 
   const isMobile = useIsMobile();
 
   // --- ONESIGNAL INITIALIZATION ---
   useEffect(() => {
+    // Skip on localhost if triggering domain errors
+    if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+      console.log("OneSignal disabled on localhost to prevent domain errors.");
+      return;
+    }
+
     if (typeof window !== 'undefined') {
       window.OneSignalDeferred = window.OneSignalDeferred || [];
       window.OneSignalDeferred.push(async function (OneSignal: any) {
-        await OneSignal.init({
-          // -------------------------------------------------------
-          // TODO: HIER DEINE ONESIGNAL APP ID EINFÜGEN
-          // -------------------------------------------------------
-          appId: "f5da4139-8119-4349-828a-70002617f157",
+        try {
+          await OneSignal.init({
+            // -------------------------------------------------------
+            // TODO: HIER DEINE ONESIGNAL APP ID EINFÜGEN
+            // -------------------------------------------------------
+            appId: "f5da4139-8119-4349-828a-70002617f157",
 
-          // Erlaubt lokale Tests (localhost), auf Produktion auf false setzen oder entfernen
-          allowLocalhostAsSecureOrigin: true,
+            // Erlaubt lokale Tests (localhost), auf Produktion auf false setzen oder entfernen
+            allowLocalhostAsSecureOrigin: true,
 
-          // Zeigt eine kleine Glocke an, damit Nutzer Notifications später aktivieren können
-          notifyButton: {
-            enable: true,
-            size: 'medium',
-            theme: 'inverse',
-            position: 'bottom-left',
-          },
-        });
+            // Zeigt eine kleine Glocke an, damit Nutzer Notifications später aktivieren können
+            notifyButton: {
+              enable: true,
+              size: 'medium',
+              theme: 'inverse',
+              position: 'bottom-left',
+            },
+          });
+        } catch (error) {
+          console.warn("OneSignal init failed:", error);
+        }
       });
     }
   }, []);
@@ -96,6 +108,7 @@ const App: React.FC = () => {
             <HashRouter>
               <Routes>
                 <Route path="/login" element={<Login />} />
+                <Route path="/print-protocol" element={<PrintProtocol />} />
 
                 <Route element={<ProtectedRoute />}>
                   <Route path="/" element={<Navigate to="/dashboard" replace />} />
@@ -110,6 +123,7 @@ const App: React.FC = () => {
                   <Route path="/labels" element={<Labels />} />
                   <Route path="/commissions" element={<Commissions />} />
                   <Route path="/shelf-editor" element={<ShelfEditor />} />
+                  <Route path="/keys" element={<Keys />} />
                 </Route>
               </Routes>
             </HashRouter>

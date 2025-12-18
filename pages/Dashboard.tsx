@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { GlassCard, StatusBadge, Button, GlassModal } from '../components/UIComponents';
 import { AlertTriangle, Wrench, User, CheckCircle2, FileText, ArrowRight, Grid, Database, X, Play, RefreshCw, Check, Copy, Settings, Factory, Warehouse, Tag, Maximize2, Minimize2, PhoneCall, StickyNote, Save, Undo2, Library, Plus, MessageSquare, Monitor, Smartphone, ShoppingCart, LayoutTemplate } from 'lucide-react';
@@ -8,23 +7,24 @@ import { useAuth } from '../contexts/AuthContext';
 import { useTheme } from '../contexts/ThemeContext';
 import { CommissionDetailModal } from '../components/CommissionDetailModal';
 import { supabase } from '../supabaseClient';
-import { Machine, MachineStatus, Commission, UserProfile } from '../types';
+import { Machine, MachineStatus, Commission, UserProfile, Key } from '../types'; // Added Key
 import { formatDistanceToNow } from 'date-fns';
 import { de } from 'date-fns/locale';
 import { Responsive, WidthProvider } from 'react-grid-layout';
 import 'react-grid-layout/css/styles.css';
 import 'react-resizable/css/styles.css';
+import { Key as KeyIcon } from 'lucide-react'; // Added KeyIcon
 
 const ResponsiveGridLayout = WidthProvider(Responsive);
 
 interface AppEvent {
     id: string;
-    type: 'machine' | 'commission' | 'order';
+    type: 'machine' | 'commission' | 'order' | 'key'; // Added key event type
     user_name: string;
     action: string;
     details: string;
     created_at: string;
-    entity_name: string; // NEW: To show WHICH item was affected
+    entity_name: string;
 }
 
 const Dashboard: React.FC = () => {
@@ -37,13 +37,14 @@ const Dashboard: React.FC = () => {
     // Data State
     const [rentedMachines, setRentedMachines] = useState<Machine[]>([]);
     const [repairMachines, setRepairMachines] = useState<Machine[]>([]);
+    const [rentedKeys, setRentedKeys] = useState<Key[]>([]); // New State
 
     const [draftCommissions, setDraftCommissions] = useState<Commission[]>([]);
     const [readyCommissions, setReadyCommissions] = useState<Commission[]>([]);
-    const [returnCommissions, setReturnCommissions] = useState<Commission[]>([]); // New State for Returns
+    const [returnCommissions, setReturnCommissions] = useState<Commission[]>([]);
     const [recentEvents, setRecentEvents] = useState<AppEvent[]>([]);
 
-    // Utility States (Modals & UI)
+    // ... (utility states unchanged)
     const [showAppDrawer, setShowAppDrawer] = useState(false);
     const [showSqlModal, setShowSqlModal] = useState(false);
     const [isInitializing, setIsInitializing] = useState(false);
@@ -51,7 +52,7 @@ const Dashboard: React.FC = () => {
     const [initError, setInitError] = useState<string | null>(null);
     const [sqlCopied, setSqlCopied] = useState(false);
 
-    // --- NEW FEATURE STATES ---
+    // ... (feature states unchanged)
     const [isCommissionTileFullscreen, setIsCommissionTileFullscreen] = useState(false);
     const [processingCommission, setProcessingCommission] = useState<Commission | null>(null);
     const [viewingCommission, setViewingCommission] = useState<Commission | null>(null);
@@ -61,26 +62,32 @@ const Dashboard: React.FC = () => {
     const [mobileTab, setMobileTab] = useState<'draft' | 'ready' | 'returns'>('draft');
 
     // --- LAYOUT STATE ---
+    // Added 'keys' tile to layout. Adjusted heights/widths to fit.
     const defaultLayouts = {
         lg: [
             { i: 'machines', x: 0, y: 0, w: 1, h: 4 },
-            { i: 'commissions', x: 1, y: 0, w: 1, h: 4 },
-            { i: 'events', x: 0, y: 4, w: 2, h: 3 }
+            { i: 'keys', x: 0, y: 4, w: 1, h: 4 }, // New Key Tile below machines
+            { i: 'commissions', x: 1, y: 0, w: 1, h: 8 }, // Taller commissions
+            { i: 'events', x: 0, y: 8, w: 2, h: 3 }
         ],
         md: [
             { i: 'machines', x: 0, y: 0, w: 1, h: 4 },
-            { i: 'commissions', x: 1, y: 0, w: 1, h: 4 },
-            { i: 'events', x: 0, y: 4, w: 2, h: 3 }
+            { i: 'keys', x: 0, y: 4, w: 1, h: 4 },
+            { i: 'commissions', x: 1, y: 0, w: 1, h: 8 },
+            { i: 'events', x: 0, y: 8, w: 2, h: 3 }
         ],
         sm: [
             { i: 'machines', x: 0, y: 0, w: 1, h: 4 },
-            { i: 'commissions', x: 0, y: 4, w: 1, h: 4 },
-            { i: 'events', x: 0, y: 8, w: 1, h: 4 }
+            { i: 'keys', x: 0, y: 4, w: 1, h: 4 },
+            { i: 'commissions', x: 0, y: 8, w: 1, h: 4 },
+            { i: 'events', x: 0, y: 12, w: 1, h: 4 }
         ]
     };
 
     const [layouts, setLayouts] = useState(() => {
         const saved = localStorage.getItem('dashboard_layouts');
+        // If saved layout doesn't have 'keys', reset to default (basic migration)
+        if (saved && !saved.includes('keys')) return defaultLayouts;
         return saved ? JSON.parse(saved) : defaultLayouts;
     });
 
@@ -95,7 +102,22 @@ const Dashboard: React.FC = () => {
         window.location.reload();
     };
 
-    // --- DATA FETCHING (Stabilized with useCallback) ---
+    // --- DATA FETCHING ---
+
+    const fetchKeysData = useCallback(async () => {
+        try {
+            const { data, error } = await supabase
+                .from('keys')
+                .select('*')
+                .eq('status', 'InUse');
+
+            if (error) throw error;
+            // @ts-ignore
+            setRentedKeys(data || []);
+        } catch (error) {
+            console.error("Error fetching keys:", error);
+        }
+    }, []);
 
     const fetchMachinesData = useCallback(async () => {
         try {
@@ -185,6 +207,13 @@ const Dashboard: React.FC = () => {
                 .order('created_at', { ascending: false })
                 .limit(10);
 
+            // Fetch Key Events
+            const { data: keyEvents } = await supabase
+                .from('key_events')
+                .select('id, action, details, created_at, profiles(full_name), keys(name)')
+                .order('created_at', { ascending: false })
+                .limit(10);
+
             const events: AppEvent[] = [];
 
             if (machineEvents) {
@@ -223,6 +252,18 @@ const Dashboard: React.FC = () => {
                 })));
             }
 
+            if (keyEvents) {
+                events.push(...keyEvents.map((e: any) => ({
+                    id: e.id,
+                    type: 'key' as const,
+                    user_name: e.profiles?.full_name || 'Unbekannt',
+                    action: e.action,
+                    details: e.details,
+                    created_at: e.created_at,
+                    entity_name: e.keys?.name || 'Unbekannter Schlüssel'
+                })));
+            }
+
             // Sort combined events by date desc
             events.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
 
@@ -237,63 +278,40 @@ const Dashboard: React.FC = () => {
     useEffect(() => {
         const loadInitialData = async () => {
             setIsLoading(true);
-            await Promise.all([fetchMachinesData(), fetchCommissionsData(), fetchRecentEvents()]);
+            await Promise.all([fetchMachinesData(), fetchCommissionsData(), fetchRecentEvents(), fetchKeysData()]);
             setIsLoading(false);
         };
 
         loadInitialData();
 
         // Realtime Subscription
-        // NOTE: 'postgres_changes' requires Realtime Replication to be enabled on the table in Supabase.
-        // We added `ALTER PUBLICATION...` to dbInit to ensure this.
         const channel = supabase
             .channel('dashboard_updates')
             .on(
                 'postgres_changes',
                 { event: '*', schema: 'public', table: 'machines' },
-                (payload) => {
-                    console.log('Machines updated (Realtime), refreshing Dashboard...', payload);
-                    fetchMachinesData();
-                }
+                () => fetchMachinesData()
+            )
+            .on(
+                'postgres_changes',
+                { event: '*', schema: 'public', table: 'keys' },
+                () => fetchKeysData()
             )
             .on(
                 'postgres_changes',
                 { event: '*', schema: 'public', table: 'commissions' },
-                (payload) => {
-                    console.log('Commissions updated (Realtime), refreshing Dashboard...', payload);
-                    fetchCommissionsData();
-                }
+                () => fetchCommissionsData()
             )
-            .on(
-                'postgres_changes',
-                { event: 'INSERT', schema: 'public', table: 'machine_events' },
-                () => {
-                    console.log('New Machine Event, refreshing events...');
-                    fetchRecentEvents();
-                }
-            )
-            .on(
-                'postgres_changes',
-                { event: 'INSERT', schema: 'public', table: 'commission_events' },
-                () => {
-                    console.log('New Commission Event, refreshing events...');
-                    fetchRecentEvents();
-                }
-            )
-            .on(
-                'postgres_changes',
-                { event: 'INSERT', schema: 'public', table: 'order_events' },
-                () => {
-                    console.log('New Order Event, refreshing events...');
-                    fetchRecentEvents();
-                }
-            )
+            .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'machine_events' }, fetchRecentEvents)
+            .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'commission_events' }, fetchRecentEvents)
+            .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'order_events' }, fetchRecentEvents)
+            .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'key_events' }, fetchRecentEvents)
             .subscribe();
 
         return () => {
             supabase.removeChannel(channel);
         };
-    }, [fetchMachinesData, fetchCommissionsData]);
+    }, [fetchMachinesData, fetchCommissionsData, fetchRecentEvents, fetchKeysData]);
 
     // --- COMMISSION OFFICE PROCESSING ---
     const handleCommissionClick = (comm: Commission) => {
@@ -656,6 +674,46 @@ const Dashboard: React.FC = () => {
                     </GlassCard>
                 </div>
 
+                {/* --- TILE 1.5: KEY STATUS (NEW) --- */}
+                <div key="keys">
+                    <GlassCard className="flex flex-col h-full p-0 overflow-hidden border-none bg-white/80 dark:bg-white/5" contentClassName="!p-0 flex flex-col h-full">
+                        <div className="drag-handle cursor-move px-6 py-5 border-b border-gray-200 dark:border-white/10 bg-white/50 dark:bg-white/5 backdrop-blur-xl flex justify-between items-center shrink-0">
+                            <h2 className="text-xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
+                                <KeyIcon size={20} className="text-amber-500" /> Ausgeliehen
+                            </h2>
+                            <button
+                                onMouseDown={(e) => e.stopPropagation()}
+                                onClick={() => navigate('/keys')}
+                                className="text-gray-400 dark:text-white/40 hover:text-gray-900 dark:hover:text-white"
+                            >
+                                <ArrowRight size={20} />
+                            </button>
+                        </div>
+
+                        <div className="p-4 flex flex-col gap-3 overflow-hidden h-full">
+                            <div className="flex justify-between items-center mb-2 shrink-0">
+                                <span className="text-sm font-bold text-white">Schlüssel in Verwendung ({rentedKeys.length})</span>
+                            </div>
+
+                            <div className="space-y-3 overflow-y-auto flex-1 min-h-0 pr-1 pb-4">
+                                {rentedKeys.length === 0 && <div className="text-xs text-gray-400 dark:text-white/30 italic">Alle Schlüssel im Kasten.</div>}
+                                {rentedKeys.map(k => (
+                                    <div key={k.id} onClick={() => navigate('/keys')} className="group cursor-pointer p-2 rounded hover:bg-white/5 border border-transparent hover:border-white/5">
+                                        <div className="flex justify-between items-start">
+                                            <div className="font-medium text-gray-900 dark:text-white text-sm group-hover:text-amber-400 transition-colors truncate">{k.name}</div>
+                                            <span className="text-xs font-mono text-emerald-400">#{k.slot_number}</span>
+                                        </div>
+                                        <div className="flex items-center gap-1.5 mt-1">
+                                            <User size={12} className="text-amber-500/70" />
+                                            <span className="text-xs text-gray-500 dark:text-white/50 truncate">{k.holder_name || 'Unbekannt'}</span>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    </GlassCard>
+                </div>
+
                 {/* --- TILE 2: KOMMISSIONEN --- */}
                 <div key="commissions">
                     {/* If fullscreen, we render a placeholder here or nothing? RGL needs the item to exist. We render it, but maybe empty or hidden if fullscreen? 
@@ -689,10 +747,12 @@ const Dashboard: React.FC = () => {
                                                 ${event.type === 'machine' ? 'bg-amber-500/10 text-amber-600 dark:text-amber-400' : ''}
                                                 ${event.type === 'commission' ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400' : ''}
                                                 ${event.type === 'order' ? 'bg-purple-500/10 text-purple-600 dark:text-purple-400' : ''}
+                                                ${event.type === 'key' ? 'bg-blue-500/10 text-blue-600 dark:text-blue-400' : ''}
                                             `}>
                                                 {event.type === 'machine' && <Wrench size={14} />}
                                                 {event.type === 'commission' && <CheckCircle2 size={14} />}
                                                 {event.type === 'order' && <ShoppingCart size={14} />}
+                                                {event.type === 'key' && <KeyIcon size={14} />}
                                             </div>
 
                                             <div className="flex-1 min-w-0">
@@ -706,7 +766,7 @@ const Dashboard: React.FC = () => {
                                                 </div>
                                                 <p className="text-sm text-gray-600 dark:text-white/70 mt-0.5">
                                                     <span className="font-medium text-gray-500 dark:text-white/50 uppercase text-[10px] tracking-wider mr-2 border border-gray-200 dark:border-white/10 px-1.5 py-0.5 rounded">
-                                                        {event.type === 'machine' ? 'Gerät' : event.type === 'commission' ? 'Kommission' : 'Bestellung'}
+                                                        {event.type === 'machine' ? 'Gerät' : event.type === 'commission' ? 'Kommission' : event.type === 'key' ? 'Schlüssel' : 'Bestellung'}
                                                     </span>
                                                     <span className="font-bold text-gray-900 dark:text-white mr-1">
                                                         {event.entity_name}:

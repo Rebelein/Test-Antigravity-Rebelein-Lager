@@ -302,6 +302,19 @@ BEGIN
         ALTER TABLE public.commission_items ADD COLUMN notes TEXT;
     END IF;
 
+    -- Key Categories Table
+    CREATE TABLE IF NOT EXISTS public.key_categories (
+        id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+        name TEXT NOT NULL,
+        color TEXT NOT NULL,
+        created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now())
+    );
+
+    -- Add category_id to keys
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='keys' AND column_name='category_id') THEN
+        ALTER TABLE public.keys ADD COLUMN category_id UUID REFERENCES public.key_categories(id) ON DELETE SET NULL;
+    END IF;
+
     -- Enable Realtime Replication explicitly
     BEGIN
         IF NOT EXISTS (SELECT 1 FROM pg_publication_tables WHERE pubname = 'supabase_realtime' AND tablename = 'machines') THEN
@@ -324,6 +337,9 @@ BEGIN
         END IF;
         IF NOT EXISTS (SELECT 1 FROM pg_publication_tables WHERE pubname = 'supabase_realtime' AND tablename = 'machine_events') THEN
             ALTER PUBLICATION supabase_realtime ADD TABLE machine_events;
+        END IF;
+        IF NOT EXISTS (SELECT 1 FROM pg_publication_tables WHERE pubname = 'supabase_realtime' AND tablename = 'key_categories') THEN
+            ALTER PUBLICATION supabase_realtime ADD TABLE key_categories;
         END IF;
     EXCEPTION WHEN OTHERS THEN
         NULL;

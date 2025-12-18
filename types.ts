@@ -194,3 +194,33 @@ export interface OrderProposal {
   }[];
   totalItems: number;
 }
+
+// --- KEY MANAGEMENT (Schlüsselkasten) TYPES ---
+
+export type KeyStatus = 'Available' | 'InUse' | 'Lost';
+
+export interface Key {
+  id: string;
+  slot_number: number;
+  name: string;
+  address?: string;
+  status: KeyStatus;
+  holder_id?: string;
+  holder_name?: string; // For manual formatting or fallback
+  owner?: string; // Owner/Customer of the keys
+  notes?: string;
+  category_id?: string;
+  key_categories?: { color: string; name: string }; // Joined
+}
+
+export interface KeyEvent {
+  id: string;
+  key_id: string;
+  user_id: string;
+  action: 'checkout' | 'checkin' | 'create' | 'update' | 'delete';
+  details: string;
+  created_at: string;
+  profiles?: { full_name: string };
+  key_slot?: number; // For log display join
+  key_name?: string; // For log display join
+}

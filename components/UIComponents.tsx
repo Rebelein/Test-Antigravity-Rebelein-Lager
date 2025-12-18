@@ -272,3 +272,15 @@ export const AnimatedModal: React.FC<AnimatedModalProps> = ({ isOpen, onClose, c
 
 // Export GlassModal for backward compatibility, but alias it to AnimatedModal
 export const GlassModal = AnimatedModal;
+
+// --- Page Header ---
+export const PageHeader: React.FC<{ title: string; subtitle?: string; actions?: React.ReactNode }> = ({ title, subtitle, actions }) => (
+  <header className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
+    <div>
+      <h1 className="text-3xl font-bold text-white mb-2 bg-clip-text text-transparent bg-gradient-to-r from-white to-white/70">{title}</h1>
+      {subtitle && <p className="text-white/50">{subtitle}</p>}
+    </div>
+    {actions && <div className="flex items-center gap-3">{actions}</div>}
+  </header>
+);
+
