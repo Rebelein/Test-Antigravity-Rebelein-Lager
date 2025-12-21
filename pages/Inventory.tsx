@@ -833,7 +833,7 @@ const Inventory: React.FC = () => {
                 await new Promise((resolve) => { reader.onload = resolve; reader.readAsDataURL(aiSelectedFile); });
                 const base64Data = (reader.result as string).split(',')[1];
                 response = await ai.models.generateContent({
-                    model: "gemini-2.5-flash",
+                    model: "gemini-3-flash-preview",
                     contents: [
                         { inlineData: { mimeType: aiSelectedFile.type, data: base64Data } },
                         { text: systemPrompt }
@@ -842,7 +842,7 @@ const Inventory: React.FC = () => {
                 });
             } else if (aiMode === 'link' && aiUrlInput) {
                 const searchPrompt = `${systemPrompt} JSON schema: ${JSON.stringify(schema)} Link: ${aiUrlInput}`;
-                response = await ai.models.generateContent({ model: "gemini-2.5-flash", contents: searchPrompt, config: { tools: [{ googleSearch: {} }] } });
+                response = await ai.models.generateContent({ model: "gemini-3-flash-preview", contents: searchPrompt, config: { tools: [{ googleSearch: {} }] } });
             }
 
             if (response && response.text) {

@@ -253,10 +253,10 @@ const Keys: React.FC = () => {
                 </div>
                 <div className="flex gap-2">
                     <Button onClick={() => setIsCategoryModalOpen(true)} variant="secondary" icon={<Tag size={18} />}>
-                        Kategorien
+                        <span className="hidden sm:inline">Kategorien</span>
                     </Button>
                     <Button onClick={handleCreate} icon={<Plus size={18} />} className="bg-emerald-600 hover:bg-emerald-500">
-                        Neuer Schlüssel
+                        <span className="hidden sm:inline">Neuer Schlüssel</span>
                     </Button>
                 </div>
             </header>
