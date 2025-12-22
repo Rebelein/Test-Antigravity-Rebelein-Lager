@@ -5,8 +5,12 @@ import { Key } from '../types';
 import { supabase } from '../supabaseClient';
 import { KeyModal, KeyHandoverModal, KeyDetailsModal } from '../components/KeyComponents';
 import { CategoryManagerModal } from '../components/CategoryManagerModal';
-import { Search, Plus, Key as KeyIcon, User, MapPin, AlertCircle, RefreshCw, MoreVertical, Trash2, Edit, Tag, ChevronDown, Info } from 'lucide-react';
+import { Search, Plus, Key as KeyIcon, User, MapPin, AlertCircle, RefreshCw, MoreVertical, Trash2, Edit, Tag, ChevronDown, Info, Printer } from 'lucide-react';
 import { toast } from 'sonner';
+
+import { useReactToPrint } from 'react-to-print';
+import { KeyExportTemplate } from '../components/KeyExportTemplate';
+// ... existing imports ...
 
 const Keys: React.FC = () => {
     const [keys, setKeys] = useState<Key[]>([]);
@@ -33,6 +37,13 @@ const Keys: React.FC = () => {
     // Delete Confirmation State
     const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
     const [keyToDelete, setKeyToDelete] = useState<Key | null>(null);
+
+    // Print Hook
+    const printComponentRef = React.useRef<HTMLDivElement>(null);
+    const handlePrint = useReactToPrint({
+        contentRef: printComponentRef,
+        documentTitle: `Schluessel_Export_${new Date().toISOString().split('T')[0]}`,
+    });
 
     const handleOpenDetails = (key: Key) => {
         setSelectedKeyForDetails(key);
@@ -244,19 +255,31 @@ const Keys: React.FC = () => {
 
     return (
         <div className="space-y-6 pb-20">
-            <header className="flex justify-between items-start">
+            {/* Hidden Print Template */}
+            <div style={{ display: 'none' }}>
+                <KeyExportTemplate
+                    ref={printComponentRef}
+                    keys={keys}
+                    categories={categories}
+                />
+            </div>
+
+            <header className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                 <div>
                     <h1 className="text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-emerald-400 to-teal-300">
                         Schlüsselkasten
                     </h1>
                     <p className="text-white/50">Verwaltung und Ausgabe von Objektschlüsseln.</p>
                 </div>
-                <div className="flex gap-2">
+                <div className="flex gap-2 self-end sm:self-auto">
+                    <Button onClick={handlePrint} variant="secondary" icon={<Printer size={18} />}>
+                        <span className="hidden md:inline">Liste drucken</span>
+                    </Button>
                     <Button onClick={() => setIsCategoryModalOpen(true)} variant="secondary" icon={<Tag size={18} />}>
-                        <span className="hidden sm:inline">Kategorien</span>
+                        <span className="hidden md:inline">Kategorien</span>
                     </Button>
                     <Button onClick={handleCreate} icon={<Plus size={18} />} className="bg-emerald-600 hover:bg-emerald-500">
-                        <span className="hidden sm:inline">Neuer Schlüssel</span>
+                        <span className="hidden md:inline">Neuer Schlüssel</span>
                     </Button>
                 </div>
             </header>
