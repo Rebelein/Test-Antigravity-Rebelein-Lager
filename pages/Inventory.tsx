@@ -6,7 +6,7 @@ import { Article, Warehouse, Supplier, ManufacturerSku, ArticleSupplier } from '
 import { supabase } from '../supabaseClient';
 import { useAuth } from '../contexts/AuthContext';
 import {
-    Search, Plus, Loader2, Check, X, Link as LinkIcon, Sparkles, Edit, Trash2, ExternalLink, History, Minus, Image as ImageIcon, Hash, Wand2, Globe, Clipboard, FileImage, Printer, Layers, Type as TypeIcon, ListChecks, Copy, CheckSquare, Square, Paperclip, User, ChevronDown, ArrowUpDown, MapPin, Building2, Star, MoreHorizontal, CheckCircle2
+    Search, Plus, Loader2, Check, X, Link as LinkIcon, Sparkles, Edit, Trash2, ExternalLink, History, Minus, Image as ImageIcon, Hash, Wand2, Globe, Clipboard, FileImage, Printer, Layers, Type as TypeIcon, ListChecks, Copy, CheckSquare, Square, Paperclip, User, ChevronDown, ArrowUpDown, MapPin, Building2, Star, MoreHorizontal, CheckCircle2, Clock
 } from 'lucide-react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { GoogleGenAI, Type } from "@google/genai";
@@ -161,6 +161,63 @@ const Inventory: React.FC = () => {
         location: '', // Acts as "Fach"
         image: ''
     });
+
+    // --- REORDER INFO STATE ---
+    const [orderDetails, setOrderDetails] = useState<Record<string, { user: string }>>({});
+
+    useEffect(() => {
+        const fetchOrderInfo = async () => {
+            const orderedArticles = articles.filter(a => a.onOrderDate);
+            if (orderedArticles.length === 0) return;
+
+            const articleIds = orderedArticles.map(a => a.id);
+
+            // 1. Get latest order item for these articles
+            const { data: items } = await supabase
+                .from('order_items')
+                .select('order_id, article_id, created_at')
+                .in('article_id', articleIds)
+                .order('created_at', { ascending: false });
+
+            if (!items || items.length === 0) return;
+
+            const articleOrderMap: Record<string, string> = {};
+            // Map article -> latest order_id (first found is latest due to sort)
+            items.forEach((item: any) => {
+                if (!articleOrderMap[item.article_id]) {
+                    articleOrderMap[item.article_id] = item.order_id;
+                }
+            });
+
+            const orderIds = Object.values(articleOrderMap);
+            if (orderIds.length === 0) return;
+
+            // 2. Get who created these orders
+            const { data: events } = await supabase
+                .from('order_events')
+                .select('order_id, user_id, profiles(full_name)')
+                .in('order_id', orderIds)
+                .eq('action', 'Neue Bestellung');
+
+            const newDetails: Record<string, { user: string }> = {};
+
+            if (events) {
+                events.forEach((ev: any) => {
+                    // Find which articles belong to this order
+                    for (const [artId, ordId] of Object.entries(articleOrderMap)) {
+                        if (ordId === ev.order_id) {
+                            newDetails[artId] = {
+                                user: ev.profiles?.full_name || 'Unbekannt'
+                            };
+                        }
+                    }
+                });
+            }
+            setOrderDetails(prev => ({ ...prev, ...newDetails }));
+        };
+
+        fetchOrderInfo();
+    }, [articles]);
 
     useEffect(() => {
         // Click outside listener for dropdowns
@@ -1270,6 +1327,17 @@ const Inventory: React.FC = () => {
                                                                         <span className="font-mono">{article.supplierSku}</span>
                                                                     </div>
                                                                 )}
+
+                                                                {/* On Order Badge */}
+                                                                {article.onOrderDate && (
+                                                                    <div className="flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-medium border bg-amber-500/10 border-amber-500/20 text-amber-200">
+                                                                        <Clock size={10} />
+                                                                        <span className="truncate">
+                                                                            {new Date(article.onOrderDate).toLocaleDateString()}
+                                                                            {orderDetails[article.id] ? ` • ${orderDetails[article.id].user}` : ''}
+                                                                        </span>
+                                                                    </div>
+                                                                )}
                                                             </div>
                                                         </div>
                                                         <div className="flex items-center gap-3">
@@ -1621,7 +1689,15 @@ const ArticleDetailModal = ({ article, onClose, onEdit, onNavigate, hasNavigatio
                             <span className={`px-2 py-0.5 rounded text-xs font-bold border ${article.stock >= article.targetStock ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30' : 'bg-rose-500/20 text-rose-300 border-rose-500/30'}`}>
                                 {article.stock >= article.targetStock ? 'Bestand OK' : 'Unterbestand'}
                             </span>
-                            {article.onOrderDate && <span className="px-2 py-0.5 rounded text-xs font-bold bg-blue-500/20 text-blue-300 border border-blue-500/30">Bestellt</span>}
+                            {article.onOrderDate && (
+                                <span className="flex items-center gap-1 px-2 py-0.5 rounded text-xs font-bold bg-amber-500/10 text-amber-200 border border-amber-500/20">
+                                    <Clock size={12} />
+                                    <span>
+                                        Bestellt: {new Date(article.onOrderDate).toLocaleDateString()}
+                                        {orderDetails[article.id] ? ` von ${orderDetails[article.id].user}` : ''}
+                                    </span>
+                                </span>
+                            )}
                         </div>
                     </div>
                     <button onClick={onClose} className="absolute right-4 top-4 p-2 rounded-full bg-black/20 hover:bg-black/40 text-white/60 hover:text-white transition-colors"><X size={20} /></button>

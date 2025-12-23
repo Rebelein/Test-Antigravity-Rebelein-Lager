@@ -1463,6 +1463,54 @@ const Orders: React.FC = () => {
                     </div>
                 </div>
             )}
+
+            {/* --- MODAL: COPY SKU LIST --- */}
+            {showSkuCopyModal && selectedProposal && (
+                <div className="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-black/90 backdrop-blur-md animate-in fade-in">
+                    <div className="w-full max-w-md bg-[#1a1d24] border border-white/10 rounded-2xl shadow-xl flex flex-col max-h-[80vh]">
+                        <div className="p-4 border-b border-white/10 flex justify-between items-center bg-white/5">
+                            <div>
+                                <h2 className="text-lg font-bold text-white">Artikel kopieren</h2>
+                                <p className="text-sm text-white/50">{selectedProposal.supplier}</p>
+                            </div>
+                            <button onClick={() => setShowSkuCopyModal(false)} className="p-2 rounded-full hover:bg-white/10"><X size={20} /></button>
+                        </div>
+                        <div className="flex-1 overflow-y-auto p-4 space-y-2">
+                            <div className="text-xs text-white/40 mb-2 uppercase font-bold tracking-wider">Ausgewählte Positionen:</div>
+                            {selectedProposal.articles
+                                .filter(item => selectedItemIds.has(item.article.id))
+                                .map(item => {
+                                    const isCopied = copiedSkuIds.has(item.article.id);
+                                    return (
+                                        <div
+                                            key={item.article.id}
+                                            onClick={() => handleCopySku(item.article.supplierSku || item.article.sku || '', item.article.id)}
+                                            className={`p-3 rounded-xl border cursor-pointer transition-all flex justify-between items-center group ${isCopied
+                                                ? 'bg-emerald-500/20 border-emerald-500/50'
+                                                : 'bg-white/5 border-white/5 hover:bg-white/10'
+                                                }`}
+                                        >
+                                            <div className="flex-1 min-w-0 pr-3">
+                                                <div className={`text-sm font-bold truncate ${isCopied ? 'text-emerald-400' : 'text-white'}`}>
+                                                    {item.article.name}
+                                                </div>
+                                                <div className="text-xs font-mono text-white/50 flex items-center gap-2">
+                                                    {item.article.supplierSku || 'Keine Art-Nr.'}
+                                                </div>
+                                            </div>
+                                            <div className={`p-2 rounded-lg ${isCopied ? 'bg-emerald-500 text-white' : 'bg-black/20 text-white/30 group-hover:text-white'}`}>
+                                                {isCopied ? <Check size={16} /> : <Copy size={16} />}
+                                            </div>
+                                        </div>
+                                    );
+                                })}
+                        </div>
+                        <div className="p-4 border-t border-white/10 bg-black/20">
+                            <Button onClick={() => setShowSkuCopyModal(false)} className="w-full bg-white/10 hover:bg-white/20">Schließen</Button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };
