@@ -12,6 +12,7 @@ import { useRegisterSW } from 'virtual:pwa-register/react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { clsx } from 'clsx';
 import NotificationToast from './NotificationToast';
+import { LastWorkingDaySign } from './LastWorkingDaySign';
 
 interface LayoutProps {
     children: React.ReactNode;
@@ -158,6 +159,9 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
 
             {/* --- GLOBAL NOTIFICATIONS --- */}
             <NotificationToast />
+
+            {/* --- GIMMICK: LAST WORKING DAY SIGN --- */}
+            <LastWorkingDaySign />
 
             {/* --- UPDATE BANNER --- */}
             <AnimatePresence>
