@@ -16,6 +16,7 @@ import Commissions from './pages/Commissions';
 import ShelfEditor from './pages/ShelfEditor';
 import Keys from './pages/Keys';
 import Login from './pages/Login';
+import Workwear from './pages/Workwear';
 import PrintProtocol from './pages/PrintProtocol';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { ThemeProvider } from './contexts/ThemeContext';
@@ -124,6 +125,7 @@ const App: React.FC = () => {
                   <Route path="/commissions" element={<Commissions />} />
                   <Route path="/shelf-editor" element={<ShelfEditor />} />
                   <Route path="/keys" element={<Keys />} />
+                  <Route path="/workwear" element={<Workwear />} />
                 </Route>
               </Routes>
             </HashRouter>

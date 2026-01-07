@@ -128,6 +128,7 @@ export interface UserProfile {
   secondary_warehouse_id?: string;
   collapsed_categories?: string[];
   has_seen_tour?: boolean; // Control for Onboarding Tour
+  workwear_role?: WorkwearRole;
 }
 
 // --- COMMISSION MODULE TYPES ---
@@ -180,7 +181,7 @@ export interface CommissionEvent {
   profiles?: { full_name: string }; // Joined user data
 }
 
-export type NavRoute = 'dashboard' | 'inventory' | 'machines' | 'orders' | 'stocktaking' | 'warehouses' | 'audit' | 'commissions';
+export type NavRoute = 'dashboard' | 'inventory' | 'machines' | 'orders' | 'stocktaking' | 'warehouses' | 'audit' | 'commissions' | 'workwear';
 
 export interface OrderProposal {
   warehouseId: string;
@@ -223,4 +224,66 @@ export interface KeyEvent {
   profiles?: { full_name: string };
   key_slot?: number; // For log display join
   key_name?: string; // For log display join
+}
+
+// --- WORKWEAR MODULE TYPES ---
+
+export type WorkwearRole = 'chef' | 'besteller' | 'monteur';
+export type WorkwearCategory = 'T-Shirt' | 'Pullover' | 'Jacke' | 'Hose' | 'Schuhe' | 'PSA' | 'Sonstiges';
+export type WorkwearOrderStatus = 'REQUESTED' | 'ORDERED' | 'RETURNED' | 'COMPLETED';
+
+export interface WorkwearTemplate {
+  id: string;
+  name: string;
+  category: string; // Plain string in DB, but we treat it as WorkwearCategory in UI usually
+  article_number: string;
+  price: number;
+  image_url?: string;
+  is_active: boolean;
+  has_logo?: boolean;
+}
+
+export interface WorkwearBudget {
+  id: string;
+  user_id: string;
+  year: number;
+  budget_limit: number;
+  // Computed on client side usually, or separate query
+}
+
+export interface CartItem {
+  id: string;
+  template: WorkwearTemplate;
+  size: string;
+  quantity: number;
+}
+
+export interface UserSize {
+  id: string;
+  user_id: string;
+  category: string;
+  size_value: string;
+}
+
+export interface WorkwearOrder {
+  id: string;
+  user_id: string;
+  status: WorkwearOrderStatus;
+  total_amount: number;
+  created_at: string;
+  updated_at: string;
+  // Joins
+  profiles?: { full_name: string };
+  files?: any;
+}
+
+export interface WorkwearOrderItem {
+  id: string;
+  order_id: string;
+  template_id?: string;
+  workwear_templates?: WorkwearTemplate; // Join
+  quantity: number;
+  size: string;
+  use_logo: boolean;
+  price_at_order: number;
 }

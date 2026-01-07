@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { NavRoute } from '../types';
-import { LayoutDashboard, Package, Drill, ShoppingCart, ScanLine, LogOut, UserCircle, WifiOff, RefreshCw, ClipboardList, ClipboardCheck, PanelLeftClose, PanelLeftOpen, Pin, PinOff, ChevronRight, Download, Share, Check, X, Key as KeyIcon } from 'lucide-react';
+import { LayoutDashboard, Package, Drill, ShoppingCart, ScanLine, LogOut, UserCircle, WifiOff, RefreshCw, ClipboardList, ClipboardCheck, PanelLeftClose, PanelLeftOpen, Pin, PinOff, ChevronRight, Download, Share, Check, X, Key as KeyIcon, Shirt } from 'lucide-react';
 import { useNavigate, useLocation, Outlet } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { Button, GlassCard } from './UIComponents';
@@ -54,6 +54,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
         { id: 'audit', icon: <ClipboardList size={24} />, label: 'Inventur' },
         { id: 'machines', icon: <Drill size={24} />, label: 'Tools' },
         { id: 'orders', icon: <ShoppingCart size={24} />, label: 'Bestellen' },
+        { id: 'workwear', icon: <Shirt size={24} />, label: 'Kleidung' },
         { id: 'keys', icon: <KeyIcon size={24} />, label: 'Schlüssel' },
     ];
 
