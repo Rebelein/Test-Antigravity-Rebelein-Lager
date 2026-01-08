@@ -3,21 +3,24 @@ import { HashRouter, Routes, Route, Navigate, Outlet } from 'react-router-dom';
 import { MotionConfig } from 'framer-motion';
 import { useIsMobile } from './hooks/useIsMobile';
 import Layout from './components/Layout';
-import Dashboard from './pages/Dashboard';
-import Inventory from './pages/Inventory';
-import Machines from './pages/Machines';
-import Orders from './pages/Orders';
-import Stocktaking from './pages/Stocktaking';
-import StockAudit from './pages/StockAudit';
-import Warehouses from './pages/Warehouses';
-import Suppliers from './pages/Suppliers';
-import Labels from './pages/Labels';
-import Commissions from './pages/Commissions';
-import ShelfEditor from './pages/ShelfEditor';
-import Keys from './pages/Keys';
-import Login from './pages/Login';
-import Workwear from './pages/Workwear';
-import PrintProtocol from './pages/PrintProtocol';
+
+// Lazy Load Pages for Performance
+const Dashboard = React.lazy(() => import('./pages/Dashboard'));
+const Inventory = React.lazy(() => import('./pages/Inventory'));
+const Machines = React.lazy(() => import('./pages/Machines'));
+const Orders = React.lazy(() => import('./pages/Orders'));
+const Stocktaking = React.lazy(() => import('./pages/Stocktaking'));
+const StockAudit = React.lazy(() => import('./pages/StockAudit'));
+const Warehouses = React.lazy(() => import('./pages/Warehouses'));
+const Suppliers = React.lazy(() => import('./pages/Suppliers'));
+const Labels = React.lazy(() => import('./pages/Labels'));
+const Commissions = React.lazy(() => import('./pages/Commissions'));
+const ShelfEditor = React.lazy(() => import('./pages/ShelfEditor'));
+const Keys = React.lazy(() => import('./pages/Keys'));
+const Login = React.lazy(() => import('./pages/Login'));
+const Workwear = React.lazy(() => import('./pages/Workwear'));
+const PrintProtocol = React.lazy(() => import('./pages/PrintProtocol'));
+
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { ThemeProvider } from './contexts/ThemeContext';
 import { NotificationProvider } from './contexts/NotificationContext';
@@ -107,27 +110,34 @@ const App: React.FC = () => {
         <NotificationProvider>
           <ThemeProvider>
             <HashRouter>
-              <Routes>
-                <Route path="/login" element={<Login />} />
-                <Route path="/print-protocol" element={<PrintProtocol />} />
+              <React.Suspense fallback={
+                <div className="min-h-screen w-full flex items-center justify-center bg-gray-900">
+                  <Loader2 size={40} className="animate-spin text-emerald-500" />
+                  <span className="ml-3 text-emerald-500 font-medium">Lade Anwendung...</span>
+                </div>
+              }>
+                <Routes>
+                  <Route path="/login" element={<Login />} />
+                  <Route path="/print-protocol" element={<PrintProtocol />} />
 
-                <Route element={<ProtectedRoute />}>
-                  <Route path="/" element={<Navigate to="/dashboard" replace />} />
-                  <Route path="/dashboard" element={<Dashboard />} />
-                  <Route path="/inventory" element={<Inventory />} />
-                  <Route path="/machines" element={<Machines />} />
-                  <Route path="/orders" element={<Orders />} />
-                  <Route path="/stocktaking" element={<Stocktaking />} />
-                  <Route path="/audit" element={<StockAudit />} />
-                  <Route path="/warehouses" element={<Warehouses />} />
-                  <Route path="/suppliers" element={<Suppliers />} />
-                  <Route path="/labels" element={<Labels />} />
-                  <Route path="/commissions" element={<Commissions />} />
-                  <Route path="/shelf-editor" element={<ShelfEditor />} />
-                  <Route path="/keys" element={<Keys />} />
-                  <Route path="/workwear" element={<Workwear />} />
-                </Route>
-              </Routes>
+                  <Route element={<ProtectedRoute />}>
+                    <Route path="/" element={<Navigate to="/dashboard" replace />} />
+                    <Route path="/dashboard" element={<Dashboard />} />
+                    <Route path="/inventory" element={<Inventory />} />
+                    <Route path="/machines" element={<Machines />} />
+                    <Route path="/orders" element={<Orders />} />
+                    <Route path="/stocktaking" element={<Stocktaking />} />
+                    <Route path="/audit" element={<StockAudit />} />
+                    <Route path="/warehouses" element={<Warehouses />} />
+                    <Route path="/suppliers" element={<Suppliers />} />
+                    <Route path="/labels" element={<Labels />} />
+                    <Route path="/commissions" element={<Commissions />} />
+                    <Route path="/shelf-editor" element={<ShelfEditor />} />
+                    <Route path="/keys" element={<Keys />} />
+                    <Route path="/workwear" element={<Workwear />} />
+                  </Route>
+                </Routes>
+              </React.Suspense>
             </HashRouter>
           </ThemeProvider>
         </NotificationProvider>

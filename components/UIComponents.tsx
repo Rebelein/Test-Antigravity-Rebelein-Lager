@@ -105,6 +105,8 @@ export const GlassSelect: React.FC<GlassSelectProps> = ({ icon, children, classN
           "focus:outline-none focus:ring-2 focus:ring-emerald-500/50 focus:border-transparent",
           "transition-all duration-300 appearance-none cursor-pointer",
           "hover:bg-white/10",
+          // Fix for dropdown options visibility
+          "[&>option]:bg-zinc-900 [&>option]:text-white",
           icon ? 'pl-10' : 'pl-4',
           className
         )}
@@ -164,6 +166,12 @@ export const Button: React.FC<ButtonProps> = ({ children, variant = 'primary', i
 export const StatusBadge: React.FC<{ status: string, size?: 'sm' | 'md' }> = ({ status, size = 'md' }) => {
   const getStyle = (s: string) => {
     switch (s) {
+      case 'Available':
+        return "bg-emerald-500/20 text-emerald-300 border-emerald-500/30";
+      case 'Rented':
+        return "bg-amber-500/20 text-amber-300 border-amber-500/30";
+      case 'In Repair':
+        return "bg-rose-500/20 text-rose-300 border-rose-500/30";
       case 'Ready':
       case 'ReturnReady':
       case 'ReturnComplete':
@@ -188,6 +196,9 @@ export const StatusBadge: React.FC<{ status: string, size?: 'sm' | 'md' }> = ({ 
 
   const translate = (s: string) => {
     switch (s) {
+      case 'Available': return 'Verfügbar';
+      case 'Rented': return 'Verliehen';
+      case 'In Repair': return 'In Reparatur';
       case 'Draft': return 'Entwurf';
       case 'Preparing': return 'In Arbeit';
       case 'Ready': return 'Bereit';

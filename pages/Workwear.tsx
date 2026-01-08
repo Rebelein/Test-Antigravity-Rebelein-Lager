@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Plus, Search, Shirt, Ruler, ShoppingBag, History, Settings, User as UserIcon, Check, X, AlertTriangle, FileText, ChevronRight, ShoppingCart, Send, Trash2 } from 'lucide-react';
+import { Plus, Search, Shirt, Ruler, ShoppingBag, History, Settings, User as UserIcon, Check, X, AlertTriangle, FileText, ChevronRight, ChevronDown, ShoppingCart, Send, Trash2 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../supabaseClient';
-import { GlassCard, Button, GlassModal } from '../components/UIComponents';
+import { GlassCard, Button, GlassModal, GlassInput, GlassSelect } from '../components/UIComponents';
 import { toast } from 'sonner';
 import { WorkwearRole, WorkwearTemplate, UserSize, WorkwearOrder, WorkwearOrderItem, CartItem } from '../types';
 import { clsx } from 'clsx';
@@ -36,6 +36,21 @@ const Workwear = () => {
     const [cart, setCart] = useState<CartItem[]>([]);
     const [isCartOpen, setIsCartOpen] = useState(false);
     const [ordering, setOrdering] = useState(false);
+
+    // Collapsible Categories
+    const [collapsedCategories, setCollapsedCategories] = useState<string[]>([]);
+
+    // Custom Request State
+    const [isCustomRequestModalOpen, setIsCustomRequestModalOpen] = useState(false);
+    const [customRequest, setCustomRequest] = useState({
+        name: '',
+        articleNumber: '',
+        category: '',
+        size: '',
+        price: '',
+        url: '',
+        notes: ''
+    });
 
     // Initialize Role and Data
     useEffect(() => {
@@ -105,20 +120,58 @@ const Workwear = () => {
 
     const addToCart = (template: WorkwearTemplate, size: string) => {
         setCart(prev => {
-            const existing = prev.find(item => item.template.id === template.id && item.size === size);
+            const existing = prev.find(item => item.template?.id === template.id && item.size === size);
             if (existing) {
                 return prev.map(item => item === existing ? { ...item, quantity: item.quantity + 1 } : item);
             }
-            return [...prev, { id: crypto.randomUUID(), template, size, quantity: 1 }];
+            return [...prev, { id: crypto.randomUUID(), type: 'catalog', template, size, quantity: 1 }];
         });
         toast.success("Zum Warenkorb hinzugefügt");
+    };
+
+    const addCustomToCart = () => {
+        if (!customRequest.name || !customRequest.category || !customRequest.size || !customRequest.price) {
+            toast.error("Bitte alle Pflichtfelder ausfüllen");
+            return;
+        }
+
+        const price = parseFloat(customRequest.price.replace(',', '.'));
+        if (isNaN(price)) {
+            toast.error("Ungültiger Preis");
+            return;
+        }
+
+        setCart(prev => [
+            ...prev,
+            {
+                id: crypto.randomUUID(),
+                type: 'custom',
+                customData: {
+                    name: customRequest.name,
+                    articleNumber: customRequest.articleNumber,
+                    category: customRequest.category,
+                    price: price,
+                    url: customRequest.url
+                },
+                size: customRequest.size,
+                quantity: 1
+            }
+        ]);
+
+        setIsCustomRequestModalOpen(false);
+        setCustomRequest({ name: '', articleNumber: '', category: '', size: '', price: '', url: '', notes: '' });
+        toast.success("Wunschartikel zum Warenkorb hinzugefügt");
     };
 
     const removeFromCart = (id: string) => {
         setCart(prev => prev.filter(item => item.id !== id));
     };
 
-    const cartTotal = cart.reduce((sum, item) => sum + (item.template.price * item.quantity), 0);
+    const cartTotal = cart.reduce((sum, item) => {
+        const price = item.type === 'catalog' ? item.template!.price : item.customData!.price;
+        return sum + (price * item.quantity);
+    }, 0);
+
     const availableBudget = myBudget ? (myBudget.limit - myBudget.used - myBudget.reserved) : 0;
 
     const handleCheckout = async () => {
@@ -146,14 +199,29 @@ const Workwear = () => {
             if (orderError) throw orderError;
 
             // 2. Create Items
-            const items = cart.map(item => ({
-                order_id: order.id,
-                template_id: item.template.id,
-                size: item.size,
-                quantity: item.quantity,
-                price_at_order: item.template.price,
-                use_logo: item.template.has_logo || false
-            }));
+            const items = cart.map(item => {
+                if (item.type === 'catalog') {
+                    return {
+                        order_id: order.id,
+                        template_id: item.template!.id,
+                        size: item.size,
+                        quantity: item.quantity,
+                        price_at_order: item.template!.price,
+                        use_logo: item.template!.has_logo || false
+                    };
+                } else {
+                    return {
+                        order_id: order.id,
+                        custom_name: item.customData!.name,
+                        custom_article_number: item.customData!.articleNumber,
+                        custom_url: item.customData!.url,
+                        size: item.size,
+                        quantity: item.quantity,
+                        price_at_order: item.customData!.price,
+                        use_logo: false
+                    };
+                }
+            });
 
             const { error: itemsError } = await supabase
                 .from('workwear_order_items')
@@ -264,21 +332,49 @@ const Workwear = () => {
                             exit={{ opacity: 0, y: -10 }}
                             className="space-y-6"
                         >
-                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                                {templates.map((item) => (
-                                    <CatalogItem key={item.id} template={item} onAddToCart={addToCart} defaultSize={userSizes[item.category]} />
-                                ))}
+                            {/* NEW: Custom Item Request Button (For everyone) */}
+                            <button
+                                onClick={() => setIsCustomRequestModalOpen(true)}
+                                className="w-full py-4 mb-6 border border-dashed border-white/10 rounded-xl flex items-center justify-center gap-2 text-white/40 hover:text-emerald-400 hover:border-emerald-500/30 hover:bg-emerald-500/5 transition-all group"
+                            >
+                                <div className="w-8 h-8 rounded-full bg-white/5 flex items-center justify-center group-hover:scale-110 transition-transform">
+                                    <Plus size={16} />
+                                </div>
+                                <span className="font-medium">Wunschartikel / Sonderbestellung anfragen</span>
+                            </button>
 
-                                {/* Admin: Add New Template Card */}
-                                {(role === 'chef' || role === 'besteller') && (
-                                    <button onClick={() => { setActiveTab('admin'); setAdminView('templates'); }} className="border-2 border-dashed border-white/10 rounded-3xl flex flex-col items-center justify-center min-h-[300px] text-white/30 hover:text-emerald-400 hover:border-emerald-500/30 hover:bg-emerald-500/5 transition-all group">
-                                        <div className="w-16 h-16 rounded-full bg-white/5 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
-                                            <Plus size={32} />
+                            {Object.entries(templates.reduce((acc, item) => {
+                                const cat = item.category || 'Sonstiges';
+                                if (!acc[cat]) acc[cat] = [];
+                                acc[cat].push(item);
+                                return acc;
+                            }, {} as Record<string, WorkwearTemplate[]>)).sort((a, b) => {
+                                const order = ['T-Shirt', 'Pullover', 'Jacke', 'Hose', 'Schuhe', 'PSA', 'Sonstiges'];
+                                return order.indexOf(a[0]) - order.indexOf(b[0]);
+                            }).map(([category, items]) => (
+                                <div key={category} className="space-y-4">
+                                    <button
+                                        onClick={() => setCollapsedCategories(prev => prev.includes(category) ? prev.filter(c => c !== category) : [...prev, category])}
+                                        className="w-full flex items-center justify-between p-4 bg-white/5 hover:bg-white/10 border border-white/5 rounded-xl transition-all group"
+                                    >
+                                        <div className="flex items-center gap-3">
+                                            {collapsedCategories.includes(category) ? <ChevronRight size={20} className="text-white/50" /> : <ChevronDown size={20} className="text-emerald-400" />}
+                                            <h3 className="text-lg font-bold text-white">{category}</h3>
+                                            <span className="bg-white/10 text-white/50 text-xs px-2 py-0.5 rounded-full">{items.length}</span>
                                         </div>
-                                        <span className="font-medium">Neuen Artikel anlegen</span>
+                                        <div className="w-full h-px bg-white/5 flex-1 mx-4 group-hover:bg-white/10 transition-colors" />
                                     </button>
-                                )}
-                            </div>
+
+                                    {!collapsedCategories.includes(category) && (
+                                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 animate-in fade-in slide-in-from-top-4 duration-300">
+                                            {items.map((item) => (
+                                                <CatalogItem key={item.id} template={item} onAddToCart={addToCart} defaultSize={userSizes[item.category]} />
+                                            ))}
+                                        </div>
+                                    )}
+                                </div>
+                            ))}
+
                             {templates.length === 0 && !loading && (
                                 <div className="flex flex-col items-center justify-center py-12 text-center">
                                     <div className="w-20 h-20 rounded-full bg-white/5 flex items-center justify-center mb-4">
@@ -287,7 +383,6 @@ const Workwear = () => {
                                     <h3 className="text-lg font-bold text-white mb-2">Keine Artikel gefunden</h3>
                                     <p className="text-white/50 max-w-sm">
                                         Es wurden noch keine Arbeitskleidungs-Vorlagen erstellt.
-                                        {(role === 'chef' || role === 'besteller') && " Wechsle zur Verwaltung, um Artikel anzulegen."}
                                     </p>
                                 </div>
                             )}
@@ -372,13 +467,24 @@ const Workwear = () => {
                             {cart.map(item => (
                                 <div key={item.id} className="flex items-center gap-4 bg-white/5 p-3 rounded-lg border border-white/5">
                                     <div className="w-12 h-12 bg-black/30 rounded flex items-center justify-center shrink-0 overflow-hidden">
-                                        {item.template.image_url ? <img src={item.template.image_url} className="w-full h-full object-cover" /> : <Shirt className="text-white/20" />}
+                                        {item.type === 'catalog' && item.template?.image_url ? (
+                                            <img src={item.template.image_url} className="w-full h-full object-cover" />
+                                        ) : (
+                                            <Shirt className="text-white/20" />
+                                        )}
                                     </div>
                                     <div className="flex-1 min-w-0">
-                                        <div className="font-bold text-white truncate">{item.template.name}</div>
-                                        <div className="text-xs text-white/50">Größe: {item.size} | Menge: {item.quantity} | {item.template.has_logo ? 'Mit Logo' : 'Ohne Logo'}</div>
+                                        <div className="font-bold text-white truncate">
+                                            {item.type === 'catalog' ? item.template!.name : item.customData!.name}
+                                        </div>
+                                        <div className="text-xs text-white/50">
+                                            Größe: {item.size} | Menge: {item.quantity} |
+                                            {item.type === 'catalog' && item.template!.has_logo ? ' Mit Logo' : ' Ohne Logo'}
+                                        </div>
                                     </div>
-                                    <div className="font-mono text-emerald-300">{(item.template.price * item.quantity).toFixed(2)} €</div>
+                                    <div className="font-mono text-emerald-300">
+                                        {((item.type === 'catalog' ? item.template!.price : item.customData!.price) * item.quantity).toFixed(2)} €
+                                    </div>
                                     <button onClick={() => removeFromCart(item.id)} className="p-2 hover:bg-white/10 rounded-full text-white/40 hover:text-rose-400"><Trash2 size={16} /></button>
                                 </div>
                             ))}
@@ -410,6 +516,93 @@ const Workwear = () => {
                             </div>
                         </div>
                     )}
+                </div>
+            </GlassModal>
+
+            {/* CUSTOM REQUEST MODAL */}
+            <GlassModal isOpen={isCustomRequestModalOpen} onClose={() => setIsCustomRequestModalOpen(false)} title="Wunschartikel Anfrage">
+                <div className="p-6 space-y-4">
+                    <div className="bg-white/5 p-4 rounded-lg border border-white/10 text-sm text-white/60 mb-4">
+                        Hier kannst du Artikel anfragen, die nicht im Katalog sind. Bitte fülle so viele Informationen wie möglich aus.
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                            <label className="text-xs text-white/50">Kategorie (für Größenzuordnung)</label>
+                            <GlassSelect
+                                value={customRequest.category}
+                                onChange={(e) => {
+                                    const cat = e.target.value;
+                                    setCustomRequest(prev => ({
+                                        ...prev,
+                                        category: cat,
+                                        size: userSizes[cat] || prev.size // Auto-fill size
+                                    }));
+                                }}
+                            >
+                                <option value="">Bitte wählen...</option>
+                                <option value="T-Shirt">T-Shirt</option>
+                                <option value="Pullover">Pullover</option>
+                                <option value="Jacke">Jacke</option>
+                                <option value="Hose">Hose</option>
+                                <option value="Schuhe">Schuhe</option>
+                                <option value="PSA">PSA</option>
+                                <option value="Sonstiges">Sonstiges</option>
+                            </GlassSelect>
+                        </div>
+                        <div className="space-y-2">
+                            <label className="text-xs text-white/50">Größe</label>
+                            <GlassInput
+                                value={customRequest.size}
+                                onChange={(e) => setCustomRequest(prev => ({ ...prev, size: e.target.value }))}
+                                placeholder="z.B. XL oder 42"
+                            />
+                        </div>
+                    </div>
+
+                    <div className="space-y-2">
+                        <label className="text-xs text-white/50">Artikelname / Beschreibung *</label>
+                        <GlassInput
+                            value={customRequest.name}
+                            onChange={(e) => setCustomRequest(prev => ({ ...prev, name: e.target.value }))}
+                            placeholder="Genauer Name des Artikels"
+                        />
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                            <label className="text-xs text-white/50">Artikelnummer (Optional)</label>
+                            <GlassInput
+                                value={customRequest.articleNumber}
+                                onChange={(e) => setCustomRequest(prev => ({ ...prev, articleNumber: e.target.value }))}
+                                placeholder="z.B. 123456"
+                            />
+                        </div>
+                        <div className="space-y-2">
+                            <label className="text-xs text-white/50">Preis (€) ca. *</label>
+                            <GlassInput
+                                type="number"
+                                step="0.01"
+                                value={customRequest.price}
+                                onChange={(e) => setCustomRequest(prev => ({ ...prev, price: e.target.value }))}
+                                placeholder="0.00"
+                            />
+                        </div>
+                    </div>
+
+                    <div className="space-y-2">
+                        <label className="text-xs text-white/50">Link zum Artikel (Optional)</label>
+                        <GlassInput
+                            value={customRequest.url}
+                            onChange={(e) => setCustomRequest(prev => ({ ...prev, url: e.target.value }))}
+                            placeholder="https://..."
+                        />
+                    </div>
+
+                    <div className="flex justify-end gap-2 pt-4">
+                        <Button variant="ghost" onClick={() => setIsCustomRequestModalOpen(false)}>Abbrechen</Button>
+                        <Button onClick={addCustomToCart}>Zum Warenkorb</Button>
+                    </div>
                 </div>
             </GlassModal>
         </div>

@@ -253,7 +253,15 @@ export interface WorkwearBudget {
 
 export interface CartItem {
   id: string;
-  template: WorkwearTemplate;
+  type: 'catalog' | 'custom';
+  template?: WorkwearTemplate;
+  customData?: {
+    name: string;
+    articleNumber?: string;
+    price: number;
+    url?: string;
+    category: string;
+  };
   size: string;
   quantity: number;
 }
@@ -280,8 +288,11 @@ export interface WorkwearOrder {
 export interface WorkwearOrderItem {
   id: string;
   order_id: string;
-  template_id?: string;
+  template_id?: string; // Optional for custom items
   workwear_templates?: WorkwearTemplate; // Join
+  custom_name?: string; // NEW
+  custom_article_number?: string; // NEW
+  custom_url?: string; // NEW
   quantity: number;
   size: string;
   use_logo: boolean;
