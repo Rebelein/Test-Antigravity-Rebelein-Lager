@@ -8,7 +8,13 @@ import { Commission, CommissionItem, Article, Supplier, CommissionEvent } from '
 import { ClipboardCheck, Plus, Search, Package, Truck, CheckCircle2, Printer, X, Loader2, History, Trash2, Box, ExternalLink, Check, ShoppingCart, Minus, ChevronDown, Edit2, Save, AlertTriangle, RotateCcw, Tag, Clock, Undo2, MapPin, PenTool, Layers, ArrowRight, Paperclip, Eye, FileText, Clipboard, MessageSquare, BoxSelect, LogOut } from 'lucide-react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { CommissionCleanupModal } from '../components/CommissionCleanupModal';
+import { CommissionCard } from '../components/CommissionCard';
+import { CommissionDetailModal } from '../components/CommissionDetailModal';
+import { PrintingSection } from '../components/PrintingSection';
 
+import { useCommissionData } from '../hooks/useCommissionData';
+
+// ... existing imports ...
 type CommissionTab = 'active' | 'returns' | 'withdrawn' | 'trash' | 'missing';
 type PrintTab = 'queue' | 'history';
 
@@ -40,10 +46,27 @@ const Commissions: React.FC = () => {
     const navigate = useNavigate();
 
     const [activeTab, setActiveTab] = useState<CommissionTab>('active');
-    const [loading, setLoading] = useState(true);
 
-    const [commissions, setCommissions] = useState<ExtendedCommission[]>([]);
-    const [suppliers, setSuppliers] = useState<Supplier[]>([]); // Available suppliers
+    // --- CUSTOM HOOK ---
+    const {
+        commissions,
+        setCommissions,
+        suppliers,
+        availableArticles,
+        loading,
+        historyLogs,
+        loadingHistory,
+        fetchHistory,
+        localHistoryLogs,
+        fetchCommissionSpecificHistory,
+        recentPrintLogs,
+        loadingPrintHistory,
+        fetchPrintHistory,
+        fetchCommissionItems,
+        logCommissionEvent,
+        refreshCommissions,
+        tabCounts
+    } = useCommissionData(activeTab);
 
     // --- MODAL STATES ---
     const [showCreateModal, setShowCreateModal] = useState(false);
@@ -65,12 +88,9 @@ const Commissions: React.FC = () => {
     // --- DELETE CONFIRMATION STATE ---
     const [deleteTarget, setDeleteTarget] = useState<{ id: string, name: string, mode: 'trash' | 'permanent' } | null>(null);
 
-    // --- HISTORY MODAL STATE ---
+
     const [showHistoryModal, setShowHistoryModal] = useState(false);
-    const [historyLogs, setHistoryLogs] = useState<CommissionEvent[]>([]);
-    const [localHistoryLogs, setLocalHistoryLogs] = useState<CommissionEvent[]>([]); // NEW: Local history for modal
     const [historySearch, setHistorySearch] = useState('');
-    const [loadingHistory, setLoadingHistory] = useState(false);
 
     // --- ATTACHMENT VIEW MODAL ---
     const [viewingAttachment, setViewingAttachment] = useState<string | null>(null);
@@ -96,8 +116,6 @@ const Commissions: React.FC = () => {
     const [showPrintArea, setShowPrintArea] = useState(false); // Default: Collapsed
     const [printTab, setPrintTab] = useState<PrintTab>('queue');
     const [selectedPrintIds, setSelectedPrintIds] = useState<Set<string>>(new Set());
-    const [recentPrintLogs, setRecentPrintLogs] = useState<(CommissionEvent & { commission?: Commission })[]>([]);
-    const [loadingPrintHistory, setLoadingPrintHistory] = useState(false);
 
     // --- CREATE/EDIT FORM STATES ---
     const [isEditMode, setIsEditMode] = useState(false);
@@ -108,7 +126,6 @@ const Commissions: React.FC = () => {
 
     // --- ITEMS STATE (For Prepare View) ---
     const [commItems, setCommItems] = useState<CommissionItem[]>([]); // Real DB items
-    const [availableArticles, setAvailableArticles] = useState<Article[]>([]);
 
     // NEW: Category Selection State
     const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
@@ -179,22 +196,35 @@ const Commissions: React.FC = () => {
 
     useEffect(() => {
         isMounted.current = true;
-        fetchCommissions();
-        fetchSuppliers();
-        fetchArticles();
+        // refreshCommissions(); // Handled by hook
+        // fetchSuppliers(); // Handled by hook
+        // fetchArticles(); // Handled by hook
         return () => { isMounted.current = false; };
     }, [activeTab, profile?.primary_warehouse_id]);
 
     // --- REALTIME SUBSCRIPTION ---
+    // --- REALTIME SUBSCRIPTION ---
+    // Handled by hook
+    /*
     useEffect(() => {
         const channel = supabase
             .channel('commissions-realtime')
+            // ...
+            .subscribe();
+
+        return () => {
+            supabase.removeChannel(channel);
+        };
+    }, [activeCommission, activeTab]); 
+    */
+    // We still need to listen for item changes to update activeCommission details if modal is open
+    useEffect(() => {
+        const channel = supabase
+            .channel('commissions-realtime-ui')
             .on(
                 'postgres_changes',
                 { event: '*', schema: 'public', table: 'commissions' },
                 (payload) => {
-                    fetchCommissions(); // Refresh list
-
                     // If detail modal is open and this specific commission changed, refresh local details
                     if (activeCommission && (payload.new as any)?.id === activeCommission.id) {
                         // Reload full active commission to get updated status/notes
@@ -209,8 +239,6 @@ const Commissions: React.FC = () => {
                 'postgres_changes',
                 { event: '*', schema: 'public', table: 'commission_items' },
                 (payload) => {
-                    fetchCommissions(); // Refresh list (badges might change)
-
                     // If detail modal is open, check if this item belongs to it
                     if (activeCommission) {
                         const newItem = payload.new as CommissionItem;
@@ -218,7 +246,14 @@ const Commissions: React.FC = () => {
                         const relevantId = newItem?.commission_id || oldItem?.commission_id;
 
                         if (relevantId === activeCommission.id) {
-                            fetchCommissionItems(activeCommission.id);
+                            fetchCommissionItems(activeCommission.id).then(data => {
+                                if (data) {
+                                    setCommItems(data.map((item: any) => ({
+                                        ...item,
+                                        article: item.article
+                                    })));
+                                }
+                            });
                         }
                     }
                 }
@@ -228,7 +263,12 @@ const Commissions: React.FC = () => {
         return () => {
             supabase.removeChannel(channel);
         };
-    }, [activeCommission, activeTab]); // Re-sub if activeCommission changes to have correct ID in closure
+    }, [activeCommission]);
+
+    const handleOpenHistory = () => {
+        setShowHistoryModal(true);
+        fetchHistory();
+    };
 
     // Fetch print history when tab changes
     useEffect(() => {
@@ -301,189 +341,7 @@ const Commissions: React.FC = () => {
         }
     };
 
-    // --- LOGGING HELPER ---
-    const logCommissionEvent = async (commId: string, commName: string, action: string, details: string) => {
-        if (!user) return;
-        try {
-            await supabase.from('commission_events').insert({
-                commission_id: commId,
-                commission_name: commName,
-                user_id: user.id,
-                action: action,
-                details: details
-            });
-        } catch (err) {
-            console.error("Failed to log event", err);
-        }
-    };
 
-    const fetchCommissions = async () => {
-        if (commissions.length === 0) setLoading(true);
-
-        try {
-            // IMPORTANT: Include commission_items to check backorder status locally
-            let query = supabase
-                .from('commissions')
-                .select('*, suppliers(name), commission_items(*, article:articles(name))')
-                .order('name', { ascending: true });
-
-            if (activeTab === 'active') {
-                query = query.is('deleted_at', null);
-            } else if (activeTab === 'returns') {
-                query = query.is('deleted_at', null);
-            } else if (activeTab === 'withdrawn') {
-                query = query.is('deleted_at', null);
-            } else if (activeTab === 'missing') {
-                query = query.is('deleted_at', null).eq('status', 'Missing');
-            } else if (activeTab === 'trash') {
-                query = query.not('deleted_at', 'is', null);
-            }
-
-            if (profile?.primary_warehouse_id) {
-                query = query.eq('warehouse_id', profile.primary_warehouse_id);
-            }
-
-            const { data, error } = await query;
-            if (error) throw error;
-
-            const sevenDaysAgo = new Date();
-            sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
-
-            const filteredData = (data as ExtendedCommission[]).filter(c => {
-                if (activeTab === 'trash' && c.deleted_at) {
-                    return new Date(c.deleted_at) > sevenDaysAgo;
-                }
-                return true;
-            });
-
-            setCommissions(filteredData);
-        } catch (err) {
-            console.error(err);
-        } finally {
-            setLoading(false);
-        }
-    };
-
-    const fetchHistory = async () => {
-        setLoadingHistory(true);
-        try {
-            const { data, error } = await supabase
-                .from('commission_events')
-                .select('*, profiles(full_name)')
-                .order('created_at', { ascending: false })
-                .limit(100);
-
-            if (error) throw error;
-            setHistoryLogs(data || []);
-        } catch (err) {
-            console.error("History fetch failed", err);
-        } finally {
-            setLoadingHistory(false);
-        }
-    };
-
-    // NEW: Fetch history for a specific commission
-    const fetchCommissionSpecificHistory = async (commissionId: string) => {
-        try {
-            const { data, error } = await supabase
-                .from('commission_events')
-                .select('*, profiles(full_name)')
-                .eq('commission_id', commissionId)
-                .order('created_at', { ascending: false });
-
-            if (error) throw error;
-            setLocalHistoryLogs(data || []);
-        } catch (err) {
-            console.error("Local history fetch failed", err);
-        }
-    };
-
-    const fetchPrintHistory = async () => {
-        setLoadingPrintHistory(true);
-        try {
-            const { data, error } = await supabase
-                .from('commission_events')
-                .select('*, commission:commissions(*), profiles(full_name)')
-                .eq('action', 'labels_printed')
-                .order('created_at', { ascending: false })
-                .limit(15);
-
-            if (error) throw error;
-            setRecentPrintLogs(data || []);
-        } catch (err) {
-            console.error("Print History fetch failed", err);
-        } finally {
-            setLoadingPrintHistory(false);
-        }
-    };
-
-    const handleOpenHistory = () => {
-        setShowHistoryModal(true);
-        fetchHistory();
-    };
-
-    const fetchSuppliers = async () => {
-        // Fetch Suppliers AND check usage frequency for sorting
-        try {
-            const { data: sups } = await supabase.from('suppliers').select('*');
-
-            // Get basic usage count from commission history (supplier_id field)
-            const { data: usage } = await supabase.from('commissions').select('supplier_id');
-
-            if (sups && usage) {
-                const counts: Record<string, number> = {};
-                usage.forEach((c: any) => {
-                    if (c.supplier_id) counts[c.supplier_id] = (counts[c.supplier_id] || 0) + 1;
-                });
-
-                // Sort: Most used first, then alphabetical
-                const sorted = sups.sort((a, b) => {
-                    const countA = counts[a.id] || 0;
-                    const countB = counts[b.id] || 0;
-                    if (countA !== countB) return countB - countA; // Descending count
-                    return a.name.localeCompare(b.name);
-                });
-                setSuppliers(sorted);
-            } else if (sups) {
-                // Fallback to alphabetical
-                setSuppliers(sups.sort((a, b) => a.name.localeCompare(b.name)));
-            }
-        } catch (e) {
-            console.error(e);
-        }
-    };
-
-    const fetchArticles = async () => {
-        if (!profile?.primary_warehouse_id) return;
-        const { data } = await supabase
-            .from('articles')
-            .select('*')
-            .eq('warehouse_id', profile.primary_warehouse_id);
-
-        if (data) {
-            // Fix: Map DB column image_url to image property so UI displays thumbnail correctly
-            const mapped = data.map((item: any) => ({
-                ...item,
-                image: item.image_url
-            }));
-            setAvailableArticles(mapped);
-        }
-    };
-
-    const fetchCommissionItems = async (commissionId: string) => {
-        const { data } = await supabase
-            .from('commission_items')
-            .select('*, article:articles(*)')
-            .eq('commission_id', commissionId);
-
-        if (data) {
-            setCommItems(data.map((item: any) => ({
-                ...item,
-                article: item.article
-            })));
-        }
-        return data;
-    };
 
     // --- TRASH / DELETE LOGIC ---
     const requestDelete = (id: string, name: string, mode: 'trash' | 'permanent', e?: React.MouseEvent) => {
@@ -505,8 +363,8 @@ const Commissions: React.FC = () => {
                 await logCommissionEvent(deleteTarget.id, deleteTarget.name, 'permanently_deleted', 'Endgültig gelöscht');
             }
 
-            fetchCommissions();
             setDeleteTarget(null);
+            refreshCommissions(); // Use hook function
         } catch (e: any) {
             alert(e.message);
         } finally {
@@ -519,7 +377,8 @@ const Commissions: React.FC = () => {
         try {
             await supabase.from('commissions').update({ deleted_at: null }).eq('id', id);
             await logCommissionEvent(id, name, 'restored', 'Aus Papierkorb wiederhergestellt');
-            fetchCommissions();
+            await logCommissionEvent(id, name, 'restored', 'Aus Papierkorb wiederhergestellt');
+            refreshCommissions(); // Use hook function
         } catch (e: any) {
             alert(e.message);
         }
@@ -527,12 +386,7 @@ const Commissions: React.FC = () => {
 
     // --- PRINT QUEUE LOGIC ---
 
-    const toggleQueueSelection = (id: string) => {
-        const newSet = new Set(selectedPrintIds);
-        if (newSet.has(id)) newSet.delete(id);
-        else newSet.add(id);
-        setSelectedPrintIds(newSet);
-    };
+
 
     const markLabelsAsPrinted = async () => {
         if (selectedPrintIds.size === 0) return;
@@ -557,7 +411,8 @@ const Commissions: React.FC = () => {
             await supabase.from('commissions').update({ needs_label: false }).in('id', ids);
 
             setSelectedPrintIds(new Set());
-            fetchCommissions();
+            refreshCommissions(); // Use hook function
+            fetchPrintHistory(); // Update history immediately
 
             setPrintTab('history');
         } catch (e) {
@@ -572,7 +427,7 @@ const Commissions: React.FC = () => {
         await logCommissionEvent(id, name, 'queued', 'Zur Druckwarteschlange hinzugefügt');
         setShowLabelOptionsModal(null);
         setShowLabelUpdateModal(false);
-        fetchCommissions();
+        refreshCommissions(); // Use hook function
 
         // If we are supposed to return to Dashboard, do it now
         if (returnPath) {
@@ -845,7 +700,7 @@ const Commissions: React.FC = () => {
             }
 
             setShowCreateModal(false);
-            fetchCommissions();
+            refreshCommissions();
 
             if (!isEditMode) {
                 setShowLabelOptionsModal(commId);
@@ -866,7 +721,8 @@ const Commissions: React.FC = () => {
     const handleOpenPrepare = async (comm: Commission) => {
         setActiveCommission(comm);
         setLabelDataChanged(false); // Reset tracking
-        await fetchCommissionItems(comm.id);
+        const items = await fetchCommissionItems(comm.id);
+        setCommItems(items || []);
         fetchCommissionSpecificHistory(comm.id); // NEW: Load history
         setShowPrepareModal(true);
     };
@@ -921,7 +777,7 @@ const Commissions: React.FC = () => {
             await logCommissionEvent(activeCommission.id, activeCommission.name, 'status_change', 'Status auf BEREIT gesetzt. Bestand gebucht.');
 
             setActiveCommission(prev => prev ? { ...prev, status: 'Ready' } : null);
-            fetchCommissions();
+            refreshCommissions();
             setShowConfirmReadyModal(false);
         } catch (err: any) {
             alert("Fehler: " + err.message);
@@ -944,7 +800,7 @@ const Commissions: React.FC = () => {
 
             setShowConfirmWithdrawModal(false);
             setShowPrepareModal(false);
-            fetchCommissions();
+            refreshCommissions();
         } catch (err: any) { alert("Fehler: " + err.message); } finally { setIsSubmitting(false); }
     };
 
@@ -959,7 +815,7 @@ const Commissions: React.FC = () => {
             await logCommissionEvent(activeCommission.id, activeCommission.name, 'status_change', 'Status manuell zurückgestellt');
 
             setActiveCommission(prev => prev ? { ...prev, status: 'Preparing' } : null);
-            fetchCommissions();
+            refreshCommissions();
         } catch (err: any) {
             alert("Fehler: " + err.message);
         } finally {
@@ -981,7 +837,7 @@ const Commissions: React.FC = () => {
             await logCommissionEvent(activeCommission.id, activeCommission.name, 'status_change', 'Entnahme widerrufen (Status: Bereit)');
 
             setShowPrepareModal(false);
-            fetchCommissions();
+            refreshCommissions();
         } catch (err: any) {
             alert(err.message);
         } finally {
@@ -1006,7 +862,7 @@ const Commissions: React.FC = () => {
 
             setShowPrepareModal(false);
             setActiveTab('returns');
-            fetchCommissions();
+            refreshCommissions();
         } catch (e: any) {
             alert(e.message);
         } finally {
@@ -1025,7 +881,7 @@ const Commissions: React.FC = () => {
             await logCommissionEvent(activeCommission.id, activeCommission.name, 'status_change', 'Retoure ins Abholregal gelegt');
 
             setActiveCommission(prev => prev ? { ...prev, status: 'ReturnReady' } : null);
-            fetchCommissions();
+            refreshCommissions();
         } catch (e: any) {
             alert(e.message);
         } finally {
@@ -1042,7 +898,7 @@ const Commissions: React.FC = () => {
             await logCommissionEvent(activeCommission.id, activeCommission.name, 'status_change', 'Retoure abgeholt (Abgeschlossen)');
 
             setShowPrepareModal(false);
-            fetchCommissions();
+            refreshCommissions();
         } catch (e: any) {
             alert(e.message);
         } finally {
@@ -1242,6 +1098,26 @@ const Commissions: React.FC = () => {
     const allItemsPicked = commItems.length === 0 || commItems.every(i => i.is_picked);
     const hasBackorders = commItems.some(i => i.is_backorder);
 
+    const filteredGroups = React.useMemo(() => {
+        const groups = {
+            ready: [] as ExtendedCommission[],
+            preparing: [] as ExtendedCommission[],
+            draft: [] as ExtendedCommission[],
+            returnReady: [] as ExtendedCommission[],
+            returnPending: [] as ExtendedCommission[],
+        };
+
+        commissions.forEach(c => {
+            if (c.status === 'Ready') groups.ready.push(c);
+            else if (c.status === 'Preparing') groups.preparing.push(c);
+            else if (c.status === 'Draft') groups.draft.push(c);
+            else if (c.status === 'ReturnReady') groups.returnReady.push(c);
+            else if (c.status === 'ReturnPending') groups.returnPending.push(c);
+        });
+
+        return groups;
+    }, [commissions]);
+
     // --- CATEGORIZATION HELPER ---
     const renderCategory = (title: string, statusKey: 'ready' | 'preparing' | 'draft' | 'returnReady' | 'returnPending', items: ExtendedCommission[], colorClass: string) => {
         const isCollapsed = collapsedCategories[statusKey];
@@ -1276,81 +1152,18 @@ const Commissions: React.FC = () => {
                         }}
                     >
                         <AnimatePresence mode='popLayout'>
-                            {items.map(comm => {
-                                const hasItemBackorder = comm.commission_items?.some((i: any) => i.is_backorder);
-
-                                return (
-                                    <motion.div
-                                        key={comm.id}
-                                        layout
-                                        initial={{ opacity: 0, scale: 0.9 }}
-                                        animate={{ opacity: 1, scale: 1 }}
-                                        exit={{ opacity: 0, scale: 0.9 }}
-                                        onClick={() => handleOpenPrepare(comm)}
-                                        className={`cursor-pointer group relative h-full flex flex-col rounded-3xl overflow-hidden border backdrop-blur-lg shadow-lg transition-all ${hasItemBackorder ? 'bg-red-500/10 hover:bg-red-500/20 border-red-500/50' :
-                                            statusKey === 'preparing' ? 'bg-amber-500/10 hover:bg-amber-500/20 border-amber-500/50' : // NEW YELLOW STYLE
-                                                'bg-white/10 hover:bg-white/20 border-white/20 hover:border-white/30'
-                                            }`}
-                                    >
-                                        <div className={`absolute top-0 left-0 w-1 h-full ${hasItemBackorder ? 'bg-red-500' :
-                                            (statusKey === 'ready' ? 'bg-emerald-400' :
-                                                statusKey === 'preparing' ? 'bg-amber-400' : // NEW YELLOW BAR
-                                                    statusKey === 'returnReady' ? 'bg-purple-400' :
-                                                        statusKey === 'returnPending' ? 'bg-orange-400' : 'bg-white/60')}`}
-                                        />
-                                        <div className="flex justify-between items-start p-4 pl-5 flex-1">
-                                            <div className="flex-1 min-w-0">
-                                                <div className="flex items-start justify-between">
-                                                    <h3 className={`text-lg font-bold truncate pr-2 ${hasItemBackorder ? 'text-white' : 'text-white'}`}>{comm.name}</h3>
-                                                    {hasItemBackorder && <AlertTriangle size={16} className="text-red-500 shrink-0" />}
-                                                </div>
-
-                                                <div className="flex flex-wrap items-center gap-2 mt-2">
-                                                    {comm.order_number && (
-                                                        <span className="px-2.5 py-0.5 rounded-full text-xs font-medium border bg-blue-500/20 text-blue-300 border-blue-500/30">
-                                                            {comm.order_number}
-                                                        </span>
-                                                    )}
-                                                    {comm.notes && (
-                                                        <span className="px-2.5 py-0.5 rounded-full text-xs font-medium border bg-white/10 text-white/70 border-white/10 max-w-[150px] truncate">
-                                                            {comm.notes}
-                                                        </span>
-                                                    )}
-                                                    {comm.commission_items?.map((item: any) => {
-                                                        // Visual indicator for item backorder directly on tile
-                                                        const isBo = item.is_backorder;
-
-                                                        if (item.type === 'Stock' && item.article) {
-                                                            return (
-                                                                <span key={item.id} className={`px-2.5 py-0.5 rounded-full text-xs font-medium border flex items-center gap-1 max-w-[200px] truncate ${isBo ? 'bg-red-500/20 text-red-200 border-red-500/40' : 'bg-emerald-500/10 text-emerald-300 border-emerald-500/20'}`}>
-                                                                    {item.amount > 1 && <span className="opacity-70 text-[10px]">{item.amount}x</span>}
-                                                                    {item.article.name}
-                                                                    {isBo && item.notes && <span className="text-[9px] opacity-70 ml-1 italic">{item.notes}</span>}
-                                                                </span>
-                                                            );
-                                                        }
-                                                        if (item.type === 'External') {
-                                                            return (
-                                                                <span key={item.id} className={`px-2.5 py-0.5 rounded-full text-xs font-medium border max-w-[200px] truncate ${isBo ? 'bg-red-500/20 text-red-200 border-red-500/40' : 'bg-purple-500/10 text-purple-300 border-purple-500/20'}`}>
-                                                                    {item.custom_name}{item.external_reference ? `: ${item.external_reference}` : ''}
-                                                                    {isBo && item.notes && <span className="text-[9px] opacity-70 ml-1 italic">{item.notes}</span>}
-                                                                </span>
-                                                            );
-                                                        }
-                                                        return null;
-                                                    })}
-                                                </div>
-                                            </div>
-                                            <div className="flex flex-col items-end gap-2">
-                                                <div className="flex gap-2">
-                                                    <button onClick={(e) => handleEditCommission(comm, e)} className="p-2 bg-white/5 hover:bg-white/20 rounded-full text-white/60 hover:text-white transition-colors"><Edit2 size={16} /></button>
-                                                    <button onClick={(e) => requestDelete(comm.id, comm.name, 'trash', e)} className="p-2 bg-white/5 hover:bg-white/20 rounded-full text-white/60 hover:text-rose-400 transition-colors"><Trash2 size={16} /></button>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </motion.div>
-                                );
-                            })}
+                            {items.map(comm => (
+                                <CommissionCard
+                                    key={comm.id}
+                                    commission={comm}
+                                    colorClass={colorClass}
+                                    statusKey={statusKey}
+                                    onClick={handleOpenPrepare}
+                                    onEdit={handleEditCommission}
+                                    onDelete={requestDelete}
+                                    onPrintLabel={statusKey === 'ready' || statusKey === 'preparing' ? undefined : undefined}
+                                />
+                            ))}
                         </AnimatePresence>
                     </motion.div>
                 )}
@@ -1372,113 +1185,46 @@ const Commissions: React.FC = () => {
                 </div>
                 <div className="flex gap-2 p-1 bg-black/20 rounded-xl w-full sm:w-fit border border-white/5 overflow-x-auto">
                     <button onClick={() => setActiveTab('active')} className={`flex-1 px-4 py-2 rounded-lg text-sm font-medium transition-all whitespace-nowrap ${activeTab === 'active' ? 'bg-white/10 text-white shadow' : 'text-white/50'}`}>Aktive</button>
-                    <button onClick={() => setActiveTab('missing')} className={`flex-1 px-4 py-2 rounded-lg text-sm font-medium transition-all whitespace-nowrap ${activeTab === 'missing' ? 'bg-white/10 text-white shadow' : 'text-white/50'}`}>Vermisst</button>
+                    <button onClick={() => setActiveTab('missing')} className={`flex-1 px-4 py-2 rounded-lg text-sm font-medium transition-all whitespace-nowrap flex items-center justify-center gap-2 ${activeTab === 'missing' ? 'bg-white/10 text-white shadow' : 'text-white/50'}`}>
+                        Vermisst
+                        {tabCounts.missing > 0 && (
+                            <span className={`px-1.5 py-0.5 rounded-full text-[10px] font-bold ${activeTab === 'missing' ? 'bg-white text-rose-500' : 'bg-white/10 text-white/60'}`}>
+                                {tabCounts.missing}
+                            </span>
+                        )}
+                    </button>
                     <button onClick={() => setActiveTab('withdrawn')} className={`flex-1 px-4 py-2 rounded-lg text-sm font-medium transition-all whitespace-nowrap ${activeTab === 'withdrawn' ? 'bg-white/10 text-white shadow' : 'text-white/50'}`}>Entnommen</button>
-                    <button onClick={() => setActiveTab('trash')} className={`flex-1 px-4 py-2 rounded-lg text-sm font-medium transition-all whitespace-nowrap flex items-center gap-2 ${activeTab === 'trash' ? 'bg-white/10 text-white shadow' : 'text-white/50'}`}>
+                    <button onClick={() => setActiveTab('trash')} className={`flex-1 px-4 py-2 rounded-lg text-sm font-medium transition-all whitespace-nowrap flex items-center justify-center gap-2 ${activeTab === 'trash' ? 'bg-white/10 text-white shadow' : 'text-white/50'}`}>
                         <Trash2 size={14} /> Papierkorb
                     </button>
-                    <button onClick={() => setActiveTab('returns')} className={`flex-1 px-4 py-2 rounded-lg text-sm font-medium transition-all whitespace-nowrap ${activeTab === 'returns' ? 'bg-white/10 text-white shadow' : 'text-white/50'}`}>Retouren</button>
+                    <button onClick={() => setActiveTab('returns')} className={`flex-1 px-4 py-2 rounded-lg text-sm font-medium transition-all whitespace-nowrap flex items-center justify-center gap-2 ${activeTab === 'returns' ? 'bg-white/10 text-white shadow' : 'text-white/50'}`}>
+                        Retouren
+                        {tabCounts.returns > 0 && (
+                            <span className={`px-1.5 py-0.5 rounded-full text-[10px] font-bold ${activeTab === 'returns' ? 'bg-white text-purple-500' : 'bg-white/10 text-white/60'}`}>
+                                {tabCounts.returns}
+                            </span>
+                        )}
+                    </button>
                 </div>
             </header>
 
             {/* --- PERMANENT PRINT AREA (Queue & History) - Only in Active Tab --- */}
+            {/* --- PRINTING SECTION --- */}
             {activeTab === 'active' && (
-                <div className="bg-blue-500/10 border border-blue-500/20 rounded-xl p-4 mb-6 animate-in fade-in">
-                    <div className="flex items-center justify-between mb-3 cursor-pointer" onClick={() => setShowPrintArea(!showPrintArea)}>
-                        <div className="flex items-center gap-2 text-blue-300">
-                            <Printer size={20} />
-                            <span className="font-bold">Etikettendruck</span>
-                        </div>
-                        <ChevronDown size={18} className={`text-blue-300/50 transition-transform ${showPrintArea ? 'rotate-180' : ''}`} />
-                    </div>
-
-                    {showPrintArea && (
-                        <div className="mt-4">
-                            {/* Tabs */}
-                            <div className="flex gap-2 mb-4 border-b border-white/10 pb-1">
-                                <button
-                                    onClick={() => setPrintTab('queue')}
-                                    className={`text-xs font-medium px-3 py-2 rounded-t-lg transition-colors ${printTab === 'queue' ? 'bg-blue-600 text-white' : 'text-white/50 hover:text-white hover:bg-white/10'}`}
-                                >
-                                    Warteschlange ({queueItems.length})
-                                </button>
-                                <button
-                                    onClick={() => setPrintTab('history')}
-                                    className={`text-xs font-medium px-3 py-2 rounded-t-lg transition-colors ${printTab === 'history' ? 'bg-blue-600 text-white' : 'text-white/50 hover:text-white hover:bg-white/10'}`}
-                                >
-                                    Zuletzt gedruckt
-                                </button>
-                            </div>
-
-                            {/* Content */}
-                            {printTab === 'queue' ? (
-                                <div className="space-y-3 animate-in fade-in">
-                                    {queueItems.length > 0 ? (
-                                        <>
-                                            <div className="flex gap-2">
-                                                <Button
-                                                    className="text-xs h-8 bg-blue-600 hover:bg-blue-500 border-none"
-                                                    onClick={markLabelsAsPrinted}
-                                                    disabled={selectedPrintIds.size === 0 || isSubmitting}
-                                                >
-                                                    {isSubmitting ? <Loader2 className="animate-spin" /> : `Ausgewählte Drucken (${selectedPrintIds.size})`}
-                                                </Button>
-                                                <button onClick={() => setSelectedPrintIds(new Set(queueItems.map(c => c.id)))} className="text-xs text-white/50 hover:text-white px-2">Alle wählen</button>
-                                                <button onClick={() => setSelectedPrintIds(new Set())} className="text-xs text-white/50 hover:text-white px-2">Keine</button>
-                                            </div>
-                                            <div className="max-h-40 overflow-y-auto border-t border-white/5 pt-2 grid grid-cols-1 sm:grid-cols-2 gap-2">
-                                                {queueItems.map(c => (
-                                                    <div key={c.id} className={`flex items-center gap-2 p-2 rounded-lg cursor-pointer border ${selectedPrintIds.has(c.id) ? 'bg-blue-500/20 border-blue-500/40' : 'bg-white/5 border-transparent hover:bg-white/10'}`} onClick={() => toggleQueueSelection(c.id)}>
-                                                        <div className={`w-4 h-4 rounded border flex items-center justify-center ${selectedPrintIds.has(c.id) ? 'bg-blue-500 border-blue-500 text-white' : 'border-white/30'}`}>
-                                                            {selectedPrintIds.has(c.id) && <Check size={10} />}
-                                                        </div>
-                                                        <span className="text-sm text-white truncate">{c.name}</span>
-                                                    </div>
-                                                ))}
-                                            </div>
-                                        </>
-                                    ) : (
-                                        <div className="text-center py-4 text-white/40 text-xs">Keine ausstehenden Druckaufträge.</div>
-                                    )}
-                                </div>
-                            ) : (
-                                <div className="space-y-2 animate-in fade-in max-h-60 overflow-y-auto">
-                                    {loadingPrintHistory ? (
-                                        <div className="text-center py-4"><Loader2 className="animate-spin text-blue-400 mx-auto" /></div>
-                                    ) : recentPrintLogs.length === 0 ? (
-                                        <div className="text-center py-4 text-white/40 text-xs">Keine Historie vorhanden.</div>
-                                    ) : (
-                                        recentPrintLogs.map(log => {
-                                            const commExists = !!log.commission;
-                                            return (
-                                                <div key={log.id} className={`flex items-center justify-between p-2 rounded-lg border border-white/5 ${commExists ? 'bg-white/5' : 'bg-white/5 opacity-50'}`}>
-                                                    <div className="min-w-0 flex-1 pr-2">
-                                                        <div className="text-sm font-bold text-white truncate">{log.commission_name}</div>
-                                                        <div className="text-xs text-white/50 flex gap-2">
-                                                            <span>{new Date(log.created_at).toLocaleString()}</span>
-                                                            <span>• {log.profiles?.full_name?.split(' ')[0]}</span>
-                                                        </div>
-                                                    </div>
-                                                    {commExists ? (
-                                                        <button
-                                                            onClick={() => handleSinglePrint(log.commission_id)}
-                                                            className="p-2 bg-blue-500/20 text-blue-300 hover:bg-blue-500 hover:text-white rounded-lg transition-colors"
-                                                            title="Erneut drucken"
-                                                        >
-                                                            <Printer size={16} />
-                                                        </button>
-                                                    ) : (
-                                                        <span className="text-[10px] text-rose-400 italic">Gelöscht</span>
-                                                    )}
-                                                </div>
-                                            );
-                                        })
-                                    )}
-                                </div>
-                            )}
-                        </div>
-                    )}
-                </div>
+                <PrintingSection
+                    showPrintArea={showPrintArea}
+                    setShowPrintArea={setShowPrintArea}
+                    printTab={printTab}
+                    setPrintTab={setPrintTab}
+                    queueItems={queueItems}
+                    selectedPrintIds={selectedPrintIds}
+                    setSelectedPrintIds={setSelectedPrintIds}
+                    onMarkAsPrinted={markLabelsAsPrinted}
+                    isSubmitting={isSubmitting}
+                    loadingHistory={loadingPrintHistory}
+                    printLogs={recentPrintLogs}
+                    onReprint={handleSinglePrint}
+                />
             )}
 
             {loading ? <div className="flex justify-center py-10"><Loader2 className="animate-spin text-emerald-400" /></div> : (
@@ -1488,17 +1234,17 @@ const Commissions: React.FC = () => {
                     {/* ACTIVE TAB */}
                     {activeTab === 'active' && (
                         <>
-                            {renderCategory("Bereitgestellt", 'ready', commissions.filter(c => c.status === 'Ready'), 'text-emerald-400')}
-                            {renderCategory("In Vorbereitung", 'preparing', commissions.filter(c => c.status === 'Preparing'), 'text-amber-400')}
-                            {renderCategory("Entwürfe", 'draft', commissions.filter(c => c.status === 'Draft'), 'text-white/60')}
+                            {renderCategory("Bereitgestellt", 'ready', filteredGroups.ready, 'border-emerald-500/30 bg-emerald-500/5 text-emerald-400')}
+                            {renderCategory("In Vorbereitung", 'preparing', filteredGroups.preparing, 'border-blue-500/30 bg-blue-500/5 text-blue-400')}
+                            {renderCategory("Entwürfe", 'draft', filteredGroups.draft, 'border-white/10 bg-white/5 text-white/60')}
                         </>
                     )}
 
                     {/* RETURNS TAB */}
                     {activeTab === 'returns' && (
                         <>
-                            {renderCategory("Abholbereit (Warten auf Großhändler)", 'returnReady', commissions.filter(c => c.status === 'ReturnReady'), 'text-purple-400')}
-                            {renderCategory("Angemeldet (Muss ins Regal)", 'returnPending', commissions.filter(c => c.status === 'ReturnPending'), 'text-orange-400')}
+                            {renderCategory("Abholbereit (Warten auf Großhändler)", 'returnReady', filteredGroups.returnReady, 'border-purple-500/30 bg-purple-500/5 text-purple-400')}
+                            {renderCategory("Angemeldet (Muss ins Regal)", 'returnPending', filteredGroups.returnPending, 'border-orange-500/30 bg-orange-500/5 text-orange-400')}
                         </>
                     )}
 
@@ -1527,7 +1273,7 @@ const Commissions: React.FC = () => {
                                                         e.stopPropagation();
                                                         if (confirm("Als 'Entnommen' markieren?")) {
                                                             await supabase.from('commissions').update({ status: 'Withdrawn', withdrawn_at: new Date().toISOString() }).eq('id', comm.id);
-                                                            fetchCommissions();
+                                                            refreshCommissions(); // Use hook function
                                                         }
                                                     }}
                                                     className="p-2 bg-rose-500/20 hover:bg-rose-500 text-rose-300 hover:text-white rounded-lg transition-colors border border-rose-500/30"
@@ -1540,7 +1286,7 @@ const Commissions: React.FC = () => {
                                                         e.stopPropagation();
                                                         if (confirm("Wieder als 'Bereit' markieren (Gefunden)?")) {
                                                             await supabase.from('commissions').update({ status: 'Ready' }).eq('id', comm.id);
-                                                            fetchCommissions();
+                                                            refreshCommissions(); // Use hook function
                                                         }
                                                     }}
                                                     className="p-2 bg-emerald-500/20 hover:bg-emerald-500 text-emerald-300 hover:text-white rounded-lg transition-colors border border-emerald-500/30"
@@ -2026,225 +1772,29 @@ const Commissions: React.FC = () => {
                 </div>
             </GlassModal>
 
-            {/* ITEM NOTE EDIT MODAL */}
-            <GlassModal isOpen={!!editingItemNote} onClose={() => setEditingItemNote(null)} className="max-w-sm">
-                <div className="p-6">
-                    <div className="flex justify-between items-center mb-4">
-                        <h3 className="font-bold text-gray-900 dark:text-white">Notiz zur Position</h3>
-                        <button onClick={() => setEditingItemNote(null)} className="text-gray-400 dark:text-white/50 hover:text-gray-900 dark:hover:text-white"><X size={20} /></button>
-                    </div>
-                    <textarea
-                        className="w-full h-32 bg-gray-50 dark:bg-white/5 border border-gray-200 dark:border-white/10 rounded-xl p-3 text-gray-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-emerald-500"
-                        placeholder="Notiz eingeben..."
-                        defaultValue={editingItemNote?.note}
-                        autoFocus
-                        id="item-note-input"
-                    />
-                    <div className="flex justify-end gap-3 mt-4">
-                        <Button variant="secondary" onClick={() => setEditingItemNote(null)}>Abbrechen</Button>
-                        <Button onClick={() => {
-                            const val = (document.getElementById('item-note-input') as HTMLTextAreaElement).value;
-                            if (editingItemNote) saveItemNote(editingItemNote.itemId, val);
-                        }}>Speichern</Button>
-                    </div>
-                </div>
-            </GlassModal>
-
-
-
-            {/* DETAIL MODAL */}
-            <GlassModal isOpen={showPrepareModal && !!activeCommission} onClose={handleClosePrepare} className="max-w-3xl h-[90vh]">
-                {activeCommission && (
-                    <div className="flex flex-col h-full overflow-hidden">
-                        <div className="p-4 border-b border-gray-200 dark:border-white/10 bg-gray-50/50 dark:bg-black/20">
-                            <div className="flex justify-between items-start">
-                                <div className="flex-1">
-                                    <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-1">{activeCommission.name}</h2>
-                                    <div className="flex items-center gap-2 text-sm text-gray-500 dark:text-white/50">
-                                        <span className="px-2.5 py-0.5 rounded-full text-xs font-medium border bg-blue-100 dark:bg-blue-500/20 text-blue-600 dark:text-blue-300 border-blue-200 dark:border-blue-500/30">
-                                            {activeCommission.order_number}
-                                        </span>
-                                        <span className="w-1 h-1 rounded-full bg-gray-300 dark:bg-white/30" />
-                                        <StatusBadge status={translateStatus(activeCommission.status)} type="neutral" />
-                                    </div>
-                                    {/* FULL NOTES DISPLAY */}
-                                    {activeCommission.notes && (
-                                        <div className="text-sm text-gray-600 dark:text-white/70 mt-3 bg-white dark:bg-white/5 p-3 rounded-lg whitespace-pre-wrap border border-gray-200 dark:border-white/5">
-                                            {activeCommission.notes}
-                                        </div>
-                                    )}
-                                </div>
-                                <button onClick={handleClosePrepare} className="p-2 bg-gray-100 dark:bg-white/5 rounded-full text-gray-500 dark:text-white/60 hover:text-gray-900 dark:hover:text-white ml-3"><X size={20} /></button>
-                            </div>
-                        </div>
-
-                        <div className="flex-1 overflow-y-auto p-4 space-y-6">
-                            {/* ACTIVE WORKFLOW ACTIONS */}
-                            {!activeCommission.status.startsWith('Return') && activeCommission.status !== 'Withdrawn' && activeCommission.deleted_at === null && (
-                                <div className="flex flex-wrap gap-2 pb-2 border-b border-gray-200 dark:border-white/5 mb-4">
-                                    {activeCommission.status !== 'Ready' && (
-                                        <div className="relative group">
-                                            <Button
-                                                onClick={handleSetReadyTrigger}
-                                                className={`whitespace-nowrap ${(!allItemsPicked || hasBackorders) ? 'bg-gray-400 dark:bg-gray-600 opacity-50 cursor-not-allowed' : 'bg-emerald-600 hover:bg-emerald-500'}`}
-                                                icon={<CheckCircle2 size={18} />}
-                                                disabled={isSubmitting || !allItemsPicked || hasBackorders}
-                                            >
-                                                Jetzt bereitstellen
-                                            </Button>
-                                            {hasBackorders && (
-                                                <div className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 w-48 p-2 bg-red-900 text-red-100 text-xs rounded shadow-lg pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity z-10 text-center border border-red-500/50">
-                                                    Rückstände vorhanden! <br />Nicht bereitstellbar.
-                                                </div>
-                                            )}
-                                        </div>
-                                    )}
-                                    {activeCommission.status === 'Ready' && (
-                                        <>
-                                            <Button onClick={handleWithdrawTrigger} className="bg-purple-600 hover:bg-purple-500 whitespace-nowrap" icon={<Truck size={18} />} disabled={isSubmitting}>Entnehmen (Abschluss)</Button>
-                                            <Button onClick={executeResetStatus} className="bg-amber-600 hover:bg-amber-500 whitespace-nowrap" icon={<RotateCcw size={18} />} disabled={isSubmitting}>Zurückstellen</Button>
-                                        </>
-                                    )}
-                                    <Button variant="secondary" onClick={(e) => handleEditCommission(activeCommission!, e)} icon={<Edit2 size={18} />}></Button>
-                                    <Button variant="secondary" onClick={() => handleSinglePrint()} icon={<Printer size={18} />}></Button>
-                                </div>
-                            )}
-
-                            {/* RETURN WORKFLOW ACTIONS */}
-                            {activeCommission.status.startsWith('Return') && activeCommission.status !== 'ReturnComplete' && activeCommission.deleted_at === null && (
-                                <div className="flex flex-wrap gap-2 pb-2 border-b border-gray-200 dark:border-white/5 mb-4">
-                                    {activeCommission.status === 'ReturnPending' && (
-                                        <Button onClick={handleReturnToReady} className="bg-purple-600 hover:bg-purple-500 whitespace-nowrap" icon={<Printer size={18} />} disabled={isSubmitting}>
-                                            Ins Abholregal (Label)
-                                        </Button>
-                                    )}
-                                    {activeCommission.status === 'ReturnReady' && (
-                                        <Button onClick={handleCompleteReturn} className="bg-emerald-600 hover:bg-emerald-500 whitespace-nowrap" icon={<Check size={18} />} disabled={isSubmitting}>
-                                            Wurde abgeholt
-                                        </Button>
-                                    )}
-                                </div>
-                            )}
-
-                            {/* WITHDRAWN ACTIONS */}
-                            {activeCommission.status === 'Withdrawn' && activeCommission.deleted_at === null && (
-                                <div className="flex flex-wrap gap-2 pb-2 border-b border-gray-200 dark:border-white/5 mb-4">
-                                    <Button
-                                        onClick={executeRevertWithdrawal}
-                                        className="bg-amber-600 hover:bg-amber-500 whitespace-nowrap"
-                                        icon={<RotateCcw size={18} />}
-                                        disabled={isSubmitting}
-                                    >
-                                        Wiederherstellen (Bereit)
-                                    </Button>
-                                    <Button
-                                        onClick={handleInitReturn}
-                                        className="bg-orange-600 hover:bg-orange-500 whitespace-nowrap"
-                                        icon={<Undo2 size={18} />}
-                                        disabled={isSubmitting}
-                                    >
-                                        Retoure / Zurückschreiben
-                                    </Button>
-                                </div>
-                            )}
-
-                            {/* ITEMS LIST */}
-                            <div className="space-y-2">
-                                {commItems.length === 0 && <div className="text-center text-gray-400 dark:text-white/30 py-4">Keine Positionen.</div>}
-                                {commItems.map(item => (
-                                    <div key={item.id} className={`flex items-center gap-3 p-3 rounded-xl border transition-all ${item.is_backorder ? 'bg-red-50 dark:bg-red-500/10 border-red-200 dark:border-red-500/50' : item.is_picked ? 'bg-emerald-50 dark:bg-emerald-500/10 border-emerald-200 dark:border-emerald-500/30 opacity-70' : 'bg-white dark:bg-white/5 border-gray-200 dark:border-white/5'}`}>
-                                        {/* Disabled button if backorder */}
-                                        <button
-                                            onClick={() => toggleActiveItemPicked(item.id, item.is_picked)}
-                                            disabled={item.is_backorder || false}
-                                            className={`w-6 h-6 rounded border flex items-center justify-center transition-colors ${item.is_backorder ? 'bg-white/50 dark:bg-white/5 border-gray-200 dark:border-white/10 cursor-not-allowed opacity-50' : item.is_picked ? 'bg-emerald-500 border-emerald-500 text-white' : 'border-gray-300 dark:border-white/30 hover:border-emerald-400'}`}
-                                        >
-                                            {item.is_picked && <Check size={14} />}
-                                        </button>
-
-                                        <div className={`flex-1 ${item.is_backorder ? 'cursor-default' : 'cursor-pointer'}`} onClick={() => !item.is_backorder && toggleActiveItemPicked(item.id, item.is_picked)}>
-                                            <div className="font-medium text-gray-900 dark:text-white">{item.type === 'Stock' ? item.article?.name : item.custom_name}</div>
-                                            <div className="text-xs text-gray-500 dark:text-white/50 flex flex-wrap items-center gap-2">
-                                                {item.type === 'Stock' ? <><Package size={12} /> Lager: {item.article?.location}</> : <><ExternalLink size={12} /> Extern • Ref: {item.external_reference || '-'}</>}
-                                                {item.notes && <span className="flex items-center gap-1 text-amber-500 dark:text-amber-300"><MessageSquare size={10} /> {item.notes}</span>}
-                                            </div>
-                                        </div>
-
-                                        {/* Right Actions */}
-                                        <div className="flex items-center gap-2">
-                                            {/* Note Button */}
-                                            <button
-                                                onClick={(e) => { e.stopPropagation(); setEditingItemNote({ itemId: item.id, note: item.notes || '' }); }}
-                                                className={`p-1.5 rounded transition-colors ${item.notes ? 'text-amber-500 dark:text-amber-400 bg-amber-100 dark:bg-amber-500/20' : 'text-gray-400 dark:text-white/30 hover:text-gray-900 dark:hover:text-white'}`}
-                                                title="Notiz hinzufügen"
-                                            >
-                                                <MessageSquare size={16} />
-                                            </button>
-
-                                            {/* Backorder Toggle */}
-                                            {item.type === 'External' && (
-                                                <div className="flex items-center gap-2 bg-gray-100 dark:bg-black/20 p-1 rounded-lg border border-gray-200 dark:border-white/5" title="Rückstand umschalten">
-                                                    <span className={`text-[9px] uppercase font-bold px-1 ${item.is_backorder ? 'text-red-500 dark:text-red-400' : 'text-gray-400 dark:text-white/30'}`}>Rückstd.</span>
-                                                    <button
-                                                        onClick={(e) => { e.stopPropagation(); toggleBackorder(item.id, item.is_backorder || false); }}
-                                                        className={`w-8 h-4 rounded-full relative transition-colors ${item.is_backorder ? 'bg-red-500' : 'bg-gray-300 dark:bg-white/20'}`}
-                                                    >
-                                                        <div className={`absolute top-0.5 left-0.5 w-3 h-3 bg-white rounded-full transition-transform ${item.is_backorder ? 'translate-x-4' : ''}`} />
-                                                    </button>
-                                                </div>
-                                            )}
-
-                                            {/* Attachment View Button */}
-                                            {item.attachment_data && (
-                                                <button
-                                                    onClick={(e) => { e.stopPropagation(); setViewingAttachment(item.attachment_data!); }}
-                                                    className="p-2 bg-blue-100 dark:bg-blue-500/20 text-blue-600 dark:text-blue-300 hover:bg-blue-500 hover:text-white rounded-lg transition-colors"
-                                                    title="Anhang ansehen"
-                                                >
-                                                    <Eye size={18} />
-                                                </button>
-                                            )}
-
-                                            <div className="font-bold text-gray-900 dark:text-white text-lg px-2">{item.amount}x</div>
-                                        </div>
-                                    </div>
-                                ))}
-                            </div>
-
-                            {/* --- HISTORY SECTION --- */}
-                            <div className="mt-8 border-t border-gray-200 dark:border-white/10 pt-6">
-                                <div className="flex items-center gap-2 mb-4">
-                                    <History size={18} className="text-gray-400 dark:text-white/50" />
-                                    <h3 className="text-lg font-bold text-gray-900 dark:text-white">Verlauf</h3>
-                                </div>
-
-                                <div className="bg-gray-50 dark:bg-black/20 rounded-xl p-4 max-h-60 overflow-y-auto space-y-3">
-                                    {localHistoryLogs.length === 0 ? (
-                                        <div className="text-center text-sm text-gray-400 dark:text-white/30 italic py-2">Noch keine Einträge vorhanden.</div>
-                                    ) : (
-                                        localHistoryLogs.map((log) => (
-                                            <div key={log.id} className="flex gap-3 text-sm">
-                                                <div className="min-w-[120px] text-gray-500 dark:text-white/40 text-xs mt-0.5">
-                                                    {new Date(log.created_at).toLocaleString('de-DE', { dateStyle: 'short', timeStyle: 'short' })}
-                                                </div>
-                                                <div className="flex-1">
-                                                    <div className="flex items-center gap-2">
-                                                        <span className="font-semibold text-gray-700 dark:text-white/90">
-                                                            {log.profiles?.full_name?.split(' ')[0] || 'Unbekannt'}
-                                                        </span>
-                                                        <span className="text-gray-400 dark:text-white/30 text-xs">•</span>
-                                                        <span className="text-gray-600 dark:text-white/70">{log.details}</span>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        ))
-                                    )}
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                )}
-            </GlassModal>
+            {/* DETAIL MODAL (Refactored) */}
+            <CommissionDetailModal
+                isOpen={showPrepareModal && !!activeCommission}
+                onClose={handleClosePrepare}
+                commission={activeCommission}
+                items={commItems}
+                localHistoryLogs={localHistoryLogs}
+                allItemsPicked={allItemsPicked}
+                hasBackorders={hasBackorders}
+                isSubmitting={isSubmitting}
+                onSetReady={handleSetReadyTrigger}
+                onWithdraw={handleWithdrawTrigger}
+                onResetStatus={executeResetStatus}
+                onRevertWithdraw={executeRevertWithdrawal}
+                onInitReturn={handleInitReturn}
+                onReturnToReady={handleReturnToReady}
+                onCompleteReturn={handleCompleteReturn}
+                onEdit={(e) => activeCommission && handleEditCommission(activeCommission, e)}
+                onPrint={() => handleSinglePrint()}
+                onTogglePicked={toggleActiveItemPicked}
+                onToggleBackorder={toggleBackorder}
+                onSaveNote={saveItemNote}
+            />
 
             {/* CONFIRM READY MODAL */}
             <GlassModal isOpen={showConfirmReadyModal} onClose={() => setShowConfirmReadyModal(false)} className="max-w-sm">
@@ -2262,7 +1812,7 @@ const Commissions: React.FC = () => {
             <CommissionCleanupModal
                 isOpen={showCleanupModal}
                 onClose={() => setShowCleanupModal(false)}
-                onCleanupComplete={() => { fetchCommissions(); }}
+                onCleanupComplete={() => { refreshCommissions(); }}
             />
 
             {/* CONFIRM WITHDRAW MODAL */}
@@ -2306,22 +1856,7 @@ const Commissions: React.FC = () => {
                 )}
             </GlassModal>
 
-            {/* ATTACHMENT VIEWER MODAL (Moved to end for Z-Index) */}
-            <GlassModal isOpen={!!viewingAttachment} onClose={() => setViewingAttachment(null)} className="max-w-[95vw] h-[95vh] max-h-[95vh]">
-                <div className="flex flex-col h-full bg-gray-900 rounded-2xl overflow-hidden">
-                    <div className="p-3 border-b border-white/10 flex justify-between items-center bg-white/5">
-                        <h3 className="text-white font-bold flex items-center gap-2"><FileText size={18} /> Anhang Vorschau</h3>
-                        <button onClick={() => setViewingAttachment(null)} className="p-2 hover:bg-white/10 rounded-full text-white/60 hover:text-white"><X size={20} /></button>
-                    </div>
-                    <div className="flex-1 bg-black p-4 overflow-auto flex items-center justify-center">
-                        {viewingAttachment?.startsWith('data:application/pdf') ? (
-                            <iframe src={viewingAttachment} className="w-full h-full border-none rounded-lg" title="PDF Vorschau" />
-                        ) : (
-                            <img src={viewingAttachment || ''} className="max-w-full max-h-full object-contain rounded-lg" alt="Anhang" />
-                        )}
-                    </div>
-                </div>
-            </GlassModal>
+
 
         </div>
     );

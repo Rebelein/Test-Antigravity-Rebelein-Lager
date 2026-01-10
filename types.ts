@@ -144,6 +144,7 @@ export interface Commission {
   status: CommissionStatus;
   warehouse_id: string;
   created_at: string;
+  updated_at?: string;
   withdrawn_at?: string;
   deleted_at?: string; // Trash bin date
   needs_label?: boolean; // Print later queue

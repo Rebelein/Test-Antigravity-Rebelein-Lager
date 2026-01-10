@@ -12,6 +12,107 @@ import { useReactToPrint } from 'react-to-print';
 import { KeyExportTemplate } from '../components/KeyExportTemplate';
 // ... existing imports ...
 
+// Extracted Component
+const KeyCard: React.FC<{
+    keyData: Key;
+    onOpenDetails: (key: Key) => void;
+    onEdit: (key: Key) => void;
+    onConfirmDelete: (key: Key) => void;
+    onHandover: (key: Key, type: 'issue' | 'return') => void;
+}> = ({ keyData, onOpenDetails, onEdit, onConfirmDelete, onHandover }) => (
+    <motion.div
+        key={keyData.id}
+        initial={{ opacity: 0, scale: 0.9 }}
+        animate={{ opacity: 1, scale: 1 }}
+        exit={{ opacity: 0, scale: 0.9 }}
+        className={`relative group rounded-xl border p-4 transition-all duration-300 cursor-pointer overflow-hidden ${keyData.status === 'InUse'
+            ? 'bg-amber-500/10 border-amber-500/20 hover:border-amber-500/40'
+            : 'bg-white/5 border-white/10 hover:border-emerald-500/30 hover:bg-white/10'
+            }`}
+        onClick={(e) => {
+            // @ts-ignore
+            if (e.target.closest('button')) return;
+            onOpenDetails(keyData);
+        }}
+    >
+        {/* Category Strip */}
+        {/* @ts-ignore */}
+        {keyData.key_categories && (
+            <div
+                className="absolute left-0 top-0 bottom-0 w-1 rounded-l-xl"
+                /* @ts-ignore */
+                style={{ backgroundColor: keyData.key_categories.color }}
+            ></div>
+        )}
+
+        <div className="flex justify-between items-start mb-3 pl-2">
+            <div className={`px-2 py-1 rounded text-xs font-bold ${keyData.status === 'InUse' ? 'bg-amber-500/20 text-amber-500' : 'bg-emerald-500/20 text-emerald-500'
+                }`}>
+                Platz {keyData.slot_number}
+            </div>
+            <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                <button onClick={() => onEdit(keyData)} className="p-1 hover:bg-white/10 rounded">
+                    <Edit size={14} className="text-gray-400" />
+                </button>
+                <button onClick={() => onConfirmDelete(keyData)} className="p-1 hover:bg-white/10 rounded">
+                    <Trash2 size={14} className="text-red-400" />
+                </button>
+            </div>
+        </div>
+
+        <h3 className="font-bold text-white text-lg mb-1 truncate" title={keyData.name}>{keyData.name}</h3>
+        {keyData.address && (
+            <div className="flex items-center text-xs text-gray-400 mb-4 truncate">
+                <MapPin size={12} className="mr-1 flex-shrink-0" />
+                <span className="truncate">{keyData.address}</span>
+            </div>
+        )}
+
+        {keyData.status === 'InUse' ? (
+            <div className="mb-4 bg-black/40 rounded p-2 text-xs space-y-2">
+                <div className="flex items-start">
+                    <User size={12} className="mr-2 mt-0.5 text-amber-500 shrink-0" />
+                    <div>
+                        <span className="text-gray-500 block text-[10px] uppercase tracking-wider">Ausgegeben an</span>
+                        <span className="text-amber-200 font-medium">{keyData.holder_name || 'Unbekannt'}</span>
+                    </div>
+                </div>
+            </div>
+        ) : (
+            <div className="mb-4 bg-white/5 rounded p-2 text-xs flex items-center justify-center text-emerald-500/50 font-medium tracking-wide">
+                VERFÜGBAR
+            </div>
+        )}
+
+        {/* Owner & Notes Info Block */}
+        <div className="space-y-2 mb-4 text-xs border-t border-white/5 pt-3">
+            {keyData.owner && (
+                <div className="flex items-start text-gray-400">
+                    <User size={12} className="mr-2 mt-0.5 shrink-0" />
+                    <div>
+                        <span className="block text-[10px] uppercase text-gray-600 tracking-wider">Eigentümer</span>
+                        <span className="text-gray-300">{keyData.owner}</span>
+                    </div>
+                </div>
+            )}
+            {keyData.notes && (
+                <div className="flex items-start text-gray-500 italic bg-white/5 p-2 rounded">
+                    <span className="line-clamp-2">"{keyData.notes}"</span>
+                </div>
+            )}
+        </div>
+
+        <Button
+            className="w-full"
+            variant={keyData.status === 'InUse' ? 'secondary' : 'primary'}
+            onClick={() => onHandover(keyData, keyData.status === 'InUse' ? 'return' : 'issue')}
+        >
+            {keyData.status === 'InUse' ? 'Rücknahme' : 'Ausgeben'}
+        </Button>
+
+    </motion.div>
+);
+
 const Keys: React.FC = () => {
     const [keys, setKeys] = useState<Key[]>([]);
     const [loading, setLoading] = useState(true);
@@ -130,7 +231,7 @@ const Keys: React.FC = () => {
     };
 
     // Filter
-    const filteredKeys = keys.filter(k => {
+    const filteredKeys = React.useMemo(() => keys.filter(k => {
         const matchesSearch = k.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
             k.slot_number.toString().includes(searchTerm) ||
             (k.holder_name && k.holder_name.toLowerCase().includes(searchTerm.toLowerCase()));
@@ -140,7 +241,7 @@ const Keys: React.FC = () => {
         if (activeTab === 'available') return k.status === 'Available';
         if (activeTab === 'inUse') return k.status === 'InUse';
         return true;
-    });
+    }), [keys, searchTerm, activeTab]);
 
     // Stats
     const totalKeys = keys.length;
@@ -156,102 +257,7 @@ const Keys: React.FC = () => {
         );
     };
 
-    // Helper to render key card (extracted to avoid duplication in render loop)
-    const RenderKeyCard = (key: Key) => (
-        <motion.div
-            key={key.id}
-            layout
-            initial={{ opacity: 0, scale: 0.9 }}
-            animate={{ opacity: 1, scale: 1 }}
-            exit={{ opacity: 0, scale: 0.9 }}
-            className={`relative group rounded-xl border p-4 transition-all duration-300 cursor-pointer overflow-hidden ${key.status === 'InUse'
-                ? 'bg-amber-500/10 border-amber-500/20 hover:border-amber-500/40'
-                : 'bg-white/5 border-white/10 hover:border-emerald-500/30 hover:bg-white/10'
-                }`}
-            onClick={(e) => {
-                // Ignore clicks on actionable buttons to prevent double firing or wrong actions
-                // @ts-ignore
-                if (e.target.closest('button')) return;
-                handleOpenDetails(key);
-            }}
-        >
-            {/* Category Strip */}
-            {/* @ts-ignore */}
-            {key.key_categories && (
-                <div
-                    className="absolute left-0 top-0 bottom-0 w-1 rounded-l-xl"
-                    /* @ts-ignore */
-                    style={{ backgroundColor: key.key_categories.color }}
-                ></div>
-            )}
 
-            <div className="flex justify-between items-start mb-3 pl-2">
-                <div className={`px-2 py-1 rounded text-xs font-bold ${key.status === 'InUse' ? 'bg-amber-500/20 text-amber-500' : 'bg-emerald-500/20 text-emerald-500'
-                    }`}>
-                    Platz {key.slot_number}
-                </div>
-                <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                    <button onClick={() => handleEdit(key)} className="p-1 hover:bg-white/10 rounded">
-                        <Edit size={14} className="text-gray-400" />
-                    </button>
-                    <button onClick={() => confirmDelete(key)} className="p-1 hover:bg-white/10 rounded">
-                        <Trash2 size={14} className="text-red-400" />
-                    </button>
-                </div>
-            </div>
-
-            <h3 className="font-bold text-white text-lg mb-1 truncate" title={key.name}>{key.name}</h3>
-            {key.address && (
-                <div className="flex items-center text-xs text-gray-400 mb-4 truncate">
-                    <MapPin size={12} className="mr-1 flex-shrink-0" />
-                    <span className="truncate">{key.address}</span>
-                </div>
-            )}
-
-            {key.status === 'InUse' ? (
-                <div className="mb-4 bg-black/40 rounded p-2 text-xs space-y-2">
-                    <div className="flex items-start">
-                        <User size={12} className="mr-2 mt-0.5 text-amber-500 shrink-0" />
-                        <div>
-                            <span className="text-gray-500 block text-[10px] uppercase tracking-wider">Ausgegeben an</span>
-                            <span className="text-amber-200 font-medium">{key.holder_name || 'Unbekannt'}</span>
-                        </div>
-                    </div>
-                </div>
-            ) : (
-                <div className="mb-4 bg-white/5 rounded p-2 text-xs flex items-center justify-center text-emerald-500/50 font-medium tracking-wide">
-                    VERFÜGBAR
-                </div>
-            )}
-
-            {/* Owner & Notes Info Block */}
-            <div className="space-y-2 mb-4 text-xs border-t border-white/5 pt-3">
-                {key.owner && (
-                    <div className="flex items-start text-gray-400">
-                        <User size={12} className="mr-2 mt-0.5 shrink-0" />
-                        <div>
-                            <span className="block text-[10px] uppercase text-gray-600 tracking-wider">Eigentümer</span>
-                            <span className="text-gray-300">{key.owner}</span>
-                        </div>
-                    </div>
-                )}
-                {key.notes && (
-                    <div className="flex items-start text-gray-500 italic bg-white/5 p-2 rounded">
-                        <span className="line-clamp-2">"{key.notes}"</span>
-                    </div>
-                )}
-            </div>
-
-            <Button
-                className="w-full"
-                variant={key.status === 'InUse' ? 'secondary' : 'primary'}
-                onClick={() => handleHandover(key, key.status === 'InUse' ? 'return' : 'issue')}
-            >
-                {key.status === 'InUse' ? 'Rücknahme' : 'Ausgeben'}
-            </Button>
-
-        </motion.div>
-    );
 
     return (
         <div className="space-y-6 pb-20">
@@ -369,7 +375,16 @@ const Keys: React.FC = () => {
                                             transition={{ duration: 0.3 }}
                                         >
                                             <div className="p-4 pt-0 border-t border-white/5 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-                                                {catKeys.map(RenderKeyCard)}
+                                                {catKeys.map(key => (
+                                                    <KeyCard
+                                                        key={key.id}
+                                                        keyData={key}
+                                                        onOpenDetails={handleOpenDetails}
+                                                        onEdit={handleEdit}
+                                                        onConfirmDelete={confirmDelete}
+                                                        onHandover={handleHandover}
+                                                    />
+                                                ))}
                                             </div>
                                         </motion.div>
                                     )}
@@ -410,7 +425,16 @@ const Keys: React.FC = () => {
                                             transition={{ duration: 0.3 }}
                                         >
                                             <div className="p-4 pt-0 border-t border-white/5 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-                                                {uncategorizedKeys.map(RenderKeyCard)}
+                                                {uncategorizedKeys.map(key => (
+                                                    <KeyCard
+                                                        key={key.id}
+                                                        keyData={key}
+                                                        onOpenDetails={handleOpenDetails}
+                                                        onEdit={handleEdit}
+                                                        onConfirmDelete={confirmDelete}
+                                                        onHandover={handleHandover}
+                                                    />
+                                                ))}
                                             </div>
                                         </motion.div>
                                     )}

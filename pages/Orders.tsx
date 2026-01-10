@@ -17,7 +17,15 @@ const Orders: React.FC = () => {
     const [badgeCounts, setBadgeCounts] = useState({ proposals: 0, pending: 0, commission: 0, completed: 0 });
 
     // --- PROPOSALS STATE ---
-    const [groupedProposals, setGroupedProposals] = useState<Record<string, OrderProposal[]>>({});
+    const [proposals, setProposals] = useState<OrderProposal[]>([]);
+    const groupedProposals = React.useMemo(() => {
+        const grouped: Record<string, OrderProposal[]> = {};
+        proposals.forEach(p => {
+            if (!grouped[p.supplier]) grouped[p.supplier] = [];
+            grouped[p.supplier].push(p);
+        });
+        return grouped;
+    }, [proposals]);
     const [loadingProposals, setLoadingProposals] = useState(true);
 
     // Proposal Modal State
@@ -271,13 +279,7 @@ const Orders: React.FC = () => {
                     });
                 });
 
-                const uiGrouped: Record<string, OrderProposal[]> = {};
-                proposals.forEach(p => {
-                    if (!uiGrouped[p.supplier]) uiGrouped[p.supplier] = [];
-                    uiGrouped[p.supplier].push(p);
-                });
-
-                setGroupedProposals(uiGrouped);
+                setProposals(proposals);
                 setBadgeCounts(prev => ({ ...prev, proposals: proposals.length }));
             }
         } catch (e) { console.error(e); } finally { setLoadingProposals(false); }

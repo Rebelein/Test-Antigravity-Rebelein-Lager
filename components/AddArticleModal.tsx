@@ -251,7 +251,7 @@ export const AddArticleModal: React.FC<AddArticleModalProps> = ({
                 await new Promise((resolve) => { reader.onload = resolve; reader.readAsDataURL(aiSelectedFile); });
                 const base64Data = (reader.result as string).split(',')[1];
                 response = await ai.models.generateContent({
-                    model: "gemini-2.5-flash-lite",
+                    model: "gemini-2.5-flash",
                     contents: [{ inlineData: { mimeType: aiSelectedFile.type, data: base64Data } }, { text: systemPrompt }],
                     config: { responseMimeType: "application/json", responseSchema: schema }
                 });

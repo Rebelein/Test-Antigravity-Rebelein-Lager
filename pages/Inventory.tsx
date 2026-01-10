@@ -10,6 +10,11 @@ import {
 } from 'lucide-react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { GoogleGenAI, Type } from "@google/genai";
+import { useInventoryData } from '../hooks/useInventoryData';
+
+import { useInventoryFilters } from '../hooks/useInventoryFilters';
+import { InventoryList } from '../components/inventory/InventoryList';
+import { InventoryToolbar } from '../components/inventory/InventoryToolbar';
 
 interface StockMovement {
     id: string;
@@ -35,18 +40,11 @@ const Inventory: React.FC = () => {
     const navigate = useNavigate();
     const location = useLocation();
 
-    const [articles, setArticles] = useState<Article[]>([]);
-    const [warehouses, setWarehouses] = useState<Warehouse[]>([]);
-    const [suppliers, setSuppliers] = useState<Supplier[]>([]);
-    const [loading, setLoading] = useState(true);
-    const [searchTerm, setSearchTerm] = useState('');
-    const [activeFilter, setActiveFilter] = useState('Alle');
-
-    // Sorting State
-    const [sortConfig, setSortConfig] = useState<{ key: 'location' | 'name'; direction: 'asc' | 'desc' }>({ key: 'location', direction: 'asc' });
-
     // 'primary' = Lager, 'secondary' = Favorit
     const [viewMode, setViewMode] = useState<'primary' | 'secondary'>('primary');
+
+    const { articles, warehouses, suppliers, loading, articleHistory, fetchHistory, updateLocalArticle, removeLocalArticle } = useInventoryData(viewMode);
+    const { searchTerm, setSearchTerm, activeFilter, setActiveFilter, sortConfig, setSortConfig, groupedArticles } = useInventoryFilters(articles);
 
     // Dropdown State
     const [isWarehouseDropdownOpen, setIsWarehouseDropdownOpen] = useState(false);
@@ -99,6 +97,8 @@ const Inventory: React.FC = () => {
     const [editingSkuIndex, setEditingSkuIndex] = useState<number | null>(null);
     const [editSkuValue, setEditSkuValue] = useState('');
 
+    const [showAiScan, setShowAiScan] = useState(false); // New inline AI state
+
     const [tempSuppliers, setTempSuppliers] = useState<ArticleSupplier[]>([]);
     const [tempSupplierSelect, setTempSupplierSelect] = useState('');
     const [tempSupplierSkuInput, setTempSupplierSkuInput] = useState('');
@@ -111,8 +111,6 @@ const Inventory: React.FC = () => {
     // DETAIL MODAL STATE
     const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
     const [viewingArticle, setViewingArticle] = useState<Article | null>(null);
-    const [articleHistory, setArticleHistory] = useState<StockMovement[]>([]);
-    const [historyLoading, setHistoryLoading] = useState(false);
     const [copiedField, setCopiedField] = useState<string | null>(null);
 
     // LOCATION CONTENT MODAL STATE (New for Shelf Scanning)
@@ -366,19 +364,7 @@ const Inventory: React.FC = () => {
     // --- DATA FETCHING & REALTIME ---
 
     // Fetch initial data
-    useEffect(() => {
-        if (!authLoading) {
-            fetchWarehouses();
-            fetchSuppliers();
-        }
-    }, [authLoading]);
 
-    // Fetch Articles
-    useEffect(() => {
-        if (!authLoading) {
-            fetchArticles();
-        }
-    }, [authLoading, viewMode, profile?.primary_warehouse_id, profile?.secondary_warehouse_id]);
 
     // Fetch Target Categories when target changes in Copy Modal
     useEffect(() => {
@@ -408,29 +394,7 @@ const Inventory: React.FC = () => {
         }
     }, [copyConfig.targetWarehouseId, isCopyModalOpen]);
 
-    // Realtime Subscription for Articles
-    useEffect(() => {
-        const channel = supabase
-            .channel('articles-changes')
-            .on(
-                'postgres_changes',
-                { event: '*', schema: 'public', table: 'articles' },
-                (payload) => {
-                    if (payload.eventType === 'INSERT') {
-                        setArticles((prev) => [...prev, mapArticleFromDB(payload.new)]);
-                    } else if (payload.eventType === 'UPDATE') {
-                        setArticles((prev) => prev.map((a) => a.id === payload.new.id ? mapArticleFromDB(payload.new) : a));
-                    } else if (payload.eventType === 'DELETE') {
-                        setArticles((prev) => prev.filter((a) => a.id !== payload.old.id));
-                    }
-                }
-            )
-            .subscribe();
 
-        return () => {
-            supabase.removeChannel(channel);
-        };
-    }, []);
 
     // Extract unique shelves
     useEffect(() => {
@@ -440,79 +404,11 @@ const Inventory: React.FC = () => {
         }
     }, [articles]);
 
-    const mapArticleFromDB = (item: any): Article => ({
-        id: item.id,
-        name: item.name,
-        sku: item.sku, // Legacy fallback
-        manufacturerSkus: item.manufacturer_skus || [],
-        stock: item.stock,
-        targetStock: item.target_stock || item.min_stock || 0,
-        location: item.location,
-        category: item.category,
-        price: item.price,
-        supplier: item.supplier,
-        warehouseId: item.warehouse_id,
-        ean: item.ean,
-        supplierSku: item.supplier_sku,
-        productUrl: item.product_url,
-        image: item.image_url,
-        onOrderDate: item.on_order_date
-    });
 
-    const fetchWarehouses = async () => {
-        const { data } = await supabase.from('warehouses').select('*').order('name');
-        if (data) {
-            setWarehouses(data.map((w: any) => ({
-                id: w.id,
-                name: w.name,
-                type: w.type,
-                location: w.location
-            })));
-        }
-    };
 
-    const fetchSuppliers = async () => {
-        const { data } = await supabase.from('suppliers').select('*').order('name');
-        if (data) {
-            setSuppliers(data);
-        }
-    };
 
-    const fetchArticles = async () => {
-        try {
-            setLoading(true);
-            const activeWarehouseId = viewMode === 'primary'
-                ? profile?.primary_warehouse_id
-                : profile?.secondary_warehouse_id;
 
-            let query = supabase.from('articles').select('*');
 
-            if (activeWarehouseId) {
-                query = query.eq('warehouse_id', activeWarehouseId);
-            } else {
-                query = query.eq('id', '00000000-0000-0000-0000-000000000000');
-            }
-
-            const { data, error } = await query;
-            if (error) { console.error('Error fetching articles:', error); return; }
-            if (data) setArticles(data.map(mapArticleFromDB));
-        } catch (error) { console.error('Unexpected error:', error); } finally { setLoading(false); }
-    };
-
-    const fetchHistory = async (articleId: string) => {
-        setHistoryLoading(true);
-        try {
-            const { data, error } = await supabase
-                .from('stock_movements')
-                .select('*, profiles:user_id (full_name)')
-                .eq('article_id', articleId)
-                .order('created_at', { ascending: false })
-                .limit(5);
-
-            if (error) throw error;
-            setArticleHistory(data as any[]);
-        } catch (err) { console.error("Error fetching history:", err); } finally { setHistoryLoading(false); }
-    };
 
     const handleWarehouseChange = async (warehouseId: string) => {
         await updateWarehousePreference(viewMode, warehouseId);
@@ -779,7 +675,11 @@ const Inventory: React.FC = () => {
     };
 
     const openAiScanModal = () => {
-        setAiImagePreview(null); setAiSelectedFile(null); setAiAnalysisResult(null); setAiUrlInput(''); setAiMode('image'); setIsAnalyzing(false); setIsAiModalOpen(true);
+        if (showAiScan) {
+            setShowAiScan(false);
+        } else {
+            setAiImagePreview(null); setAiSelectedFile(null); setAiAnalysisResult(null); setAiUrlInput(''); setAiMode('image'); setIsAnalyzing(false); setShowAiScan(true);
+        }
     };
 
     // --- LOGIC: SKU & SUPPLIER LISTS ---
@@ -890,7 +790,7 @@ const Inventory: React.FC = () => {
                 await new Promise((resolve) => { reader.onload = resolve; reader.readAsDataURL(aiSelectedFile); });
                 const base64Data = (reader.result as string).split(',')[1];
                 response = await ai.models.generateContent({
-                    model: "gemini-2.5-flash-lite",
+                    model: "gemini-2.5-flash",
                     contents: [
                         { inlineData: { mimeType: aiSelectedFile.type, data: base64Data } },
                         { text: systemPrompt }
@@ -993,7 +893,7 @@ const Inventory: React.FC = () => {
         try {
             if (!user) throw new Error("Kein Benutzer"); const article = articles.find(a => a.id === articleId); if (!article) throw new Error("Artikel fehlt");
             const newStock = article.stock + quickStockAmount; const updates: any = { stock: newStock }; if (quickStockAmount > 0 && article.onOrderDate) updates.on_order_date = null;
-            setArticles(prev => prev.map(a => a.id === articleId ? { ...a, stock: newStock, onOrderDate: quickStockAmount > 0 ? null : a.onOrderDate } : a));
+            updateLocalArticle(articleId, { stock: newStock, onOrderDate: quickStockAmount > 0 ? null : article.onOrderDate });
             await supabase.from('articles').update(updates).eq('id', articleId);
             if (quickStockAmount !== 0) { await supabase.from('stock_movements').insert({ article_id: articleId, user_id: user.id, amount: quickStockAmount, type: quickStockAmount > 0 ? 'manual_add' : 'manual_remove', reference: 'Schnellbuchung' }); }
             setExpandedArticleId(null); setQuickStockAmount(0);
@@ -1026,11 +926,11 @@ const Inventory: React.FC = () => {
 
     const executeDelete = async () => {
         if (!deleteTargetId) return;
-        try { const { error } = await supabase.from('articles').delete().eq('id', deleteTargetId); if (error) throw error; setShowDeleteModal(false); setDeleteTargetId(null); } catch (err: any) { alert("Fehler: " + err.message); }
+        try { const { error } = await supabase.from('articles').delete().eq('id', deleteTargetId); if (error) throw error; removeLocalArticle(deleteTargetId); setShowDeleteModal(false); setDeleteTargetId(null); } catch (err: any) { alert("Fehler: " + err.message); }
     };
 
-    const handleSaveArticle = async (e: React.FormEvent) => {
-        e.preventDefault();
+    const handleSaveArticle = async (e: React.FormEvent | null = null, shouldClose = true) => {
+        if (e) e.preventDefault();
         const targetWarehouseId = viewMode === 'primary' ? profile?.primary_warehouse_id : profile?.secondary_warehouse_id;
         if (!targetWarehouseId) { alert("Bitte Lager wählen."); return; }
 
@@ -1083,7 +983,18 @@ const Inventory: React.FC = () => {
                     if (error) console.error("Error saving suppliers:", error);
                 }
             }
-            setIsAddModalOpen(false);
+
+            if (shouldClose) {
+                setIsAddModalOpen(false);
+            } else {
+                // Reset form for next entry but maybe keep useful context like Category?
+                // User asked for "direct add another". Often this implies speed.
+                // Resetting everything is safest.
+                resetModalForm();
+                // Visual feedback that save worked
+                // Since we don't have a toast, maybe we can just rely on the form clearing.
+                // Or maybe focus the name input? (Not easy generically).
+            }
         } catch (err: any) {
             alert("Fehler: " + err.message);
         } finally {
@@ -1095,25 +1006,8 @@ const Inventory: React.FC = () => {
 
 
 
-    // --- SORTING HELPER ---
-    const sortArticles = (a: Article, b: Article) => {
-        const dir = sortConfig.direction === 'asc' ? 1 : -1;
-        if (sortConfig.key === 'location') {
-            // Natural sort for strings with numbers (e.g., "Fach 2" before "Fach 10")
-            const locA = a.location || '';
-            const locB = b.location || '';
-            return locA.localeCompare(locB, undefined, { numeric: true, sensitivity: 'base' }) * dir;
-        } else {
-            // Name sort
-            return a.name.localeCompare(b.name, undefined, { numeric: true, sensitivity: 'base' }) * dir;
-        }
-    };
 
-    const groupedArticles = articles
-        .filter(a => { if (activeFilter === 'Unter Soll') return a.stock < a.targetStock; if (activeFilter === 'Bestellt') return !!a.onOrderDate; return true; })
-        .filter(article => article.name.toLowerCase().includes(searchTerm.toLowerCase()) || article.sku.toLowerCase().includes(searchTerm.toLowerCase()))
-        .sort(sortArticles) // Apply Sorting
-        .reduce((acc, article) => { const cat = article.category || 'Sonstiges'; if (!acc[cat]) acc[cat] = []; acc[cat].push(article); return acc; }, {} as Record<string, Article[]>);
+
 
     const currentWarehouseId = viewMode === 'primary' ? profile?.primary_warehouse_id : profile?.secondary_warehouse_id;
     const currentWarehouse = warehouses.find(w => w.id === currentWarehouseId);
@@ -1158,474 +1052,367 @@ const Inventory: React.FC = () => {
             </header>
 
             {/* Toolbar */}
-            <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl p-2 flex flex-col gap-4 shadow-lg sticky top-0 z-30">
-                <div className="flex flex-col sm:flex-row items-center gap-3 w-full">
-                    <div className="flex items-center gap-2 w-full sm:w-auto bg-black/20 p-1 rounded-xl border border-white/5">
-                        <button onClick={() => setViewMode('primary')} className={`px-4 py-2 rounded-lg text-sm font-medium ${viewMode === 'primary' ? 'bg-emerald-600 text-white' : 'text-white/50'}`}>Lager</button>
-                        <button onClick={() => setViewMode('secondary')} className={`px-4 py-2 rounded-lg text-sm font-medium ${viewMode === 'secondary' ? 'bg-blue-600 text-white' : 'text-white/50'}`}>Favorit</button>
-                    </div>
-                    <div className="relative flex-1 sm:flex-none min-w-[140px]" ref={dropdownRef}>
-                        <button onClick={() => setIsWarehouseDropdownOpen(!isWarehouseDropdownOpen)} className="w-full flex items-center justify-between gap-2 px-3 py-2 rounded-lg bg-[#1a1d24] border border-white/10 text-sm text-white shadow-lg backdrop-blur-xl hover:bg-white/5 transition-colors"><span className="truncate font-medium">{currentWarehouse ? currentWarehouse.name : 'Wählen...'}</span><ChevronDown size={14} className={`transition-transform duration-200 ${isWarehouseDropdownOpen ? 'rotate-180' : ''}`} /></button>
-                        {isWarehouseDropdownOpen && (
-                            <div className="absolute top-full left-0 mt-2 w-64 bg-[#1a1d24] border border-white/10 rounded-xl z-50 shadow-2xl backdrop-blur-xl overflow-hidden animate-in fade-in zoom-in-95 origin-top-left">
-                                <div className="max-h-60 overflow-y-auto p-1 space-y-1">
-                                    {warehouses.map(w => (
-                                        <button key={w.id} onClick={() => handleWarehouseChange(w.id)} className={`w-full text-left px-3 py-2.5 text-sm rounded-lg flex items-center justify-between group ${currentWarehouseId === w.id ? 'bg-emerald-500/10 text-emerald-400 font-medium' : 'text-white hover:bg-white/5'}`}><span>{w.name}</span>{currentWarehouseId === w.id && <Check size={14} />}</button>
-                                    ))}
-                                </div>
-                            </div>
-                        )}
-                    </div>
-                    <div className="flex items-center bg-black/20 border border-white/5 rounded-xl px-3 py-2 flex-1 w-full">
-                        <Search size={16} className="text-white/40 mr-2" />
-                        <input type="text" placeholder="Suchen... (oder 'LOC:...' scannen)" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="bg-transparent border-none outline-none text-sm text-white w-full" />
-                    </div>
-                </div>
-
-                {/* Filters & Sorting Row */}
-                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 overflow-x-auto no-scrollbar pb-1">
-                    <div className="flex items-center gap-2">
-                        {['Alle', 'Unter Soll', 'Bestellt'].map((filter) => (
-                            <button key={filter} onClick={() => setActiveFilter(filter)} className={`px-3 py-1.5 rounded-lg text-sm border whitespace-nowrap ${activeFilter === filter ? 'bg-white/10 text-white border-white/10' : 'text-white/50 border-transparent hover:text-white'}`}>{filter}</button>
-                        ))}
-                    </div>
-
-                    <div className="w-full sm:w-auto">
-                        <GlassSelect
-                            icon={<ArrowUpDown size={14} />}
-                            value={`${sortConfig.key}-${sortConfig.direction}`}
-                            onChange={(e) => {
-                                const [key, direction] = e.target.value.split('-');
-                                setSortConfig({ key: key as any, direction: direction as any });
-                            }}
-                            className="w-full sm:w-auto text-xs py-1.5 pl-9 pr-8 bg-black/20 border-white/5"
-                        >
-                            <option value="location-asc" className="bg-gray-900">Fach Nr. (Aufsteigend)</option>
-                            <option value="location-desc" className="bg-gray-900">Fach Nr. (Absteigend)</option>
-                            <option value="name-asc" className="bg-gray-900">Name (A-Z)</option>
-                            <option value="name-desc" className="bg-gray-900">Name (Z-A)</option>
-                        </GlassSelect>
-                    </div>
-                </div>
-            </div>
+            <InventoryToolbar
+                viewMode={viewMode}
+                setViewMode={setViewMode}
+                currentWarehouse={currentWarehouse}
+                warehouses={warehouses}
+                onWarehouseChange={handleWarehouseChange}
+                searchTerm={searchTerm}
+                setSearchTerm={setSearchTerm}
+                activeFilter={activeFilter}
+                setActiveFilter={setActiveFilter}
+                sortConfig={sortConfig}
+                setSortConfig={setSortConfig}
+            />
 
             {/* List */}
-            <motion.div
-                className="space-y-6"
-                initial="hidden"
-                animate="visible"
-                variants={{
-                    hidden: { opacity: 0 },
-                    visible: {
-                        opacity: 1,
-                        transition: {
-                            staggerChildren: 0.05
-                        }
-                    }
-                }}
-            >
-                {Object.entries(groupedArticles).map(([category, grpArticles]: [string, Article[]]) => {
-                    const isCollapsed = profile?.collapsed_categories?.includes(category) || false;
-                    const isCatSelected = isSelectionMode && grpArticles.every(a => selectedArticleIds.has(a.id));
-                    return (
-                        <motion.div
-                            key={category}
-                            className="space-y-3"
-                            variants={{
-                                hidden: { opacity: 0, y: 20 },
-                                visible: { opacity: 1, y: 0 }
-                            }}
-                        >
-                            <div className="flex items-center justify-between px-2 pt-2 cursor-pointer hover:bg-white/5 rounded-lg transition-colors group">
-                                <div className="flex items-center gap-3 w-full" onClick={() => toggleCategoryCollapse(category)}>
-                                    {isSelectionMode && <div onClick={(e) => { e.stopPropagation(); toggleCategorySelection(grpArticles); }} className="text-white/50 hover:text-white">{isCatSelected ? <CheckSquare size={20} className="text-emerald-400" /> : <Square size={20} />}</div>}
-                                    <div className="flex items-center gap-2"><ChevronDown size={18} className={`transition-transform duration-300 ${isCollapsed ? '-rotate-90' : ''} text-white/50`} /><h2 className="text-base font-semibold text-white/90">{category}</h2><span className="text-[10px] bg-white/10 text-white/50 px-1.5 py-0.5 rounded-md">{grpArticles.length}</span></div>
-                                </div>
-                                {!isSelectionMode && <button onClick={(e) => handleQuickAddToCategory(e, category)} className="p-2 text-emerald-400 hover:bg-emerald-500/20 hover:text-emerald-300 rounded-full transition-colors opacity-0 group-hover:opacity-100" title={`Neu in ${category}`}><Plus size={20} /></button>}
-                            </div>
-                            <div className={`grid transition-[grid-template-rows] duration-300 ease-in-out ${isCollapsed ? 'grid-rows-[0fr]' : 'grid-rows-[1fr]'}`}>
-                                <div className="overflow-hidden">
-                                    <div className="flex flex-col gap-2 pb-2">
-                                        <AnimatePresence mode='popLayout'>
-                                            {grpArticles.map((article) => {
-                                                const isOrdered = !!article.onOrderDate; const isTargetReached = article.stock >= article.targetStock; const isExpanded = expandedArticleId === article.id; const isSelected = selectedArticleIds.has(article.id);
-                                                if (isExpanded) {
-                                                    return (
-                                                        <motion.div
-                                                            layout
-                                                            initial={{ opacity: 0, scale: 0.95 }}
-                                                            animate={{ opacity: 1, scale: 1 }}
-                                                            exit={{ opacity: 0, scale: 0.95 }}
-                                                            key={article.id}
-                                                            onClick={() => handleCardClick(article)}
-                                                            className="flex flex-col gap-4 p-3 rounded-xl bg-white/5 border shadow-lg cursor-pointer border-emerald-500/20"
-                                                        >
-                                                            <div className="flex items-center justify-between gap-2">
-                                                                <div className="flex items-center gap-2 flex-1">
-                                                                    <button onClick={decrementStock} className="w-10 h-10 flex items-center justify-center rounded-lg bg-white/10 text-white"><Minus size={18} /></button>
-                                                                    <input type="number" className="w-full h-10 text-center bg-white/5 rounded-lg text-white" value={quickStockAmount} onChange={(e) => setQuickStockAmount(Number(e.target.value))} onClick={(e) => e.stopPropagation()} />
-                                                                    <button onClick={incrementStock} className="w-10 h-10 flex items-center justify-center rounded-lg bg-white/10 text-white"><Plus size={18} /></button>
-                                                                </div>
-                                                                <div className="flex items-center gap-2 border-l border-white/10 pl-3">
-                                                                    <button onClick={handleCancelQuickBook} className="w-10 h-10 flex items-center justify-center text-white/40"><X size={20} /></button>
-                                                                    <button onClick={(e) => handleQuickSave(e, article.id)} className="px-4 h-10 rounded-lg bg-emerald-500 text-white text-sm">{isBooking ? <Loader2 className="animate-spin" /> : 'Buchen'}</button>
-                                                                </div>
-                                                            </div>
-                                                        </motion.div>
-                                                    );
-                                                }
-                                                return (
-                                                    <motion.div
-                                                        layout
-                                                        initial={{ opacity: 0 }}
-                                                        animate={{ opacity: 1 }}
-                                                        exit={{ opacity: 0 }}
-                                                        key={article.id}
-                                                        onClick={() => handleCardClick(article)}
-                                                        className={`group relative flex items-center gap-3 p-2 pr-4 rounded-xl transition-all border cursor-pointer ${isSelectionMode && isSelected ? 'bg-emerald-500/20 border-emerald-500/50' : isTargetReached ? 'bg-emerald-500/5 hover:bg-emerald-500/10 border-emerald-500/20' : 'bg-rose-500/5 hover:bg-rose-500/10 border-rose-500/20'}`}
-                                                    >
-                                                        {isSelectionMode && <div className={`shrink-0 mr-1 text-white/50 ${isSelected ? 'text-emerald-400' : ''}`}>{isSelected ? <CheckSquare size={24} /> : <Square size={24} />}</div>}
-                                                        <div onClick={(e) => { e.stopPropagation(); openDetailModal(article); }} className="w-12 h-12 shrink-0 rounded-lg bg-black/20 overflow-hidden relative border border-white/5 cursor-pointer hover:opacity-80 transition-opacity"><img src={article.image || `https://picsum.photos/seed/${article.id}/200/200`} className="w-full h-full object-contain opacity-80" /></div>
-                                                        <div className="flex-1 min-w-0 flex flex-col justify-center">
-                                                            <h3 className="font-medium text-white text-sm truncate">{article.name}</h3>
-                                                            <div className="flex items-center gap-2 text-xs text-white/40 mt-0.5">
-                                                                <span className="font-mono tracking-tight">{article.sku}</span>
-                                                                <span className="truncate text-white/50 flex items-center gap-1"><MapPin size={10} /> {article.location}</span>
-                                                            </div>
-                                                            <div className="flex flex-wrap gap-1.5 mt-1.5">
-                                                                {/* Supplier Name Badge */}
-                                                                {article.supplier && (
-                                                                    <div
-                                                                        onClick={(e) => {
-                                                                            e.stopPropagation();
-                                                                            if (article.productUrl) window.open(article.productUrl, '_blank');
-                                                                        }}
-                                                                        className={`
-                                                        flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-medium border transition-all
-                                                        ${article.productUrl ? 'cursor-pointer hover:bg-blue-500/20' : ''}
-                                                        bg-blue-500/10 border-blue-500/20 text-blue-200
-                                                    `}
-                                                                        title={article.productUrl ? "Zum Shop öffnen" : "Lieferant"}
-                                                                    >
-                                                                        <Building2 size={10} />
-                                                                        <span className="truncate max-w-[100px]">{article.supplier}</span>
-                                                                        {article.productUrl && <ExternalLink size={8} className="opacity-70" />}
-                                                                    </div>
-                                                                )}
-
-                                                                {/* Supplier SKU Badge */}
-                                                                {article.supplierSku && (
-                                                                    <div
-                                                                        onClick={(e) => {
-                                                                            e.stopPropagation();
-                                                                            handleCopy(article.supplierSku!, `${article.id}-suppSku`);
-                                                                        }}
-                                                                        className="flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-medium border bg-purple-500/10 border-purple-500/20 text-purple-200 cursor-pointer hover:bg-purple-500/20 transition-all"
-                                                                        title="Artikelnummer kopieren"
-                                                                    >
-                                                                        {copiedField === `${article.id}-suppSku` ? <Check size={10} /> : <Hash size={10} />}
-                                                                        <span className="font-mono">{article.supplierSku}</span>
-                                                                    </div>
-                                                                )}
-
-                                                                {/* On Order Badge */}
-                                                                {article.onOrderDate && (
-                                                                    <div className="flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-medium border bg-amber-500/10 border-amber-500/20 text-amber-200">
-                                                                        <Clock size={10} />
-                                                                        <span className="truncate">
-                                                                            {new Date(article.onOrderDate).toLocaleDateString()}
-                                                                            {orderDetails[article.id] ? ` • ${orderDetails[article.id].user}` : ''}
-                                                                        </span>
-                                                                    </div>
-                                                                )}
-                                                            </div>
-                                                        </div>
-                                                        <div className="flex items-center gap-3">
-                                                            <div className="text-right flex flex-col items-end">
-                                                                <div className="flex items-baseline gap-1">
-                                                                    <span className={`text-sm font-bold ${isTargetReached ? 'text-emerald-400' : 'text-rose-400'}`}>{article.stock}</span>
-                                                                    <span className="text-[10px] text-white/30">/ {article.targetStock}</span>
-                                                                </div>
-                                                            </div>
-                                                            {!isSelectionMode && <button onClick={(e) => handleContextMenuClick(e, article.id)} className="p-1.5 text-white/20 hover:text-white rounded-lg hover:bg-white/10"><MoreHorizontal size={16} /></button>}
-                                                        </div>
-                                                    </motion.div>
-                                                );
-                                            })}
-                                        </AnimatePresence>
-                                    </div>
-                                </div>
-                            </div>
-                        </motion.div>
-                    );
-                })}
-            </motion.div>
+            {/* List */}
+            <InventoryList
+                groupedArticles={groupedArticles}
+                collapsedCategories={profile?.collapsed_categories}
+                toggleCategoryCollapse={toggleCategoryCollapse}
+                isSelectionMode={isSelectionMode}
+                selectedArticleIds={selectedArticleIds}
+                toggleCategorySelection={toggleCategorySelection}
+                toggleArticleSelection={toggleArticleSelection}
+                handleQuickAddToCategory={handleQuickAddToCategory}
+                expandedArticleId={expandedArticleId}
+                quickStockAmount={quickStockAmount}
+                isBooking={isBooking}
+                onCardClick={handleCardClick}
+                onQuickStockChange={setQuickStockAmount}
+                onIncrementStock={incrementStock}
+                onDecrementStock={decrementStock}
+                onCancelQuickBook={handleCancelQuickBook}
+                onQuickSave={handleQuickSave}
+                onOpenDetail={openDetailModal}
+                orderDetails={orderDetails}
+                copiedField={copiedField}
+                onCopy={handleCopy}
+            />
 
             {/* SELECTION ACTIONS */}
-            {isSelectionMode && selectedArticleIds.size > 0 && (
-                <div className="fixed bottom-0 left-0 right-0 p-4 z-[90] flex justify-center animate-in slide-in-from-bottom-5">
-                    <div className="bg-black/80 backdrop-blur-xl border border-white/20 rounded-2xl shadow-2xl p-3 flex items-center gap-4 max-w-lg w-full">
-                        <div className="pl-2 font-bold text-white whitespace-nowrap">{selectedArticleIds.size} Ausgewählt</div>
-                        <div className="h-6 w-px bg-white/20"></div>
-                        <Button onClick={handleOpenCopyModal} icon={<Copy size={16} />} className="flex-1 bg-emerald-600 hover:bg-emerald-500 text-xs sm:text-sm whitespace-nowrap">In anderes Lager kopieren</Button>
+            {
+                isSelectionMode && selectedArticleIds.size > 0 && (
+                    <div className="fixed bottom-0 left-0 right-0 p-4 z-[90] flex justify-center animate-in slide-in-from-bottom-5">
+                        <div className="bg-black/80 backdrop-blur-xl border border-white/20 rounded-2xl shadow-2xl p-3 flex items-center gap-4 max-w-lg w-full">
+                            <div className="pl-2 font-bold text-white whitespace-nowrap">{selectedArticleIds.size} Ausgewählt</div>
+                            <div className="h-6 w-px bg-white/20"></div>
+                            <Button onClick={handleOpenCopyModal} icon={<Copy size={16} />} className="flex-1 bg-emerald-600 hover:bg-emerald-500 text-xs sm:text-sm whitespace-nowrap">In anderes Lager kopieren</Button>
+                        </div>
                     </div>
-                </div>
-            )}
+                )
+            }
 
             {/* COPY MODAL */}
-            {isCopyModalOpen && (
-                <div className="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-in fade-in zoom-in-95">
-                    <GlassCard className="w-full max-w-lg">
-                        <div className="flex justify-between items-center mb-6"><h2 className="text-xl font-bold text-white flex items-center gap-2"><Copy size={20} /> Artikel kopieren</h2><button onClick={() => setIsCopyModalOpen(false)} className="text-white/50 hover:text-white"><X size={20} /></button></div>
-                        <div className="space-y-4">
-                            <div className="p-3 bg-blue-500/10 border border-blue-500/20 rounded-xl text-xs text-blue-200 mb-4">Du kopierst <b>{selectedArticleIds.size}</b> Artikel. Stammdaten (Name, EAN, Lieferanten) werden übernommen. Bitte definiere den neuen Lagerort.</div>
-                            <div><label className="text-xs text-white/50 block mb-1">Ziel-Lager</label><GlassSelect value={copyConfig.targetWarehouseId} onChange={(e) => setCopyConfig({ ...copyConfig, targetWarehouseId: e.target.value })}><option value="" className="bg-gray-900">Bitte wählen...</option>{warehouses.filter(w => w.id !== currentWarehouseId).map(w => <option key={w.id} value={w.id} className="bg-gray-900">{w.name}</option>)}{warehouses.length > 0 && currentWarehouseId && <option value={currentWarehouseId} className="bg-gray-900">{currentWarehouse?.name} (Duplizieren)</option>}</GlassSelect></div>
-                            <div className="grid grid-cols-2 gap-4">
-                                <div><label className="text-xs text-white/50 block mb-1">Neues Regal (Kategorie)</label>{isManualTargetCategory ? <div className="flex gap-2"><GlassInput value={copyConfig.targetCategory} onChange={(e) => setCopyConfig({ ...copyConfig, targetCategory: e.target.value })} placeholder="Neues Regal benennen..." autoFocus />{targetWarehouseCategories.length > 0 && <button type="button" onClick={() => setIsManualTargetCategory(false)} className="p-3 bg-white/10 hover:bg-white/20 border border-white/10 rounded-xl text-white/60 hover:text-white" title="Aus Liste wählen"><Layers size={20} /></button>}</div> : <div className="relative w-full group"><select className="w-full bg-white/5 border border-white/10 rounded-xl py-3 pl-4 pr-10 text-white appearance-none focus:outline-none focus:ring-2 focus:ring-teal-500/50" value={copyConfig.targetCategory} onChange={(e) => { if (e.target.value === '___NEW___') { setCopyConfig({ ...copyConfig, targetCategory: '' }); setIsManualTargetCategory(true); } else { setCopyConfig({ ...copyConfig, targetCategory: e.target.value }); } }}><option value="" disabled className="bg-gray-900">Wählen...</option>{targetWarehouseCategories.map(c => <option key={c} value={c} className="bg-gray-900 text-white">{c}</option>)}<option value="___NEW___" className="bg-gray-900 text-emerald-400 font-bold">+ Neues Regal erstellen</option></select><div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-white/50"><ChevronDown size={16} /></div></div>}</div>
-                                <div><label className="text-xs text-white/50 block mb-1">Neues Fach (Ort)</label><div className="flex gap-2"><GlassInput value={copyConfig.targetLocation} onChange={(e) => setCopyConfig({ ...copyConfig, targetLocation: e.target.value })} placeholder="z.B. A-01" /><button type="button" onClick={handleAutoLocationForCopy} disabled={!copyConfig.targetWarehouseId || !copyConfig.targetCategory} className="px-3 bg-white/10 hover:bg-white/20 border border-white/10 rounded-xl text-emerald-400 hover:text-emerald-300 transition-colors disabled:opacity-50 disabled:cursor-not-allowed" title="Nächstes freies Fach generieren"><Wand2 size={18} /></button></div></div>
+            {
+                isCopyModalOpen && (
+                    <div className="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-in fade-in zoom-in-95">
+                        <GlassCard className="w-full max-w-lg">
+                            <div className="flex justify-between items-center mb-6"><h2 className="text-xl font-bold text-white flex items-center gap-2"><Copy size={20} /> Artikel kopieren</h2><button onClick={() => setIsCopyModalOpen(false)} className="text-white/50 hover:text-white"><X size={20} /></button></div>
+                            <div className="space-y-4">
+                                <div className="p-3 bg-blue-500/10 border border-blue-500/20 rounded-xl text-xs text-blue-200 mb-4">Du kopierst <b>{selectedArticleIds.size}</b> Artikel. Stammdaten (Name, EAN, Lieferanten) werden übernommen. Bitte definiere den neuen Lagerort.</div>
+                                <div><label className="text-xs text-white/50 block mb-1">Ziel-Lager</label><GlassSelect value={copyConfig.targetWarehouseId} onChange={(e) => setCopyConfig({ ...copyConfig, targetWarehouseId: e.target.value })}><option value="" className="bg-gray-900">Bitte wählen...</option>{warehouses.filter(w => w.id !== currentWarehouseId).map(w => <option key={w.id} value={w.id} className="bg-gray-900">{w.name}</option>)}{warehouses.length > 0 && currentWarehouseId && <option value={currentWarehouseId} className="bg-gray-900">{currentWarehouse?.name} (Duplizieren)</option>}</GlassSelect></div>
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div><label className="text-xs text-white/50 block mb-1">Neues Regal (Kategorie)</label>{isManualTargetCategory ? <div className="flex gap-2"><GlassInput value={copyConfig.targetCategory} onChange={(e) => setCopyConfig({ ...copyConfig, targetCategory: e.target.value })} placeholder="Neues Regal benennen..." autoFocus />{targetWarehouseCategories.length > 0 && <button type="button" onClick={() => setIsManualTargetCategory(false)} className="p-3 bg-white/10 hover:bg-white/20 border border-white/10 rounded-xl text-white/60 hover:text-white" title="Aus Liste wählen"><Layers size={20} /></button>}</div> : <div className="relative w-full group"><select className="w-full bg-white/5 border border-white/10 rounded-xl py-3 pl-4 pr-10 text-white appearance-none focus:outline-none focus:ring-2 focus:ring-teal-500/50" value={copyConfig.targetCategory} onChange={(e) => { if (e.target.value === '___NEW___') { setCopyConfig({ ...copyConfig, targetCategory: '' }); setIsManualTargetCategory(true); } else { setCopyConfig({ ...copyConfig, targetCategory: e.target.value }); } }}><option value="" disabled className="bg-gray-900">Wählen...</option>{targetWarehouseCategories.map(c => <option key={c} value={c} className="bg-gray-900 text-white">{c}</option>)}<option value="___NEW___" className="bg-gray-900 text-emerald-400 font-bold">+ Neues Regal erstellen</option></select><div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-white/50"><ChevronDown size={16} /></div></div>}</div>
+                                    <div><label className="text-xs text-white/50 block mb-1">Neues Fach (Ort)</label><div className="flex gap-2"><GlassInput value={copyConfig.targetLocation} onChange={(e) => setCopyConfig({ ...copyConfig, targetLocation: e.target.value })} placeholder="z.B. A-01" /><button type="button" onClick={handleAutoLocationForCopy} disabled={!copyConfig.targetWarehouseId || !copyConfig.targetCategory} className="px-3 bg-white/10 hover:bg-white/20 border border-white/10 rounded-xl text-emerald-400 hover:text-emerald-300 transition-colors disabled:opacity-50 disabled:cursor-not-allowed" title="Nächstes freies Fach generieren"><Wand2 size={18} /></button></div></div>
+                                </div>
+                                <div className="grid grid-cols-2 gap-4 bg-black/20 p-3 rounded-xl border border-white/5"><div><label className="text-xs text-emerald-400 block mb-1 font-bold">Startbestand (Ist)</label><input type="number" className="w-full bg-emerald-500/10 border border-emerald-500/30 rounded-lg p-2 text-white" value={copyConfig.stock} onChange={(e) => setCopyConfig({ ...copyConfig, stock: Number(e.target.value) })} /></div><div><label className="text-xs text-blue-400 block mb-1 font-bold">Sollbestand (Ziel)</label><input type="number" className="w-full bg-blue-500/10 border border-blue-500/30 rounded-lg p-2 text-white" value={copyConfig.targetStock} onChange={(e) => setCopyConfig({ ...copyConfig, targetStock: Number(e.target.value) })} /></div></div>
                             </div>
-                            <div className="grid grid-cols-2 gap-4 bg-black/20 p-3 rounded-xl border border-white/5"><div><label className="text-xs text-emerald-400 block mb-1 font-bold">Startbestand (Ist)</label><input type="number" className="w-full bg-emerald-500/10 border border-emerald-500/30 rounded-lg p-2 text-white" value={copyConfig.stock} onChange={(e) => setCopyConfig({ ...copyConfig, stock: Number(e.target.value) })} /></div><div><label className="text-xs text-blue-400 block mb-1 font-bold">Sollbestand (Ziel)</label><input type="number" className="w-full bg-blue-500/10 border border-blue-500/30 rounded-lg p-2 text-white" value={copyConfig.targetStock} onChange={(e) => setCopyConfig({ ...copyConfig, targetStock: Number(e.target.value) })} /></div></div>
-                        </div>
-                        <div className="flex justify-end gap-3 mt-8"><Button variant="secondary" onClick={() => setIsCopyModalOpen(false)}>Abbrechen</Button><Button onClick={executeBulkCopy} disabled={isSubmitting}>{isSubmitting ? <Loader2 className="animate-spin" /> : 'Kopieren starten'}</Button></div>
-                    </GlassCard>
-                </div>
-            )}
+                            <div className="flex justify-end gap-3 mt-8"><Button variant="secondary" onClick={() => setIsCopyModalOpen(false)}>Abbrechen</Button><Button onClick={executeBulkCopy} disabled={isSubmitting}>{isSubmitting ? <Loader2 className="animate-spin" /> : 'Kopieren starten'}</Button></div>
+                        </GlassCard>
+                    </div>
+                )
+            }
 
             {/* CONTEXT MENU */}
-            {contextMenu && contextMenuArticle && (
-                <div className="fixed bg-gray-900 border border-white/10 rounded-xl shadow-2xl z-[9999] overflow-hidden w-48 context-menu-container" style={{ top: contextMenu.y, left: contextMenu.x }}>
-                    <div className="py-1"><button onClick={() => openDetailModal(contextMenuArticle)} className="w-full text-left px-4 py-3 text-sm text-white hover:bg-white/10 flex gap-3 items-center"><History size={16} /> Verlauf</button><button onClick={() => handlePrintLabel(contextMenuArticle)} className="w-full text-left px-4 py-3 text-sm text-white hover:bg-white/10 flex gap-3 items-center"><Printer size={16} /> Etikett</button><button onClick={() => openEditArticleModal(contextMenuArticle)} className="w-full text-left px-4 py-3 text-sm text-white hover:bg-white/10 flex gap-3 items-center"><Edit size={16} /> Bearbeiten</button><div className="h-px bg-white/10 my-1"></div><button onClick={() => handleDeleteArticle(contextMenuArticle.id)} className="w-full text-left px-4 py-3 text-sm text-rose-400 hover:bg-rose-500/10 flex gap-3 items-center"><Trash2 size={16} /> Löschen</button></div>
-                </div>
-            )}
+            {
+                contextMenu && contextMenuArticle && (
+                    <div className="fixed bg-gray-900 border border-white/10 rounded-xl shadow-2xl z-[9999] overflow-hidden w-48 context-menu-container" style={{ top: contextMenu.y, left: contextMenu.x }}>
+                        <div className="py-1"><button onClick={() => openDetailModal(contextMenuArticle)} className="w-full text-left px-4 py-3 text-sm text-white hover:bg-white/10 flex gap-3 items-center"><History size={16} /> Verlauf</button><button onClick={() => handlePrintLabel(contextMenuArticle)} className="w-full text-left px-4 py-3 text-sm text-white hover:bg-white/10 flex gap-3 items-center"><Printer size={16} /> Etikett</button><button onClick={() => openEditArticleModal(contextMenuArticle)} className="w-full text-left px-4 py-3 text-sm text-white hover:bg-white/10 flex gap-3 items-center"><Edit size={16} /> Bearbeiten</button><div className="h-px bg-white/10 my-1"></div><button onClick={() => handleDeleteArticle(contextMenuArticle.id)} className="w-full text-left px-4 py-3 text-sm text-rose-400 hover:bg-rose-500/10 flex gap-3 items-center"><Trash2 size={16} /> Löschen</button></div>
+                    </div>
+                )
+            }
 
             {/* ADD/EDIT MODAL */}
-            {isAddModalOpen && (
-                <div className="fixed inset-0 z-[100] flex items-center justify-center sm:p-4 bg-black/80 backdrop-blur-md overflow-hidden">
-                    {/* Edit Navigation Logic */}
-                    {isEditMode && Object.values(groupedArticles).flat().length > 1 && (
-                        <>
-                            <button
-                                onClick={(e) => { e.stopPropagation(); handleEditNavigate('prev'); }}
-                                className="absolute left-2 sm:left-6 top-1/2 -translate-y-1/2 z-[110] p-3 rounded-full bg-black/50 text-white/50 hover:bg-emerald-500/20 hover:text-emerald-400 hover:scale-110 transition-all backdrop-blur-sm group hidden sm:block"
-                                title="Vorheriger Artikel (Pfeil Links)"
-                            >
-                                <ChevronDown size={32} className="rotate-90 relative right-0.5" />
-                            </button>
-                            <button
-                                onClick={(e) => { e.stopPropagation(); handleEditNavigate('next'); }}
-                                className="absolute right-2 sm:right-6 top-1/2 -translate-y-1/2 z-[110] p-3 rounded-full bg-black/50 text-white/50 hover:bg-emerald-500/20 hover:text-emerald-400 hover:scale-110 transition-all backdrop-blur-sm group hidden sm:block"
-                                title="Nächster Artikel (Pfeil Rechts)"
-                            >
-                                <ChevronDown size={32} className="-rotate-90 relative left-0.5" />
-                            </button>
-                        </>
-                    )}
+            {
+                isAddModalOpen && (
+                    <div className="fixed inset-0 z-[100] flex items-center justify-center sm:p-4 bg-black/80 backdrop-blur-md overflow-hidden">
+                        {/* Edit Navigation Logic */}
+                        {isEditMode && Object.values(groupedArticles).flat().length > 1 && (
+                            <>
+                                <button
+                                    onClick={(e) => { e.stopPropagation(); handleEditNavigate('prev'); }}
+                                    className="absolute left-2 sm:left-6 top-1/2 -translate-y-1/2 z-[110] p-3 rounded-full bg-black/50 text-white/50 hover:bg-emerald-500/20 hover:text-emerald-400 hover:scale-110 transition-all backdrop-blur-sm group hidden sm:block"
+                                    title="Vorheriger Artikel (Pfeil Links)"
+                                >
+                                    <ChevronDown size={32} className="rotate-90 relative right-0.5" />
+                                </button>
+                                <button
+                                    onClick={(e) => { e.stopPropagation(); handleEditNavigate('next'); }}
+                                    className="absolute right-2 sm:right-6 top-1/2 -translate-y-1/2 z-[110] p-3 rounded-full bg-black/50 text-white/50 hover:bg-emerald-500/20 hover:text-emerald-400 hover:scale-110 transition-all backdrop-blur-sm group hidden sm:block"
+                                    title="Nächster Artikel (Pfeil Rechts)"
+                                >
+                                    <ChevronDown size={32} className="-rotate-90 relative left-0.5" />
+                                </button>
+                            </>
+                        )}
 
-                    <div className="w-full h-full sm:h-auto sm:max-h-[90vh] max-w-2xl bg-[#1a1d24] border-0 sm:border border-white/10 sm:rounded-2xl shadow-2xl flex flex-col relative z-10">
-                        <div className="p-4 sm:p-6 border-b border-white/10 flex justify-between items-center bg-white/5 sticky top-0 z-10 backdrop-blur-xl shrink-0">
-                            <div className="flex items-center gap-3"><h2 className="text-xl font-bold text-white">{isEditMode ? 'Artikel bearbeiten' : 'Neuer Artikel'}</h2><button onClick={openAiScanModal} className="flex items-center gap-2 bg-gradient-to-r from-purple-500 to-blue-500 hover:from-purple-400 hover:to-blue-400 text-white text-xs font-bold px-3 py-1.5 rounded-full shadow-lg shadow-purple-500/20 transition-all transform hover:scale-105"><Sparkles size={12} /><span>KI-Scan</span></button></div><button onClick={() => setIsAddModalOpen(false)} className="p-2 rounded-full hover:bg-white/5 text-white/60 hover:text-white"><X size={20} /></button>
-                        </div>
-                        <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-6 sm:space-y-8">
-                            <div className="flex flex-col md:flex-row gap-6">
-                                <div className="flex flex-col gap-2 sm:w-32 shrink-0">
-                                    <div className="w-full h-32 rounded-2xl border-2 border-dashed border-white/10 bg-white/5 flex flex-col items-center justify-center relative overflow-hidden group hover:border-white/20 transition-all">
-                                        <input type="file" ref={fileInputRef} className="hidden" accept="image/*" onChange={handleFileSelect} />
-                                        {isUploading ? <Loader2 className="animate-spin text-emerald-400" /> : newArticle.image ? <img src={newArticle.image} className="w-full h-full object-cover" /> : <div onClick={() => fileInputRef.current?.click()} className="flex flex-col items-center gap-2 text-white/30 cursor-pointer p-2 text-center"><ImageIcon size={24} /> <span className="text-[10px]">Bild wählen</span></div>}
-                                        {newArticle.image && !isUploading && <div className="absolute inset-0 bg-black/60 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity gap-2"><button onClick={handleImageRemove} className="p-1 bg-red-500/20 text-red-300 rounded hover:bg-red-500/40"><Trash2 size={16} /></button></div>}
-                                    </div>
-                                    {!newArticle.image && !isUploading && (
-                                        <>
-                                            <button type="button" onClick={handlePasteProductImage} className="w-full py-2 rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 text-xs text-white/60 hover:text-white flex items-center justify-center gap-2 transition-colors"><Clipboard size={14} /> Einfügen</button>
-                                            <button type="button" onClick={handleOpenImageReuse} className="w-full py-2 rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 text-xs text-white/60 hover:text-white flex items-center justify-center gap-2 transition-colors"><Paperclip size={14} /> Verknüpfen</button>
-                                        </>
-                                    )}
-                                </div>
-                                <div className="flex-1 space-y-4">
-                                    <div><label className="text-xs text-white/50 mb-1 block font-medium">Bezeichnung</label><input className="w-full bg-white/5 border border-white/10 rounded-xl p-3 text-white font-medium focus:outline-none focus:ring-1 focus:ring-emerald-500/50 text-lg" placeholder="Was liegt im Regal?" value={newArticle.name} onChange={e => setNewArticle({ ...newArticle, name: e.target.value })} /></div>
-                                    <div><label className="text-xs text-white/50 mb-1 block font-medium">EAN / Barcode (Optional)</label><input className="w-full bg-white/5 border border-white/10 rounded-xl p-3 text-white focus:outline-none focus:ring-1 focus:ring-emerald-500/50" placeholder="z.B. 401234567890" value={newArticle.ean} onChange={e => setNewArticle({ ...newArticle, ean: e.target.value })} /></div>
-                                </div>
+                        <div className="w-full h-full sm:h-auto sm:max-h-[90vh] max-w-2xl bg-[#1a1d24] border-0 sm:border border-white/10 sm:rounded-2xl shadow-2xl flex flex-col relative z-10 sm:overflow-hidden">
+                            <div className="p-4 sm:p-6 border-b border-white/10 flex justify-between items-center bg-white/5 sticky top-0 z-10 backdrop-blur-xl shrink-0">
+                                <div className="flex items-center gap-3"><h2 className="text-xl font-bold text-white">{isEditMode ? 'Artikel bearbeiten' : 'Neuer Artikel'}</h2><button onClick={openAiScanModal} className="flex items-center gap-2 bg-gradient-to-r from-purple-500 to-blue-500 hover:from-purple-400 hover:to-blue-400 text-white text-xs font-bold px-3 py-1.5 rounded-full shadow-lg shadow-purple-500/20 transition-all transform hover:scale-105"><Sparkles size={12} /><span>KI-Scan</span></button></div><button onClick={() => setIsAddModalOpen(false)} className="p-2 rounded-full hover:bg-white/5 text-white/60 hover:text-white"><X size={20} /></button>
                             </div>
-                            <div className="space-y-2"><label className="text-xs text-white/50 block font-medium flex items-center gap-1"><Hash size={12} /> Hersteller-Nr. / SKUs</label><div className="flex gap-2"><input className="flex-1 bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:ring-1 focus:ring-emerald-500/50 font-mono" value={tempSkuInput} onChange={e => setTempSkuInput(e.target.value)} onKeyDown={e => e.key === 'Enter' && addTempSku()} placeholder="z.B. 123-456" /><Button type="button" onClick={() => addTempSku()} className="px-3 py-2 h-auto bg-white/10 hover:bg-white/20 border-white/10"><Plus size={16} /></Button></div><div className="flex flex-wrap gap-2">{tempSkus.map((s, idx) => (<div key={idx} className={`flex items-center gap-1 pl-2 pr-1 py-1 rounded-lg border text-xs ${s.isPreferred ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-200' : 'bg-white/5 border-white/10 text-white/60'}`}>{editingSkuIndex === idx ? (<div className="flex items-center"><input className="bg-transparent border-b border-white/30 text-white w-20 focus:outline-none" value={editSkuValue} onChange={(e) => setEditSkuValue(e.target.value)} onBlur={saveEditingSku} onKeyDown={(e) => e.key === 'Enter' && saveEditingSku()} autoFocus /></div>) : (<span onClick={() => startEditingSku(idx)} className="cursor-pointer">{s.sku}</span>)}<div className="flex gap-1 ml-1 pl-1 border-l border-white/10"><button type="button" onClick={() => togglePreferredSku(idx)} className={`hover:text-white ${s.isPreferred ? 'text-emerald-400' : 'text-white/20'}`} title="Als Haupt-Nr. setzen"><Star size={10} fill={s.isPreferred ? "currentColor" : "none"} /></button><button type="button" onClick={() => removeTempSku(idx)} className="hover:text-rose-400 text-white/40"><X size={10} /></button></div></div>))}</div></div>
-                            <div className="h-px bg-white/5 w-full" />
-                            <div className="grid grid-cols-2 gap-4 sm:gap-6">
-                                <div><label className="text-xs text-white/50 block mb-1">Regal (Kategorie)</label>{isManualCategory ? <div className="flex gap-2"><input className="w-full bg-white/5 border border-white/10 rounded-xl p-3 text-white" value={newArticle.category} onChange={e => setNewArticle({ ...newArticle, category: e.target.value })} placeholder="Neues Regal benennen..." autoFocus />{distinctCategories.length > 0 && <button type="button" onClick={() => setIsManualCategory(false)} className="p-3 bg-white/10 hover:bg-white/20 border border-white/10 rounded-xl text-white/60 hover:text-white" title="Aus Liste wählen"><Layers size={20} /></button>}</div> : <div className="flex gap-2"><div className="relative w-full group"><select className="w-full bg-white/5 border border-white/10 rounded-xl py-3 pl-4 pr-10 text-white appearance-none focus:outline-none focus:ring-2 focus:ring-teal-500/50" value={newArticle.category} onChange={(e) => { if (e.target.value === '___NEW___') { setNewArticle({ ...newArticle, category: '' }); setIsManualCategory(true); } else { setNewArticle({ ...newArticle, category: e.target.value }); } }}><option value="" disabled className="bg-gray-900">Wählen...</option>{distinctCategories.map(c => <option key={c} value={c} className="bg-gray-900 text-white">{c}</option>)}<option value="___NEW___" className="bg-gray-900 text-emerald-400 font-bold">+ Neues Regal erstellen</option></select><div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-white/50"><ChevronDown size={16} /></div></div></div>}</div>
-                                <div><label className="text-xs text-white/50 block mb-1">Fach (Ort)</label><div className="flex gap-2"><input className="w-full bg-white/5 border border-white/10 rounded-xl p-3 text-white" value={newArticle.location} onChange={e => setNewArticle({ ...newArticle, location: e.target.value })} placeholder="z.B. A-01" /><button type="button" onClick={handleAutoLocation} className="px-3 bg-white/10 hover:bg-white/20 border border-white/10 rounded-xl text-emerald-400 hover:text-emerald-300 transition-colors" title="Nächstes freies Fach generieren"><Wand2 size={18} /></button></div></div>
-                                <div><label className="text-xs text-white/50 block mb-1 text-emerald-400">Ist-Bestand</label><input type="number" className="w-full bg-emerald-500/5 border border-emerald-500/20 rounded-xl p-3 text-white font-bold" value={newArticle.stock} onChange={e => setNewArticle({ ...newArticle, stock: parseInt(e.target.value) || 0 })} /></div>
-                                <div><label className="text-xs text-white/50 block mb-1 text-blue-400">Soll-Bestand</label><input type="number" className="w-full bg-blue-500/5 border border-blue-500/20 rounded-xl p-3 text-white font-bold" value={newArticle.targetStock} onChange={e => setNewArticle({ ...newArticle, targetStock: parseInt(e.target.value) || 0 })} /></div>
-                            </div>
-                            <div className="h-px bg-white/5 w-full" />
-                            <div className="space-y-4">
-                                <div className="flex justify-between items-center"><label className="text-xs text-white/50 font-bold uppercase tracking-wider">Lieferanten & Preise</label><button type="button" onClick={() => navigate('/suppliers')} className="text-[10px] text-blue-400 hover:underline">Verwalten</button></div>
-                                <div className="bg-black/20 p-3 rounded-xl border border-white/5 space-y-3"><div className="flex gap-2"><GlassSelect className="flex-1 py-2 text-sm" value={tempSupplierSelect} onChange={(e) => setTempSupplierSelect(e.target.value)}><option value="" className="bg-gray-900 text-white">Lieferant wählen...</option>{suppliers.map(s => <option key={s.id} value={s.id} className="bg-gray-900 text-white">{s.name}</option>)}</GlassSelect><Button type="button" onClick={addTempSupplier} disabled={!tempSupplierSelect} className="px-4 py-2 h-auto text-xs">Hinzufügen</Button></div><div className="grid grid-cols-2 gap-2"><input className="bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-xs text-white focus:outline-none" placeholder="Artikel-Nr. beim Händler" value={tempSupplierSkuInput} onChange={e => setTempSupplierSkuInput(e.target.value)} /><input className="bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-xs text-white focus:outline-none" placeholder="URL zum Produkt" value={tempSupplierUrlInput} onChange={e => setTempSupplierUrlInput(e.target.value)} /></div></div>
-                                <div className="space-y-2">{tempSuppliers.length === 0 && <div className="text-center text-xs text-white/30 py-2">Keine Lieferanten verknüpft.</div>}{tempSuppliers.map((s, idx) => (<div key={idx} className={`flex items-center justify-between p-3 rounded-xl border ${s.isPreferred ? 'bg-blue-500/10 border-blue-500/30' : 'bg-white/5 border-white/10'}`}><div className="flex-1 min-w-0 mr-4"><div className="flex items-center gap-2"><span className="font-bold text-sm text-white">{s.supplierName}</span>{s.isPreferred && <span className="text-[9px] bg-blue-500 text-white px-1.5 rounded-sm">Primär</span>}</div>{editingSupplierIndex === idx ? (<div className="grid grid-cols-2 gap-2 mt-2"><input className="bg-black/30 border border-white/20 rounded px-2 py-1 text-xs text-white" value={editSupplierData.supplierSku} onChange={e => setEditSupplierData({ ...editSupplierData, supplierSku: e.target.value })} placeholder="Art-Nr." /><input className="bg-black/30 border border-white/20 rounded px-2 py-1 text-xs text-white" value={editSupplierData.url} onChange={e => setEditSupplierData({ ...editSupplierData, url: e.target.value })} placeholder="URL" /><div className="col-span-2 flex justify-end gap-2"><button onClick={saveEditingSupplier} className="text-xs text-emerald-400 hover:underline">Speichern</button><button onClick={() => setEditingSupplierIndex(null)} className="text-xs text-white/50 hover:underline">Abbruch</button></div></div>) : (<div className="text-xs text-white/50 flex flex-col sm:flex-row sm:gap-3 mt-0.5"><span className="truncate">Art-Nr: {s.supplierSku || '-'}</span>{s.url && <a href={s.url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 text-blue-400 hover:underline truncate max-w-[150px]"><LinkIcon size={10} /> Link</a>}</div>)}</div><div className="flex items-center gap-1">{editingSupplierIndex !== idx && (<><button type="button" onClick={() => startEditingSupplier(idx)} className="p-2 hover:bg-white/10 rounded-lg text-white/40 hover:text-white"><Edit size={14} /></button><button type="button" onClick={() => togglePreferredSupplier(idx)} className={`p-2 hover:bg-white/10 rounded-lg ${s.isPreferred ? 'text-blue-400' : 'text-white/20 hover:text-white'}`} title="Als Hauptlieferant setzen"><Star size={14} fill={s.isPreferred ? "currentColor" : "none"} /></button><button type="button" onClick={() => removeTempSupplier(idx)} className="p-2 hover:bg-white/10 rounded-lg text-white/40 hover:text-rose-400"><Trash2 size={14} /></button></>)}</div></div>))}</div>
-                            </div>
-                        </div>
-                        <div className="p-4 sm:p-6 border-t border-white/10 flex justify-end gap-3 bg-gray-900/95 sm:bg-black/20 rounded-none sm:rounded-b-2xl sticky bottom-0 z-10 backdrop-blur-xl shrink-0">
-                            <Button variant="secondary" onClick={() => setIsAddModalOpen(false)}>Abbrechen</Button>
-                            <Button onClick={handleSaveArticle} disabled={isSubmitting} className="min-w-[120px]">{isSubmitting ? <Loader2 className="animate-spin" /> : 'Speichern'}</Button>
-                        </div>
-                    </div>
-                </div>
-            )}
+                            <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-6 sm:space-y-8 relative">
 
-            {/* ARTICLE DETAIL MODAL */}
-            {isImageReuseModalOpen && (
-                <div className="fixed inset-0 z-[120] flex items-center justify-center p-4 bg-black/90 backdrop-blur-md animate-in fade-in zoom-in-95">
-                    <GlassCard className="w-full max-w-3xl flex flex-col h-[80vh] p-0 overflow-hidden">
-                        <div className="p-5 border-b border-white/10 bg-white/5 flex justify-between items-center">
-                            <div>
-                                <h3 className="text-lg font-bold text-white">Bild wiederverwenden</h3>
-                                <p className="text-xs text-white/50">Wählen Sie ein bereits vorhandenes Artikelbild aus.</p>
-                            </div>
-                            <button onClick={() => setIsImageReuseModalOpen(false)} className="text-white/50 hover:text-white"><X size={20} /></button>
-                        </div>
-
-                        <div className="p-4 border-b border-white/5 space-y-3">
-                            <div className="relative">
-                                <Search className="absolute left-3 top-3 text-white/30" size={16} />
-                                <input className="w-full bg-white/5 border border-white/10 rounded-xl pl-10 pr-4 py-2 text-sm text-white focus:outline-none focus:ring-1 focus:ring-emerald-500/30" placeholder="Suchen..." value={reuseSearch} onChange={e => setReuseSearch(e.target.value)} />
-                            </div>
-                            <div className="flex gap-2">
-                                <GlassSelect className="text-xs py-2" value={reuseFilterWarehouse} onChange={e => setReuseFilterWarehouse(e.target.value)}>
-                                    <option value="all" className="bg-gray-900">Alle Lagerorte</option>
-                                    {warehouses.map(w => <option key={w.id} value={w.id} className="bg-gray-900">{w.name}</option>)}
-                                </GlassSelect>
-                                <GlassSelect className="text-xs py-2" value={reuseFilterCategory} onChange={e => setReuseFilterCategory(e.target.value)}>
-                                    <option value="all" className="bg-gray-900">Alle Kategorien</option>
-                                    {reuseFilterWarehouse === 'all'
-                                        ? reuseCategories.map(c => <option key={c} value={c} className="bg-gray-900">{c}</option>)
-                                        : (warehouseCategoryMap[reuseFilterWarehouse] || []).map(c => <option key={c} value={c} className="bg-gray-900">{c}</option>)
-                                    }
-                                </GlassSelect>
-                            </div>
-                        </div>
-
-                        <div className="flex-1 overflow-y-auto p-4">
-                            {reuseLoading ? (
-                                <div className="flex justify-center py-10"><Loader2 className="animate-spin text-emerald-400" /></div>
-                            ) : (
-                                <div className="space-y-6">
-                                    {showRecent && recentImages.length > 0 && (
-                                        <div>
-                                            <h4 className="text-xs font-bold text-white/40 uppercase mb-2 px-1">Zuletzt verwendet</h4>
-                                            <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-3">
-                                                {recentImages.map((img, idx) => (
-                                                    <button key={idx} onClick={() => handleSelectReuseImage(img.url)} className="group relative aspect-square rounded-xl overflow-hidden border border-white/10 hover:border-emerald-500/50 transition-all">
-                                                        <img src={img.url} className="w-full h-full object-cover" />
-                                                        <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                                                            <span className="text-xs text-white font-medium px-2 text-center">{img.articleNames[0]}</span>
-                                                        </div>
-                                                    </button>
-                                                ))}
-                                            </div>
-                                            <div className="h-px bg-white/5 w-full my-4"></div>
+                                {/* INLINE AI SCAN SECTION */}
+                                {showAiScan && (
+                                    <div className="absolute left-0 right-0 top-0 mx-4 sm:mx-6 mt-4 sm:mt-6 z-20 bg-[#1a1d24]/95 backdrop-blur-xl border border-purple-500/20 rounded-xl p-4 shadow-2xl animate-in fade-in zoom-in-95 slide-in-from-top-2">
+                                        <div className="flex gap-2 mb-4">
+                                            {/* Tabs */}
+                                            <button onClick={() => { setAiMode('image'); setAiAnalysisResult(null); }} className={`flex-1 py-1.5 text-xs font-bold rounded-lg transition-all ${aiMode === 'image' ? 'bg-purple-500 text-white shadow' : 'bg-white/5 text-white/50 hover:text-white'}`}>Bild-Scan</button>
+                                            <button onClick={() => { setAiMode('link'); setAiAnalysisResult(null); }} className={`flex-1 py-1.5 text-xs font-bold rounded-lg transition-all ${aiMode === 'link' ? 'bg-blue-500 text-white shadow' : 'bg-white/5 text-white/50 hover:text-white'}`}>Link / Text</button>
                                         </div>
-                                    )}
 
-                                    <div>
-                                        <h4 className="text-xs font-bold text-white/40 uppercase mb-2 px-1">{showRecent ? 'Alle Bilder' : `Gefunden: ${filteredImages.length}`}</h4>
-                                        {filteredImages.length === 0 ? (
-                                            <div className="text-center text-white/30 py-8">Keine Bilder gefunden.</div>
+                                        {/* Content Area - Simpler Version for Inline */}
+                                        {!aiAnalysisResult ? (
+                                            <div className="space-y-3">
+                                                {aiMode === 'image' && (
+                                                    <div className="relative w-full aspect-[21/9] rounded-lg border-2 border-dashed border-white/20 bg-white/5 flex flex-col items-center justify-center overflow-hidden hover:border-purple-500/50 transition-colors cursor-pointer group" onClick={() => aiFileInputRef.current?.click()}>
+                                                        {aiImagePreview ? (
+                                                            <div className="relative w-full h-full group">
+                                                                <img src={aiImagePreview} className="w-full h-full object-contain" />
+                                                                <button onClick={(e) => { e.stopPropagation(); setAiImagePreview(null); setAiSelectedFile(null); }} className="absolute top-2 right-2 p-1.5 bg-black/50 hover:bg-red-500/80 rounded-full text-white transition-colors"><X size={14} /></button>
+                                                            </div>
+                                                        ) : (
+                                                            <div className="text-center text-white/40">
+                                                                <FileImage className="mx-auto mb-2 opacity-50" size={24} />
+                                                                <span className="text-xs font-medium">Bild hier ablegen oder klicken</span>
+                                                            </div>
+                                                        )}
+                                                        <input type="file" ref={aiFileInputRef} className="hidden" accept="image/*" onChange={handleAiFileSelectInput} />
+                                                    </div>
+                                                )}
+
+                                                {aiMode === 'link' && (
+                                                    <div className="relative">
+                                                        <input className="w-full bg-white/5 border border-white/10 rounded-lg py-2 pl-9 pr-3 text-sm text-white focus:ring-1 focus:ring-blue-500" placeholder="https://..." value={aiUrlInput} onChange={(e) => setAiUrlInput(e.target.value)} />
+                                                        <Globe className="absolute left-3 top-1/2 -translate-y-1/2 text-white/30" size={14} />
+                                                    </div>
+                                                )}
+
+                                                <Button onClick={analyzeWithGemini} disabled={isAnalyzing || (aiMode === 'image' && !aiSelectedFile) || (aiMode === 'link' && !aiUrlInput)} className="w-full h-8 text-xs bg-gradient-to-r from-purple-500 to-blue-500 hover:from-purple-400 hover:to-blue-400 border-none">
+                                                    {isAnalyzing ? <><Loader2 className="animate-spin w-3 h-3 mr-2" /> Analysiere...</> : <><Sparkles size={14} className="mr-2" /> Analysieren</>}
+                                                </Button>
+                                            </div>
                                         ) : (
-                                            <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-3">
-                                                {displayImages.map((img, idx) => (
-                                                    <button key={idx} onClick={() => handleSelectReuseImage(img.url)} className="group relative aspect-square rounded-xl overflow-hidden border border-white/10 hover:border-emerald-500/50 transition-all">
-                                                        <img src={img.url} className="w-full h-full object-cover" loading="lazy" />
-                                                        <div className="absolute bottom-0 left-0 right-0 bg-black/70 p-1 text-[9px] text-white truncate opacity-0 group-hover:opacity-100 transition-opacity">
-                                                            {img.articleNames[0]}
-                                                        </div>
+                                            <div className="space-y-2 animate-in fade-in">
+                                                <div className="flex items-center gap-2 text-emerald-400 text-xs font-bold"><CheckCircle2 size={14} /> <span>Gefunden!</span></div>
+                                                <div className="grid grid-cols-1 gap-2">
+                                                    <button onClick={() => applyAiResult(aiAnalysisResult.name)} className="text-left p-2.5 rounded-lg bg-white/5 hover:bg-white/10 border border-white/10 transition-colors">
+                                                        <div className="text-[9px] text-white/40 uppercase font-bold">Original</div>
+                                                        <div className="text-sm font-medium text-white truncate">{aiAnalysisResult.name}</div>
                                                     </button>
-                                                ))}
+                                                    {aiAnalysisResult.compact_name_proposal && (
+                                                        <button onClick={() => applyAiResult(aiAnalysisResult.compact_name_proposal)} className="text-left p-2.5 rounded-lg bg-purple-500/10 hover:bg-purple-500/20 border border-purple-500/30 transition-colors relative overflow-hidden">
+                                                            <div className="absolute top-0 right-0 px-1.5 py-0.5 bg-purple-500/20 text-purple-300 text-[8px] font-bold rounded-bl">Empfohlen</div>
+                                                            <div className="text-[9px] text-purple-300 uppercase font-bold">Kurzform</div>
+                                                            <div className="text-sm font-medium text-white truncate">{aiAnalysisResult.compact_name_proposal}</div>
+                                                        </button>
+                                                    )}
+                                                </div>
+                                                <button onClick={() => setAiAnalysisResult(null)} className="w-full py-1 text-[10px] text-white/30 hover:text-white">Neu scannen</button>
                                             </div>
                                         )}
                                     </div>
-                                </div>
-                            )}
-                        </div>
-                    </GlassCard>
-                </div>
-            )}
+                                )}
 
-            {/* AI SCAN MODAL */}
-            {isAiModalOpen && (
-                <div className="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-black/90 backdrop-blur-lg animate-in fade-in zoom-in-95">
-                    <GlassCard className="w-full max-w-lg flex flex-col p-0 overflow-hidden">
-                        <div className="p-5 border-b border-white/10 bg-gradient-to-r from-purple-500/10 to-blue-500/10 flex justify-between items-center">
-                            <div className="flex items-center gap-2"><Sparkles size={20} className="text-purple-300" /><h3 className="text-lg font-bold text-white">KI-Artikel-Scan</h3></div>
-                            <button onClick={() => setIsAiModalOpen(false)} className="text-white/50 hover:text-white"><X size={20} /></button>
-                        </div>
-                        <div className="p-6 flex flex-col gap-4">
-                            <div className="flex bg-white/5 p-1 rounded-xl border border-white/10">
-                                <button onClick={() => { setAiMode('image'); setAiAnalysisResult(null); }} className={`flex-1 py-2 text-sm font-bold rounded-lg transition-all ${aiMode === 'image' ? 'bg-white/10 text-white shadow' : 'text-white/40 hover:text-white'}`}>Bild</button>
-                                <button onClick={() => { setAiMode('link'); setAiAnalysisResult(null); }} className={`flex-1 py-2 text-sm font-bold rounded-lg transition-all ${aiMode === 'link' ? 'bg-white/10 text-white shadow' : 'text-white/40 hover:text-white'}`}>Link / Text</button>
-                            </div>
-                            {!aiAnalysisResult ? (
-                                <>
-                                    {aiMode === 'image' && (
-                                        <div className="relative w-full aspect-square rounded-xl border-2 border-dashed border-white/20 bg-white/5 flex flex-col items-center justify-center overflow-hidden group">
-                                            {aiImagePreview ? (<><img src={aiImagePreview} className="w-full h-full object-contain p-2" /><div className="absolute inset-0 bg-black/60 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"><button onClick={() => { setAiImagePreview(null); setAiSelectedFile(null); }} className="p-2 bg-red-500/20 text-red-200 rounded-full hover:bg-red-500/40"><Trash2 size={20} /></button></div></>) : (<div className="flex flex-col items-center gap-3 text-white/30"><FileImage size={40} strokeWidth={1.5} /><div className="flex flex-col gap-2 items-center"><button onClick={() => aiFileInputRef.current?.click()} className="px-4 py-2 bg-white/10 hover:bg-white/20 rounded-lg text-sm text-white transition-colors">Datei wählen</button><span className="text-xs">oder</span><button onClick={handlePasteAiImage} className="px-4 py-2 bg-purple-500/20 hover:bg-purple-500/30 text-purple-300 rounded-lg text-sm transition-colors flex items-center gap-2"><Clipboard size={14} /> Aus Zwischenablage</button></div></div>)}
-                                            <input type="file" ref={aiFileInputRef} className="hidden" accept="image/*" onChange={handleAiFileSelectInput} />
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 h-full overflow-y-auto">
+                                    {/* LEFT COLUMN */}
+                                    <div className="space-y-6">
+                                        {/* Image Section */}
+                                        <div className="flex gap-4">
+                                            <div className="w-32 h-32 shrink-0 rounded-2xl border-2 border-dashed border-white/10 bg-white/5 flex flex-col items-center justify-center relative overflow-hidden group hover:border-white/20 transition-all">
+                                                <input type="file" ref={fileInputRef} className="hidden" accept="image/*" onChange={handleFileSelect} />
+                                                {isUploading ? <Loader2 className="animate-spin text-emerald-400" /> : newArticle.image ? <img src={newArticle.image} className="w-full h-full object-cover" /> : <div onClick={() => fileInputRef.current?.click()} className="flex flex-col items-center gap-2 text-white/30 cursor-pointer p-2 text-center"><ImageIcon size={24} /> <span className="text-[10px]">Bild wählen</span></div>}
+                                                {newArticle.image && !isUploading && <div className="absolute inset-0 bg-black/60 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity gap-2"><button onClick={handleImageRemove} className="p-1 bg-red-500/20 text-red-300 rounded hover:bg-red-500/40"><Trash2 size={16} /></button></div>}
+                                            </div>
+                                            <div className="flex flex-col justify-center gap-2">
+                                                {!newArticle.image && !isUploading && (
+                                                    <>
+                                                        <button type="button" onClick={handlePasteProductImage} className="px-3 py-2 rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 text-xs text-white/60 hover:text-white flex items-center justify-center gap-2 transition-colors"><Clipboard size={14} /> Einfügen</button>
+                                                        <button type="button" onClick={handleOpenImageReuse} className="px-3 py-2 rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 text-xs text-white/60 hover:text-white flex items-center justify-center gap-2 transition-colors"><Paperclip size={14} /> Verknüpfen</button>
+                                                    </>
+                                                )}
+                                            </div>
                                         </div>
-                                    )}
-                                    {aiMode === 'link' && (
-                                        <div className="space-y-3 py-6">
-                                            <div className="text-sm text-white/60 mb-2">Füge einen Produktlink oder Text zur Analyse ein:</div>
-                                            <div className="relative"><input className="w-full bg-white/5 border border-white/10 rounded-xl p-4 pl-12 text-white placeholder-white/30 focus:outline-none focus:ring-2 focus:ring-purple-500/50" placeholder="https://shop.lieferant.de/produkt/..." value={aiUrlInput} onChange={(e) => setAiUrlInput(e.target.value)} /><Globe className="absolute left-4 top-1/2 -translate-y-1/2 text-white/30" size={20} /></div>
+
+                                        {/* Primary Fields */}
+                                        <div className="space-y-4">
+                                            <div><label className="text-xs text-white/50 mb-1 block font-medium">Bezeichnung</label><input className="w-full bg-white/5 border border-white/10 rounded-xl p-3 text-white font-medium focus:outline-none focus:ring-1 focus:ring-emerald-500/50 text-lg" placeholder="Was liegt im Regal?" value={newArticle.name} onChange={e => setNewArticle({ ...newArticle, name: e.target.value })} /></div>
+                                            <div><label className="text-xs text-white/50 mb-1 block font-medium">EAN / Barcode</label><input className="w-full bg-white/5 border border-white/10 rounded-xl p-3 text-white focus:outline-none focus:ring-1 focus:ring-emerald-500/50" placeholder="z.B. 401234567890" value={newArticle.ean} onChange={e => setNewArticle({ ...newArticle, ean: e.target.value })} /></div>
                                         </div>
-                                    )}
-                                    <Button onClick={analyzeWithGemini} disabled={(aiMode === 'image' && !aiSelectedFile) || (aiMode === 'link' && !aiUrlInput.trim()) || isAnalyzing} className={`w-full bg-gradient-to-r from-purple-500 to-blue-500 border-none mt-4`}>{isAnalyzing ? <div className="flex items-center gap-2"><Loader2 className="animate-spin" /> Analysiere...</div> : <div className="flex items-center gap-2"><Wand2 size={18} /> Daten ausfüllen</div>}</Button>
-                                </>
-                            ) : (
-                                <div className="space-y-4 animate-in fade-in">
-                                    <div className="p-3 bg-emerald-500/10 border border-emerald-500/20 rounded-xl flex items-center gap-3"><CheckCircle2 size={24} className="text-emerald-400" /><div className="text-sm text-white">Analyse erfolgreich! Wähle einen Namen:</div></div>
-                                    <div className="space-y-2">
-                                        <div onClick={() => applyAiResult(aiAnalysisResult.name)} className="p-3 rounded-xl border border-white/10 bg-white/5 hover:bg-white/10 cursor-pointer transition-colors"><div className="text-[10px] text-white/40 uppercase font-bold mb-1">Original (gefunden)</div><div className="font-bold text-white">{aiAnalysisResult.name}</div></div>
-                                        {aiAnalysisResult.compact_name_proposal && (<div onClick={() => applyAiResult(aiAnalysisResult.compact_name_proposal)} className="p-3 rounded-xl border border-purple-500/30 bg-purple-500/10 hover:bg-purple-500/20 cursor-pointer transition-colors relative overflow-hidden"><div className="absolute top-0 right-0 p-1 bg-purple-500 text-white text-[9px] font-bold rounded-bl-lg">Empfohlen</div><div className="text-[10px] text-purple-200 uppercase font-bold mb-1 flex items-center gap-1"><TypeIcon size={10} /> Kurz & Knapp</div><div className="font-bold text-white">{aiAnalysisResult.compact_name_proposal}</div></div>)}
-                                        {aiAnalysisResult.pattern_name_proposal && (<div onClick={() => applyAiResult(aiAnalysisResult.pattern_name_proposal)} className="p-3 rounded-xl border border-blue-500/30 bg-blue-500/10 hover:bg-blue-500/20 cursor-pointer transition-colors"><div className="text-[10px] text-blue-200 uppercase font-bold mb-1 flex items-center gap-1"><Layers size={10} /> Muster-Match (Aus Bestand)</div><div className="font-bold text-white">{aiAnalysisResult.pattern_name_proposal}</div></div>)}
+
+                                        {/* SKUs */}
+                                        <div className="space-y-2"><label className="text-xs text-white/50 block font-medium flex items-center gap-1"><Hash size={12} /> Hersteller-Nr. / SKUs</label><div className="flex gap-2"><input className="flex-1 bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:ring-1 focus:ring-emerald-500/50 font-mono" value={tempSkuInput} onChange={e => setTempSkuInput(e.target.value)} onKeyDown={e => e.key === 'Enter' && addTempSku()} placeholder="z.B. 123-456" /><Button type="button" onClick={() => addTempSku()} className="px-3 py-2 h-auto bg-white/10 hover:bg-white/20 border-white/10"><Plus size={16} /></Button></div><div className="flex flex-wrap gap-2">{tempSkus.map((s, idx) => (<div key={idx} className={`flex items-center gap-1 pl-2 pr-1 py-1 rounded-lg border text-xs ${s.isPreferred ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-200' : 'bg-white/5 border-white/10 text-white/60'}`}>{editingSkuIndex === idx ? (<div className="flex items-center"><input className="bg-transparent border-b border-white/30 text-white w-20 focus:outline-none" value={editSkuValue} onChange={(e) => setEditSkuValue(e.target.value)} onBlur={saveEditingSku} onKeyDown={(e) => e.key === 'Enter' && saveEditingSku()} autoFocus /></div>) : (<span onClick={() => startEditingSku(idx)} className="cursor-pointer">{s.sku}</span>)}<div className="flex gap-1 ml-1 pl-1 border-l border-white/10"><button type="button" onClick={() => togglePreferredSku(idx)} className={`hover:text-white ${s.isPreferred ? 'text-emerald-400' : 'text-white/20'}`} title="Als Haupt-Nr. setzen"><Star size={10} fill={s.isPreferred ? "currentColor" : "none"} /></button><button type="button" onClick={() => removeTempSku(idx)} className="hover:text-rose-400 text-white/40"><X size={10} /></button></div></div>))}</div></div>
                                     </div>
-                                    <button onClick={() => setAiAnalysisResult(null)} className="w-full py-2 text-xs text-white/40 hover:text-white mt-2">Zurück</button>
-                                </div>
-                            )}
-                        </div>
-                    </GlassCard>
-                </div>
-            )}
 
-            {/* DELETE CONFIRMATION MODAL */}
-            {showDeleteModal && deleteTargetId && (
-                <div className="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in zoom-in-95">
-                    <GlassCard className="w-full max-w-sm p-6 flex flex-col items-center text-center">
-                        <div className="w-16 h-16 rounded-full bg-red-500/10 flex items-center justify-center mb-4 text-red-400 border border-red-500/20"><Trash2 size={32} /></div>
-                        <h3 className="text-xl font-bold text-white mb-2">Artikel löschen?</h3>
-                        <p className="text-sm text-white/60 mb-6">Möchtest du <span className="text-white font-bold">"{articles.find(a => a.id === deleteTargetId)?.name}"</span> wirklich löschen? Dies kann nicht rückgängig gemacht werden.</p>
-                        <div className="flex gap-3 w-full"><Button variant="secondary" onClick={() => setShowDeleteModal(false)} className="flex-1">Abbrechen</Button><Button variant="danger" onClick={executeDelete} className="flex-1">Löschen</Button></div>
-                    </GlassCard>
-                </div>
-            )}
+                                    {/* RIGHT COLUMN */}
+                                    <div className="space-y-6">
+                                        <div className="grid grid-cols-2 gap-4">
+                                            <div><label className="text-xs text-white/50 block mb-1">Regal (Kategorie)</label>{isManualCategory ? <div className="flex gap-2"><input className="w-full bg-white/5 border border-white/10 rounded-xl p-3 text-white" value={newArticle.category} onChange={e => setNewArticle({ ...newArticle, category: e.target.value })} placeholder="Neues Regal benennen..." autoFocus />{distinctCategories.length > 0 && <button type="button" onClick={() => setIsManualCategory(false)} className="p-3 bg-white/10 hover:bg-white/20 border border-white/10 rounded-xl text-white/60 hover:text-white" title="Aus Liste wählen"><Layers size={20} /></button>}</div> : <div className="flex gap-2"><div className="relative w-full group"><select className="w-full bg-white/5 border border-white/10 rounded-xl py-3 pl-4 pr-10 text-white appearance-none focus:outline-none focus:ring-2 focus:ring-teal-500/50" value={newArticle.category} onChange={(e) => { if (e.target.value === '___NEW___') { setNewArticle({ ...newArticle, category: '' }); setIsManualCategory(true); } else { setNewArticle({ ...newArticle, category: e.target.value }); } }}><option value="" disabled className="bg-gray-900">Wählen...</option>{distinctCategories.map(c => <option key={c} value={c} className="bg-gray-900 text-white">{c}</option>)}<option value="___NEW___" className="bg-gray-900 text-emerald-400 font-bold">+ Neues Regal erstellen</option></select><div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-white/50"><ChevronDown size={16} /></div></div></div>}</div>
+                                            <div><label className="text-xs text-white/50 block mb-1">Fach (Ort)</label><div className="flex gap-2"><input className="w-full bg-white/5 border border-white/10 rounded-xl p-3 text-white" value={newArticle.location} onChange={e => setNewArticle({ ...newArticle, location: e.target.value })} placeholder="z.B. A-01" /><button type="button" onClick={handleAutoLocation} className="px-3 bg-white/10 hover:bg-white/20 border border-white/10 rounded-xl text-emerald-400 hover:text-emerald-300 transition-colors" title="Nächstes freies Fach generieren"><Wand2 size={18} /></button></div></div>
+                                        </div>
+
+                                        <div className="grid grid-cols-2 gap-4 bg-black/20 p-4 rounded-xl border border-white/5">
+                                            <div><label className="text-xs text-emerald-400 block mb-1 font-bold">Ist-Bestand</label><input type="number" className="w-full bg-emerald-500/10 border border-emerald-500/30 rounded-xl p-2 text-white font-bold" value={newArticle.stock} onChange={e => setNewArticle({ ...newArticle, stock: parseInt(e.target.value) || 0 })} onWheel={(e) => (e.target as HTMLInputElement).blur()} /></div>
+                                            <div><label className="text-xs text-blue-400 block mb-1 font-bold">Soll-Bestand</label><input type="number" className="w-full bg-blue-500/10 border border-blue-500/30 rounded-xl p-2 text-white font-bold" value={newArticle.targetStock} onChange={e => setNewArticle({ ...newArticle, targetStock: parseInt(e.target.value) || 0 })} onWheel={(e) => (e.target as HTMLInputElement).blur()} /></div>
+                                        </div>
+
+                                        {/* Suppliers */}
+                                        <div className="space-y-4 pt-2 border-t border-white/5">
+                                            <div className="flex justify-between items-center"><label className="text-xs text-white/50 font-bold uppercase tracking-wider">Lieferanten & Preise</label><button type="button" onClick={() => navigate('/suppliers')} className="text-[10px] text-blue-400 hover:underline">Verwalten</button></div>
+                                            <div className="bg-black/20 p-3 rounded-xl border border-white/5 space-y-3"><div className="flex gap-2"><GlassSelect className="flex-1 py-2 text-sm" value={tempSupplierSelect} onChange={(e) => setTempSupplierSelect(e.target.value)}><option value="" className="bg-gray-900 text-white">Lieferant wählen...</option>{suppliers.map(s => <option key={s.id} value={s.id} className="bg-gray-900 text-white">{s.name}</option>)}</GlassSelect><Button type="button" onClick={addTempSupplier} disabled={!tempSupplierSelect} className="px-4 py-2 h-auto text-xs">Hinzufügen</Button></div><div className="grid grid-cols-2 gap-2"><input className="bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-xs text-white focus:outline-none" placeholder="Artikel-Nr. beim Händler" value={tempSupplierSkuInput} onChange={e => setTempSupplierSkuInput(e.target.value)} /><input className="bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-xs text-white focus:outline-none" placeholder="URL zum Produkt" value={tempSupplierUrlInput} onChange={e => setTempSupplierUrlInput(e.target.value)} /></div></div>
+                                            <div className="space-y-2">{tempSuppliers.length === 0 && <div className="text-center text-xs text-white/30 py-2">Keine Lieferanten verknüpft.</div>}{tempSuppliers.map((s, idx) => (<div key={idx} className={`flex items-center justify-between p-3 rounded-xl border ${s.isPreferred ? 'bg-blue-500/10 border-blue-500/30' : 'bg-white/5 border-white/10'}`}><div className="flex-1 min-w-0 mr-4"><div className="flex items-center gap-2"><span className="font-bold text-sm text-white">{s.supplierName}</span>{s.isPreferred && <span className="text-[9px] bg-blue-500 text-white px-1.5 rounded-sm">Primär</span>}</div>{editingSupplierIndex === idx ? (<div className="grid grid-cols-2 gap-2 mt-2"><input className="bg-black/30 border border-white/20 rounded px-2 py-1 text-xs text-white" value={editSupplierData.supplierSku} onChange={e => setEditSupplierData({ ...editSupplierData, supplierSku: e.target.value })} placeholder="Art-Nr." /><input className="bg-black/30 border border-white/20 rounded px-2 py-1 text-xs text-white" value={editSupplierData.url} onChange={e => setEditSupplierData({ ...editSupplierData, url: e.target.value })} placeholder="URL" /><div className="col-span-2 flex justify-end gap-2"><button onClick={saveEditingSupplier} className="text-xs text-emerald-400 hover:underline">Speichern</button><button onClick={() => setEditingSupplierIndex(null)} className="text-xs text-white/50 hover:underline">Abbruch</button></div></div>) : (<div className="text-xs text-white/50 flex flex-col sm:flex-row sm:gap-3 mt-0.5"><span className="truncate">Art-Nr: {s.supplierSku || '-'}</span>{s.url && <a href={s.url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 text-blue-400 hover:underline truncate max-w-[150px]"><LinkIcon size={10} /> Link</a>}</div>)}</div><div className="flex items-center gap-1">{editingSupplierIndex !== idx && (<><button type="button" onClick={() => startEditingSupplier(idx)} className="p-2 hover:bg-white/10 rounded-lg text-white/40 hover:text-white"><Edit size={14} /></button><button type="button" onClick={() => togglePreferredSupplier(idx)} className={`p-2 hover:bg-white/10 rounded-lg ${s.isPreferred ? 'text-blue-400' : 'text-white/20 hover:text-white'}`} title="Als Hauptlieferant setzen"><Star size={14} fill={s.isPreferred ? "currentColor" : "none"} /></button><button type="button" onClick={() => removeTempSupplier(idx)} className="p-2 hover:bg-white/10 rounded-lg text-white/40 hover:text-rose-400"><Trash2 size={14} /></button></>)}</div></div>))}</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div className="p-4 sm:p-6 border-t border-white/10 flex justify-end gap-3 bg-gray-900/95 sm:bg-black/20 rounded-none sm:rounded-b-2xl sticky bottom-0 z-10 backdrop-blur-xl shrink-0">
+                                <Button variant="secondary" onClick={() => setIsAddModalOpen(false)}>Abbrechen</Button>
+                                {!isEditMode && (
+                                    <Button variant="secondary" onClick={() => handleSaveArticle(null, false)} disabled={isSubmitting} className="border-emerald-500/30 text-emerald-400 hover:bg-emerald-500/10">
+                                        {isSubmitting ? <Loader2 className="animate-spin" /> : 'Speichern & Weiter'}
+                                    </Button>
+                                )}
+                                <Button onClick={(e) => handleSaveArticle(e, true)} disabled={isSubmitting} className="min-w-[120px]">{isSubmitting ? <Loader2 className="animate-spin" /> : 'Speichern'}</Button>
+                            </div>
+                        </div>
+                    </div>
+                )
+            }
 
             {/* ARTICLE DETAIL MODAL */}
-            {isDetailModalOpen && viewingArticle && (
-                <ArticleDetailModal
-                    article={viewingArticle}
-                    onClose={() => setIsDetailModalOpen(false)}
-                    onEdit={() => { setIsDetailModalOpen(false); openEditArticleModal(viewingArticle); }}
-                    onNavigate={(direction) => {
-                        const flatArticles = Object.values(groupedArticles).flat();
-                        const currentIndex = flatArticles.findIndex(a => a.id === viewingArticle.id);
-                        if (currentIndex === -1) return;
+            {
+                isImageReuseModalOpen && (
+                    <div className="fixed inset-0 z-[120] flex items-center justify-center p-4 bg-black/90 backdrop-blur-md animate-in fade-in zoom-in-95">
+                        <GlassCard className="w-full max-w-3xl flex flex-col h-[80vh] p-0 overflow-hidden">
+                            <div className="p-5 border-b border-white/10 bg-white/5 flex justify-between items-center">
+                                <div>
+                                    <h3 className="text-lg font-bold text-white">Bild wiederverwenden</h3>
+                                    <p className="text-xs text-white/50">Wählen Sie ein bereits vorhandenes Artikelbild aus.</p>
+                                </div>
+                                <button onClick={() => setIsImageReuseModalOpen(false)} className="text-white/50 hover:text-white"><X size={20} /></button>
+                            </div>
 
-                        const newIndex = direction === 'next'
-                            ? (currentIndex + 1) % flatArticles.length
-                            : (currentIndex - 1 + flatArticles.length) % flatArticles.length;
+                            <div className="p-4 border-b border-white/5 space-y-3">
+                                <div className="relative">
+                                    <Search className="absolute left-3 top-3 text-white/30" size={16} />
+                                    <input className="w-full bg-white/5 border border-white/10 rounded-xl pl-10 pr-4 py-2 text-sm text-white focus:outline-none focus:ring-1 focus:ring-emerald-500/30" placeholder="Suchen..." value={reuseSearch} onChange={e => setReuseSearch(e.target.value)} />
+                                </div>
+                                <div className="flex gap-2">
+                                    <GlassSelect className="text-xs py-2" value={reuseFilterWarehouse} onChange={e => setReuseFilterWarehouse(e.target.value)}>
+                                        <option value="all" className="bg-gray-900">Alle Lagerorte</option>
+                                        {warehouses.map(w => <option key={w.id} value={w.id} className="bg-gray-900">{w.name}</option>)}
+                                    </GlassSelect>
+                                    <GlassSelect className="text-xs py-2" value={reuseFilterCategory} onChange={e => setReuseFilterCategory(e.target.value)}>
+                                        <option value="all" className="bg-gray-900">Alle Kategorien</option>
+                                        {reuseFilterWarehouse === 'all'
+                                            ? reuseCategories.map(c => <option key={c} value={c} className="bg-gray-900">{c}</option>)
+                                            : (warehouseCategoryMap[reuseFilterWarehouse] || []).map(c => <option key={c} value={c} className="bg-gray-900">{c}</option>)
+                                        }
+                                    </GlassSelect>
+                                </div>
+                            </div>
 
-                        const newArticle = flatArticles[newIndex];
-                        setViewingArticle(newArticle);
-                        fetchHistory(newArticle.id);
-                    }}
-                    hasNavigation={Object.values(groupedArticles).flat().length > 1}
-                />
-            )}
-        </div>
+                            <div className="flex-1 overflow-y-auto p-4">
+                                {reuseLoading ? (
+                                    <div className="flex justify-center py-10"><Loader2 className="animate-spin text-emerald-400" /></div>
+                                ) : (
+                                    <div className="space-y-6">
+                                        {showRecent && recentImages.length > 0 && (
+                                            <div>
+                                                <h4 className="text-xs font-bold text-white/40 uppercase mb-2 px-1">Zuletzt verwendet</h4>
+                                                <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-3">
+                                                    {recentImages.map((img, idx) => (
+                                                        <button key={idx} onClick={() => handleSelectReuseImage(img.url)} className="group relative aspect-square rounded-xl overflow-hidden border border-white/10 hover:border-emerald-500/50 transition-all">
+                                                            <img src={img.url} className="w-full h-full object-cover" />
+                                                            <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                                                                <span className="text-xs text-white font-medium px-2 text-center">{img.articleNames[0]}</span>
+                                                            </div>
+                                                        </button>
+                                                    ))}
+                                                </div>
+                                                <div className="h-px bg-white/5 w-full my-4"></div>
+                                            </div>
+                                        )}
+
+                                        <div>
+                                            <h4 className="text-xs font-bold text-white/40 uppercase mb-2 px-1">{showRecent ? 'Alle Bilder' : `Gefunden: ${filteredImages.length}`}</h4>
+                                            {filteredImages.length === 0 ? (
+                                                <div className="text-center text-white/30 py-8">Keine Bilder gefunden.</div>
+                                            ) : (
+                                                <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-3">
+                                                    {displayImages.map((img, idx) => (
+                                                        <button key={idx} onClick={() => handleSelectReuseImage(img.url)} className="group relative aspect-square rounded-xl overflow-hidden border border-white/10 hover:border-emerald-500/50 transition-all">
+                                                            <img src={img.url} className="w-full h-full object-cover" loading="lazy" />
+                                                            <div className="absolute bottom-0 left-0 right-0 bg-black/70 p-1 text-[9px] text-white truncate opacity-0 group-hover:opacity-100 transition-opacity">
+                                                                {img.articleNames[0]}
+                                                            </div>
+                                                        </button>
+                                                    ))}
+                                                </div>
+                                            )}
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+                        </GlassCard>
+                    </div>
+                )
+            }
+
+            {/* AI SCAN MODAL REMOVED (Now Inline) */}
+
+            {/* DELETE CONFIRMATION MODAL */}
+            {
+                showDeleteModal && deleteTargetId && (
+                    <div className="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in zoom-in-95">
+                        <GlassCard className="w-full max-w-sm p-6 flex flex-col items-center text-center">
+                            <div className="w-16 h-16 rounded-full bg-red-500/10 flex items-center justify-center mb-4 text-red-400 border border-red-500/20"><Trash2 size={32} /></div>
+                            <h3 className="text-xl font-bold text-white mb-2">Artikel löschen?</h3>
+                            <p className="text-sm text-white/60 mb-6">Möchtest du <span className="text-white font-bold">"{articles.find(a => a.id === deleteTargetId)?.name}"</span> wirklich löschen? Dies kann nicht rückgängig gemacht werden.</p>
+                            <div className="flex gap-3 w-full"><Button variant="secondary" onClick={() => setShowDeleteModal(false)} className="flex-1">Abbrechen</Button><Button variant="danger" onClick={executeDelete} className="flex-1">Löschen</Button></div>
+                        </GlassCard>
+                    </div>
+                )
+            }
+
+            {/* ARTICLE DETAIL MODAL */}
+            {
+                isDetailModalOpen && viewingArticle && (
+                    <ArticleDetailModal
+                        article={viewingArticle}
+                        onClose={() => setIsDetailModalOpen(false)}
+                        onEdit={() => { setIsDetailModalOpen(false); openEditArticleModal(viewingArticle); }}
+                        onNavigate={(direction) => {
+                            const flatArticles = Object.values(groupedArticles).flat();
+                            const currentIndex = flatArticles.findIndex(a => a.id === viewingArticle.id);
+                            if (currentIndex === -1) return;
+
+                            const newIndex = direction === 'next'
+                                ? (currentIndex + 1) % flatArticles.length
+                                : (currentIndex - 1 + flatArticles.length) % flatArticles.length;
+
+                            const newArticle = flatArticles[newIndex];
+                            setViewingArticle(newArticle);
+                            fetchHistory(newArticle.id);
+                        }}
+                        hasNavigation={Object.values(groupedArticles).flat().length > 1}
+                    />
+                )
+            }
+        </div >
     );
 };
 
@@ -1694,7 +1481,7 @@ const ArticleDetailModal = ({ article, onClose, onEdit, onNavigate, hasNavigatio
                                     <Clock size={12} />
                                     <span>
                                         Bestellt: {new Date(article.onOrderDate).toLocaleDateString()}
-                                        {orderDetails[article.id] ? ` von ${orderDetails[article.id].user}` : ''}
+                                        {/* {orderDetails[article.id] ? ` von ${orderDetails[article.id].user}` : ''} */}
                                     </span>
                                 </span>
                             )}
