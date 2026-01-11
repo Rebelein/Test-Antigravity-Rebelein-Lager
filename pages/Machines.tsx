@@ -7,6 +7,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { MasterDetailLayout } from '../components/MasterDetailLayout';
 import { MachineDetailContent } from '../components/machines/MachineDetailContent';
+import { MachineEditForm } from '../components/machines/MachineEditForm';
 import { toast } from 'sonner';
 
 const Machines: React.FC = () => {
@@ -23,15 +24,9 @@ const Machines: React.FC = () => {
     const [selectedMachine, setSelectedMachine] = useState<Machine | null>(null);
     const [searchTerm, setSearchTerm] = useState('');
 
-    // Modal State
-    const [showEditModal, setShowEditModal] = useState(false);
-    const [editingMachineId, setEditingMachineId] = useState<string | null>(null);
-    const [machineForm, setMachineForm] = useState({ name: '', image: '', nextMaintenance: '' });
-    const [isSubmitting, setIsSubmitting] = useState(false);
-
-    // Image Upload State
-    const [isUploading, setIsUploading] = useState(false);
-    const fileInputRef = useRef<HTMLInputElement>(null);
+    // Editor State
+    const [isCreating, setIsCreating] = useState(false);
+    const [isEditing, setIsEditing] = useState(false);
 
     // Context Menu State
     const [contextMenu, setContextMenu] = useState<{ id: string; x: number; y: number; } | null>(null);
@@ -98,16 +93,15 @@ const Machines: React.FC = () => {
     // --- HANDLERS ---
 
     const handleCreate = () => {
-        setEditingMachineId(null);
-        setMachineForm({ name: '', image: '', nextMaintenance: '' });
-        setShowEditModal(true);
+        setSelectedMachine(null);
+        setIsEditing(false);
+        setIsCreating(true);
     };
 
     const handleEdit = (m: Machine) => {
         setContextMenu(null);
-        setEditingMachineId(m.id);
-        setMachineForm({ name: m.name, image: m.image || '', nextMaintenance: m.nextMaintenance || '' });
-        setShowEditModal(true);
+        setSelectedMachine(m);
+        setIsEditing(true);
     };
 
     const handleDeleteMachine = async (machine: Machine) => {
@@ -124,54 +118,39 @@ const Machines: React.FC = () => {
         }
     };
 
-    const executeSave = async () => {
-        if (!machineForm.name) return toast.error("Name ist erforderlich");
-        setIsSubmitting(true);
+    const handleSaveMachine = async (data: { name: string; image: string; nextMaintenance: string }) => {
         try {
             const payload = {
-                name: machineForm.name,
-                image_url: machineForm.image,
-                next_maintenance: machineForm.nextMaintenance || null,
-                status: editingMachineId ? undefined : MachineStatus.AVAILABLE
+                name: data.name,
+                image_url: data.image,
+                next_maintenance: data.nextMaintenance || null,
+                status: isEditing ? undefined : MachineStatus.AVAILABLE
             };
 
-            // Remove undefined keys in a cleaner way if needed, but supabase ignores undefined often if not set. 
-            // Better to be explicit:
-            const dataToUpsert = editingMachineId ? payload : { ...payload, status: MachineStatus.AVAILABLE };
+            const dataToUpsert = isEditing ? payload : { ...payload, status: MachineStatus.AVAILABLE };
 
-            if (editingMachineId) {
-                await supabase.from('machines').update(dataToUpsert).eq('id', editingMachineId);
+            if (isEditing && selectedMachine) {
+                await supabase.from('machines').update(dataToUpsert).eq('id', selectedMachine.id);
             } else {
                 await supabase.from('machines').insert(dataToUpsert);
             }
             fetchMachines();
-            setShowEditModal(false);
+            handleClose();
             toast.success("Maschine gespeichert");
         } catch (e: any) {
             toast.error(e.message);
-        } finally {
-            setIsSubmitting(false);
+            throw e; // Re-throw to let form handle state
         }
     };
 
-    const processFileUpload = async (file: File) => {
-        try {
-            setIsUploading(true);
-            const fileExt = file.name.split('.').pop();
-            const fileName = `machine_${Math.random().toString(36).substring(2, 15)}_${Date.now()}.${fileExt}`;
-            const { error } = await supabase.storage.from('article-images').upload(fileName, file);
-            if (error) throw error;
-            const { data: { publicUrl } } = supabase.storage.from('article-images').getPublicUrl(fileName);
-            setMachineForm(prev => ({ ...prev, image: publicUrl }));
-        } catch (error: any) {
-            toast.error("Upload Fehler: " + error.message);
-        } finally {
-            setIsUploading(false);
-        }
+    const handleClose = () => {
+        setSelectedMachine(null);
+        setIsCreating(false);
+        setIsEditing(false);
     };
 
     const handleContextMenuClick = (e: React.MouseEvent, id: string) => {
-        e.stopPropagation(); // Check if this stops card click
+        e.stopPropagation();
         e.preventDefault();
         const rect = e.currentTarget.getBoundingClientRect();
         setContextMenu({ id, x: rect.left - 160, y: rect.bottom + 5 });
@@ -186,10 +165,10 @@ const Machines: React.FC = () => {
 
     const handlePrintLabel = (machine: Machine) => {
         setContextMenu(null);
-        // Standard print logic can be extracted, reusing inline for simple port
         const printWindow = window.open('', 'PRINT_MACH', 'height=400,width=600');
         if (!printWindow) return;
         const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(`MACH:${machine.id}`)}`;
+        // Basic Print Template
         printWindow.document.write(`<html><body style="font-family:sans-serif;text-align:center;padding:20px;"><h2 style="margin:0">${machine.name}</h2><p style="margin:5px 0;font-size:10px;">ID: ${machine.id}</p><img src="${qrUrl}" style="width:150px;height:150px;" /><p style="font-weight:bold;">Eigentum der Firma</p></body><script>window.onload=()=>{window.print();window.close();}</script></html>`);
         printWindow.document.close();
     };
@@ -254,8 +233,8 @@ const Machines: React.FC = () => {
                 {visibleMachines.map((machine) => (
                     <div
                         key={machine.id}
-                        onClick={() => setSelectedMachine(machine)}
-                        className={`bg-white/5 backdrop-blur-md border border-white/10 rounded-xl p-2.5 flex items-center gap-3 hover:bg-white/10 transition-all cursor-pointer ${selectedMachine?.id === machine.id ? 'border-emerald-500/50 bg-emerald-500/5' : ''}`}
+                        onClick={() => { setSelectedMachine(machine); setIsCreating(false); setIsEditing(false); }}
+                        className={`bg-white/5 backdrop-blur-md border border-white/10 rounded-xl p-2.5 flex items-center gap-3 hover:bg-white/10 transition-all cursor-pointer ${selectedMachine?.id === machine.id && !isCreating ? 'border-emerald-500/50 bg-emerald-500/5' : ''}`}
                     >
                         <div className="w-14 h-14 shrink-0 rounded-lg bg-black/30 overflow-hidden relative border border-white/5">
                             <img src={machine.image || `https://picsum.photos/seed/${machine.id}/200`} className="w-full h-full object-cover opacity-90" />
@@ -284,58 +263,41 @@ const Machines: React.FC = () => {
         </div>
     );
 
-    return (
-        <MasterDetailLayout
-            title="Maschinenpark"
-            isOpen={!!selectedMachine}
-            onClose={() => setSelectedMachine(null)}
-            listContent={renderListContent()}
-            detailContent={selectedMachine ? (
+    const renderDetailContent = () => {
+        if (isCreating) {
+            return <MachineEditForm isEditMode={false} onSave={handleSaveMachine} onCancel={handleClose} />;
+        }
+        if (selectedMachine) {
+            if (isEditing) {
+                return (
+                    <MachineEditForm
+                        isEditMode={true}
+                        initialData={{ name: selectedMachine.name, image: selectedMachine.image || '', nextMaintenance: selectedMachine.nextMaintenance || '' }}
+                        onSave={handleSaveMachine}
+                        onCancel={() => setIsEditing(false)}
+                    />
+                );
+            }
+            return (
                 <MachineDetailContent
                     machine={selectedMachine}
                     users={users}
-                    onClose={() => setSelectedMachine(null)}
+                    onClose={handleClose}
                     onUpdate={fetchMachines}
                 />
-            ) : null}
+            );
+        }
+        return null;
+    };
+
+    return (
+        <MasterDetailLayout
+            title="Maschinenpark"
+            isOpen={!!selectedMachine || isCreating}
+            onClose={handleClose}
+            listContent={renderListContent()}
+            detailContent={renderDetailContent()}
         >
-            {/* EDIT MODAL (Global) */}
-            {showEditModal && (
-                <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in">
-                    <GlassCard className="w-full max-w-md">
-                        <h2 className="text-xl font-bold text-white mb-4">{editingMachineId ? 'Maschine bearbeiten' : 'Neue Maschine'}</h2>
-                        <div className="space-y-4">
-                            <div>
-                                <label className="text-xs text-white/50 block mb-1">Name</label>
-                                <GlassInput value={machineForm.name} onChange={e => setMachineForm(prev => ({ ...prev, name: e.target.value }))} placeholder="Bezeichnung" />
-                            </div>
-
-                            <div className="flex items-center gap-4">
-                                <div className="w-20 h-20 bg-white/5 rounded-lg border border-white/10 flex items-center justify-center overflow-hidden relative group cursor-pointer" onClick={() => fileInputRef.current?.click()}>
-                                    {machineForm.image ? <img src={machineForm.image} className="w-full h-full object-cover" /> : <Plus className="text-white/20" />}
-                                    <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 flex items-center justify-center text-xs text-white">Ändern</div>
-                                </div>
-                                <div className="flex-1">
-                                    <button onClick={() => fileInputRef.current?.click()} className="text-sm text-emerald-400 hover:text-emerald-300">Bild hochladen</button>
-                                    <input type="file" ref={fileInputRef} className="hidden" accept="image/*" onChange={e => { if (e.target.files?.[0]) processFileUpload(e.target.files[0]) }} />
-                                    <p className="text-xs text-white/40 mt-1">Klicken zum Upload</p>
-                                </div>
-                            </div>
-
-                            <div>
-                                <label className="text-xs text-white/50 block mb-1">Nächste Wartung (Optional)</label>
-                                <input type="date" className="w-full bg-black/30 border border-white/10 rounded-lg p-3 text-white focus:outline-none" value={machineForm.nextMaintenance ? new Date(machineForm.nextMaintenance).toISOString().split('T')[0] : ''} onChange={e => setMachineForm(prev => ({ ...prev, nextMaintenance: e.target.value }))} />
-                            </div>
-
-                            <div className="flex justify-end gap-3 mt-4">
-                                <Button variant="secondary" onClick={() => setShowEditModal(false)}>Abbrechen</Button>
-                                <Button onClick={executeSave} disabled={isSubmitting || isUploading} className="bg-emerald-600 hover:bg-emerald-500">{isSubmitting ? 'Speichere...' : 'Speichern'}</Button>
-                            </div>
-                        </div>
-                    </GlassCard>
-                </div>
-            )}
-
             {/* CONTEXT MENU */}
             {contextMenu && (
                 <div className="fixed bg-[#1a1d24] border border-white/10 rounded-xl shadow-2xl z-[9999] overflow-hidden w-48" style={{ top: contextMenu.y, left: contextMenu.x }}>
@@ -356,5 +318,6 @@ const Machines: React.FC = () => {
         </MasterDetailLayout>
     );
 };
+
 
 export default Machines;

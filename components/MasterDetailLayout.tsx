@@ -74,7 +74,7 @@ export const MasterDetailLayout: React.FC<MasterDetailLayoutProps> = ({
 
     // DESKTOP LAYOUT: Split View with Slide Animation
     return (
-        <div className={`relative h-[calc(100vh-100px)] overflow-hidden flex ${className}`}>
+        <div className={`relative h-[calc(100vh-2rem)] overflow-hidden flex ${className}`}>
             {/* LIST CONTENT (Animates Width) */}
             <motion.div
                 initial={false}

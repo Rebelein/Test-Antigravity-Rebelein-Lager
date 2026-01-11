@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { supabase } from '../../supabaseClient';
 import { Article, Warehouse, Supplier, ManufacturerSku, ArticleSupplier } from '../../types';
 import { Button } from '../UIComponents';
-import { X, ChevronDown, Trash2, Plus, Sparkles, Loader2, FileImage, Globe, CheckCircle2, ImageIcon, Clipboard, Hash, Star, Layers, Wand2 } from 'lucide-react';
+import { X, ChevronDown, Trash2, Plus, Sparkles, Loader2, FileImage, Globe, CheckCircle2, ImageIcon, Clipboard, Hash, Star, Layers, Wand2, Pencil } from 'lucide-react';
 import { GoogleGenAI, Type } from "@google/genai";
 
 interface ArticleEditFormProps {
@@ -51,6 +51,7 @@ export const ArticleEditForm: React.FC<ArticleEditFormProps> = ({
     const [tempSupplierSelect, setTempSupplierSelect] = useState('');
     const [tempSupplierSkuInput, setTempSupplierSkuInput] = useState('');
     const [tempSupplierUrlInput, setTempSupplierUrlInput] = useState('');
+    const [editingSupplierIdx, setEditingSupplierIdx] = useState<number | null>(null);
 
     // AI State
     const [showAiScan, setShowAiScan] = useState(false);
@@ -173,15 +174,41 @@ export const ArticleEditForm: React.FC<ArticleEditFormProps> = ({
     const addTempSupplier = () => {
         if (!tempSupplierSelect) return;
         const sObj = suppliers.find(s => s.id === tempSupplierSelect);
-        if (!sObj || tempSuppliers.some(s => s.supplierId === sObj.id)) return;
-        setTempSuppliers(prev => [...prev, {
+        // If editing, skip the duplicate check for the CURRENT item (but still check others if needed, though simple replacement is easier for now)
+        // If adding new, check duplicates
+        if (!sObj || (editingSupplierIdx === null && tempSuppliers.some(s => s.supplierId === sObj.id))) return;
+
+        const newSupplierEntry = {
             supplierId: sObj.id,
             supplierName: sObj.name,
             supplierSku: tempSupplierSkuInput,
             url: tempSupplierUrlInput,
-            isPreferred: prev.length === 0
-        }]);
+            isPreferred: editingSupplierIdx !== null ? tempSuppliers[editingSupplierIdx].isPreferred : tempSuppliers.length === 0
+        };
+
+        if (editingSupplierIdx !== null) {
+            setTempSuppliers(prev => prev.map((s, i) => i === editingSupplierIdx ? newSupplierEntry : s));
+            setEditingSupplierIdx(null);
+        } else {
+            setTempSuppliers(prev => [...prev, newSupplierEntry]);
+        }
+
         setTempSupplierSelect(''); setTempSupplierSkuInput(''); setTempSupplierUrlInput('');
+    };
+
+    const startEditSupplier = (idx: number) => {
+        const s = tempSuppliers[idx];
+        setTempSupplierSelect(s.supplierId);
+        setTempSupplierSkuInput(s.supplierSku || '');
+        setTempSupplierUrlInput(s.url || '');
+        setEditingSupplierIdx(idx);
+    };
+
+    const cancelEditSupplier = () => {
+        setEditingSupplierIdx(null);
+        setTempSupplierSelect('');
+        setTempSupplierSkuInput('');
+        setTempSupplierUrlInput('');
     };
     const removeTempSupplier = (idx: number) => setTempSuppliers(prev => prev.filter((_, i) => i !== idx));
     const togglePreferredSupplier = (idx: number) => setTempSuppliers(prev => prev.map((s, i) => ({ ...s, isPreferred: i === idx })));
@@ -342,108 +369,151 @@ export const ArticleEditForm: React.FC<ArticleEditFormProps> = ({
                     </div>
                 )}
 
-                <div className="flex flex-col gap-6 h-full pb-20">
-                    {/* Image Section */}
-                    <div className="flex gap-4">
-                        <div className="w-24 h-24 shrink-0 rounded-2xl border-2 border-dashed border-white/10 bg-white/5 flex items-center justify-center relative overflow-hidden group hover:border-white/20">
-                            <input type="file" ref={fileInputRef} className="hidden" accept="image/*" onChange={handleFileUpload} />
-                            {isUploading ? <Loader2 className="animate-spin text-emerald-400" /> : newArticle.image ? <img src={newArticle.image} className="w-full h-full object-cover" /> : <div onClick={() => fileInputRef.current?.click()} className="flex flex-col items-center cursor-pointer text-white/30"><ImageIcon size={20} /><span className="text-[9px]">Bild</span></div>}
-                            {newArticle.image && !isUploading && <button onClick={() => setNewArticle(prev => ({ ...prev, image: '' }))} className="absolute inset-0 bg-black/60 flex items-center justify-center opacity-0 group-hover:opacity-100 text-red-300"><Trash2 size={16} /></button>}
-                        </div>
-                        <div className="flex flex-col justify-center gap-2">
-                            {!newArticle.image && !isUploading && (
-                                <button type="button" onClick={() => { }} className="px-3 py-2 rounded-xl bg-white/5 border border-white/10 text-xs text-white/60 hover:text-white flex items-center gap-2"><Clipboard size={14} /> Einfügen</button>
-                            )}
-                        </div>
-                    </div>
+                {/* Content Layout */}
+                <div className="md:grid md:grid-cols-2 md:gap-8 h-full pb-20 md:pb-0">
 
-                    {/* Main Fields */}
-                    <div className="space-y-4">
-                        <div><label className="text-xs text-white/50 mb-1 block">Bezeichnung</label><input className="w-full bg-white/5 border border-white/10 rounded-xl p-3 text-white text-base font-medium focus:ring-1 focus:ring-emerald-500/50" value={newArticle.name} onChange={e => setNewArticle({ ...newArticle, name: e.target.value })} placeholder="Artikelname" /></div>
-                        <div><label className="text-xs text-white/50 mb-1 block">EAN / Barcode</label><input className="w-full bg-white/5 border border-white/10 rounded-xl p-3 text-white focus:ring-1 focus:ring-emerald-500/50" value={newArticle.ean} onChange={e => setNewArticle({ ...newArticle, ean: e.target.value })} placeholder="EAN" /></div>
-                    </div>
-
-                    {/* Stock Grid */}
-                    <div className="grid grid-cols-2 gap-3 bg-black/20 p-3 rounded-xl border border-white/5">
-                        <div><label className="text-[10px] text-emerald-400 block mb-1 font-bold">Ist</label><input type="number" className="w-full bg-emerald-500/10 border border-emerald-500/30 rounded-lg p-2 text-white font-bold" value={newArticle.stock} onChange={e => setNewArticle({ ...newArticle, stock: parseInt(e.target.value) || 0 })} /></div>
-                        <div><label className="text-[10px] text-blue-400 block mb-1 font-bold">Soll</label><input type="number" className="w-full bg-blue-500/10 border border-blue-500/30 rounded-lg p-2 text-white font-bold" value={newArticle.targetStock} onChange={e => setNewArticle({ ...newArticle, targetStock: parseInt(e.target.value) || 0 })} /></div>
-                    </div>
-
-                    {/* Location */}
-                    <div className="space-y-4">
-                        <div>
-                            <label className="text-xs text-white/50 block mb-1">Regal</label>
-                            {isManualCategory ? (
-                                <div className="flex gap-2">
-                                    <input className="w-full bg-white/5 border border-white/10 rounded-xl p-3 text-white" value={newArticle.category} onChange={e => setNewArticle({ ...newArticle, category: e.target.value })} placeholder="Regal" />
-                                    {distinctCategories.length > 0 && <button onClick={() => setIsManualCategory(false)} className="p-3 bg-white/10 rounded-xl text-white/60 hover:text-white"><Layers size={20} /></button>}
-                                </div>
-                            ) : (
-                                <div className="relative w-full">
-                                    <select className="w-full bg-white/5 border border-white/10 rounded-xl py-3 pl-4 pr-10 text-white appearance-none" value={newArticle.category} onChange={e => e.target.value === '___NEW___' ? (setNewArticle({ ...newArticle, category: '' }), setIsManualCategory(true)) : setNewArticle({ ...newArticle, category: e.target.value })}>
-                                        <option value="" disabled className="bg-gray-900">Wählen...</option>
-                                        {distinctCategories.map(c => <option key={c} value={c} className="bg-gray-900">{c}</option>)}
-                                        <option value="___NEW___" className="bg-gray-900 text-emerald-400 font-bold">+ Neu</option>
-                                    </select>
-                                    <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 text-white/50" size={16} />
-                                </div>
-                            )}
-                        </div>
-                        <div>
-                            <label className="text-xs text-white/50 block mb-1">Fach</label>
-                            <div className="flex gap-2">
-                                <input className="w-full bg-white/5 border border-white/10 rounded-xl p-3 text-white" value={newArticle.location} onChange={e => setNewArticle({ ...newArticle, location: e.target.value })} placeholder="A-01" />
-                                <button onClick={handleAutoLocation} className="px-3 bg-white/10 rounded-xl text-emerald-400 hover:text-emerald-300"><Wand2 size={18} /></button>
+                    {/* LEFT COLUMN: Image & Basic Info */}
+                    <div className="flex flex-col gap-6">
+                        {/* Image Section */}
+                        <div className="flex gap-4">
+                            <div className="w-24 h-24 shrink-0 rounded-2xl border-2 border-dashed border-white/10 bg-white/5 flex items-center justify-center relative overflow-hidden group hover:border-white/20">
+                                <input type="file" ref={fileInputRef} className="hidden" accept="image/*" onChange={handleFileUpload} />
+                                {isUploading ? <Loader2 className="animate-spin text-emerald-400" /> : newArticle.image ? <img src={newArticle.image} className="w-full h-full object-cover" /> : <div onClick={() => fileInputRef.current?.click()} className="flex flex-col items-center cursor-pointer text-white/30"><ImageIcon size={20} /><span className="text-[9px]">Bild</span></div>}
+                                {newArticle.image && !isUploading && <button onClick={() => setNewArticle(prev => ({ ...prev, image: '' }))} className="absolute inset-0 bg-black/60 flex items-center justify-center opacity-0 group-hover:opacity-100 text-red-300"><Trash2 size={16} /></button>}
+                            </div>
+                            <div className="flex flex-col justify-center gap-2">
+                                {!newArticle.image && !isUploading && (
+                                    <button type="button" onClick={() => { }} className="px-3 py-2 rounded-xl bg-white/5 border border-white/10 text-xs text-white/60 hover:text-white flex items-center gap-2"><Clipboard size={14} /> Einfügen</button>
+                                )}
                             </div>
                         </div>
+
+                        {/* Main Fields */}
+                        <div className="space-y-4">
+                            <div><label className="text-xs text-white/50 mb-1 block">Bezeichnung</label><input className="w-full bg-white/5 border border-white/10 rounded-xl p-3 text-white text-base font-medium focus:ring-1 focus:ring-emerald-500/50" value={newArticle.name} onChange={e => setNewArticle({ ...newArticle, name: e.target.value })} placeholder="Artikelname" /></div>
+                            <div><label className="text-xs text-white/50 mb-1 block">EAN / Barcode</label><input className="w-full bg-white/5 border border-white/10 rounded-xl p-3 text-white focus:ring-1 focus:ring-emerald-500/50" value={newArticle.ean} onChange={e => setNewArticle({ ...newArticle, ean: e.target.value })} placeholder="EAN" /></div>
+                        </div>
                     </div>
 
-                    {/* Suppliers & SKUs */}
-                    <div className="space-y-6 pt-2 border-t border-white/5">
-                        <div className="space-y-2">
-                            <label className="text-xs text-white/50 block flex items-center gap-1"><Hash size={12} /> SKUs</label>
-                            <div className="flex gap-2">
-                                <input className="flex-1 bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-sm text-white font-mono" value={tempSkuInput} onChange={e => setTempSkuInput(e.target.value)} onKeyDown={e => e.key === 'Enter' && addTempSku()} placeholder="123-456" />
-                                <button type="button" onClick={() => addTempSku()} className="px-3 bg-white/10 hover:bg-white/20 rounded-lg"><Plus size={16} /></button>
-                            </div>
-                            <div className="flex flex-wrap gap-2">
-                                {tempSkus.map((s, idx) => (
-                                    <div key={idx} className={`flex items-center gap-1 pl-2 pr-1 py-1 rounded-lg border text-xs ${s.isPreferred ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-200' : 'bg-white/5 border-white/10 text-white/60'}`}>
-                                        <span>{s.sku}</span>
-                                        <div className="flex gap-1 ml-1 pl-1 border-l border-white/10">
-                                            <button onClick={() => togglePreferredSku(idx)} className={`hover:text-white ${s.isPreferred ? 'text-emerald-400' : 'text-white/20'}`}><Star size={10} fill={s.isPreferred ? "currentColor" : "none"} /></button>
-                                            <button onClick={() => removeTempSku(idx)} className="hover:text-rose-400 text-white/40"><X size={10} /></button>
-                                        </div>
+                    {/* RIGHT COLUMN: Stock, Location, Suppliers */}
+                    <div className="flex flex-col gap-6 mt-6 md:mt-0">
+                        {/* Stock Grid */}
+                        <div className="grid grid-cols-2 gap-3 bg-black/20 p-3 rounded-xl border border-white/5">
+                            <div><label className="text-[10px] text-emerald-400 block mb-1 font-bold">Ist</label><input type="number" className="w-full bg-emerald-500/10 border border-emerald-500/30 rounded-lg p-2 text-white font-bold" value={newArticle.stock} onChange={e => setNewArticle({ ...newArticle, stock: parseInt(e.target.value) || 0 })} /></div>
+                            <div><label className="text-[10px] text-blue-400 block mb-1 font-bold">Soll</label><input type="number" className="w-full bg-blue-500/10 border border-blue-500/30 rounded-lg p-2 text-white font-bold" value={newArticle.targetStock} onChange={e => setNewArticle({ ...newArticle, targetStock: parseInt(e.target.value) || 0 })} /></div>
+                        </div>
+
+                        {/* Location */}
+                        <div className="space-y-4">
+                            <div>
+                                <label className="text-xs text-white/50 block mb-1">Regal</label>
+                                {isManualCategory ? (
+                                    <div className="flex gap-2">
+                                        <input className="w-full bg-white/5 border border-white/10 rounded-xl p-3 text-white" value={newArticle.category} onChange={e => setNewArticle({ ...newArticle, category: e.target.value })} placeholder="Regal" />
+                                        {distinctCategories.length > 0 && <button onClick={() => setIsManualCategory(false)} className="p-3 bg-white/10 rounded-xl text-white/60 hover:text-white"><Layers size={20} /></button>}
                                     </div>
-                                ))}
+                                ) : (
+                                    <div className="relative w-full">
+                                        <select className="w-full bg-white/5 border border-white/10 rounded-xl py-3 pl-4 pr-10 text-white appearance-none" value={newArticle.category} onChange={e => e.target.value === '___NEW___' ? (setNewArticle({ ...newArticle, category: '' }), setIsManualCategory(true)) : setNewArticle({ ...newArticle, category: e.target.value })}>
+                                            <option value="" disabled className="bg-gray-900">Wählen...</option>
+                                            {distinctCategories.map(c => <option key={c} value={c} className="bg-gray-900">{c}</option>)}
+                                            <option value="___NEW___" className="bg-gray-900 text-emerald-400 font-bold">+ Neu</option>
+                                        </select>
+                                        <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 text-white/50" size={16} />
+                                    </div>
+                                )}
+                            </div>
+                            <div>
+                                <label className="text-xs text-white/50 block mb-1">Fach</label>
+                                <div className="flex gap-2">
+                                    <input className="w-full bg-white/5 border border-white/10 rounded-xl p-3 text-white" value={newArticle.location} onChange={e => setNewArticle({ ...newArticle, location: e.target.value })} placeholder="A-01" />
+                                    <button onClick={handleAutoLocation} className="px-3 bg-white/10 rounded-xl text-emerald-400 hover:text-emerald-300"><Wand2 size={18} /></button>
+                                </div>
                             </div>
                         </div>
 
-                        <div className="space-y-2">
-                            <label className="text-xs text-white/50 font-bold uppercase">Lieferanten</label>
-                            <div className="bg-black/20 p-3 rounded-xl border border-white/5 space-y-3">
-                                <div className="flex gap-2">
-                                    <select className="flex-1 bg-white/5 border border-white/10 rounded-lg text-white text-sm p-2 appearance-none" value={tempSupplierSelect} onChange={e => setTempSupplierSelect(e.target.value)}>
-                                        <option value="" className="bg-gray-900">Lieferant...</option>
-                                        {suppliers.map(s => <option key={s.id} value={s.id} className="bg-gray-900">{s.name}</option>)}
-                                    </select>
-                                    <Button onClick={addTempSupplier} disabled={!tempSupplierSelect} className="px-3 py-2 h-auto text-xs">Add</Button>
-                                </div>
-                                <input className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-xs text-white" placeholder="Art-Nr." value={tempSupplierSkuInput} onChange={e => setTempSupplierSkuInput(e.target.value)} />
-                            </div>
+                        {/* Suppliers & SKUs */}
+                        <div className="space-y-6 pt-2 border-t border-white/5">
                             <div className="space-y-2">
-                                {tempSuppliers.map((s, idx) => (
-                                    <div key={idx} className="flex items-center justify-between p-3 rounded-xl border bg-white/5 border-white/10">
-                                        <div className="overflow-hidden mr-2">
-                                            <div className="flex items-center gap-2 font-bold text-sm text-white truncate">{s.supplierName} {s.isPreferred && <span className="text-[9px] bg-blue-500 px-1 rounded">Main</span>}</div>
-                                            <div className="text-xs text-white/50 truncate">{s.supplierSku || '-'}</div>
+                                <label className="text-xs text-white/50 block flex items-center gap-1"><Hash size={12} /> SKUs</label>
+                                <div className="flex gap-2">
+                                    <input className="flex-1 bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-sm text-white font-mono" value={tempSkuInput} onChange={e => setTempSkuInput(e.target.value)} onKeyDown={e => e.key === 'Enter' && addTempSku()} placeholder="123-456" />
+                                    <button type="button" onClick={() => addTempSku()} className="px-3 bg-white/10 hover:bg-white/20 rounded-lg"><Plus size={16} /></button>
+                                </div>
+                                <div className="flex flex-wrap gap-2">
+                                    {tempSkus.map((s, idx) => (
+                                        <div key={idx} className={`flex items-center gap-1 pl-2 pr-1 py-1 rounded-lg border text-xs ${s.isPreferred ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-200' : 'bg-white/5 border-white/10 text-white/60'}`}>
+                                            <span>{s.sku}</span>
+                                            <div className="flex gap-1 ml-1 pl-1 border-l border-white/10">
+                                                <button onClick={() => togglePreferredSku(idx)} className={`hover:text-white ${s.isPreferred ? 'text-emerald-400' : 'text-white/20'}`}><Star size={10} fill={s.isPreferred ? "currentColor" : "none"} /></button>
+                                                <button onClick={() => removeTempSku(idx)} className="hover:text-rose-400 text-white/40"><X size={10} /></button>
+                                            </div>
                                         </div>
+                                    ))}
+                                </div>
+                            </div>
+
+                            <div className="space-y-2">
+                                <label className="text-xs text-white/50 font-bold uppercase">Lieferanten</label>
+                                <div className="bg-black/20 p-3 rounded-xl border border-white/5 space-y-3">
+                                    <div className="flex gap-2">
+                                        <select className="flex-1 bg-white/5 border border-white/10 rounded-lg text-white text-sm p-2 appearance-none" value={tempSupplierSelect} onChange={e => setTempSupplierSelect(e.target.value)}>
+                                            <option value="" className="bg-gray-900">Lieferant...</option>
+                                            {suppliers.map(s => <option key={s.id} value={s.id} className="bg-gray-900">{s.name}</option>)}
+                                        </select>
                                         <div className="flex gap-1">
-                                            <button onClick={() => togglePreferredSupplier(idx)} className={`p-2 rounded-lg ${s.isPreferred ? 'text-blue-400' : 'text-white/20'}`}><Star size={14} fill={s.isPreferred ? "currentColor" : "none"} /></button>
-                                            <button onClick={() => removeTempSupplier(idx)} className="p-2 rounded-lg text-white/40 hover:text-rose-400"><Trash2 size={14} /></button>
+                                            {editingSupplierIdx !== null && (
+                                                <Button onClick={cancelEditSupplier} variant="secondary" className="px-3 py-2 h-auto text-xs">Cancel</Button>
+                                            )}
+                                            <Button onClick={addTempSupplier} disabled={!tempSupplierSelect} className="px-3 py-2 h-auto text-xs">{editingSupplierIdx !== null ? 'Update' : 'Add'}</Button>
                                         </div>
                                     </div>
-                                ))}
+                                    <input className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-xs text-white" placeholder="Art-Nr." value={tempSupplierSkuInput} onChange={e => setTempSupplierSkuInput(e.target.value)} />
+                                    <input className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-xs text-white" placeholder="Produkt-Link (URL)" value={tempSupplierUrlInput} onChange={e => setTempSupplierUrlInput(e.target.value)} />
+                                </div>
+                                <div className="space-y-2">
+                                    {tempSuppliers.map((s, idx) => (
+                                        <div key={idx} className={`relative group p-3 rounded-xl border transition-all duration-300 ${s.isPreferred ? 'bg-gradient-to-br from-emerald-500/10 to-emerald-500/5 border-emerald-500/20' : 'bg-gradient-to-br from-white/10 to-white/5 border-white/10 hover:border-white/20'}`}>
+                                            <div className="flex justify-between items-start">
+                                                <div className="overflow-hidden mr-3 flex-1">
+                                                    <div className="flex items-center gap-2 mb-1.5">
+                                                        <span className={`font-bold text-sm leading-none ${s.isPreferred ? 'text-emerald-300' : 'text-white'}`}>{s.supplierName}</span>
+                                                        {s.isPreferred && (
+                                                            <span className="px-1.5 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider bg-emerald-500/20 text-emerald-400 border border-emerald-500/20">Main</span>
+                                                        )}
+                                                    </div>
+
+                                                    <div className="flex flex-col gap-1">
+                                                        {s.supplierSku && (
+                                                            <div className="flex items-center gap-1.5 text-xs text-white/50">
+                                                                <Hash size={10} className="stroke-[2.5]" />
+                                                                <span className="font-mono tracking-wide">{s.supplierSku}</span>
+                                                            </div>
+                                                        )}
+                                                        {s.url && (
+                                                            <a href={s.url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1.5 text-xs text-blue-400/80 hover:text-blue-300 transition-colors w-full group/link">
+                                                                <Globe size={10} className="shrink-0 stroke-[2.5]" />
+                                                                <span className="truncate underline decoration-blue-500/30 underline-offset-2 group-hover/link:decoration-blue-400/50">{s.url}</span>
+                                                            </a>
+                                                        )}
+                                                    </div>
+                                                </div>
+
+                                                <div className="flex gap-1 shrink-0">
+                                                    <button onClick={() => togglePreferredSupplier(idx)} className={`p-2 rounded-lg transition-colors ${s.isPreferred ? 'text-emerald-400 bg-emerald-500/10 hover:bg-emerald-500/20' : 'text-white/20 hover:text-yellow-400 hover:bg-white/10'}`} title={s.isPreferred ? "Hauptlieferant" : "Als Hauptlieferant setzen"}>
+                                                        <Star size={14} fill={s.isPreferred ? "currentColor" : "none"} />
+                                                    </button>
+                                                    <button onClick={() => startEditSupplier(idx)} className="p-2 rounded-lg text-white/30 hover:text-blue-400 hover:bg-blue-500/10 transition-colors">
+                                                        <Pencil size={14} />
+                                                    </button>
+                                                    <button onClick={() => removeTempSupplier(idx)} className="p-2 rounded-lg text-white/30 hover:text-rose-400 hover:bg-rose-500/10 transition-colors">
+                                                        <Trash2 size={14} />
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
                             </div>
                         </div>
                     </div>

@@ -418,75 +418,91 @@ export const CommissionEditContent: React.FC<CommissionEditContentProps> = ({
                     ) : (
                         tempItems.map(item => (
                             <div key={item.uniqueId}
-                                className={`bg-[#32363f] border ${item.isDragging ? 'border-emerald-500 bg-emerald-500/10' : 'border-white/10'} rounded-3xl p-5 transition-all group hover:border-white/20 space-y-4 shadow-xl shadow-black/50`}
+                                className={`group relative bg-[#1c1f26] border ${item.isDragging ? 'border-emerald-500 bg-emerald-500/5' : 'border-white/5 hover:border-white/10'} rounded-2xl p-4 transition-all shadow-sm`}
                                 onDragEnter={(e) => handleDragEnter(e, item.uniqueId)} onDragOver={(e) => handleDragOver(e, item.uniqueId)} onDragLeave={(e) => handleDragLeave(e, item.uniqueId)} onDrop={(e) => handleDrop(e, item.uniqueId)}
                             >
-                                {/* HEADER: Badge, Name, Controls */}
-                                <div className="flex justify-between items-start gap-4">
-                                    <div className="min-w-0">
-                                        <div className="text-[10px] font-bold uppercase tracking-wider mb-1">
-                                            {item.type === 'Stock' ? <span className="text-emerald-400">Lagermaterial</span> : <span className="text-purple-400">Manuell / Extern</span>}
+                                {/* HEADER ROW: Type, Name, Quantity */}
+                                <div className="flex items-start justify-between gap-3 mb-3">
+                                    <div className="flex-1 min-w-0">
+                                        <div className="flex items-center gap-2 mb-1">
+                                            <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded border uppercase tracking-wider ${item.type === 'Stock' ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' : 'bg-purple-500/10 text-purple-400 border-purple-500/20'}`}>
+                                                {item.type === 'Stock' ? 'Lager' : (item.supplierId ? 'Lieferant' : 'Manuell')}
+                                            </span>
+                                            {item.isBackorder && <span className="text-[9px] font-bold px-1.5 py-0.5 rounded border bg-amber-500/10 text-amber-400 border-amber-500/20 uppercase">Rückstand</span>}
                                         </div>
+
                                         {item.type === 'Stock' ? (
-                                            <div className="font-bold text-lg text-white truncate">{item.article?.name}</div>
+                                            <div className="font-bold text-base text-white truncate pr-2" title={item.article?.name}>{item.article?.name}</div>
                                         ) : (
-                                            <input className="w-full bg-transparent border-b border-white/10 text-white font-bold text-lg focus:outline-none focus:border-blue-500/50 pb-1 placeholder-white/30" value={item.customName} onChange={(e) => updateTempItem(item.uniqueId, 'customName', e.target.value)} placeholder="Artikelname..." />
+                                            <input
+                                                className="w-full bg-transparent border-0 border-b border-white/10 text-white font-bold text-base focus:outline-none focus:border-blue-500/50 pb-0.5 placeholder-white/20 p-0"
+                                                value={item.customName}
+                                                onChange={(e) => updateTempItem(item.uniqueId, 'customName', e.target.value)}
+                                                placeholder="Artikelbezeichnung..."
+                                            />
                                         )}
                                     </div>
 
-                                    {/* CONTROLS */}
-                                    <div className="flex items-center gap-2 bg-[#111111]/50 rounded-lg p-1 border border-white/5">
-                                        <button onClick={() => updateTempItem(item.uniqueId, 'amount', Math.max(1, item.amount - 1))} className="p-1.5 hover:bg-white/10 rounded text-white/40 hover:text-white transition-colors"><ChevronDown size={16} className="" /></button>
-                                        <span className="font-bold text-base text-white font-mono w-6 text-center">{item.amount}</span>
-                                        <button onClick={() => updateTempItem(item.uniqueId, 'amount', item.amount + 1)} className="p-1.5 hover:bg-white/10 rounded text-white/40 hover:text-white transition-colors"><Plus size={16} /></button>
-                                        <div className="w-px h-4 bg-white/10 mx-1"></div>
-                                        <button onClick={() => removeTempItem(item.uniqueId)} className="p-1.5 hover:bg-rose-500/20 rounded text-white/40 hover:text-rose-400 transition-colors"><X size={16} /></button>
+                                    <div className="flex items-center bg-[#111111] rounded-lg border border-white/5 shrink-0">
+                                        <button onClick={() => updateTempItem(item.uniqueId, 'amount', Math.max(1, item.amount - 1))} className="w-8 h-8 flex items-center justify-center hover:bg-white/5 text-white/40 hover:text-white transition-colors rounded-l-lg"><ChevronDown size={14} /></button>
+                                        <span className="font-mono text-sm font-bold text-white w-8 text-center">{item.amount}</span>
+                                        <button onClick={() => updateTempItem(item.uniqueId, 'amount', item.amount + 1)} className="w-8 h-8 flex items-center justify-center hover:bg-white/5 text-white/40 hover:text-white transition-colors rounded-r-lg"><Plus size={14} /></button>
                                     </div>
                                 </div>
 
-                                {/* INPUTS */}
-                                <div className="space-y-3">
-                                    <div className="space-y-1">
-                                        <label className="text-[10px] font-bold text-white/30 uppercase">Notiz an Lieferant / Lager:</label>
+                                {/* DETAILS ROW: Inputs */}
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3">
+                                    <div className="relative group/input">
+                                        <input
+                                            className="w-full bg-[#111111]/50 border border-white/5 data-[filled=true]:border-white/10 focus:border-emerald-500/30 rounded-lg px-3 py-2 text-xs text-white placeholder-transparent transition-all peer"
+                                            placeholder="Notiz"
+                                            value={item.notes || ''}
+                                            onChange={(e) => updateTempItem(item.uniqueId, 'notes', e.target.value)}
+                                            data-filled={!!item.notes}
+                                            id={`note-${item.uniqueId}`}
+                                        />
+                                        <label htmlFor={`note-${item.uniqueId}`} className="absolute left-3 top-2 text-xs text-white/30 transition-all peer-focus:-top-2 peer-focus:left-1 peer-focus:text-[9px] peer-focus:text-emerald-400 peer-focus:bg-[#1c1f26] peer-focus:px-1 peer-not-placeholder-shown:-top-2 peer-not-placeholder-shown:left-1 peer-not-placeholder-shown:text-[9px] pointer-events-none peer-not-placeholder-shown:text-white/50 peer-not-placeholder-shown:bg-[#1c1f26] peer-not-placeholder-shown:px-1">
+                                            Notiz / Info
+                                        </label>
+                                    </div>
+
+                                    <div className="relative group/input">
+                                        <input
+                                            className="w-full bg-[#111111]/50 border border-white/5 data-[filled=true]:border-white/10 focus:border-blue-500/30 rounded-lg px-3 py-2 text-xs text-white placeholder-transparent transition-all peer font-mono"
+                                            placeholder="Vorgang"
+                                            value={item.externalReference || ''}
+                                            onChange={(e) => updateTempItem(item.uniqueId, 'externalReference', e.target.value)}
+                                            disabled={item.type === 'Stock'}
+                                            data-filled={!!item.externalReference}
+                                            id={`ref-${item.uniqueId}`}
+                                        />
+                                        <label htmlFor={`ref-${item.uniqueId}`} className="absolute left-3 top-2 text-xs text-white/30 transition-all peer-focus:-top-2 peer-focus:left-1 peer-focus:text-[9px] peer-focus:text-blue-400 peer-focus:bg-[#1c1f26] peer-focus:px-1 peer-not-placeholder-shown:-top-2 peer-not-placeholder-shown:left-1 peer-not-placeholder-shown:text-[9px] pointer-events-none peer-not-placeholder-shown:text-white/50 peer-not-placeholder-shown:bg-[#1c1f26] peer-not-placeholder-shown:px-1">
+                                            {item.type === 'Stock' ? 'Kein Vorgang' : 'Vorgangsnummer'}
+                                        </label>
+                                    </div>
+                                </div>
+
+                                {/* FOOTER ROW: Attachments & Actions */}
+                                <div className="flex items-center justify-between pt-2 border-t border-white/5">
+                                    <div className="flex items-center gap-2">
                                         <div className="relative">
-                                            <input
-                                                className="w-full bg-[#111111]/50 border border-white/5 hover:border-white/10 focus:border-white/20 rounded-lg px-3 py-2 text-sm text-white placeholder-white/20 transition-colors"
-                                                placeholder={item.type === 'Stock' ? "z.B. Nur Originalteile..." : "Wichtige Infos..."}
-                                                value={item.notes || ''}
-                                                onChange={(e) => updateTempItem(item.uniqueId, 'notes', e.target.value)}
-                                            />
+                                            <input type="file" id={`file-${item.uniqueId}`} className="hidden" onChange={(e) => handleFileUpload(item.uniqueId, e.target.files)} />
+                                            <label htmlFor={`file-${item.uniqueId}`} className={`flex items-center gap-1.5 px-2 py-1 rounded text-[10px] font-medium transition-colors cursor-pointer ${item.attachmentData ? 'bg-blue-500/10 text-blue-400 border border-blue-500/20' : 'text-white/30 hover:text-white hover:bg-white/5 border border-transparent'}`}>
+                                                <Paperclip size={12} />
+                                                {item.attachmentData ? 'Anhang' : 'Anhang'}
+                                            </label>
+                                            {item.attachmentData && (
+                                                <button onClick={(e) => { e.preventDefault(); updateTempItem(item.uniqueId, 'attachmentData', undefined) }} className="absolute -top-1 -right-1 bg-rose-500 text-white rounded-full p-0.5 hover:scale-110 transition-transform"><X size={8} /></button>
+                                            )}
                                         </div>
                                     </div>
 
-                                    <div className="flex gap-2">
-                                        <div className="flex-1 relative">
-                                            <label className="text-[10px] font-bold text-white/30 uppercase absolute -top-4 left-0">Vorgang:</label>
-                                            <input
-                                                className="w-full bg-[#111111]/50 border border-white/5 hover:border-white/10 focus:border-white/20 rounded-lg px-3 py-2 text-sm text-white font-mono placeholder-white/20 transition-colors"
-                                                placeholder="Optional..."
-                                                value={item.externalReference || ''}
-                                                onChange={(e) => updateTempItem(item.uniqueId, 'externalReference', e.target.value)}
-                                                disabled={item.type === 'Stock'}
-                                            />
-                                        </div>
-                                        <div className="flex gap-2 items-end">
-                                            <button className="h-[38px] w-[38px] bg-[#111111]/50 border border-white/5 rounded-lg flex items-center justify-center text-white/40 hover:text-white hover:bg-white/5 transition-colors" title="Kopieren"><Copy size={16} /></button>
-                                            <div className="relative">
-                                                <button className={`h-[38px] w-[38px] ${item.attachmentData ? 'bg-blue-500/20 border-blue-500/50 text-blue-400' : 'bg-[#111111]/50 border-white/5 text-white/40 hover:text-white hover:bg-white/5'} border rounded-lg flex items-center justify-center transition-colors`} title="Anhang"><Paperclip size={16} /><input type="file" className="absolute inset-0 opacity-0 cursor-pointer" onChange={(e) => handleFileUpload(item.uniqueId, e.target.files)} /></button>
-                                                {item.attachmentData && <div className="absolute -top-1 -right-1 w-2 h-2 bg-blue-500 rounded-full"></div>}
-                                            </div>
-                                        </div>
+                                    <div className="flex items-center gap-1">
+                                        <button className="p-1.5 rounded text-white/20 hover:text-white hover:bg-white/5 transition-colors" title="Duplizieren"><Copy size={14} /></button>
+                                        <div className="w-px h-3 bg-white/10 mx-1"></div>
+                                        <button onClick={() => removeTempItem(item.uniqueId)} className="p-1.5 rounded text-white/20 hover:text-rose-400 hover:bg-rose-500/10 transition-colors" title="Entfernen"><Trash2 size={14} /></button>
                                     </div>
                                 </div>
-
-                                {/* ATTACHMENT PREVIEW */}
-                                {item.attachmentData && (
-                                    <div className="flex items-center gap-2 px-3 py-2 bg-blue-500/10 border border-blue-500/20 rounded-lg">
-                                        <FileText size={14} className="text-blue-400" />
-                                        <span className="text-xs text-blue-200 flex-1 truncate">Anhang vorhanden</span>
-                                        <button onClick={() => updateTempItem(item.uniqueId, 'attachmentData', undefined)} className="text-white/40 hover:text-white"><X size={14} /></button>
-                                    </div>
-                                )}
                             </div>
                         ))
                     )}

@@ -387,7 +387,7 @@ const Inventory = () => {
     if (loading || authLoading) return <div className="flex flex-col items-center justify-center h-[60vh] text-white/50"><Loader2 size={40} className="animate-spin mb-4 text-emerald-400" /><p>Lade Lagerbestand...</p></div>;
 
     const listContent = (
-        <div className="space-y-6 pb-24 relative h-full flex flex-col">
+        <div className={`space-y-6 relative h-full flex flex-col ${isMobile ? 'pb-24' : 'pb-0'}`}>
             <header className="flex flex-col md:flex-row md:items-center justify-between gap-4 shrink-0">
                 <h1 className="text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-emerald-300 to-teal-200">Lagerbestand</h1>
                 <div className="flex gap-3">
