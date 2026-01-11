@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useIsMobile } from '../hooks/useIsMobile';
 import { supabase } from '../supabaseClient';
 import { useInventoryData } from '../hooks/useInventoryData';
 import { Article } from '../types';
@@ -19,6 +20,7 @@ interface SortConfig {
 
 const Inventory = () => {
     const navigate = useNavigate();
+    const isMobile = useIsMobile();
     const { profile, loading: authLoading, user } = useAuth();
 
     // --- VIEW STATE ---
@@ -231,7 +233,8 @@ const Inventory = () => {
         if (expandedArticleId === article.id) {
             setExpandedArticleId(null);
         } else {
-            openDetail(article);
+            setExpandedArticleId(article.id);
+            setQuickStockAmount(0); // Reset amount when opening
         }
     };
 
@@ -347,67 +350,14 @@ const Inventory = () => {
     };
 
     // --- STOCK MANIPULATION ---
-    const handleIncrementStock = async (e: React.MouseEvent) => {
-        // e is provided by InventoryList button click if wired up, 
-        // but wait, InventoryList passes function pointer? 
-        // InventoryList: <button onClick={onIncrementStock} ...>
-        // Yes, it passes the event.
-        // BUT my implementation in InventoryList used `onIncrementStock` without arguments in `onClick={onIncrementStock}` 
-        // which passes the event object.
-        // However, I need the `article.id`.
-        // Inspecting InventoryList.tsx again:
-        // `itemContent` has `article` in scope. 
-        // But `onIncrementStock` is passed as prop to `InventoryList`.
-        // Wait, `InventoryList` renders the +/- buttons.
-        // DOES it pass the article ID?
-        // Let's check InventoryList.tsx line 124:
-        // `onClick={onIncrementStock}`. 
-        // This just sends the MouseEvent. It does NOT send the ID.
-        // `InventoryList` assumes `onIncrementStock` handles the logic for the *currently expanded/active* item?
-        // But `expandedArticleId` is used to show the quick book section.
-        // So `handleIncrementStock` should use `expandedArticleId`.
-
-        if (!expandedArticleId) return;
-        const id = expandedArticleId;
-
-        setIsBooking(true);
-        const article = articles.find(a => a.id === id);
-        if (!article) return;
-        const newStock = article.stock + 1;
-
-        updateLocalArticle(id, { stock: newStock });
-
-        try {
-            const { error } = await supabase.from('articles').update({ stock: newStock }).eq('id', id);
-            if (error) throw error;
-        } catch (err) {
-            updateLocalArticle(id, { stock: article.stock });
-            console.error(err);
-        } finally {
-            setIsBooking(false);
-        }
+    const handleIncrementStock = (e: React.MouseEvent) => {
+        e.stopPropagation();
+        setQuickStockAmount(prev => prev + 1);
     };
 
-    const handleDecrementStock = async (e: React.MouseEvent) => {
-        if (!expandedArticleId) return;
-        const id = expandedArticleId;
-
-        setIsBooking(true);
-        const article = articles.find(a => a.id === id);
-        if (!article || article.stock <= 0) return;
-        const newStock = Math.max(0, article.stock - 1);
-
-        updateLocalArticle(id, { stock: newStock });
-
-        try {
-            const { error } = await supabase.from('articles').update({ stock: newStock }).eq('id', id);
-            if (error) throw error;
-        } catch (err) {
-            updateLocalArticle(id, { stock: article.stock });
-            console.error(err);
-        } finally {
-            setIsBooking(false);
-        }
+    const handleDecrementStock = (e: React.MouseEvent) => {
+        e.stopPropagation();
+        setQuickStockAmount(prev => prev - 1);
     };
 
     const handleQuickSave = async (e: React.MouseEvent, id: string) => {
@@ -485,7 +435,7 @@ const Inventory = () => {
                     orderDetails={orderDetails}
                     copiedField={copiedField}
                     onCopy={handleCopy}
-                    useWindowScroll={false}
+                    useWindowScroll={isMobile}
                 />
             </div>
 

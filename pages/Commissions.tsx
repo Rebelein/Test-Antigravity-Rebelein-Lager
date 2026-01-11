@@ -13,6 +13,7 @@ import { useCommissionData } from '../hooks/useCommissionData';
 import { MasterDetailLayout } from '../components/MasterDetailLayout';
 import { CommissionDetailContent } from '../components/commissions/CommissionDetailContent';
 import { CommissionEditContent, ExtendedCommission } from '../components/commissions/CommissionEditContent';
+import { useIsMobile } from '../hooks/useIsMobile';
 
 // --- TYPES ---
 type CommissionTab = 'active' | 'returns' | 'withdrawn' | 'trash' | 'missing';
@@ -193,7 +194,7 @@ const Commissions: React.FC = () => {
         setSidePanelMode('edit');
     };
 
-    const handleSaveCommission = () => {
+    const handleSaveCommission = (id?: string, isNew?: boolean) => {
         refreshCommissions();
         if (sidePanelMode === 'edit' && editingCommissionId) {
             // If we were editing, restore detail view for that commission
@@ -205,6 +206,10 @@ const Commissions: React.FC = () => {
         } else {
             // Created new
             setSidePanelMode('none');
+            if (isNew && id) {
+                // Short timeout to ensure modal transition feels smooth
+                setTimeout(() => setShowLabelOptionsModal(id), 300);
+            }
         }
     };
 
@@ -612,7 +617,7 @@ const Commissions: React.FC = () => {
         return groups;
     }, [commissions]);
 
-    const renderCategory = (title: string, statusKey: string, items: ExtendedCommission[], colorClass: string) => {
+    const renderCategory = (title: string, statusKey: 'ready' | 'preparing' | 'draft' | 'returnReady' | 'returnPending', items: ExtendedCommission[], colorClass: string) => {
         const isCollapsed = collapsedCategories[statusKey];
         if (items.length === 0) return null;
         return (
@@ -651,12 +656,14 @@ const Commissions: React.FC = () => {
         } catch (err) { console.error(err); }
     };
 
+    const isMobile = useIsMobile();
+
     const listContent = (
         <div className="space-y-6 pb-24 h-full overflow-y-auto pr-2">
             <header className="flex flex-col gap-4">
-                <div className="flex justify-between items-center">
+                <div className={`flex ${isMobile ? 'flex-col items-start gap-3' : 'justify-between items-center'}`}>
                     <h1 className="text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-emerald-300 to-teal-200">Komm.</h1>
-                    <div className="flex gap-2">
+                    <div className={`flex gap-2 ${isMobile ? 'w-full overflow-x-auto pb-1 no-scrollbar' : ''}`}>
                         <Button icon={<Search size={18} />} variant="secondary" onClick={() => setSidePanelMode('search')} />
                         <Button icon={<History size={18} />} variant="secondary" onClick={() => { setSidePanelMode('history'); fetchHistory(); }} />
                         <Button icon={<BoxSelect size={18} />} variant="secondary" onClick={() => setShowCleanupModal(true)} className="bg-orange-500/10 text-orange-400 hover:bg-orange-500 hover:text-white" />
@@ -695,7 +702,7 @@ const Commissions: React.FC = () => {
 
                     {activeTab === 'withdrawn' && (
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                            {commissions.filter(c => ['Withdrawn', 'ReturnComplete'].includes(c.status)).map(c => <CommissionCard key={c.id} commission={c} onClick={handleOpenDetail} onEdit={handleEditCommission} onDelete={handleDelete} className="opacity-80 hover:opacity-100" />)}
+                            {commissions.filter(c => ['Withdrawn', 'ReturnComplete'].includes(c.status)).map(c => <CommissionCard key={c.id} commission={c} onClick={handleOpenDetail} onEdit={handleEditCommission} onDelete={handleDelete} className="opacity-80 hover:opacity-100" colorClass="border-blue-500/20" statusKey="withdrawn" />)}
                         </div>
                     )}
 
@@ -766,6 +773,37 @@ const Commissions: React.FC = () => {
                     </div>
                 </GlassModal>
             )}
+
+            <GlassModal isOpen={!!showLabelOptionsModal} onClose={() => setShowLabelOptionsModal(null)} className="max-w-md text-center">
+                <div className="p-6">
+                    <Tag size={48} className="mx-auto text-blue-500 mb-4" />
+                    <h2 className="text-xl font-bold text-white mb-2">Kommission erstellt!</h2>
+                    <p className="text-white/60 mb-6">Möchtest du direkt ein Etikett drucken?</p>
+
+                    <div className="space-y-3">
+                        <Button onClick={() => handleSinglePrint(showLabelOptionsModal!)} className="w-full py-3 bg-emerald-600 hover:bg-emerald-500" icon={<Printer size={18} />}>Sofort drucken</Button>
+                        <Button onClick={() => {
+                            // Find commission name for the log/queue
+                            const comm = commissions.find(c => c.id === showLabelOptionsModal); // Might need refresh?
+                            // Actually handleQueue requires finding it. 
+                            // Since we just refreshed, it should be in commissions list soon or we fetch it.
+                            // For now, let's just trigger queue logic which handles update.
+                            // But handleAddToQueue helper function is missing in this version of code?!
+                            // Let's implement queue logic inline or verify if handleAddToQueue exists.
+                            // Checking previous view_file of Commissions.tsx... handleAddToQueue was NOT in the file viewing (Step 236). 
+                            // I need to implement the queue action logic here or add the helper.
+                            // Let's use supabase directly for queueing to be safe and simple.
+                            const addToQueue = async () => {
+                                await supabase.from('commissions').update({ needs_label: true }).eq('id', showLabelOptionsModal);
+                                setShowLabelOptionsModal(null);
+                                refreshCommissions();
+                            };
+                            addToQueue();
+                        }} className="w-full py-3 bg-blue-600 hover:bg-blue-500" icon={<Layers size={18} />}>Zur Druckwarteschlange</Button>
+                        <Button onClick={() => setShowLabelOptionsModal(null)} variant="secondary" className="w-full">Schließen</Button>
+                    </div>
+                </div>
+            </GlassModal>
 
             <CommissionCleanupModal isOpen={showCleanupModal} onClose={() => setShowCleanupModal(false)} />
 

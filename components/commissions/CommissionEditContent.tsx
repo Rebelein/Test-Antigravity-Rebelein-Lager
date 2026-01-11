@@ -3,6 +3,7 @@ import { Button, GlassInput } from '../UIComponents';
 import { Plus, Search, Package, ExternalLink, Trash2, Save, X, BoxSelect, Clipboard, Paperclip, ChevronDown, Loader2, Layers, FileText, ShoppingCart, Copy } from 'lucide-react';
 import { Article, Supplier, Commission, CommissionItem } from '../../types';
 import { supabase } from '../../supabaseClient';
+import { useIsMobile } from '../../hooks/useIsMobile';
 
 // --- TYPES ---
 export interface ExtendedCommission extends Commission {
@@ -31,7 +32,7 @@ interface CommissionEditContentProps {
     primaryWarehouseId: string | null;
     availableArticles: Article[];
     suppliers: Supplier[];
-    onSave: () => void;
+    onSave: (id?: string, isNew?: boolean) => void;
     onClose: () => void;
 }
 
@@ -249,7 +250,7 @@ export const CommissionEditContent: React.FC<CommissionEditContentProps> = ({
                 if (error) throw error;
             }
 
-            onSave(); // Refresh parent
+            onSave(commId, !isEditMode); // Pass ID and isNew flag
             onClose();
         } catch (err: any) {
             alert("Fehler: " + err.message);
@@ -258,13 +259,21 @@ export const CommissionEditContent: React.FC<CommissionEditContentProps> = ({
         }
     };
 
+    const isMobile = useIsMobile();
+
     return (
-        <div className="flex w-full h-full bg-[#09090b]">
-            {/* LEFT COLUMN - FORM & SEARCH (50% Split) */}
-            <div className="w-1/2 shrink-0 border-r border-white/5 flex flex-col p-6 space-y-6 overflow-y-auto custom-scrollbar bg-[#111111]/50">
+        <div className={`flex w-full h-full bg-[#09090b] ${isMobile ? 'flex-col overflow-y-auto' : 'flex-row'}`}>
+            {/* LEFT COLUMN - FORM & SEARCH */}
+            <div className={`${isMobile ? 'w-full shrink-0 h-auto' : 'w-1/2 shrink-0 border-r border-white/5 overflow-y-auto custom-scrollbar'} flex flex-col p-6 space-y-6 bg-[#111111]/50`}>
                 <div className="space-y-1 pb-2">
-                    <h2 className="text-xl font-bold text-white tracking-tight">{isEditMode ? 'Kommission bearbeiten' : 'Neue Kommission erstellen'}</h2>
-                    <p className="text-sm text-white/50">Details und Material erfassen.</p>
+                    {/* Header with Close button for Mobile (since Right Col is below) */}
+                    <div className="flex justify-between items-start">
+                        <div>
+                            <h2 className="text-xl font-bold text-white tracking-tight">{isEditMode ? 'Kommission bearbeiten' : 'Neue Kommission'}</h2>
+                            <p className="text-sm text-white/50">Details und Material erfassen.</p>
+                        </div>
+                        {isMobile && <button onClick={onClose} className="p-2 -mr-2 text-white/50 hover:text-white"><X size={24} /></button>}
+                    </div>
                 </div>
 
                 <div className="space-y-5">
@@ -275,7 +284,7 @@ export const CommissionEditContent: React.FC<CommissionEditContentProps> = ({
                             placeholder=""
                             value={newComm.order_number}
                             onChange={e => setNewComm({ ...newComm, order_number: e.target.value })}
-                            autoFocus
+                            autoFocus={!isMobile} // Don't autofocus on mobile to prevent keyboard pop-up
                         />
                     </div>
 
@@ -393,16 +402,16 @@ export const CommissionEditContent: React.FC<CommissionEditContentProps> = ({
                 </div>
             </div>
 
-            {/* RIGHT COLUMN - MATERIALS LIST (50% Split) */}
-            <div className="w-1/2 flex flex-col bg-[#16181D]">
-                <div className="p-6 border-b border-white/5 flex justify-between items-center shrink-0">
+            {/* RIGHT COLUMN - MATERIALS LIST */}
+            <div className={`${isMobile ? 'w-full flex-1 shrink-0' : 'w-1/2 flex flex-col'} bg-[#16181D]`}>
+                <div className={`p-6 border-b border-white/5 flex justify-between items-center shrink-0 ${isMobile ? 'border-t' : ''}`}>
                     <h3 className="text-base font-bold text-white">Material ({tempItems.length})</h3>
-                    <button onClick={onClose} className="p-2 hover:bg-white/10 rounded-full text-white/50 hover:text-white transition-colors "><X size={20} /></button>
+                    {!isMobile && <button onClick={onClose} className="p-2 hover:bg-white/10 rounded-full text-white/50 hover:text-white transition-colors "><X size={20} /></button>}
                 </div>
 
-                <div className="flex-1 overflow-y-auto p-6 space-y-4 custom-scrollbar">
+                <div className={`${isMobile ? '' : 'flex-1 overflow-y-auto custom-scrollbar'} p-6 space-y-4`}>
                     {tempItems.length === 0 ? (
-                        <div className="flex flex-col items-center justify-center h-full text-white/20 gap-4">
+                        <div className="flex flex-col items-center justify-center py-10 text-white/20 gap-4">
                             <BoxSelect size={64} strokeWidth={0.5} />
                             <p className="text-sm font-medium">Leer.</p>
                         </div>
@@ -483,7 +492,7 @@ export const CommissionEditContent: React.FC<CommissionEditContentProps> = ({
                     )}
                 </div>
 
-                <div className="p-6 border-t border-white/5 flex justify-end gap-3 bg-[#111111]/30 shrink-0">
+                <div className="p-6 border-t border-white/5 flex justify-end gap-3 bg-[#111111]/30 shrink-0 sticky bottom-0 z-10 backdrop-blur-md">
                     <Button variant="secondary" onClick={onClose} className="h-10 px-6 bg-white/5 hover:bg-white/10 border-white/5 text-white/70 hover:text-white font-medium">Abbrechen</Button>
                     <Button onClick={handleFinalizeCreate} disabled={isSubmitting || tempItems.length === 0} icon={isSubmitting ? <Loader2 className="animate-spin" size={18} /> : (isEditMode ? <Save size={18} /> : <Plus size={18} />)} className="h-10 px-6 bg-emerald-600 hover:bg-emerald-500 text-white shadow-lg shadow-emerald-500/20 font-medium">
                         {isEditMode ? 'Speichern' : 'Anlegen'}

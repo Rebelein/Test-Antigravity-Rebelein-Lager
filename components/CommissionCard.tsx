@@ -19,6 +19,7 @@ interface CommissionCardProps {
     onRevertWithdraw?: (comm: ExtendedCommission, e: React.MouseEvent) => void;
     onPrintLabel?: (id: string, name: string) => void;
     statusKey: 'ready' | 'preparing' | 'draft' | 'returnReady' | 'returnPending' | 'trash' | 'withdrawn' | 'missing';
+    className?: string;
 }
 
 export const CommissionCard: React.FC<CommissionCardProps> = ({
@@ -31,7 +32,8 @@ export const CommissionCard: React.FC<CommissionCardProps> = ({
     onWithdraw,
     onRevertWithdraw,
     onPrintLabel,
-    statusKey
+    statusKey,
+    className
 }) => {
     // Helper to calculate progress (if items are available)
     const calculateProgress = () => {
@@ -56,6 +58,7 @@ export const CommissionCard: React.FC<CommissionCardProps> = ({
                 bg-[#1A1C23] hover:bg-[#22252E]
                 ${colorClass}
                 border-opacity-20 hover:border-opacity-40 shadow-xl shadow-black/80
+                ${className || ''}
             `}
             onClick={() => onClick(commission)}
         >

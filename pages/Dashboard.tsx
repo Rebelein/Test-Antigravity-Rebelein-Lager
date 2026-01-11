@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { GlassCard, StatusBadge, Button, GlassModal } from '../components/UIComponents';
 import { AlertTriangle, Wrench, User, CheckCircle2, FileText, ArrowRight, Grid, Database, X, Play, RefreshCw, Check, Copy, Settings, Factory, Warehouse, Tag, Maximize2, Minimize2, PhoneCall, StickyNote, Save, Undo2, Library, Plus, MessageSquare, Monitor, Smartphone, ShoppingCart, LayoutTemplate, Lock, Unlock } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { useIsMobile } from '../hooks/useIsMobile';
 import { initializeDatabase, MANUAL_SETUP_SQL } from '../utils/dbInit';
 import { useAuth } from '../contexts/AuthContext';
 import { useTheme } from '../contexts/ThemeContext';
@@ -73,8 +74,9 @@ const Dashboard: React.FC = () => {
     const [isSavingProcess, setIsSavingProcess] = useState(false);
     const [mobileTab, setMobileTab] = useState<'draft' | 'ready' | 'returns'>('draft');
 
-    // Split View Status
-    const isSplitView = !!selectedMachine || !!selectedKey || !!viewingCommission;
+    const isMobile = useIsMobile();
+    // Split View Status: Only active if NOT mobile
+    const isSplitView = !isMobile && (!!selectedMachine || !!selectedKey || !!viewingCommission);
 
     // --- LAYOUT STATE ---
     // Added 'keys' tile to layout. Adjusted heights/widths to fit.
@@ -1008,6 +1010,93 @@ const Dashboard: React.FC = () => {
                     );
                 })()}
             </div>
+
+            {/* --- MOBILE DETAIL MODALS --- */}
+            {isMobile && (
+                <>
+                    <GlassModal
+                        isOpen={!!selectedMachine}
+                        onClose={() => setSelectedMachine(null)}
+                        title="Maschinendetails"
+                    >
+                        {selectedMachine && (
+                            <MachineDetailContent
+                                machine={selectedMachine}
+                                users={allUsers}
+                                onClose={() => setSelectedMachine(null)}
+                                onUpdate={() => {
+                                    fetchMachinesData();
+                                    fetchRecentEvents();
+                                }}
+                            />
+                        )}
+                    </GlassModal>
+
+                    <GlassModal
+                        isOpen={!!selectedKey}
+                        onClose={() => setSelectedKey(null)}
+                        title="Schlüsselrückgabe"
+                    >
+                        {selectedKey && (
+                            <KeyHandoverContent
+                                selectedKeys={[selectedKey]}
+                                type="return"
+                                onClose={() => setSelectedKey(null)}
+                                onSave={() => {
+                                    fetchKeysData();
+                                    fetchRecentEvents();
+                                    setSelectedKey(null);
+                                }}
+                            />
+                        )}
+                    </GlassModal>
+
+                    <GlassModal
+                        isOpen={!!viewingCommission}
+                        onClose={() => setViewingCommission(null)}
+                        title="Kommission"
+                        fullScreen // Commissions might need more space
+                    >
+                        {viewingCommission && (
+                            ['Draft', 'Preparing'].includes(viewingCommission.status) ? (
+                                <CommissionDetailContent
+                                    commission={viewingCommission}
+                                    items={(viewingCommission as any).commission_items || []}
+                                    localHistoryLogs={[]}
+                                    allItemsPicked={false}
+                                    hasBackorders={false}
+                                    isSubmitting={false}
+                                    onSetReady={() => toast.info("Bitte in der Kommissionierungs-Ansicht durchführen")}
+                                    onWithdraw={() => toast.info("Bitte in der Kommissionierungs-Ansicht durchführen")}
+                                    onResetStatus={() => toast.info("Bitte in der Kommissionierungs-Ansicht durchführen")}
+                                    onRevertWithdraw={() => toast.info("Bitte in der Kommissionierungs-Ansicht durchführen")}
+                                    onInitReturn={() => toast.info("Bitte in der Kommissionierungs-Ansicht durchführen")}
+                                    onReturnToReady={() => toast.info("Bitte in der Kommissionierungs-Ansicht durchführen")}
+                                    onCompleteReturn={() => toast.info("Bitte in der Kommissionierungs-Ansicht durchführen")}
+                                    onEdit={(e) => {
+                                        e.stopPropagation();
+                                        setViewingCommission(null);
+                                        navigate('/commissions', { state: { editCommissionId: viewingCommission.id } });
+                                    }}
+                                    onPrint={() => toast.info("Drucken...")}
+                                    onTogglePicked={() => { }}
+                                    onToggleBackorder={() => { }}
+                                    onSaveNote={() => { }}
+                                    onClose={() => setViewingCommission(null)}
+                                    onSaveOfficeData={handleSaveOfficeData}
+                                />
+                            ) : (
+                                <CommissionOfficeContent
+                                    commission={viewingCommission}
+                                    onClose={() => setViewingCommission(null)}
+                                    onSave={handleSaveOfficeData}
+                                    isSaving={isSavingProcess}
+                                />
+                            )
+                        )}
+                    </GlassModal>
+                </>
+            )}
 
 
             {/* --- UTILITY MODALS (App Drawer & SQL Fix) --- */}
