@@ -16,6 +16,7 @@ interface ArticleEditFormProps {
     // Navigation props (optional for form, but useful if embedded)
     onNavigate?: (direction: 'prev' | 'next') => void;
     hasNavigation?: boolean;
+    hideSaveAndNext?: boolean;
 }
 
 export const ArticleEditForm: React.FC<ArticleEditFormProps> = ({
@@ -27,7 +28,8 @@ export const ArticleEditForm: React.FC<ArticleEditFormProps> = ({
     onCancel,
     distinctCategories,
     onNavigate,
-    hasNavigation
+    hasNavigation,
+    hideSaveAndNext
 }) => {
     // --- STATE MANAGEMENT ---
     const [newArticle, setNewArticle] = useState({
@@ -148,6 +150,11 @@ export const ArticleEditForm: React.FC<ArticleEditFormProps> = ({
                 manufacturer_skus: tempSkus,
                 tempSuppliers
             }, shouldClose);
+
+            if (!shouldClose) {
+                resetForm();
+                // Optional: Success Toast or Feedback here
+            }
         } catch (error) {
             console.error(error);
         } finally {
@@ -522,6 +529,15 @@ export const ArticleEditForm: React.FC<ArticleEditFormProps> = ({
 
             <div className="p-4 sm:p-6 border-t border-white/10 flex justify-end gap-3 bg-black/20 rounded-b-2xl sticky bottom-0 z-10 backdrop-blur-xl shrink-0">
                 <Button variant="secondary" onClick={onCancel}>Abbrechen</Button>
+                {!isEditMode && !hideSaveAndNext && (
+                    <Button
+                        onClick={() => handleSave(false)}
+                        disabled={isSubmitting}
+                        className="bg-emerald-600/20 text-emerald-400 hover:bg-emerald-600/30 border-emerald-500/30"
+                    >
+                        {isSubmitting ? <Loader2 className="animate-spin" /> : 'Speichern & Weiter'}
+                    </Button>
+                )}
                 <Button onClick={() => handleSave(true)} disabled={isSubmitting} className="min-w-[120px]">{isSubmitting ? <Loader2 className="animate-spin" /> : 'Speichern'}</Button>
             </div>
         </div>

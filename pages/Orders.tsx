@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useRef } from 'react';
-import { GlassCard, Button, GlassInput, GlassSelect, StatusBadge } from '../components/UIComponents';
+import { GlassCard, Button, GlassInput, GlassSelect, StatusBadge, GlassModal } from '../components/UIComponents';
 import { AddArticleModal } from '../components/AddArticleModal';
 import { Article, Order, OrderItem, Supplier, OrderProposal, WarehouseType, Warehouse } from '../types';
 import { ShoppingCart, CheckCircle2, Loader2, Send, Copy, FileDown, Check, X, ClipboardList, Truck, Search, Box, Barcode, MapPin, Plus, Minus, PackageCheck, ArrowDownToLine, ChevronDown, ChevronUp, Clock, AlertTriangle, Archive, FileText, Sparkles, Upload, Trash2, Link as LinkIcon, Wand2, Eye, Warehouse as WarehouseIcon, RefreshCw, HardHat } from 'lucide-react';
@@ -10,6 +10,7 @@ import { GoogleGenAI, Type } from "@google/genai";
 import { MasterDetailLayout } from '../components/MasterDetailLayout';
 import { OrderDetailContent } from '../components/orders/OrderDetailContent';
 import { OrderProposalContent } from '../components/orders/OrderProposalContent';
+import { OrderImportDetailContent } from '../components/orders/OrderImportDetailContent';
 
 const Orders: React.FC = () => {
     const navigate = useNavigate();
@@ -62,8 +63,7 @@ const Orders: React.FC = () => {
     // --- IMPORT TAB STATE ---
     const [importCandidates, setImportCandidates] = useState<any[]>([]);
     const [loadingImport, setLoadingImport] = useState(false);
-    const [isAddModalOpen, setIsAddModalOpen] = useState(false);
-    const [importDataForModal, setImportDataForModal] = useState<Partial<Article> & { orderItemId: string } | null>(null);
+    const [selectedImportItem, setSelectedImportItem] = useState<any | null>(null);
     const [suppliers, setSuppliers] = useState<Supplier[]>([]);
 
 
@@ -162,26 +162,21 @@ const Orders: React.FC = () => {
         if (data) setSuppliers(data as Supplier[]);
     };
 
-    const handleOpenImportModal = (item: any) => {
-        setImportDataForModal({
-            orderItemId: item.id,
-            name: item.name,
-            sku: item.sku,
-            supplier: item.supplier,
-            location: 'Lager'
-        });
-        setIsAddModalOpen(true);
+    const handleOpenImport = (item: any) => {
+        setSelectedOrder(null);
+        setSelectedProposal(null);
+        setSelectedImportItem(item);
     };
 
     const handleImportSuccess = async (newArticleId: string) => {
-        if (!importDataForModal) return;
-        try {
-            await supabase.from('order_items').update({ article_id: newArticleId }).eq('id', importDataForModal.orderItemId);
-            setImportCandidates(prev => prev.filter(c => c.id !== importDataForModal.orderItemId));
-            alert("Artikel erfolgreich angelegt und verknüpft!");
-        } catch (e: any) {
-            alert("Fehler beim Verknüpfen: " + e.message);
-        }
+        if (!selectedImportItem) return;
+        setImportCandidates(prev => prev.filter(c => c.id !== selectedImportItem.id));
+        setSelectedImportItem(null);
+        // Optional: Select next item automatically?
+        // const currentIdx = importCandidates.findIndex(c => c.id === selectedImportItem.id);
+        // if (currentIdx >= 0 && currentIdx < importCandidates.length - 1) {
+        //    setSelectedImportItem(importCandidates[currentIdx + 1]);
+        // }
     };
 
     const fetchProposals = async () => {
@@ -568,6 +563,7 @@ const Orders: React.FC = () => {
     const handleCloseDetail = () => {
         setSelectedOrder(null);
         setSelectedProposal(null);
+        setSelectedImportItem(null);
     };
 
     const handleOrderCreated = () => {
@@ -660,7 +656,6 @@ const Orders: React.FC = () => {
                 </div>
             )}
 
-            {/* --- CONTENT: IMPORT CANDIDATES --- */}
             {activeTab === 'import' && (
                 <div className="space-y-4">
                     <div className="text-xs text-white/30 text-center mb-4">
@@ -670,7 +665,8 @@ const Orders: React.FC = () => {
                         importCandidates.map((item, idx) => (
                             <GlassCard
                                 key={idx}
-                                className="flex flex-col gap-3 group border-emerald-500/20 bg-emerald-500/5"
+                                className={`flex flex-col gap-3 group border-emerald-500/20 bg-emerald-500/5 cursor-pointer hover:bg-emerald-500/10 transition-colors ${selectedImportItem?.id === item.id ? 'bg-emerald-500/20 border-emerald-500/40' : ''}`}
+                                onClick={() => handleOpenImport(item)}
                             >
                                 <div className="flex justify-between items-start">
                                     <div>
@@ -683,13 +679,12 @@ const Orders: React.FC = () => {
                                         </p>
                                     </div>
                                     <Button
-                                        onClick={() => handleOpenImportModal(item)}
+                                        onClick={(e) => { e.stopPropagation(); handleOpenImport(item); }}
                                         className="bg-emerald-600 hover:bg-emerald-500 h-8 text-xs"
                                         icon={<Plus size={14} />}
                                     >
                                         Übernehmen
                                     </Button>
-
                                 </div>
                             </GlassCard>
                         ))
@@ -844,33 +839,24 @@ const Orders: React.FC = () => {
                         onClose={handleCloseDetail}
                         onUpdate={handleOrderUpdate}
                     />
+                ) : selectedImportItem ? (
+                    <OrderImportDetailContent
+                        importItem={selectedImportItem}
+                        warehouses={manualWarehouses}
+                        suppliers={suppliers}
+                        onClose={handleCloseDetail}
+                        onSuccess={handleImportSuccess}
+                    />
                 ) : null
             }
-            isOpen={!!selectedOrder || !!selectedProposal}
+            isOpen={!!selectedOrder || !!selectedProposal || !!selectedImportItem}
             onClose={handleCloseDetail}
+            hideHeader={!!selectedImportItem}
         >
-            {/* ADD ARTICLE MODAL FOR IMPORT - Stays Global */}
-            <AddArticleModal
-                isOpen={isAddModalOpen}
-                onClose={() => setIsAddModalOpen(false)}
-                onSaveSuccess={handleImportSuccess}
-                initialData={importDataForModal || undefined}
-                mode="add"
-                warehouses={manualWarehouses}
-                suppliers={suppliers}
-                existingCategories={[]}
-            />
-
-            {/* --- MODAL: MANUAL ORDER WIZARD --- */}
+            {/* --- MANUAL ORDER MODAL (WIZARD) --- */}
             {showManualModal && (
-                <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/90 backdrop-blur-md animate-in fade-in">
-                    <div className="w-full max-w-md bg-[#1a1d24] border border-white/10 rounded-2xl shadow-xl flex flex-col max-h-[90vh]">
-
-                        {/* HEADER */}
-                        <div className="p-4 border-b border-white/10 flex justify-between items-center">
-                            <h2 className="text-lg font-bold text-white">Manuelle Bestellung</h2>
-                            <button onClick={() => setShowManualModal(false)}><X className="text-white/50 hover:text-white" size={20} /></button>
-                        </div>
+                <GlassModal isOpen={showManualModal} onClose={() => setShowManualModal(false)} title="Manuelle Bestellung erfassen / Digitalisieren">
+                    <div className="flex flex-col h-[70vh]">
 
                         <div className="p-6 flex-1 overflow-y-auto space-y-6">
 
@@ -1013,7 +999,7 @@ const Orders: React.FC = () => {
                             )}
                         </div>
                     </div>
-                </div>
+                </GlassModal>
             )}
         </MasterDetailLayout>
     );
