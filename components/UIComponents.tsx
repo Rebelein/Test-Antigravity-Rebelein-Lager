@@ -233,9 +233,10 @@ interface AnimatedModalProps {
   children: React.ReactNode;
   className?: string;
   title?: string;
+  fullScreen?: boolean;
 }
 
-export const AnimatedModal: React.FC<AnimatedModalProps> = ({ isOpen, onClose, children, className = '', title }) => {
+export const AnimatedModal: React.FC<AnimatedModalProps> = ({ isOpen, onClose, children, className = '', title, fullScreen = false }) => {
   return (
     <AnimatePresence>
       {isOpen && (
@@ -246,19 +247,20 @@ export const AnimatedModal: React.FC<AnimatedModalProps> = ({ isOpen, onClose, c
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             onClick={onClose}
-            className="fixed inset-0 z-[150] bg-black/60 backdrop-blur-md flex items-center justify-center p-4"
+            className="fixed inset-0 z-[150] bg-black/60 backdrop-blur-md flex items-center justify-center p-4 content-center"
           />
 
           {/* Modal Content */}
-          <div className="fixed inset-0 z-[151] flex items-center justify-center p-4 pointer-events-none">
+          <div className={`fixed inset-0 z-[151] flex items-center justify-center ${fullScreen ? 'p-0' : 'p-4'} pointer-events-none`}>
             <motion.div
               initial={{ opacity: 0, scale: 0.95, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 20 }}
               transition={{ type: "spring", duration: 0.5, bounce: 0.3 }}
               className={cn(
-                "w-full max-w-2xl pointer-events-auto will-change-transform",
-                "bg-[#121212]/90 backdrop-blur-lg border border-white/10 rounded-3xl shadow-2xl overflow-hidden flex flex-col max-h-[85vh]", // Reduced blur 2xl->lg
+                "w-full pointer-events-auto will-change-transform",
+                "bg-[#121212]/90 backdrop-blur-lg border border-white/10 shadow-2xl overflow-hidden flex flex-col",
+                fullScreen ? "h-full max-w-none rounded-none border-0" : "max-w-2xl rounded-3xl max-h-[85vh]", // Reduced blur 2xl->lg
                 className
               )}
             >

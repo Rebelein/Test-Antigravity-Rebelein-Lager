@@ -232,15 +232,14 @@ export const KeyModal: React.FC<KeyModalProps> = ({ isOpen, onClose, onSave, edi
 
 // --- HANDOVER MODAL (Check-in / Check-out) ---
 
-interface KeyHandoverModalProps {
-    isOpen: boolean;
+export interface KeyHandoverContentProps {
     onClose: () => void;
     onSave: () => void;
-    selectedKeys: Key[]; // Can be multiple for mass handover? Typically one or few.
+    selectedKeys: Key[];
     type: 'issue' | 'return';
 }
 
-export const KeyHandoverModal: React.FC<KeyHandoverModalProps> = ({ isOpen, onClose, onSave, selectedKeys, type }) => {
+export const KeyHandoverContent: React.FC<KeyHandoverContentProps> = ({ onClose, onSave, selectedKeys, type }) => {
     const { user } = useAuth();
 
     // Form State
@@ -254,7 +253,7 @@ export const KeyHandoverModal: React.FC<KeyHandoverModalProps> = ({ isOpen, onCl
     const [profiles, setProfiles] = useState<UserProfile[]>([]);
     const [showSuggestions, setShowSuggestions] = useState(false);
 
-    // Fetch profiles on mount
+    // Fetch profiles on mount and init defaults
     useEffect(() => {
         const fetchProfiles = async () => {
             const { data } = await supabase.from('profiles').select('*');
@@ -263,36 +262,27 @@ export const KeyHandoverModal: React.FC<KeyHandoverModalProps> = ({ isOpen, onCl
         fetchProfiles();
     }, []);
 
-    // Set default user when opening modal
+    // Init Logic moved from Modal to Content
+    // We run this only once on mount of content or when selectedKeys/type changes significantly
     useEffect(() => {
-        if (isOpen) {
-            if (type === 'issue' && user) {
-                setPartnerName(prev => prev || (user.user_metadata?.full_name || user.email || ''));
-                setHolderId(user.id);
-            } else if (type === 'return' && selectedKeys.length > 0) {
-                // Pre-fill with the holder of the first key (assuming batch return from same person usually)
-                const currentHolder = selectedKeys[0].holder_name;
-                if (currentHolder) {
-                    setPartnerName(currentHolder);
-                    // Try to find ID if exists in profiles? Not strictly necessary for return logic but nice.
-                    const match = profiles.find(p => (p.full_name || '').toLowerCase() === currentHolder.toLowerCase());
-                    if (match) setHolderId(match.id);
-                }
+        if (type === 'issue' && user && !partnerName) {
+            setPartnerName(user.user_metadata?.full_name || user.email || '');
+            setHolderId(user.id);
+        } else if (type === 'return' && selectedKeys.length > 0 && !partnerName) {
+            // Pre-fill with the holder of the first key (assuming batch return from same person usually)
+            const currentHolder = selectedKeys[0].holder_name;
+            if (currentHolder) {
+                setPartnerName(currentHolder);
+                // Try to find ID if exists in profiles (requires profiles to be loaded, might need check)
+                // NOTE: Since profiles fetch is async, this might miss on first render if profiles empty. 
+                // However, for return logic, we just need the name mostly. ID is cleared on return anyway.
             }
-        } else {
-            // Reset when closed
-            setPartnerName('');
-            setHolderId(null);
-            setPartnerAddress('');
-            setNotes('');
         }
-    }, [isOpen, type, selectedKeys, user, profiles]); // Added deps
+    }, [type, selectedKeys, user]); // Run on mount/change
 
     const handleNameChange = (val: string) => {
         setPartnerName(val);
         setShowSuggestions(true);
-
-        // Check if manual entry matches a known user exactly (optional, but good for ID linking)
         const match = profiles.find(p => (p.full_name || '').toLowerCase() === val.toLowerCase());
         setHolderId(match ? match.id : null);
     };
@@ -351,27 +341,40 @@ export const KeyHandoverModal: React.FC<KeyHandoverModalProps> = ({ isOpen, onCl
     const filteredProfiles = profiles.filter(p =>
         ((p.full_name || '').toLowerCase().includes(partnerName.toLowerCase()) ||
             (p.email || '').toLowerCase().includes(partnerName.toLowerCase())) &&
-        (p.full_name !== partnerName) // Don't show if already exact match
+        (p.full_name !== partnerName)
     );
 
-    // If modal is not open, don't render or it might mess up deps
-    if (!isOpen) return null;
-
     return (
-        <GlassModal isOpen={isOpen} onClose={onClose} title={type === 'issue' ? 'Schlüssel ausgeben' : 'Schlüssel zurücknehmen'}>
-            <div className="p-6 max-w-lg w-full mx-auto space-y-6">
+        <div className="flex flex-col h-full bg-white/50 dark:bg-black/20 backdrop-blur-md dark:border-white/10 shadow-xl rounded-2xl overflow-hidden">
+            {/* Header if embedded? Or just Content? The modal wrapper has title. 
+                 For split view, we might want a header. Let's add a robust header here, 
+                 that fits both modal (if transparent) or panel.
+                 Actually, Standard Modal uses title prop. 
+                 Let's keep it simple content-focused.
+             */}
+
+            <div className={`p-6 w-full mx-auto space-y-6 flex-1 overflow-y-auto ${type === 'issue' ? '' : ''}`}>
+                {/* Header for Split View context mostly */}
+                <div className="flex justify-between items-center pb-4 border-b border-gray-200 dark:border-white/10 mb-4">
+                    <h2 className="text-xl font-bold text-gray-900 dark:text-white">
+                        {type === 'issue' ? 'Schlüssel ausgeben' : 'Schlüssel zurücknehmen'}
+                    </h2>
+                    {/* Close button handled by parent usually, but good to have if needed inside */}
+                    <button onClick={onClose} className="p-2 hover:bg-gray-100 dark:hover:bg-white/10 rounded-full text-gray-500 dark:text-white/60"><X size={20} /></button>
+                </div>
+
 
                 {/* Selected Keys List */}
-                <div className="bg-white/5 rounded-lg p-4 border border-white/10">
-                    <h3 className="font-bold text-white mb-2">Gewählte Schlüssel</h3>
+                <div className="bg-white dark:bg-white/5 rounded-lg p-4 border border-gray-200 dark:border-white/10 shadow-sm">
+                    <h3 className="font-bold text-gray-900 dark:text-white mb-2">Gewählte Schlüssel</h3>
                     <ul className="space-y-3">
                         {selectedKeys.map(k => (
-                            <li key={k.id} className="text-sm bg-white/5 p-3 rounded-md border border-white/5">
+                            <li key={k.id} className="text-sm bg-gray-50 dark:bg-white/5 p-3 rounded-md border border-gray-200 dark:border-white/5">
                                 <div className="flex justify-between items-start mb-1">
-                                    <span className="font-bold text-white">{k.name}</span>
-                                    <span className="text-emerald-400 font-mono">#{k.slot_number}</span>
+                                    <span className="font-bold text-gray-900 dark:text-white">{k.name}</span>
+                                    <span className="text-emerald-600 dark:text-emerald-400 font-mono">#{k.slot_number}</span>
                                 </div>
-                                <div className="space-y-1 text-gray-400 text-xs">
+                                <div className="space-y-1 text-gray-500 dark:text-gray-400 text-xs">
                                     {k.address && (
                                         <div className="flex items-center gap-2">
                                             <MapPin size={12} />
@@ -381,11 +384,11 @@ export const KeyHandoverModal: React.FC<KeyHandoverModalProps> = ({ isOpen, onCl
                                     {k.owner && (
                                         <div className="flex items-center gap-2">
                                             <User size={12} />
-                                            <span>Eigentümer: <span className="text-gray-300">{k.owner}</span></span>
+                                            <span>Eigentümer: <span className="text-gray-700 dark:text-gray-300">{k.owner}</span></span>
                                         </div>
                                     )}
                                     {k.notes && (
-                                        <div className="mt-1 pt-1 border-t border-white/10 italic text-gray-500">
+                                        <div className="mt-1 pt-1 border-t border-gray-200 dark:border-white/10 italic text-gray-400 dark:text-gray-500">
                                             "{k.notes}"
                                         </div>
                                     )}
@@ -398,7 +401,7 @@ export const KeyHandoverModal: React.FC<KeyHandoverModalProps> = ({ isOpen, onCl
                 {/* Form Fields */}
                 <div className="space-y-4">
                     <div className="relative">
-                        <label className="block text-sm font-medium text-gray-300 mb-1">
+                        <label className="block text-sm font-medium text-gray-600 dark:text-gray-300 mb-1">
                             {type === 'issue' ? 'Ausgegeben an' : 'Abgegeben von (Name)'}
                         </label>
                         <div className="relative group">
@@ -407,7 +410,7 @@ export const KeyHandoverModal: React.FC<KeyHandoverModalProps> = ({ isOpen, onCl
                             <input
                                 type="text"
                                 required
-                                className="w-full bg-white/5 border border-white/10 rounded-lg p-2 pl-10 pr-10 text-white focus:outline-none focus:ring-2 focus:ring-emerald-500/50"
+                                className="w-full bg-white dark:bg-white/5 border border-gray-200 dark:border-white/10 rounded-lg p-2 pl-10 pr-10 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500/50"
                                 value={partnerName}
                                 onChange={(e) => handleNameChange(e.target.value)}
                                 onFocus={() => setShowSuggestions(true)}
@@ -420,7 +423,7 @@ export const KeyHandoverModal: React.FC<KeyHandoverModalProps> = ({ isOpen, onCl
                             {partnerName ? (
                                 <button
                                     onClick={() => { setPartnerName(''); setHolderId(null); }}
-                                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-white z-20"
+                                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-900 dark:hover:text-white z-20 bg-transparent"
                                 >
                                     <X size={16} />
                                 </button>
@@ -430,12 +433,12 @@ export const KeyHandoverModal: React.FC<KeyHandoverModalProps> = ({ isOpen, onCl
 
                             {/* Suggestions Dropdown */}
                             {showSuggestions && (
-                                <div className="absolute z-10 w-full mt-1 bg-gray-900 border border-white/10 rounded-lg shadow-xl max-h-48 overflow-y-auto">
+                                <div className="absolute z-10 w-full mt-1 bg-white dark:bg-gray-900 border border-gray-200 dark:border-white/10 rounded-lg shadow-xl max-h-48 overflow-y-auto">
                                     {filteredProfiles.length > 0 ? (
                                         filteredProfiles.map(p => (
                                             <div
                                                 key={p.id}
-                                                className="px-4 py-2 hover:bg-white/10 cursor-pointer text-sm text-gray-200 flex items-center justify-between"
+                                                className="px-4 py-2 hover:bg-gray-100 dark:hover:bg-white/10 cursor-pointer text-sm text-gray-900 dark:text-gray-200 flex items-center justify-between"
                                                 onClick={() => selectUser(p)}
                                             >
                                                 <span>{p.full_name || p.email}</span>
@@ -445,7 +448,7 @@ export const KeyHandoverModal: React.FC<KeyHandoverModalProps> = ({ isOpen, onCl
                                     ) : (
                                         <div className="px-4 py-2 text-sm text-gray-500 italic">
                                             Kein interner Nutzer gefunden. <br />
-                                            <span className="text-emerald-400">"{partnerName}"</span> als externen Namen verwenden.
+                                            <span className="text-emerald-500 dark:text-emerald-400">"{partnerName}"</span> als externen Namen verwenden.
                                         </div>
                                     )}
                                 </div>
@@ -454,9 +457,9 @@ export const KeyHandoverModal: React.FC<KeyHandoverModalProps> = ({ isOpen, onCl
                     </div>
 
                     <div>
-                        <label className="block text-sm font-medium text-gray-300 mb-1">Notiz</label>
+                        <label className="block text-sm font-medium text-gray-600 dark:text-gray-300 mb-1">Notiz</label>
                         <textarea
-                            className="w-full bg-white/5 border border-white/10 rounded-lg p-2 text-white focus:outline-none focus:ring-2 focus:ring-emerald-500/50 h-20"
+                            className="w-full bg-white dark:bg-white/5 border border-gray-200 dark:border-white/10 rounded-lg p-2 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500/50 h-20"
                             value={notes}
                             onChange={(e) => setNotes(e.target.value)}
                             placeholder="Zweck, Besonderheiten..."
@@ -464,8 +467,9 @@ export const KeyHandoverModal: React.FC<KeyHandoverModalProps> = ({ isOpen, onCl
                     </div>
                 </div>
 
-                {/* Footer */}
-                <div className="flex justify-end gap-3 pt-4 border-t border-white/10">
+                {/* Footer Logic for Modal vs Panel */}
+                <div className="flex justify-end gap-3 pt-4 border-t border-gray-200 dark:border-white/10 mt-auto">
+                    {/* We can hide Cancel button in split view if we want, or keep it as "Close" */}
                     <Button onClick={onClose} variant="secondary">Abbrechen</Button>
                     <Button onClick={handleConfirm} variant="primary" disabled={loading}>
                         <Save size={18} className="mr-2" />
@@ -473,6 +477,25 @@ export const KeyHandoverModal: React.FC<KeyHandoverModalProps> = ({ isOpen, onCl
                     </Button>
                 </div>
             </div>
+        </div>
+    );
+}
+
+interface KeyHandoverModalProps {
+    isOpen: boolean;
+    onClose: () => void;
+    onSave: () => void;
+    selectedKeys: Key[]; // Can be multiple for mass handover? Typically one or few.
+    type: 'issue' | 'return';
+}
+
+export const KeyHandoverModal: React.FC<KeyHandoverModalProps> = ({ isOpen, onClose, onSave, selectedKeys, type }) => {
+    if (!isOpen) return null;
+
+    return (
+        <GlassModal isOpen={isOpen} onClose={onClose} title="">
+            {/* We rely on Content's header now or obscure modal title */}
+            <KeyHandoverContent onClose={onClose} onSave={onSave} selectedKeys={selectedKeys} type={type} />
         </GlassModal>
     );
 };

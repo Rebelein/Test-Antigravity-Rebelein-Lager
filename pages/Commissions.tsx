@@ -1,44 +1,23 @@
-
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { GlassCard, Button, GlassInput, GlassSelect, StatusBadge, GlassModal } from '../components/UIComponents';
+import { GlassCard, Button, GlassInput, GlassModal, StatusBadge } from '../components/UIComponents';
 import { supabase } from '../supabaseClient';
 import { useAuth } from '../contexts/AuthContext';
-import { Commission, CommissionItem, Article, Supplier, CommissionEvent } from '../types';
-import { ClipboardCheck, Plus, Search, Package, Truck, CheckCircle2, Printer, X, Loader2, History, Trash2, Box, ExternalLink, Check, ShoppingCart, Minus, ChevronDown, Edit2, Save, AlertTriangle, RotateCcw, Tag, Clock, Undo2, MapPin, PenTool, Layers, ArrowRight, Paperclip, Eye, FileText, Clipboard, MessageSquare, BoxSelect, LogOut } from 'lucide-react';
+import { Commission, CommissionItem, Article, Supplier } from '../types';
+import { Plus, Search, CheckCircle2, Printer, X, Loader2, History, Trash2, BoxSelect, ArrowRight, Clock, LogOut, Undo2, RotateCcw, AlertTriangle, Layers, Tag } from 'lucide-react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { CommissionCleanupModal } from '../components/CommissionCleanupModal';
 import { CommissionCard } from '../components/CommissionCard';
-import { CommissionDetailModal } from '../components/CommissionDetailModal';
 import { PrintingSection } from '../components/PrintingSection';
-
 import { useCommissionData } from '../hooks/useCommissionData';
+import { MasterDetailLayout } from '../components/MasterDetailLayout';
+import { CommissionDetailContent } from '../components/commissions/CommissionDetailContent';
+import { CommissionEditContent, ExtendedCommission } from '../components/commissions/CommissionEditContent';
 
-// ... existing imports ...
+// --- TYPES ---
 type CommissionTab = 'active' | 'returns' | 'withdrawn' | 'trash' | 'missing';
 type PrintTab = 'queue' | 'history';
-
-// Extended type for UI
-type ExtendedCommission = Commission & {
-    commission_items?: any[];
-    suppliers?: { name: string };
-};
-
-// Interface for local items before saving to DB
-interface TempCommissionItem {
-    uniqueId: string; // Local temp ID
-    type: 'Stock' | 'External';
-    amount: number;
-    article?: Article; // If stock
-    customName?: string; // If external (Supplier Name)
-    externalReference?: string; // The "Vorgangsnummer"
-    attachmentData?: string; // Base64 data
-    isBackorder?: boolean; // NEW
-    notes?: string; // NEW
-    supplierId?: string;
-    isPicked?: boolean; // Keep track of picked state even during edit
-    isDragging?: boolean; // UI State for Drag & Drop
-}
+type SidePanelMode = 'none' | 'detail' | 'create' | 'edit' | 'search' | 'history';
 
 const Commissions: React.FC = () => {
     const { user, profile } = useAuth();
@@ -68,870 +47,274 @@ const Commissions: React.FC = () => {
         tabCounts
     } = useCommissionData(activeTab);
 
-    // --- MODAL STATES ---
-    const [showCreateModal, setShowCreateModal] = useState(false);
-    const [showPrepareModal, setShowPrepareModal] = useState(false);
-    const [showConfirmReadyModal, setShowConfirmReadyModal] = useState(false);
-    const [showConfirmWithdrawModal, setShowConfirmWithdrawModal] = useState(false);
-    const [showLabelOptionsModal, setShowLabelOptionsModal] = useState<string | null>(null);
-    const [showLabelUpdateModal, setShowLabelUpdateModal] = useState(false); // NEW
+    // --- MASTER-DETAIL STATE ---
+    const [sidePanelMode, setSidePanelMode] = useState<SidePanelMode>('none');
+    const [activeCommission, setActiveCommission] = useState<ExtendedCommission | null>(null);
+    const [commItems, setCommItems] = useState<CommissionItem[]>([]);
 
-    // --- SEARCH MODAL STATE ---
-    const [showSearchModal, setShowSearchModal] = useState(false);
+    // --- EDIT / CREATE STATE ---
+    const [editingCommissionId, setEditingCommissionId] = useState<string | null>(null);
+    const [editingInitialCommission, setEditingInitialCommission] = useState<ExtendedCommission | null>(null);
+    const [editingInitialItems, setEditingInitialItems] = useState<any[]>([]);
+
+    // --- SEARCH STATE ---
     const [globalSearchTerm, setGlobalSearchTerm] = useState('');
     const [searchResults, setSearchResults] = useState<ExtendedCommission[]>([]);
     const [isSearching, setIsSearching] = useState(false);
 
-    // --- CLEANUP MODAL STATE ---
+    // --- OTHER MODALS ---
+    const [showConfirmReadyModal, setShowConfirmReadyModal] = useState(false);
+    const [showConfirmWithdrawModal, setShowConfirmWithdrawModal] = useState(false);
+    const [showLabelOptionsModal, setShowLabelOptionsModal] = useState<string | null>(null);
+    const [showLabelUpdateModal, setShowLabelUpdateModal] = useState(false);
     const [showCleanupModal, setShowCleanupModal] = useState(false);
 
-    // --- DELETE CONFIRMATION STATE ---
-    const [deleteTarget, setDeleteTarget] = useState<{ id: string, name: string, mode: 'trash' | 'permanent' } | null>(null);
-
-
-    const [showHistoryModal, setShowHistoryModal] = useState(false);
-    const [historySearch, setHistorySearch] = useState('');
-
-    // --- ATTACHMENT VIEW MODAL ---
-    const [viewingAttachment, setViewingAttachment] = useState<string | null>(null);
-
-    // --- ITEM NOTE MODAL ---
-    const [editingItemNote, setEditingItemNote] = useState<{ itemId: string, note: string } | null>(null);
-
-    const [activeCommission, setActiveCommission] = useState<Commission | null>(null);
-
-    // Track if label-critical data changed
-    const [labelDataChanged, setLabelDataChanged] = useState(false);
-
-    // --- CATEGORY COLLAPSE STATES ---
-    const [collapsedCategories, setCollapsedCategories] = useState({
-        ready: false,
-        preparing: false,
-        draft: false,
-        returnReady: false,
-        returnPending: false
-    });
-
-    // --- PRINT QUEUE & HISTORY STATE ---
-    const [showPrintArea, setShowPrintArea] = useState(false); // Default: Collapsed
+    // Printing
+    const [showPrintArea, setShowPrintArea] = useState(false);
     const [printTab, setPrintTab] = useState<PrintTab>('queue');
     const [selectedPrintIds, setSelectedPrintIds] = useState<Set<string>>(new Set());
-
-    // --- CREATE/EDIT FORM STATES ---
-    const [isEditMode, setIsEditMode] = useState(false);
-    const [editingCommissionId, setEditingCommissionId] = useState<string | null>(null);
-    const [newComm, setNewComm] = useState({ order_number: '', name: '', notes: '' });
-    const [tempItems, setTempItems] = useState<TempCommissionItem[]>([]);
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const [labelDataChanged, setLabelDataChanged] = useState(false);
 
-    // --- ITEMS STATE (For Prepare View) ---
-    const [commItems, setCommItems] = useState<CommissionItem[]>([]); // Real DB items
+    // Collapsed Categories
+    const [collapsedCategories, setCollapsedCategories] = useState<{ [key: string]: boolean }>({
+        ready: false, preparing: false, draft: false, returnReady: false, returnPending: false
+    });
 
-    // NEW: Category Selection State
-    const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
-
-    // Navigation State
+    // Navigation
     const [returnPath, setReturnPath] = useState<string | null>(null);
 
-    // Collapsible sections in Create Modal
-    const [expandStockSearch, setExpandStockSearch] = useState(false); // DEFAULT COLLAPSED
-    const [expandSupplierList, setExpandSupplierList] = useState(false);
-
-    // Search States within Modal
-    const [stockSearchTerm, setStockSearchTerm] = useState('');
-    const [supplierSearchTerm, setSupplierSearchTerm] = useState('');
-
-    const isMounted = useRef(true);
-
-    // Helper for Categories
-    const distinctCategories = useMemo(() => {
-        const cats = new Set(availableArticles.map(a => a.category || 'Sonstiges'));
-        return Array.from(cats).sort();
-    }, [availableArticles]);
-
-    // Derived Queue Items (Memoized for performance and Effect dependency)
+    // Derived Queue Items
     const queueItems = useMemo(() => {
         return commissions.filter(c => c.needs_label && !c.deleted_at && c.status !== 'Withdrawn');
     }, [commissions]);
 
-    // --- EFFECT: Auto-Toggle Print Area based on Queue ---
+    // Auto-Open Queue
     useEffect(() => {
-        if (queueItems.length > 0) {
-            setShowPrintArea(true);
-        } else {
-            // If queue is empty, auto-collapse (unless user manually opens it later, which this effect won't block)
-            setShowPrintArea(false);
-        }
+        if (queueItems.length > 0) setShowPrintArea(true);
+        else setShowPrintArea(false);
     }, [queueItems.length]);
 
-    // Handle edit/create redirect from dashboard
+    // Handle deep links / navigation state
     useEffect(() => {
-        const state = location.state as { editCommissionId?: string; openCreateModal?: boolean; returnTo?: string } | null;
+        const state = location.state as { editCommissionId?: string; openCreateModal?: boolean; returnTo?: string; openCommissionId?: string } | null;
 
         if (state) {
-            // 1. Edit Mode
             if (state.editCommissionId) {
-                window.history.replaceState({}, document.title); // Cleanup
-
+                window.history.replaceState({}, document.title);
                 const loadAndEdit = async () => {
-                    let comm = commissions.find(c => c.id === state.editCommissionId);
+                    let comm = commissions.find(c => c.id === state.editCommissionId) as ExtendedCommission;
                     if (!comm) {
                         const { data } = await supabase.from('commissions').select('*, suppliers(name)').eq('id', state.editCommissionId).single();
                         if (data) comm = data as ExtendedCommission;
                     }
-                    if (comm) {
-                        handleEditCommission(comm);
-                    }
+                    if (comm) handleEditCommission(comm);
                 };
                 loadAndEdit();
-            }
-            // 2. Create Mode (New Feature)
-            else if (state.openCreateModal) {
+            } else if (state.openCreateModal) {
                 if (state.returnTo) setReturnPath(state.returnTo);
-                window.history.replaceState({}, document.title); // Cleanup
-                openCreateModal();
+                window.history.replaceState({}, document.title);
+                handleOpenCreate();
+            } else if (state.openCommissionId) {
+                const loadScannerTarget = async (id: string) => {
+                    let comm = commissions.find(c => c.id === id) as ExtendedCommission;
+                    if (!comm) {
+                        const { data } = await supabase.from('commissions').select('*, suppliers(name)').eq('id', id).single();
+                        if (data) comm = data as ExtendedCommission;
+                    }
+                    if (comm) {
+                        handleOpenDetail(comm);
+                        window.history.replaceState({}, document.title);
+                    }
+                };
+                loadScannerTarget(state.openCommissionId);
             }
         }
     }, [location, commissions]);
 
+    // Realtime Subscriptions for Active Commission Details
     useEffect(() => {
-        isMounted.current = true;
-        // refreshCommissions(); // Handled by hook
-        // fetchSuppliers(); // Handled by hook
-        // fetchArticles(); // Handled by hook
-        return () => { isMounted.current = false; };
-    }, [activeTab, profile?.primary_warehouse_id]);
+        if (!activeCommission || sidePanelMode !== 'detail') return;
 
-    // --- REALTIME SUBSCRIPTION ---
-    // --- REALTIME SUBSCRIPTION ---
-    // Handled by hook
-    /*
-    useEffect(() => {
-        const channel = supabase
-            .channel('commissions-realtime')
-            // ...
-            .subscribe();
-
-        return () => {
-            supabase.removeChannel(channel);
-        };
-    }, [activeCommission, activeTab]); 
-    */
-    // We still need to listen for item changes to update activeCommission details if modal is open
-    useEffect(() => {
-        const channel = supabase
-            .channel('commissions-realtime-ui')
-            .on(
-                'postgres_changes',
-                { event: '*', schema: 'public', table: 'commissions' },
+        const channel = supabase.channel('commissions-detail-ui')
+            .on('postgres_changes', { event: '*', schema: 'public', table: 'commissions', filter: `id=eq.${activeCommission.id}` },
                 (payload) => {
-                    // If detail modal is open and this specific commission changed, refresh local details
-                    if (activeCommission && (payload.new as any)?.id === activeCommission.id) {
-                        // Reload full active commission to get updated status/notes
-                        supabase.from('commissions').select('*, suppliers(name)').eq('id', activeCommission.id).single()
-                            .then(({ data }) => {
-                                if (data) setActiveCommission(data as ExtendedCommission);
-                            });
-                    }
+                    const newComm = payload.new as ExtendedCommission;
+                    if (newComm) setActiveCommission(newComm);
                 }
             )
-            .on(
-                'postgres_changes',
-                { event: '*', schema: 'public', table: 'commission_items' },
-                (payload) => {
-                    // If detail modal is open, check if this item belongs to it
-                    if (activeCommission) {
-                        const newItem = payload.new as CommissionItem;
-                        const oldItem = payload.old as CommissionItem;
-                        const relevantId = newItem?.commission_id || oldItem?.commission_id;
-
-                        if (relevantId === activeCommission.id) {
-                            fetchCommissionItems(activeCommission.id).then(data => {
-                                if (data) {
-                                    setCommItems(data.map((item: any) => ({
-                                        ...item,
-                                        article: item.article
-                                    })));
-                                }
-                            });
-                        }
-                    }
+            .on('postgres_changes', { event: '*', schema: 'public', table: 'commission_items', filter: `commission_id=eq.${activeCommission.id}` },
+                () => {
+                    fetchCommissionItems(activeCommission.id).then(items => setCommItems(items || []));
                 }
             )
             .subscribe();
 
-        return () => {
-            supabase.removeChannel(channel);
-        };
-    }, [activeCommission]);
+        return () => { supabase.removeChannel(channel); };
+    }, [activeCommission?.id, sidePanelMode]);
 
-    const handleOpenHistory = () => {
-        setShowHistoryModal(true);
-        fetchHistory();
-    };
 
-    // Fetch print history when tab changes
-    useEffect(() => {
-        if (printTab === 'history') {
-            fetchPrintHistory();
-        }
-    }, [printTab]);
+    // --- HANDLERS ---
 
-    useEffect(() => {
-        const state = location.state as { openCommissionId?: string } | null;
-        if (state && state.openCommissionId) {
-            const loadScannerTarget = async (id: string) => {
-                let comm = commissions.find(c => c.id === id);
-                if (!comm) {
-                    const { data } = await supabase.from('commissions').select('*, suppliers(name)').eq('id', id).single();
-                    if (data) comm = data as ExtendedCommission;
-                }
-
-                if (comm) {
-                    handleOpenPrepare(comm);
-                    window.history.replaceState({}, document.title);
-                }
-            };
-            loadScannerTarget(state.openCommissionId);
-        }
-    }, [location, commissions]);
-
-    // --- SEARCH LOGIC ---
-    const performGlobalSearch = async (term: string) => {
-        setGlobalSearchTerm(term);
-        if (term.trim().length < 2) {
-            setSearchResults([]);
-            return;
-        }
-
-        setIsSearching(true);
-        try {
-            const { data, error } = await supabase
-                .from('commissions')
-                .select('*, suppliers(name), commission_items(*, article:articles(name))')
-                .or(`name.ilike.%${term}%,order_number.ilike.%${term}%,notes.ilike.%${term}%`)
-                .order('created_at', { ascending: false })
-                .limit(20);
-
-            if (error) throw error;
-            setSearchResults((data as ExtendedCommission[]) || []);
-        } catch (err) {
-            console.error("Search failed", err);
-        } finally {
-            setIsSearching(false);
-        }
-    };
-
-    const handleSearchResultClick = (comm: ExtendedCommission) => {
-        setShowSearchModal(false);
-        handleOpenPrepare(comm);
-    };
-
-    const translateStatus = (status: string) => {
-        switch (status) {
-            case 'Draft': return 'Entwurf';
-            case 'Preparing': return 'In Vorbereitung';
-            case 'Ready': return 'Bereit';
-            case 'Withdrawn': return 'Abgeschlossen';
-            case 'ReturnPending': return 'Retoure (Angemeldet)';
-            case 'ReturnReady': return 'Retoure (Abholbereit)';
-            case 'ReturnComplete': return 'Retoure (Erledigt)';
-            case 'Missing': return 'VERMISST';
-            default: return status;
-        }
-    };
-
-
-
-    // --- TRASH / DELETE LOGIC ---
-    const requestDelete = (id: string, name: string, mode: 'trash' | 'permanent', e?: React.MouseEvent) => {
-        if (e) e.stopPropagation();
-        setDeleteTarget({ id, name, mode });
-    };
-
-    const executeDelete = async () => {
-        if (!deleteTarget) return;
-        setIsSubmitting(true);
-
-        try {
-            if (deleteTarget.mode === 'trash') {
-                await supabase.from('commissions').update({ deleted_at: new Date().toISOString() }).eq('id', deleteTarget.id);
-                await logCommissionEvent(deleteTarget.id, deleteTarget.name, 'deleted', 'In Papierkorb verschoben');
-                setShowPrepareModal(false);
-            } else {
-                await supabase.from('commissions').delete().eq('id', deleteTarget.id);
-                await logCommissionEvent(deleteTarget.id, deleteTarget.name, 'permanently_deleted', 'Endgültig gelöscht');
-            }
-
-            setDeleteTarget(null);
-            refreshCommissions(); // Use hook function
-        } catch (e: any) {
-            alert(e.message);
-        } finally {
-            setIsSubmitting(false);
-        }
-    };
-
-    const restoreFromTrash = async (id: string, name: string, e?: React.MouseEvent) => {
-        if (e) e.stopPropagation();
-        try {
-            await supabase.from('commissions').update({ deleted_at: null }).eq('id', id);
-            await logCommissionEvent(id, name, 'restored', 'Aus Papierkorb wiederhergestellt');
-            await logCommissionEvent(id, name, 'restored', 'Aus Papierkorb wiederhergestellt');
-            refreshCommissions(); // Use hook function
-        } catch (e: any) {
-            alert(e.message);
-        }
-    };
-
-    // --- PRINT QUEUE LOGIC ---
-
-
-
-    const markLabelsAsPrinted = async () => {
-        if (selectedPrintIds.size === 0) return;
-        const ids = Array.from(selectedPrintIds);
-
-        const commissionsToPrint = commissions.filter(c => selectedPrintIds.has(c.id));
-
-        const printData: { comm: Commission, items: CommissionItem[] }[] = [];
-
-        setIsSubmitting(true);
-        try {
-            for (const comm of commissionsToPrint) {
-                const { data } = await supabase.from('commission_items').select('*, article:articles(*)').eq('commission_id', comm.id);
-                const items = data ? data.map((i: any) => ({ ...i, article: i.article })) : [];
-                printData.push({ comm, items });
-
-                await logCommissionEvent(comm.id, comm.name, 'labels_printed', 'Etiketten aus Warteschlange gedruckt');
-            }
-
-            generateBatchPDF(printData);
-
-            await supabase.from('commissions').update({ needs_label: false }).in('id', ids);
-
-            setSelectedPrintIds(new Set());
-            refreshCommissions(); // Use hook function
-            fetchPrintHistory(); // Update history immediately
-
-            setPrintTab('history');
-        } catch (e) {
-            console.error(e);
-        } finally {
-            setIsSubmitting(false);
-        }
-    };
-
-    const handleAddToQueue = async (id: string, name: string) => {
-        await supabase.from('commissions').update({ needs_label: true }).eq('id', id);
-        await logCommissionEvent(id, name, 'queued', 'Zur Druckwarteschlange hinzugefügt');
-        setShowLabelOptionsModal(null);
-        setShowLabelUpdateModal(false);
-        refreshCommissions(); // Use hook function
-
-        // If we are supposed to return to Dashboard, do it now
-        if (returnPath) {
-            navigate(returnPath);
-            setReturnPath(null);
-        }
-    };
-
-
-    // --- CREATE / EDIT MODAL LOGIC ---
-
-    const resetCreateForm = () => {
-        setNewComm({ order_number: '', name: '', notes: '' });
-        setTempItems([]);
-        setSelectedCategory(null);
-        setIsEditMode(false);
-        setEditingCommissionId(null);
-        // Reset expansions and search
-        setExpandStockSearch(false);
-        setExpandSupplierList(false);
-        setStockSearchTerm('');
-        setSupplierSearchTerm('');
-    };
-
-    const openCreateModal = () => {
-        resetCreateForm();
-        setShowCreateModal(true);
-    };
-
-    const handleCloseCreateModal = () => {
-        setShowCreateModal(false);
-        if (returnPath) {
-            navigate(returnPath);
-            setReturnPath(null);
-        }
-    };
-
-    const handleEditCommission = async (comm: Commission, e?: React.MouseEvent) => {
-        if (e) e.stopPropagation();
-        resetCreateForm();
-
-        setIsEditMode(true);
-        setEditingCommissionId(comm.id);
-        setNewComm({
-            order_number: comm.order_number || '',
-            name: comm.name,
-            notes: comm.notes || ''
-        });
-
-        const itemsData = await fetchCommissionItems(comm.id);
-        if (itemsData) {
-            const mappedTempItems: TempCommissionItem[] = itemsData.map((item: any) => ({
-                uniqueId: Math.random().toString(36).substr(2, 9), // New temp ID
-                type: item.type,
-                amount: item.amount,
-                article: item.article,
-                customName: item.custom_name,
-                externalReference: item.external_reference,
-                attachmentData: item.attachment_data,
-                isBackorder: item.is_backorder,
-                notes: item.notes,
-                isPicked: item.is_picked
-            }));
-            setTempItems(mappedTempItems);
-        }
-
-        setShowCreateModal(true);
-        setShowPrepareModal(false);
-    };
-
-    const addTempStockItem = (article: Article) => {
-        setTempItems(prev => {
-            const existing = prev.find(i => i.type === 'Stock' && i.article?.id === article.id);
-            if (existing) {
-                return prev.map(i => i.uniqueId === existing.uniqueId ? { ...i, amount: i.amount + 1 } : i);
-            }
-            return [...prev, {
-                uniqueId: Math.random().toString(36).substr(2, 9),
-                type: 'Stock',
-                amount: 1,
-                article: article,
-                isPicked: false
-            }];
-        });
-    };
-
-    const addManualItem = () => {
-        setTempItems(prev => [...prev, {
-            uniqueId: Math.random().toString(36).substr(2, 9),
-            type: 'External',
-            amount: 1,
-            customName: 'Freitext Position', // Default
-            externalReference: '',
-            isPicked: false
-        }]);
-    };
-
-    const addTempExternalItem = (supplier: Supplier) => {
-        setTempItems(prev => [...prev, {
-            uniqueId: Math.random().toString(36).substr(2, 9),
-            type: 'External',
-            amount: 1,
-            customName: supplier.name,
-            supplierId: supplier.id,
-            externalReference: '',
-            isPicked: false
-        }]);
-    };
-
-    const updateTempItem = (uniqueId: string, field: keyof TempCommissionItem, value: any) => {
-        setTempItems(prev => prev.map(i => i.uniqueId === uniqueId ? { ...i, [field]: value } : i));
-    };
-
-    const removeTempItem = (uniqueId: string) => {
-        setTempItems(prev => prev.filter(i => i.uniqueId !== uniqueId));
-    };
-
-    const fileToBase64 = (file: File): Promise<string> => {
-        return new Promise((resolve, reject) => {
-            const reader = new FileReader();
-            reader.readAsDataURL(file);
-            reader.onload = () => resolve(reader.result as string);
-            reader.onerror = error => reject(error);
-        });
-    };
-
-    const handlePasteAttachment = async (uniqueId: string) => {
-        try {
-            const clipboardItems = await navigator.clipboard.read();
-            let foundImage = false;
-            for (const item of clipboardItems) {
-                const imageType = item.types.find(type => type.startsWith('image/'));
-                if (imageType) {
-                    const blob = await item.getType(imageType);
-                    const file = new File([blob], `pasted_${Date.now()}.png`, { type: imageType });
-
-                    if (file.size > 3 * 1024 * 1024) {
-                        alert("Bild zu groß! Max 3MB.");
-                        return;
-                    }
-
-                    const base64 = await fileToBase64(file);
-                    updateTempItem(uniqueId, 'attachmentData', base64);
-                    foundImage = true;
-                    break;
-                }
-            }
-            if (!foundImage) {
-                alert("Kein Bild in der Zwischenablage.");
-            }
-        } catch (err) {
-            console.error(err);
-            alert("Zugriff verweigert oder nicht unterstützt. Bitte Datei-Upload nutzen.");
-        }
-    };
-
-    const handleFileUpload = async (uniqueId: string, files: FileList | null) => {
-        if (!files || files.length === 0) return;
-        const file = files[0];
-
-        // Limit file size to 3MB
-        if (file.size > 3 * 1024 * 1024) {
-            alert("Datei zu groß! Max 3MB erlaubt.");
-            return;
-        }
-
-        try {
-            const base64 = await fileToBase64(file);
-            updateTempItem(uniqueId, 'attachmentData', base64);
-        } catch (e) {
-            alert("Fehler beim Lesen der Datei.");
-        }
-    };
-
-    // --- DRAG AND DROP HANDLERS ---
-    const handleDragEnter = (e: React.DragEvent, uniqueId: string) => {
-        e.preventDefault();
-        e.stopPropagation();
-        updateTempItem(uniqueId, 'isDragging', true);
-    };
-
-    const handleDragOver = (e: React.DragEvent, uniqueId: string) => {
-        e.preventDefault();
-        e.stopPropagation();
-        // Necessary to allow dropping
-    };
-
-    const handleDragLeave = (e: React.DragEvent, uniqueId: string) => {
-        e.preventDefault();
-        e.stopPropagation();
-
-        // Prevent flicker when dragging over child elements
-        if (e.currentTarget.contains(e.relatedTarget as Node)) return;
-
-        updateTempItem(uniqueId, 'isDragging', false);
-    };
-
-    const handleDrop = async (e: React.DragEvent, uniqueId: string) => {
-        e.preventDefault();
-        e.stopPropagation();
-        updateTempItem(uniqueId, 'isDragging', false);
-
-        if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
-            await handleFileUpload(uniqueId, e.dataTransfer.files);
-        }
-    };
-
-    const handleFinalizeCreate = async () => {
-        if (!profile?.primary_warehouse_id) {
-            alert("Bitte wähle zuerst ein Hauptlager im Dashboard.");
-            return;
-        }
-        if (!newComm.name) return;
-
-        setIsSubmitting(true);
-        try {
-            let commId = editingCommissionId;
-
-            const payload: any = {
-                order_number: newComm.order_number,
-                name: newComm.name,
-                notes: newComm.notes,
-                warehouse_id: profile.primary_warehouse_id,
-            };
-
-            if (!isEditMode) {
-                payload.status = 'Draft';
-            }
-
-            Object.keys(payload).forEach(key => (payload as any)[key] === undefined && delete (payload as any)[key]);
-
-            if (isEditMode && commId) {
-                const currentComm = commissions.find(c => c.id === commId);
-                if (currentComm && currentComm.status === 'Ready') {
-                    payload.status = 'Preparing';
-                    await logCommissionEvent(commId, newComm.name, 'status_change', 'Automatisch zurückgestellt auf "In Vorbereitung" wegen Bearbeitung');
-                }
-
-                await supabase.from('commissions').update(payload).eq('id', commId);
-                await logCommissionEvent(commId, newComm.name, 'updated', 'Kommission bearbeitet');
-            } else {
-                const { data: commData, error: commError } = await supabase.from('commissions').insert(payload).select().single();
-                if (commError) throw commError;
-                commId = commData.id;
-                await logCommissionEvent(commId, newComm.name, 'created', 'Neue Kommission erstellt');
-            }
-
-            if (!commId) throw new Error("Commission ID missing");
-
-            if (isEditMode) {
-                await supabase.from('commission_items').delete().eq('commission_id', commId);
-            }
-
-            if (tempItems.length > 0) {
-                const itemsPayload = tempItems.map(item => ({
-                    commission_id: commId,
-                    type: item.type,
-                    amount: item.amount,
-                    article_id: item.type === 'Stock' ? item.article?.id : null,
-                    custom_name: item.type === 'External' ? item.customName : null,
-                    external_reference: item.type === 'External' ? item.externalReference : null,
-                    attachment_data: item.attachmentData || null,
-                    is_backorder: item.isBackorder || false,
-                    notes: item.notes || null,
-                    is_picked: item.isPicked || false
-                }));
-
-                const { error: itemsError } = await supabase.from('commission_items').insert(itemsPayload);
-                if (itemsError) throw itemsError;
-            }
-
-            setShowCreateModal(false);
-            refreshCommissions();
-
-            if (!isEditMode) {
-                setShowLabelOptionsModal(commId);
-            } else {
-                // If edit mode, handle navigation back immediately
-                handleCloseCreateModal();
-            }
-
-        } catch (err: any) {
-            alert("Fehler: " + err.message);
-        } finally {
-            setIsSubmitting(false);
-        }
-    };
-
-    // --- PREPARE MODAL LOGIC ---
-
-    const handleOpenPrepare = async (comm: Commission) => {
+    const handleOpenDetail = async (comm: ExtendedCommission) => {
         setActiveCommission(comm);
-        setLabelDataChanged(false); // Reset tracking
+        setSidePanelMode('detail');
+        setLabelDataChanged(false);
         const items = await fetchCommissionItems(comm.id);
         setCommItems(items || []);
-        fetchCommissionSpecificHistory(comm.id); // NEW: Load history
-        setShowPrepareModal(true);
+        fetchCommissionSpecificHistory(comm.id);
     };
 
-    const handleClosePrepare = () => {
-        if (labelDataChanged && activeCommission) {
-            // If critical data changed (notes/backorder), ask for label reprint
+    const handleCloseSidePanel = () => {
+        if (sidePanelMode === 'detail' && labelDataChanged && activeCommission) {
             setShowLabelUpdateModal(true);
         }
-        setShowPrepareModal(false);
+        setSidePanelMode('none');
+        // Check if we need to clear activeCommission immediately? 
+        // Better to keep it until mode changes back or something else is selected, 
+        // but 'none' implies closed. UseState updates are batched.
+        if (sidePanelMode !== 'detail') setActiveCommission(null); // Clear only if not detail
+        else setActiveCommission(null);
     };
 
-    const handleSetReadyTrigger = () => {
-        if (!activeCommission || !user) return;
-        const allDone = commItems.length === 0 || commItems.every(i => i.is_picked);
-        if (!allDone) return;
-
-        const hasBackorders = commItems.some(i => i.is_backorder);
-        if (hasBackorders) {
-            // This should ideally be blocked by UI state, but double check here
-            return;
-        }
-
-        setShowConfirmReadyModal(true);
+    const handleOpenCreate = () => {
+        setEditingCommissionId(null);
+        setEditingInitialCommission(null);
+        setEditingInitialItems([]);
+        setSidePanelMode('create');
     };
 
-    const executeSetReady = async () => {
-        if (!activeCommission || !user) return;
+    const handleEditCommission = async (comm: ExtendedCommission, e?: React.MouseEvent) => {
+        if (e) e.stopPropagation();
+        setEditingCommissionId(comm.id);
+        setEditingInitialCommission(comm);
+        const items = await fetchCommissionItems(comm.id);
+        setEditingInitialItems(items || []);
+        setSidePanelMode('edit');
+    };
 
-        setIsSubmitting(true);
-        try {
-            const stockItems = commItems.filter(i => i.type === 'Stock');
-
-            if (activeCommission.status !== 'Ready' && activeCommission.status !== 'Withdrawn') {
-                for (const item of stockItems) {
-                    if (item.article && item.article.stock >= item.amount) {
-                        await supabase.from('articles').update({ stock: item.article.stock - item.amount }).eq('id', item.article.id);
-                        await supabase.from('stock_movements').insert({
-                            article_id: item.article.id,
-                            user_id: user.id,
-                            amount: -item.amount,
-                            type: 'commission_pick',
-                            reference: `Komm. ${activeCommission.order_number}`
-                        });
-                    }
-                }
+    const handleSaveCommission = () => {
+        refreshCommissions();
+        if (sidePanelMode === 'edit' && editingCommissionId) {
+            // If we were editing, restore detail view for that commission
+            if (activeCommission && activeCommission.id === editingCommissionId) {
+                handleOpenDetail(activeCommission);
+            } else {
+                setSidePanelMode('none');
             }
+        } else {
+            // Created new
+            setSidePanelMode('none');
+        }
+    };
 
-            const { error } = await supabase.from('commissions').update({ status: 'Ready' }).eq('id', activeCommission.id);
+    // Search Logic
+    const performGlobalSearch = async (term: string) => {
+        setGlobalSearchTerm(term);
+        if (term.trim().length < 2) { setSearchResults([]); return; }
+        setIsSearching(true);
+        try {
+            const { data, error } = await supabase.from('commissions')
+                .select('*, suppliers(name), commission_items(*, article:articles(name))')
+                .or(`name.ilike.%${term}%,order_number.ilike.%${term}%,notes.ilike.%${term}%`)
+                .order('created_at', { ascending: false }).limit(20);
             if (error) throw error;
+            setSearchResults((data as ExtendedCommission[]) || []);
+        } catch (err) { console.error(err); } finally { setIsSearching(false); }
+    };
 
-            await logCommissionEvent(activeCommission.id, activeCommission.name, 'status_change', 'Status auf BEREIT gesetzt. Bestand gebucht.');
-
-            setActiveCommission(prev => prev ? { ...prev, status: 'Ready' } : null);
-            refreshCommissions();
-            setShowConfirmReadyModal(false);
-        } catch (err: any) {
-            alert("Fehler: " + err.message);
-        } finally {
-            setIsSubmitting(false);
+    // --- SIDE PANEL CONTENT MAP ---
+    const getSidePanelTitle = () => {
+        switch (sidePanelMode) {
+            case 'create': return 'Neue Kommission';
+            case 'edit': return 'Kommission bearbeiten';
+            case 'search': return 'Suche';
+            case 'history': return 'Verlauf';
+            case 'detail': return activeCommission?.name || 'Details';
+            default: return 'Details';
         }
     };
 
-    const handleWithdrawTrigger = () => {
-        if (!activeCommission) return;
-        setShowConfirmWithdrawModal(true);
-    };
-
-    const executeWithdraw = async () => {
-        if (!activeCommission) return;
-        setIsSubmitting(true);
-        try {
-            await supabase.from('commissions').update({ status: 'Withdrawn', withdrawn_at: new Date().toISOString() }).eq('id', activeCommission.id);
-            await logCommissionEvent(activeCommission.id, activeCommission.name, 'status_change', 'Kommission entnommen (Abgeschlossen)');
-
-            setShowConfirmWithdrawModal(false);
-            setShowPrepareModal(false);
-            refreshCommissions();
-        } catch (err: any) { alert("Fehler: " + err.message); } finally { setIsSubmitting(false); }
-    };
-
-    // --- RESET STATUS LOGIC (Manual) ---
-    const executeResetStatus = async () => {
-        if (!activeCommission) return;
-        if (!window.confirm("Status wirklich auf 'In Vorbereitung' zurücksetzen?")) return;
-
-        setIsSubmitting(true);
-        try {
-            await supabase.from('commissions').update({ status: 'Preparing' }).eq('id', activeCommission.id);
-            await logCommissionEvent(activeCommission.id, activeCommission.name, 'status_change', 'Status manuell zurückgestellt');
-
-            setActiveCommission(prev => prev ? { ...prev, status: 'Preparing' } : null);
-            refreshCommissions();
-        } catch (err: any) {
-            alert("Fehler: " + err.message);
-        } finally {
-            setIsSubmitting(false);
+    const renderSidePanelContent = () => {
+        switch (sidePanelMode) {
+            case 'create':
+            case 'edit':
+                return (
+                    <CommissionEditContent
+                        isEditMode={sidePanelMode === 'edit'}
+                        initialCommission={editingInitialCommission}
+                        initialItems={editingInitialItems}
+                        primaryWarehouseId={profile?.primary_warehouse_id || null}
+                        availableArticles={availableArticles}
+                        suppliers={suppliers}
+                        onSave={handleSaveCommission}
+                        onClose={handleCloseSidePanel}
+                    />
+                );
+            case 'search':
+                return (
+                    <div className="flex flex-col h-full bg-[#1a1d24]">
+                        <div className="p-4 border-b border-white/10 flex gap-2 shrink-0 bg-white/5">
+                            <Search className="text-white/50" />
+                            <input autoFocus className="bg-transparent border-none text-white flex-1 focus:outline-none" placeholder="Suchen..." value={globalSearchTerm} onChange={e => performGlobalSearch(e.target.value)} />
+                        </div>
+                        <div className="flex-1 overflow-y-auto p-2 custom-scrollbar">
+                            {isSearching && <div className="p-4 text-center text-white/50"><Loader2 className="animate-spin inline mr-2" />Suchen...</div>}
+                            {!isSearching && searchResults.length === 0 && globalSearchTerm.length >= 2 && <div className="p-4 text-center text-white/50">Keine Ergebnisse</div>}
+                            {searchResults.map(c => (
+                                <div key={c.id} onClick={() => handleOpenDetail(c)} className="p-3 hover:bg-white/10 rounded cursor-pointer border-b border-white/5 last:border-0">
+                                    <div className="font-bold text-white">{c.name}</div>
+                                    <div className="text-xs text-white/50">{c.order_number} • {c.status}</div>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                );
+            case 'history':
+                return (
+                    <div className="flex flex-col h-full bg-[#1a1d24]">
+                        <div className="p-4 overflow-y-auto h-full space-y-2 custom-scrollbar">
+                            {loadingHistory && <div className="text-center p-4"><Loader2 className="animate-spin text-emerald-400 mx-auto" /></div>}
+                            {!loadingHistory && historyLogs.map(log => (
+                                <div key={log.id} className="bg-white/5 p-2 rounded text-sm border border-white/5">
+                                    <div className="font-bold text-white">{log.commission_name}</div>
+                                    <div className="text-white/70">{log.details}</div>
+                                    <div className="text-xs text-white/30">{new Date(log.created_at).toLocaleString()}</div>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                );
+            case 'detail':
+                return activeCommission ? (
+                    <CommissionDetailContent
+                        commission={activeCommission}
+                        items={commItems}
+                        localHistoryLogs={localHistoryLogs}
+                        allItemsPicked={activeCommission ? (commItems.length === 0 || commItems.every(i => i.is_picked)) : true}
+                        hasBackorders={commItems.some(i => i.is_backorder)}
+                        isSubmitting={isSubmitting}
+                        onSetReady={handleSetReadyTrigger}
+                        onWithdraw={handleWithdrawTrigger}
+                        onResetStatus={executeResetStatus}
+                        onRevertWithdraw={executeRevertWithdrawal}
+                        onInitReturn={handleInitReturn}
+                        onReturnToReady={handleReturnToReady}
+                        onCompleteReturn={handleCompleteReturn}
+                        onEdit={(e) => handleEditCommission(activeCommission, e)}
+                        onPrint={() => handleSinglePrint()}
+                        onTogglePicked={toggleActiveItemPicked}
+                        onToggleBackorder={toggleBackorder}
+                        onSaveNote={saveItemNote}
+                    />
+                ) : null;
+            default:
+                return null;
         }
     };
 
-    const executeRevertWithdrawal = async () => {
-        if (!activeCommission) return;
-        if (!window.confirm("Möchtest du diese Kommission wieder auf 'Bereit' setzen?")) return;
 
-        setIsSubmitting(true);
-        try {
-            await supabase.from('commissions').update({
-                status: 'Ready',
-                withdrawn_at: null
-            }).eq('id', activeCommission.id);
-
-            await logCommissionEvent(activeCommission.id, activeCommission.name, 'status_change', 'Entnahme widerrufen (Status: Bereit)');
-
-            setShowPrepareModal(false);
-            refreshCommissions();
-        } catch (err: any) {
-            alert(err.message);
-        } finally {
-            setIsSubmitting(false);
-        }
-    };
-
-    // --- RETURN FLOW ACTIONS ---
-
-    const handleInitReturn = async () => {
-        if (!activeCommission) return;
-        if (!window.confirm("Kommission als 'Zurückschreiben' (Retoure) markieren?")) return;
-
-        setIsSubmitting(true);
-        try {
-            await supabase.from('commissions').update({
-                status: 'ReturnPending',
-                is_processed: false
-            }).eq('id', activeCommission.id);
-
-            await logCommissionEvent(activeCommission.id, activeCommission.name, 'status_change', 'Als Retoure markiert');
-
-            setShowPrepareModal(false);
-            setActiveTab('returns');
-            refreshCommissions();
-        } catch (e: any) {
-            alert(e.message);
-        } finally {
-            setIsSubmitting(false);
-        }
-    };
-
-    const handleReturnToReady = async () => {
-        if (!activeCommission) return;
-
-        setIsSubmitting(true);
-        try {
-            await supabase.from('commissions').update({ status: 'ReturnReady' }).eq('id', activeCommission.id);
-
-            printReturnLabel(activeCommission);
-            await logCommissionEvent(activeCommission.id, activeCommission.name, 'status_change', 'Retoure ins Abholregal gelegt');
-
-            setActiveCommission(prev => prev ? { ...prev, status: 'ReturnReady' } : null);
-            refreshCommissions();
-        } catch (e: any) {
-            alert(e.message);
-        } finally {
-            setIsSubmitting(false);
-        }
-    };
-
-    const handleCompleteReturn = async () => {
-        if (!activeCommission) return;
-
-        setIsSubmitting(true);
-        try {
-            await supabase.from('commissions').update({ status: 'ReturnComplete' }).eq('id', activeCommission.id);
-            await logCommissionEvent(activeCommission.id, activeCommission.name, 'status_change', 'Retoure abgeholt (Abgeschlossen)');
-
-            setShowPrepareModal(false);
-            refreshCommissions();
-        } catch (e: any) {
-            alert(e.message);
-        } finally {
-            setIsSubmitting(false);
-        }
-    };
-
-    const printReturnLabel = (comm: Commission) => {
-        const printWindow = window.open('', 'PRINT_RET', 'height=400,width=600');
-        if (!printWindow) return;
-
-        const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(`COMM:${comm.id}`)}`;
-        const dateStr = new Date().toLocaleDateString('de-DE');
-
-        printWindow.document.write(`
-        <html>
-          <body style="font-family: sans-serif; text-align: center; padding: 20px; border: 5px solid black; box-sizing: border-box; height: 100vh; display: flex; flex-direction: column; justify-content: center;">
-             <h1 style="font-size: 3em; margin: 0 0 20px 0; font-weight: 900;">RÜCKSENDUNG</h1>
-             <h2 style="margin:0; font-size: 1.5em;">${comm.name}</h2>
-             <p style="margin: 10px 0; font-size: 1.2em;">Auftrag: ${comm.order_number || '-'}</p>
-             <div style="margin: 20px 0;">
-                <img src="${qrUrl}" style="width: 150px; height: 150px;" />
-             </div>
-             <p style="font-weight:bold; font-size: 1.2em;">Datum: ${dateStr}</p>
-          </body>
-          <script>window.onload = () => { window.print(); window.close(); }</script>
-        </html>
-      `);
-        printWindow.document.close();
-    };
-
-    // --- PRINTING ---
-
+    // Printing Logic (Preserved)
     const handleSinglePrint = async (commId?: string) => {
         const id = commId || activeCommission?.id;
         if (!id) return;
@@ -952,18 +335,34 @@ const Commissions: React.FC = () => {
         }
         setShowLabelOptionsModal(null);
         setShowLabelUpdateModal(false);
-
-        if (printTab === 'history') {
-            fetchPrintHistory();
-        }
-
-        // Check return path after printing and closing the modal
-        if (returnPath) {
-            navigate(returnPath);
-            setReturnPath(null);
-        }
+        if (printTab === 'history') fetchPrintHistory();
+        if (returnPath) { navigate(returnPath); setReturnPath(null); }
     };
 
+    const markLabelsAsPrinted = async () => {
+        if (selectedPrintIds.size === 0) return;
+        const ids = Array.from(selectedPrintIds);
+        setIsSubmitting(true);
+        try {
+            const printData: { comm: Commission, items: CommissionItem[] }[] = [];
+            const commissionsToPrint = commissions.filter(c => selectedPrintIds.has(c.id));
+
+            for (const comm of commissionsToPrint) {
+                const { data } = await supabase.from('commission_items').select('*, article:articles(*)').eq('commission_id', comm.id);
+                const items = data ? data.map((i: any) => ({ ...i, article: i.article })) : [];
+                printData.push({ comm, items });
+                await logCommissionEvent(comm.id, comm.name, 'labels_printed', 'Etiketten aus Warteschlange gedruckt');
+            }
+            generateBatchPDF(printData);
+            await supabase.from('commissions').update({ needs_label: false }).in('id', ids);
+            setSelectedPrintIds(new Set());
+            refreshCommissions();
+            fetchPrintHistory();
+            setPrintTab('history');
+        } catch (e) { console.error(e); } finally { setIsSubmitting(false); }
+    };
+
+    // Copy-pasted PDF Generation (Crucial to preserve)
     const generateBatchPDF = (data: { comm: Commission, items: CommissionItem[] }[]) => {
         const printWindow = window.open('', 'PRINT_COMM', 'height=800,width=600');
         if (!printWindow) return;
@@ -981,13 +380,8 @@ const Commissions: React.FC = () => {
             const stockItems = items.filter(i => i.type === 'Stock');
             const extItems = items.filter(i => i.type === 'External');
             const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(`COMM:${comm.id}`)}`;
-
             const notesHtml = comm.notes ? `<div class="notes" style="font-size: 10pt; margin-top: 2mm; font-style: italic; color: #000; border-top: 1px dotted #aaa; padding-top: 1mm; line-height: 1.2;">${comm.notes}</div>` : '';
-
-            const renderLocation = (article: Article) => {
-                if (!article.category && !article.location) return '-';
-                return `${article.category || ''} / ${article.location || ''}`;
-            };
+            const renderLocation = (article: Article) => (!article.category && !article.location) ? '-' : `${article.category || ''} / ${article.location || ''}`;
 
             return `
             <div class="page">
@@ -1041,72 +435,173 @@ const Commissions: React.FC = () => {
             <script>window.onload = function() { setTimeout(() => { window.print(); }, 800); }</script>
         </body>
         </html>
+        `);
+        printWindow.document.close();
+    };
+
+    const printReturnLabel = (comm: Commission) => {
+        const printWindow = window.open('', 'PRINT_RET', 'height=400,width=600');
+        if (!printWindow) return;
+        const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(`COMM:${comm.id}`)}`;
+        const dateStr = new Date().toLocaleDateString('de-DE');
+
+        printWindow.document.write(`
+        <html>
+          <body style="font-family: sans-serif; text-align: center; padding: 20px; border: 5px solid black; box-sizing: border-box; height: 100vh; display: flex; flex-direction: column; justify-content: center;">
+             <h1 style="font-size: 3em; margin: 0 0 20px 0; font-weight: 900;">RÜCKSENDUNG</h1>
+             <h2 style="margin:0; font-size: 1.5em;">${comm.name}</h2>
+             <p style="margin: 10px 0; font-size: 1.2em;">Auftrag: ${comm.order_number || '-'}</p>
+             <div style="margin: 20px 0;">
+                <img src="${qrUrl}" style="width: 150px; height: 150px;" />
+             </div>
+             <p style="font-weight:bold; font-size: 1.2em;">Datum: ${dateStr}</p>
+          </body>
+          <script>window.onload = () => { window.print(); window.close(); }</script>
+        </html>
       `);
         printWindow.document.close();
     };
 
+    // --- WORKFLOW ACTIONS ---
+    const allItemsPicked = commItems.length === 0 || commItems.every(i => i.is_picked);
+    const hasBackorders = commItems.some(i => i.is_backorder);
+
+    const handleSetReadyTrigger = () => {
+        if (!activeCommission || !allItemsPicked || hasBackorders) return;
+        setShowConfirmReadyModal(true);
+    };
+
+    const executeSetReady = async () => {
+        if (!activeCommission || !user) return;
+        setIsSubmitting(true);
+        try {
+            const stockItems = commItems.filter(i => i.type === 'Stock');
+            if (activeCommission.status !== 'Ready' && activeCommission.status !== 'Withdrawn') {
+                for (const item of stockItems) {
+                    if (item.article && item.article.stock >= item.amount) {
+                        await supabase.from('articles').update({ stock: item.article.stock - item.amount }).eq('id', item.article.id);
+                        await supabase.from('stock_movements').insert({
+                            article_id: item.article.id,
+                            user_id: user.id,
+                            amount: -item.amount,
+                            type: 'commission_pick',
+                            reference: `Komm. ${activeCommission.order_number}`
+                        });
+                    }
+                }
+            }
+            await supabase.from('commissions').update({ status: 'Ready' }).eq('id', activeCommission.id);
+            await logCommissionEvent(activeCommission.id, activeCommission.name, 'status_change', 'Status auf BEREIT gesetzt.');
+            setActiveCommission(prev => prev ? { ...prev, status: 'Ready' } : null);
+            refreshCommissions();
+            setShowConfirmReadyModal(false);
+        } catch (err: any) { alert("Fehler: " + err.message); } finally { setIsSubmitting(false); }
+    };
+
+    const handleWithdrawTrigger = () => setShowConfirmWithdrawModal(true);
+    const executeWithdraw = async () => {
+        if (!activeCommission) return;
+        setIsSubmitting(true);
+        try {
+            await supabase.from('commissions').update({ status: 'Withdrawn', withdrawn_at: new Date().toISOString() }).eq('id', activeCommission.id);
+            await logCommissionEvent(activeCommission.id, activeCommission.name, 'status_change', 'Kommission entnommen (Abgeschlossen)');
+            setShowConfirmWithdrawModal(false);
+            setActiveCommission(null);
+            refreshCommissions();
+        } catch (err: any) { alert(err.message); } finally { setIsSubmitting(false); }
+    };
+
+    // Other Status Updates
+    const executeResetStatus = async () => {
+        if (!activeCommission || !window.confirm("Status zurücksetzen?")) return;
+        setIsSubmitting(true);
+        try {
+            await supabase.from('commissions').update({ status: 'Preparing' }).eq('id', activeCommission.id);
+            await logCommissionEvent(activeCommission.id, activeCommission.name, 'status_change', 'Status manuell zurückgestellt');
+            setActiveCommission(prev => prev ? { ...prev, status: 'Preparing' } : null);
+            refreshCommissions();
+        } catch (e) { console.error(e); } finally { setIsSubmitting(false); }
+    };
+
+    const executeRevertWithdrawal = async () => {
+        if (!activeCommission || !window.confirm("Wieder auf Bereit setzen?")) return;
+        setIsSubmitting(true);
+        try {
+            await supabase.from('commissions').update({ status: 'Ready', withdrawn_at: null }).eq('id', activeCommission.id);
+            await logCommissionEvent(activeCommission.id, activeCommission.name, 'status_change', 'Entnahme widerrufen');
+            setActiveCommission(prev => prev ? { ...prev, status: 'Ready', withdrawn_at: undefined } : null);
+            refreshCommissions();
+        } catch (e) { console.error(e); } finally { setIsSubmitting(false); }
+    };
+
+    const handleInitReturn = async () => {
+        if (!activeCommission || !window.confirm("Als Retoure markieren?")) return;
+        setIsSubmitting(true);
+        try {
+            await supabase.from('commissions').update({ status: 'ReturnPending', is_processed: false }).eq('id', activeCommission.id);
+            await logCommissionEvent(activeCommission.id, activeCommission.name, 'status_change', 'Als Retoure markiert');
+            setActiveCommission(null);
+            setActiveTab('returns');
+            refreshCommissions();
+        } catch (e) { console.error(e); } finally { setIsSubmitting(false); }
+    };
+
+    const handleReturnToReady = async () => {
+        if (!activeCommission) return;
+        setIsSubmitting(true);
+        try {
+            await supabase.from('commissions').update({ status: 'ReturnReady' }).eq('id', activeCommission.id);
+            printReturnLabel(activeCommission);
+            await logCommissionEvent(activeCommission.id, activeCommission.name, 'status_change', 'Retoure ins Abholregal gelegt');
+            setActiveCommission(prev => prev ? { ...prev, status: 'ReturnReady' } : null);
+            refreshCommissions();
+        } catch (e) { console.error(e); } finally { setIsSubmitting(false); }
+    };
+
+    const handleCompleteReturn = async () => {
+        if (!activeCommission) return;
+        setIsSubmitting(true);
+        try {
+            await supabase.from('commissions').update({ status: 'ReturnComplete' }).eq('id', activeCommission.id);
+            await logCommissionEvent(activeCommission.id, activeCommission.name, 'status_change', 'Retoure abgeholt');
+            setActiveCommission(null);
+            refreshCommissions();
+        } catch (e) { console.error(e); } finally { setIsSubmitting(false); }
+    };
+
+    // Toggle Picked/Backorder
     const toggleActiveItemPicked = async (itemId: string, currentVal: boolean) => {
         const item = commItems.find(i => i.id === itemId);
-        // LOCK: If backorder, cannot toggle pick
         if (item && item.is_backorder) return;
-
         const newVal = !currentVal;
-        const { error } = await supabase.from('commission_items').update({ is_picked: newVal }).eq('id', itemId);
+        await supabase.from('commission_items').update({ is_picked: newVal }).eq('id', itemId);
+        setCommItems(prev => prev.map(i => i.id === itemId ? { ...i, is_picked: newVal } : i));
 
-        if (!error) {
-            setCommItems(prev => prev.map(i => i.id === itemId ? { ...i, is_picked: newVal } : i));
-
-            // NEW: Auto-switch from Draft to Preparing on first pick
-            if (newVal === true && activeCommission?.status === 'Draft') {
-                await supabase.from('commissions').update({ status: 'Preparing' }).eq('id', activeCommission.id);
-
-                setActiveCommission(prev => prev ? { ...prev, status: 'Preparing' } : null);
-                setCommissions(prev => prev.map(c => c.id === activeCommission.id ? { ...c, status: 'Preparing' } : c));
-
-                await logCommissionEvent(activeCommission.id, activeCommission.name, 'status_change', 'Status automatisch auf "In Vorbereitung" gesetzt (Erster Artikel gepickt)');
-            }
-
-            if (newVal === false && activeCommission?.status === 'Ready') {
-                await supabase.from('commissions').update({ status: 'Preparing' }).eq('id', activeCommission.id);
-
-                setActiveCommission(prev => prev ? { ...prev, status: 'Preparing' } : null);
-                setCommissions(prev => prev.map(c => c.id === activeCommission.id ? { ...c, status: 'Preparing' } : c));
-
-                await logCommissionEvent(activeCommission.id, activeCommission.name, 'status_change', 'Automatisch zurückgestellt auf "In Vorbereitung" (Artikel abgewählt)');
-            }
+        // Auto status
+        if (newVal === true && activeCommission?.status === 'Draft') {
+            await supabase.from('commissions').update({ status: 'Preparing' }).eq('id', activeCommission.id);
+            setActiveCommission(prev => prev ? { ...prev, status: 'Preparing' } : null);
+            refreshCommissions();
         }
     };
 
     const toggleBackorder = async (itemId: string, currentVal: boolean) => {
         const newVal = !currentVal;
-        const { error } = await supabase.from('commission_items').update({ is_backorder: newVal }).eq('id', itemId);
-        if (!error) {
-            setCommItems(prev => prev.map(i => i.id === itemId ? { ...i, is_backorder: newVal } : i));
-            setLabelDataChanged(true);
-        }
+        await supabase.from('commission_items').update({ is_backorder: newVal }).eq('id', itemId);
+        setCommItems(prev => prev.map(i => i.id === itemId ? { ...i, is_backorder: newVal } : i));
+        setLabelDataChanged(true);
     };
 
     const saveItemNote = async (itemId: string, note: string) => {
-        const { error } = await supabase.from('commission_items').update({ notes: note }).eq('id', itemId);
-        if (!error) {
-            setCommItems(prev => prev.map(i => i.id === itemId ? { ...i, notes: note } : i));
-            setEditingItemNote(null);
-            setLabelDataChanged(true);
-        }
+        await supabase.from('commission_items').update({ notes: note }).eq('id', itemId);
+        setCommItems(prev => prev.map(i => i.id === itemId ? { ...i, notes: note } : i));
+        setLabelDataChanged(true);
     };
 
-    const allItemsPicked = commItems.length === 0 || commItems.every(i => i.is_picked);
-    const hasBackorders = commItems.some(i => i.is_backorder);
+    // --- LIST CONTENT ---
 
-    const filteredGroups = React.useMemo(() => {
-        const groups = {
-            ready: [] as ExtendedCommission[],
-            preparing: [] as ExtendedCommission[],
-            draft: [] as ExtendedCommission[],
-            returnReady: [] as ExtendedCommission[],
-            returnPending: [] as ExtendedCommission[],
-        };
-
+    const filteredGroups = useMemo(() => {
+        const groups = { ready: [] as ExtendedCommission[], preparing: [] as ExtendedCommission[], draft: [] as ExtendedCommission[], returnReady: [] as ExtendedCommission[], returnPending: [] as ExtendedCommission[] };
         commissions.forEach(c => {
             if (c.status === 'Ready') groups.ready.push(c);
             else if (c.status === 'Preparing') groups.preparing.push(c);
@@ -1114,751 +609,167 @@ const Commissions: React.FC = () => {
             else if (c.status === 'ReturnReady') groups.returnReady.push(c);
             else if (c.status === 'ReturnPending') groups.returnPending.push(c);
         });
-
         return groups;
     }, [commissions]);
 
-    // --- CATEGORIZATION HELPER ---
-    const renderCategory = (title: string, statusKey: 'ready' | 'preparing' | 'draft' | 'returnReady' | 'returnPending', items: ExtendedCommission[], colorClass: string) => {
+    const renderCategory = (title: string, statusKey: string, items: ExtendedCommission[], colorClass: string) => {
         const isCollapsed = collapsedCategories[statusKey];
         if (items.length === 0) return null;
-
         return (
             <div className="mb-4">
-                <div
-                    className="flex items-center justify-between mb-2 px-2 cursor-pointer select-none"
-                    onClick={() => setCollapsedCategories(prev => ({ ...prev, [statusKey]: !prev[statusKey] }))}
-                >
-                    <div className="flex items-center gap-2">
-                        <ChevronDown size={18} className={`text-white/50 transition-transform ${isCollapsed ? '-rotate-90' : ''}`} />
-                        <h3 className={`font-bold uppercase tracking-wider text-xs ${colorClass}`}>{title} ({items.length})</h3>
-                    </div>
+                <div onClick={() => setCollapsedCategories(prev => ({ ...prev, [statusKey]: !prev[statusKey] }))} className="flex items-center justify-between mb-2 px-2 cursor-pointer select-none">
+                    <div className="flex items-center gap-2"><div className={`transition-transform duration-200 ${isCollapsed ? '-rotate-90' : ''}`}>▼</div><h3 className={`font-bold uppercase tracking-wider text-xs ${colorClass}`}>{title} ({items.length})</h3></div>
                     <div className="h-px bg-white/10 flex-1 ml-4"></div>
                 </div>
-
                 {!isCollapsed && (
-                    <motion.div
-                        className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4"
-                        initial="hidden"
-                        animate="visible"
-                        variants={{
-                            hidden: { opacity: 0 },
-                            visible: {
-                                opacity: 1,
-                                transition: {
-                                    staggerChildren: 0.05
-                                }
-                            }
-                        }}
-                    >
-                        <AnimatePresence mode='popLayout'>
-                            {items.map(comm => (
-                                <CommissionCard
-                                    key={comm.id}
-                                    commission={comm}
-                                    colorClass={colorClass}
-                                    statusKey={statusKey}
-                                    onClick={handleOpenPrepare}
-                                    onEdit={handleEditCommission}
-                                    onDelete={requestDelete}
-                                    onPrintLabel={statusKey === 'ready' || statusKey === 'preparing' ? undefined : undefined}
-                                />
-                            ))}
-                        </AnimatePresence>
-                    </motion.div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                        {items.map(comm => (
+                            <CommissionCard key={comm.id} commission={comm} colorClass={colorClass} statusKey={statusKey} onClick={handleOpenDetail} onEdit={handleEditCommission} onDelete={(id, name, mode, e) => { handleDelete(id, name, mode, e); }} onPrintLabel={undefined} />
+                        ))}
+                    </div>
                 )}
             </div>
         );
     };
 
-    return (
-        <div className="space-y-6 pb-24">
+    // Deletion Logic
+    const handleDelete = async (id: string, name: string, mode: 'trash' | 'permanent', e?: React.MouseEvent) => {
+        if (e) e.stopPropagation();
+        if (!confirm(`${mode === 'trash' ? 'In Papierkorb?' : 'Endgültig löschen?'} (${name})`)) return;
+        try {
+            if (mode === 'trash') await supabase.from('commissions').update({ deleted_at: new Date().toISOString() }).eq('id', id);
+            else await supabase.from('commissions').delete().eq('id', id);
+            refreshCommissions();
+        } catch (err) { console.error(err); }
+    };
+
+    const handleRestore = async (id: string, name: string, e?: React.MouseEvent) => {
+        if (e) e.stopPropagation();
+        try {
+            await supabase.from('commissions').update({ deleted_at: null }).eq('id', id);
+            refreshCommissions();
+        } catch (err) { console.error(err); }
+    };
+
+    const listContent = (
+        <div className="space-y-6 pb-24 h-full overflow-y-auto pr-2">
             <header className="flex flex-col gap-4">
                 <div className="flex justify-between items-center">
                     <h1 className="text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-emerald-300 to-teal-200">Komm.</h1>
                     <div className="flex gap-2">
-                        <Button icon={<Search size={18} />} variant="secondary" onClick={() => setShowSearchModal(true)} className="px-4" />
-                        <Button icon={<History size={18} />} variant="secondary" onClick={handleOpenHistory} className="px-4" />
-                        <Button icon={<BoxSelect size={18} />} variant="secondary" onClick={() => { console.log('Cleanup Clicked!'); setShowCleanupModal(true); }} className="px-4 bg-orange-500/10 text-orange-400 hover:bg-orange-500 hover:text-white border-orange-500/20" title="Regal aufräumen / Abgleich"></Button>
-                        <Button icon={<Plus size={18} />} onClick={openCreateModal}>Neu</Button>
+                        <Button icon={<Search size={18} />} variant="secondary" onClick={() => setSidePanelMode('search')} />
+                        <Button icon={<History size={18} />} variant="secondary" onClick={() => { setSidePanelMode('history'); fetchHistory(); }} />
+                        <Button icon={<BoxSelect size={18} />} variant="secondary" onClick={() => setShowCleanupModal(true)} className="bg-orange-500/10 text-orange-400 hover:bg-orange-500 hover:text-white" />
+                        <Button icon={<Plus size={18} />} onClick={handleOpenCreate}>Neu</Button>
                     </div>
                 </div>
                 <div className="flex gap-2 p-1 bg-black/20 rounded-xl w-full sm:w-fit border border-white/5 overflow-x-auto">
-                    <button onClick={() => setActiveTab('active')} className={`flex-1 px-4 py-2 rounded-lg text-sm font-medium transition-all whitespace-nowrap ${activeTab === 'active' ? 'bg-white/10 text-white shadow' : 'text-white/50'}`}>Aktive</button>
-                    <button onClick={() => setActiveTab('missing')} className={`flex-1 px-4 py-2 rounded-lg text-sm font-medium transition-all whitespace-nowrap flex items-center justify-center gap-2 ${activeTab === 'missing' ? 'bg-white/10 text-white shadow' : 'text-white/50'}`}>
-                        Vermisst
-                        {tabCounts.missing > 0 && (
-                            <span className={`px-1.5 py-0.5 rounded-full text-[10px] font-bold ${activeTab === 'missing' ? 'bg-white text-rose-500' : 'bg-white/10 text-white/60'}`}>
-                                {tabCounts.missing}
-                            </span>
-                        )}
-                    </button>
-                    <button onClick={() => setActiveTab('withdrawn')} className={`flex-1 px-4 py-2 rounded-lg text-sm font-medium transition-all whitespace-nowrap ${activeTab === 'withdrawn' ? 'bg-white/10 text-white shadow' : 'text-white/50'}`}>Entnommen</button>
-                    <button onClick={() => setActiveTab('trash')} className={`flex-1 px-4 py-2 rounded-lg text-sm font-medium transition-all whitespace-nowrap flex items-center justify-center gap-2 ${activeTab === 'trash' ? 'bg-white/10 text-white shadow' : 'text-white/50'}`}>
-                        <Trash2 size={14} /> Papierkorb
-                    </button>
-                    <button onClick={() => setActiveTab('returns')} className={`flex-1 px-4 py-2 rounded-lg text-sm font-medium transition-all whitespace-nowrap flex items-center justify-center gap-2 ${activeTab === 'returns' ? 'bg-white/10 text-white shadow' : 'text-white/50'}`}>
-                        Retouren
-                        {tabCounts.returns > 0 && (
-                            <span className={`px-1.5 py-0.5 rounded-full text-[10px] font-bold ${activeTab === 'returns' ? 'bg-white text-purple-500' : 'bg-white/10 text-white/60'}`}>
-                                {tabCounts.returns}
-                            </span>
-                        )}
-                    </button>
+                    <button onClick={() => setActiveTab('active')} className={`flex-1 px-4 py-2 rounded-lg text-sm font-medium whitespace-nowrap ${activeTab === 'active' ? 'bg-white/10 text-white' : 'text-white/50'}`}>Aktive</button>
+                    <button onClick={() => setActiveTab('missing')} className={`flex-1 px-4 py-2 rounded-lg text-sm font-medium whitespace-nowrap flex gap-2 ${activeTab === 'missing' ? 'bg-white/10 text-white' : 'text-white/50'}`}>Vermisst {tabCounts.missing > 0 && <span className="bg-rose-500 text-white text-[10px] px-1.5 rounded-full">{tabCounts.missing}</span>}</button>
+                    <button onClick={() => setActiveTab('withdrawn')} className={`flex-1 px-4 py-2 rounded-lg text-sm font-medium whitespace-nowrap ${activeTab === 'withdrawn' ? 'bg-white/10 text-white' : 'text-white/50'}`}>Entnommen</button>
+                    <button onClick={() => setActiveTab('trash')} className={`flex-1 px-4 py-2 rounded-lg text-sm font-medium whitespace-nowrap flex gap-2 ${activeTab === 'trash' ? 'bg-white/10 text-white' : 'text-white/50'}`}>Papierkorb</button>
+                    <button onClick={() => setActiveTab('returns')} className={`flex-1 px-4 py-2 rounded-lg text-sm font-medium whitespace-nowrap flex gap-2 ${activeTab === 'returns' ? 'bg-white/10 text-white' : 'text-white/50'}`}>Retouren {tabCounts.returns > 0 && <span className="bg-purple-500 text-white text-[10px] px-1.5 rounded-full">{tabCounts.returns}</span>}</button>
                 </div>
             </header>
 
-            {/* --- PERMANENT PRINT AREA (Queue & History) - Only in Active Tab --- */}
-            {/* --- PRINTING SECTION --- */}
-            {activeTab === 'active' && (
-                <PrintingSection
-                    showPrintArea={showPrintArea}
-                    setShowPrintArea={setShowPrintArea}
-                    printTab={printTab}
-                    setPrintTab={setPrintTab}
-                    queueItems={queueItems}
-                    selectedPrintIds={selectedPrintIds}
-                    setSelectedPrintIds={setSelectedPrintIds}
-                    onMarkAsPrinted={markLabelsAsPrinted}
-                    isSubmitting={isSubmitting}
-                    loadingHistory={loadingPrintHistory}
-                    printLogs={recentPrintLogs}
-                    onReprint={handleSinglePrint}
-                />
-            )}
+            {activeTab === 'active' && <PrintingSection showPrintArea={showPrintArea} setShowPrintArea={setShowPrintArea} printTab={printTab} setPrintTab={setPrintTab} queueItems={queueItems} selectedPrintIds={selectedPrintIds} setSelectedPrintIds={setSelectedPrintIds} onMarkAsPrinted={markLabelsAsPrinted} isSubmitting={isSubmitting} loadingHistory={loadingPrintHistory} printLogs={recentPrintLogs} onReprint={handleSinglePrint} />}
 
             {loading ? <div className="flex justify-center py-10"><Loader2 className="animate-spin text-emerald-400" /></div> : (
                 <div className="grid grid-cols-1 gap-4">
-                    {commissions.length === 0 && <div className="text-white/40 text-center py-10">Keine Einträge vorhanden.</div>}
+                    {commissions.length === 0 && <div className="text-white/40 text-center py-10">Keine Einträge.</div>}
 
-                    {/* ACTIVE TAB */}
                     {activeTab === 'active' && (
                         <>
-                            {renderCategory("Bereitgestellt", 'ready', filteredGroups.ready, 'border-emerald-500/30 bg-emerald-500/5 text-emerald-400')}
-                            {renderCategory("In Vorbereitung", 'preparing', filteredGroups.preparing, 'border-blue-500/30 bg-blue-500/5 text-blue-400')}
-                            {renderCategory("Entwürfe", 'draft', filteredGroups.draft, 'border-white/10 bg-white/5 text-white/60')}
+                            {renderCategory("Bereitgestellt", 'ready', filteredGroups.ready, 'text-emerald-400')}
+                            {renderCategory("In Vorbereitung", 'preparing', filteredGroups.preparing, 'text-blue-400')}
+                            {renderCategory("Entwürfe", 'draft', filteredGroups.draft, 'text-white/60')}
                         </>
                     )}
 
-                    {/* RETURNS TAB */}
                     {activeTab === 'returns' && (
                         <>
-                            {renderCategory("Abholbereit (Warten auf Großhändler)", 'returnReady', filteredGroups.returnReady, 'border-purple-500/30 bg-purple-500/5 text-purple-400')}
-                            {renderCategory("Angemeldet (Muss ins Regal)", 'returnPending', filteredGroups.returnPending, 'border-orange-500/30 bg-orange-500/5 text-orange-400')}
+                            {renderCategory("Abholbereit", 'returnReady', filteredGroups.returnReady, 'text-purple-400')}
+                            {renderCategory("Angemeldet", 'returnPending', filteredGroups.returnPending, 'text-orange-400')}
                         </>
                     )}
 
-                    {/* MISSING TAB */}
-                    {activeTab === 'missing' && (
-                        <>
-                            <div className="text-xs text-rose-300/60 uppercase tracking-wider font-bold mb-4 flex items-center gap-2">
-                                <AlertTriangle size={14} /> Kommissionen, die beim Aufräumen nicht gefunden wurden
-                            </div>
-                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 animate-in slide-in-from-top-2">
-                                {commissions.map(comm => (
-                                    <GlassCard key={comm.id} className="cursor-pointer border-rose-500/30 bg-rose-500/5 hover:bg-rose-500/10 h-full flex flex-col group">
-                                        <div className="flex justify-between items-start pl-3 flex-1">
-                                            <div className="flex-1 min-w-0">
-                                                <h3 className="text-lg font-bold text-rose-200">{comm.name}</h3>
-                                                <span className="inline-block mt-1 px-2.5 py-0.5 rounded-full text-xs font-medium border bg-white/10 text-white/50 border-white/10">
-                                                    {comm.order_number || '---'}
-                                                </span>
-                                                <div className="text-xs text-rose-400/70 mt-2 italic">
-                                                    Vermisst seit dem letzten Scan
-                                                </div>
-                                            </div>
-                                            <div className="flex flex-col gap-2">
-                                                <button
-                                                    onClick={async (e) => {
-                                                        e.stopPropagation();
-                                                        if (confirm("Als 'Entnommen' markieren?")) {
-                                                            await supabase.from('commissions').update({ status: 'Withdrawn', withdrawn_at: new Date().toISOString() }).eq('id', comm.id);
-                                                            refreshCommissions(); // Use hook function
-                                                        }
-                                                    }}
-                                                    className="p-2 bg-rose-500/20 hover:bg-rose-500 text-rose-300 hover:text-white rounded-lg transition-colors border border-rose-500/30"
-                                                    title="Als Entnommen markieren"
-                                                >
-                                                    <LogOut size={16} />
-                                                </button>
-                                                <button
-                                                    onClick={async (e) => {
-                                                        e.stopPropagation();
-                                                        if (confirm("Wieder als 'Bereit' markieren (Gefunden)?")) {
-                                                            await supabase.from('commissions').update({ status: 'Ready' }).eq('id', comm.id);
-                                                            refreshCommissions(); // Use hook function
-                                                        }
-                                                    }}
-                                                    className="p-2 bg-emerald-500/20 hover:bg-emerald-500 text-emerald-300 hover:text-white rounded-lg transition-colors border border-emerald-500/30"
-                                                    title="Wiederherstellen (Gefunden)"
-                                                >
-                                                    <CheckCircle2 size={16} />
-                                                </button>
-                                            </div>
-                                        </div>
-                                    </GlassCard>
-                                ))}
-                            </div>
-                        </>
-                    )}
-
-                    {/* WITHDRAWN TAB */}
                     {activeTab === 'withdrawn' && (
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 animate-in slide-in-from-top-2">
-                            {commissions.filter(c => ['Withdrawn', 'ReturnComplete'].includes(c.status)).map(comm => (
-                                <GlassCard key={comm.id} onClick={() => handleOpenPrepare(comm)} className="cursor-pointer hover:bg-white/10 group opacity-80 hover:opacity-100 h-full flex flex-col">
-                                    <div className="flex justify-between items-start pl-3 flex-1">
-                                        <div className="flex-1 min-w-0">
-                                            <h3 className={`text-lg font-bold ${comm.status === 'ReturnComplete' ? 'text-purple-300' : 'text-white line-through'}`}>{comm.name}</h3>
-                                            <span className="inline-block mt-1 px-2.5 py-0.5 rounded-full text-xs font-medium border bg-white/10 text-white/50 border-white/10">
-                                                {comm.order_number || '---'}
-                                            </span>
-                                            <div className="text-xs text-purple-300 mt-1">
-                                                {comm.status === 'ReturnComplete' ? 'Rücksendung erledigt' : `Entnommen: ${comm.withdrawn_at ? new Date(comm.withdrawn_at).toLocaleDateString() : '-'}`}
-                                            </div>
-                                        </div>
-                                        <div className="flex items-center gap-2">
-                                            {comm.status === 'Withdrawn' && (
-                                                <button
-                                                    onClick={(e) => { e.stopPropagation(); setActiveCommission(comm); handleInitReturn(); }}
-                                                    className="px-3 py-1.5 bg-orange-500/20 hover:bg-orange-500 text-orange-200 hover:text-white rounded-lg text-xs font-bold flex items-center gap-1 transition-colors"
-                                                >
-                                                    <Undo2 size={14} /> Retoure
-                                                </button>
-                                            )}
-                                            <button onClick={(e) => requestDelete(comm.id, comm.name, 'trash', e)} className="p-2 text-white/30 hover:text-rose-400"><Trash2 size={16} /></button>
-                                        </div>
-                                    </div>
-                                </GlassCard>
-                            ))}
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                            {commissions.filter(c => ['Withdrawn', 'ReturnComplete'].includes(c.status)).map(c => <CommissionCard key={c.id} commission={c} onClick={handleOpenDetail} onEdit={handleEditCommission} onDelete={handleDelete} className="opacity-80 hover:opacity-100" />)}
                         </div>
                     )}
 
-                    {/* TRASH TAB */}
+                    {activeTab === 'missing' && (
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                            {commissions.map(c => <GlassCard key={c.id} className="border-rose-500/30 bg-rose-500/5 hover:bg-rose-500/10"><div className="p-3">
+                                <h3 className="text-lg font-bold text-rose-200">{c.name}</h3>
+                                <div className="mt-2 flex gap-2">
+                                    <button onClick={() => handleDelete(c.id, c.name, 'trash')} className="p-2 bg-rose-500/20 text-rose-300 rounded hover:text-white"><Trash2 size={16} /></button>
+                                </div>
+                            </div></GlassCard>)}
+                        </div>
+                    )}
+
                     {activeTab === 'trash' && (
-                        <>
-                            <div className="text-xs text-white/30 text-center mb-4">Elemente werden nach 7 Tagen automatisch endgültig gelöscht.</div>
-                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 animate-in slide-in-from-top-2">
-                                {commissions.map(comm => (
-                                    <GlassCard key={comm.id} className="opacity-60 border-rose-500/20 h-full flex flex-col">
-                                        <div className="flex justify-between items-center pl-3 h-full">
-                                            <div className="flex-1 min-w-0">
-                                                <h3 className="text-lg font-bold text-white/70 truncate">{comm.name}</h3>
-                                                <div className="text-xs text-rose-400">Gelöscht am: {comm.deleted_at ? new Date(comm.deleted_at).toLocaleDateString() : '-'}</div>
-                                            </div>
-                                            <div className="flex gap-2 pl-2">
-                                                <button
-                                                    onClick={(e) => restoreFromTrash(comm.id, comm.name, e)}
-                                                    className="p-2 bg-emerald-500/20 hover:bg-emerald-500/40 text-emerald-300 rounded-lg transition-colors"
-                                                    title="Wiederherstellen"
-                                                >
-                                                    <RotateCcw size={16} />
-                                                </button>
-                                                <button onClick={(e) => requestDelete(comm.id, comm.name, 'permanent', e)} className="p-2 bg-rose-500/20 hover:bg-rose-500/40 text-rose-300 rounded-lg"><X size={16} /></button>
-                                            </div>
-                                        </div>
-                                    </GlassCard>
-                                ))}
-                            </div>
-                        </>
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                            {commissions.map(c => <GlassCard key={c.id} className="opacity-60 border-rose-500/20"><div className="p-3 flex justify-between items-center">
+                                <div><h3 className="font-bold text-white/70">{c.name}</h3><span className="text-xs text-rose-400">Gelöscht: {c.deleted_at}</span></div>
+                                <div className="flex gap-2"><button onClick={(e) => handleRestore(c.id, c.name, e)} className="p-2 bg-emerald-500/20 text-emerald-300 rounded"><RotateCcw size={16} /></button><button onClick={(e) => handleDelete(c.id, c.name, 'permanent', e)} className="p-2 bg-rose-500/20 text-rose-300 rounded"><X size={16} /></button></div>
+                            </div></GlassCard>)}
+                        </div>
                     )}
                 </div>
             )}
-
-            {/* --- MODALS --- */}
-
-            {/* GLOBAL SEARCH MODAL */}
-            <GlassModal isOpen={showSearchModal} onClose={() => setShowSearchModal(false)} className="max-w-lg">
-                <div className="p-4 border-b border-gray-200 dark:border-white/10 flex gap-3 items-center">
-                    <Search className="text-gray-400 dark:text-white/50" size={20} />
-                    <input
-                        autoFocus
-                        className="bg-transparent border-none text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-white/30 text-lg flex-1 focus:outline-none"
-                        placeholder="Global suchen (Name, Nr, Notiz)..."
-                        value={globalSearchTerm}
-                        onChange={(e) => performGlobalSearch(e.target.value)}
-                    />
-                    <button onClick={() => setShowSearchModal(false)} className="text-gray-400 dark:text-white/50 hover:text-gray-900 dark:hover:text-white"><X size={24} /></button>
-                </div>
-
-                <div className="max-h-[60vh] overflow-y-auto p-2 space-y-2">
-                    {isSearching && <div className="text-center py-4"><Loader2 className="animate-spin text-emerald-400 mx-auto" /></div>}
-                    {!isSearching && globalSearchTerm && searchResults.length === 0 && (
-                        <div className="text-center py-8 text-gray-400 dark:text-white/30">Keine Ergebnisse gefunden.</div>
-                    )}
-                    {searchResults.map(comm => (
-                        <div
-                            key={comm.id}
-                            onClick={() => handleSearchResultClick(comm)}
-                            className="p-3 rounded-xl bg-gray-50 dark:bg-white/5 hover:bg-gray-100 dark:hover:bg-white/10 border border-gray-200 dark:border-white/5 cursor-pointer transition-all flex justify-between items-center group"
-                        >
-                            <div>
-                                <div className="font-bold text-gray-900 dark:text-white">{comm.name}</div>
-                                <div className="flex gap-2 text-xs text-gray-500 dark:text-white/50 mt-1">
-                                    <span className="font-mono bg-gray-200 dark:bg-white/10 px-1.5 rounded">{comm.order_number || '-'}</span>
-                                    <span>• {translateStatus(comm.status)}</span>
-                                </div>
-                            </div>
-                            <ArrowRight size={18} className="text-gray-400 dark:text-white/20 group-hover:text-gray-900 dark:group-hover:text-white transition-colors" />
-                        </div>
-                    ))}
-                </div>
-            </GlassModal>
-
-            {/* HISTORY MODAL */}
-            <GlassModal isOpen={showHistoryModal} onClose={() => setShowHistoryModal(false)} className="max-w-2xl h-[85vh]">
-                <div className="p-4 border-b border-gray-200 dark:border-white/10 flex justify-between items-center bg-gray-50/50 dark:bg-black/20">
-                    <div className="flex items-center gap-2">
-                        <History size={20} className="text-blue-500 dark:text-blue-400" />
-                        <h2 className="text-xl font-bold text-gray-900 dark:text-white">Verlauf / Logbuch</h2>
-                    </div>
-                    <button onClick={() => setShowHistoryModal(false)} className="p-2 hover:bg-gray-200 dark:hover:bg-white/5 rounded-full text-gray-500 dark:text-white/60 hover:text-gray-900 dark:hover:text-white"><X size={20} /></button>
-                </div>
-
-                <div className="p-4 border-b border-gray-200 dark:border-white/5">
-                    <GlassInput
-                        icon={<Search size={16} />}
-                        placeholder="Nach Name oder Aktion suchen..."
-                        value={historySearch}
-                        onChange={e => setHistorySearch(e.target.value)}
-                        className="text-sm py-2"
-                    />
-                </div>
-
-                <div className="flex-1 overflow-y-auto p-4 space-y-3">
-                    {loadingHistory ? (
-                        <div className="text-center py-10"><Loader2 className="animate-spin text-blue-400 mx-auto" /></div>
-                    ) : (
-                        (() => {
-                            const filteredHistory = historyLogs.filter(log =>
-                                (log.commission_name || '').toLowerCase().includes(historySearch.toLowerCase()) ||
-                                (log.action || '').toLowerCase().includes(historySearch.toLowerCase()) ||
-                                (log.details || '').toLowerCase().includes(historySearch.toLowerCase())
-                            );
-
-                            if (filteredHistory.length === 0) return <div className="text-center text-gray-400 dark:text-white/30 py-10">Keine Einträge gefunden.</div>;
-
-                            return filteredHistory.map(log => (
-                                <div key={log.id} className="bg-gray-50 dark:bg-white/5 rounded-xl p-3 border border-gray-200 dark:border-white/5 flex gap-3 items-start">
-                                    <div className={`mt-1 w-8 h-8 rounded-full flex items-center justify-center shrink-0 
-                                  ${log.action === 'labels_printed' ? 'bg-blue-100 dark:bg-blue-500/20 text-blue-600 dark:text-blue-300' :
-                                            log.action === 'created' ? 'bg-emerald-100 dark:bg-emerald-500/20 text-emerald-600 dark:text-emerald-300' :
-                                                log.action === 'deleted' ? 'bg-rose-100 dark:bg-rose-500/20 text-rose-600 dark:text-rose-300' :
-                                                    'bg-gray-100 dark:bg-white/10 text-gray-500 dark:text-white/50'}`}
-                                    >
-                                        {log.action === 'labels_printed' ? <Printer size={14} /> :
-                                            log.action === 'created' ? <Plus size={14} /> :
-                                                log.action === 'deleted' ? <Trash2 size={14} /> :
-                                                    <Clock size={14} />}
-                                    </div>
-                                    <div className="flex-1 min-w-0">
-                                        <div className="flex justify-between">
-                                            <span className="font-bold text-gray-900 dark:text-white truncate">{log.commission_name || 'Unbekannt'}</span>
-                                            <span className="text-xs text-gray-500 dark:text-white/30 whitespace-nowrap ml-2">{new Date(log.created_at).toLocaleString()}</span>
-                                        </div>
-                                        <p className="text-sm text-gray-600 dark:text-white/70">{log.details}</p>
-                                        <div className="text-xs text-gray-400 dark:text-white/30 mt-1 flex items-center gap-1">
-                                            Von: {log.profiles?.full_name || 'System'}
-                                        </div>
-                                    </div>
-                                </div>
-                            ));
-                        })()
-                    )}
-                </div>
-            </GlassModal>
-
-            {/* CREATE / EDIT MODAL */}
-            <GlassModal isOpen={showCreateModal} onClose={handleCloseCreateModal} className="max-w-5xl h-[90vh]">
-                <div className="flex flex-col sm:flex-row h-auto sm:h-full sm:overflow-hidden">
-                    <div className="shrink-0 sm:flex-1 flex flex-col border-b sm:border-b-0 sm:border-r border-gray-200 dark:border-white/10 min-w-0">
-                        <div className="p-6 border-b border-gray-200 dark:border-white/10 bg-gray-50/50 dark:bg-white/5">
-                            <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-2">{isEditMode ? 'Kommission bearbeiten' : 'Neue Kommission erstellen'}</h2>
-                            <p className="text-sm text-gray-500 dark:text-white/50">Details und Material erfassen.</p>
-                        </div>
-                        <div className="h-auto sm:flex-1 sm:overflow-y-auto p-6 space-y-6">
-                            <div className="space-y-4">
-                                <div>
-                                    <label className="text-xs text-gray-500 dark:text-white/50 mb-1 block">Auftrags-Nr.</label>
-                                    <GlassInput
-                                        value={newComm.order_number}
-                                        onChange={e => setNewComm({ ...newComm, order_number: e.target.value })}
-                                        autoFocus={!isEditMode}
-                                    />
-                                </div>
-                                <div>
-                                    <label className="text-xs text-gray-500 dark:text-white/50 mb-1 block">Name</label>
-                                    <GlassInput
-                                        value={newComm.name}
-                                        onChange={e => setNewComm({ ...newComm, name: e.target.value })}
-                                    />
-                                </div>
-                                <div>
-                                    <label className="text-xs text-gray-500 dark:text-white/50 mb-1 block">Notizen</label>
-                                    <textarea
-                                        className="w-full bg-gray-50 dark:bg-white/5 border border-gray-200 dark:border-white/10 rounded-xl p-3 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-teal-500/50 focus:border-transparent transition-all duration-300"
-                                        rows={3}
-                                        value={newComm.notes}
-                                        onChange={e => setNewComm({ ...newComm, notes: e.target.value })}
-                                    />
-                                </div>
-                            </div>
-
-                            <div className="h-px bg-gray-200 dark:bg-white/5 w-full" />
-
-                            {/* MATERIAL SELECTION */}
-                            <div className="bg-gray-50 dark:bg-white/5 rounded-xl border border-gray-200 dark:border-white/5 overflow-hidden">
-                                <div className="flex items-center justify-between p-2 gap-2">
-                                    <button onClick={() => setExpandStockSearch(!expandStockSearch)} className="flex items-center gap-2 text-sm font-medium text-gray-700 dark:text-white/80 py-2 px-1 flex-shrink-0">
-                                        <Package size={16} /> Material aus Hauptlager
-                                    </button>
-
-                                    {/* Inline Search Box */}
-                                    <div className="flex-1 flex items-center bg-gray-200 dark:bg-black/20 rounded-lg px-2 border border-transparent dark:border-white/5 focus-within:border-emerald-500/50 transition-colors">
-                                        <Search size={14} className="text-gray-400 dark:text-white/40" />
-                                        <input
-                                            className="w-full bg-transparent border-none text-xs text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-white/30 focus:ring-0 px-2 py-2 focus:outline-none"
-                                            placeholder="Suchen..."
-                                            value={stockSearchTerm}
-                                            onChange={(e) => {
-                                                setStockSearchTerm(e.target.value);
-                                                if (!expandStockSearch && e.target.value.length > 0) setExpandStockSearch(true);
-                                            }}
-                                            onClick={(e) => e.stopPropagation()} // Prevent accordion toggle
-                                        />
-                                    </div>
-
-                                    <button onClick={() => setExpandStockSearch(!expandStockSearch)} className="p-2 text-gray-400 dark:text-white/50 hover:text-gray-900 dark:hover:text-white">
-                                        <ChevronDown size={16} className={`transition-transform ${!expandStockSearch ? '-rotate-90' : ''}`} />
-                                    </button>
-                                </div>
-
-                                {expandStockSearch && (
-                                    <div className="space-y-3 p-3 pt-0 animate-in slide-in-from-top-2">
-
-                                        {/* Category Chips */}
-                                        <div className="flex gap-2 overflow-x-auto pb-2 no-scrollbar border-b border-gray-200 dark:border-white/5 mb-2">
-                                            {distinctCategories.map(cat => (
-                                                <button
-                                                    key={cat}
-                                                    onClick={() => setSelectedCategory(selectedCategory === cat ? null : cat)}
-                                                    className={`whitespace-nowrap px-3 py-1.5 rounded-full text-xs font-medium border transition-colors ${selectedCategory === cat ? 'bg-emerald-500 text-white border-emerald-500' : 'bg-white dark:bg-white/5 border-gray-200 dark:border-white/10 text-gray-600 dark:text-white/60 hover:text-gray-900 dark:hover:text-white'}`}
-                                                >
-                                                    {cat}
-                                                </button>
-                                            ))}
-                                        </div>
-
-                                        {/* Article List */}
-                                        <div className="max-h-60 overflow-y-auto space-y-2 pr-1">
-                                            {availableArticles
-                                                .filter(a => {
-                                                    const matchesCat = !selectedCategory || (a.category || 'Sonstiges') === selectedCategory;
-                                                    const matchesSearch = !stockSearchTerm || a.name.toLowerCase().includes(stockSearchTerm.toLowerCase()) || a.sku.toLowerCase().includes(stockSearchTerm.toLowerCase());
-                                                    return matchesCat && matchesSearch;
-                                                })
-                                                .map(art => (
-                                                    <button key={art.id} onClick={() => addTempStockItem(art)} className="w-full text-left px-3 py-2 bg-white dark:bg-white/5 hover:bg-gray-100 dark:hover:bg-white/10 rounded-xl border border-gray-200 dark:border-white/5 flex items-center gap-3 group transition-colors">
-                                                        {/* Image Thumbnail */}
-                                                        <div className="w-9 h-9 shrink-0 rounded-lg bg-gray-100 dark:bg-black/30 overflow-hidden border border-gray-200 dark:border-white/10">
-                                                            <img
-                                                                src={art.image || `https://picsum.photos/seed/${art.id}/200`}
-                                                                alt={art.name}
-                                                                className="w-full h-full object-cover opacity-80 group-hover:opacity-100 transition-opacity"
-                                                                loading="lazy"
-                                                            />
-                                                        </div>
-
-                                                        <div className="min-w-0 flex-1">
-                                                            <div className="font-medium text-sm text-gray-900 dark:text-white truncate">{art.name}</div>
-                                                            <div className="text-[10px] text-gray-500 dark:text-white/40 flex items-center gap-2">
-                                                                <span>{art.sku}</span>
-                                                                {art.stock > 0 ? <span className="text-emerald-600 dark:text-emerald-400">Bestand: {art.stock}</span> : <span className="text-rose-500 dark:text-rose-400">Leer</span>}
-                                                            </div>
-                                                        </div>
-                                                        <div className="w-6 h-6 rounded-full border border-gray-200 dark:border-white/10 flex items-center justify-center text-gray-400 dark:text-white/30 group-hover:bg-emerald-500 group-hover:text-white group-hover:border-emerald-500 transition-colors shrink-0">
-                                                            <Plus size={14} />
-                                                        </div>
-                                                    </button>
-                                                ))
-                                            }
-                                            {availableArticles.length === 0 && <div className="text-center text-xs text-gray-400 dark:text-white/30 py-4">Kein Material im Lager.</div>}
-                                        </div>
-                                    </div>
-                                )}
-                            </div>
-
-                            {/* EXTERNAL / MANUAL SELECTION */}
-                            <div className="bg-gray-50 dark:bg-white/5 rounded-xl border border-gray-200 dark:border-white/5 overflow-hidden">
-                                <div className="flex items-center justify-between p-2 gap-2">
-                                    <button onClick={() => setExpandSupplierList(!expandSupplierList)} className="flex items-center gap-2 text-sm font-medium text-gray-700 dark:text-white/80 py-2 px-1 flex-shrink-0">
-                                        <ShoppingCart size={16} /> Lieferant wählen
-                                    </button>
-
-                                    {/* Inline Search Box */}
-                                    <div className="flex-1 flex items-center bg-gray-200 dark:bg-black/20 rounded-lg px-2 border border-transparent dark:border-white/5 focus-within:border-purple-500/50 transition-colors">
-                                        <Search size={14} className="text-gray-400 dark:text-white/40" />
-                                        <input
-                                            className="w-full bg-transparent border-none text-xs text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-white/30 focus:ring-0 px-2 py-2 focus:outline-none"
-                                            placeholder="Suche..."
-                                            value={supplierSearchTerm}
-                                            onChange={(e) => {
-                                                setSupplierSearchTerm(e.target.value);
-                                                if (!expandSupplierList && e.target.value.length > 0) setExpandSupplierList(true);
-                                            }}
-                                            onClick={(e) => e.stopPropagation()} // Prevent accordion toggle
-                                        />
-                                    </div>
-
-                                    <div className="flex gap-1">
-                                        <button onClick={() => setExpandSupplierList(!expandSupplierList)} className="p-2 text-gray-400 dark:text-white/50 hover:text-gray-900 dark:hover:text-white">
-                                            <ChevronDown size={16} className={`transition-transform ${!expandSupplierList ? '-rotate-90' : ''}`} />
-                                        </button>
-                                        <button onClick={addManualItem} className="p-2 bg-white dark:bg-white/10 hover:bg-gray-100 dark:hover:bg-white/20 rounded-lg text-gray-700 dark:text-white/80 flex items-center justify-center ml-1" title="Freitext Position hinzufügen">
-                                            <PenTool size={16} />
-                                        </button>
-                                    </div>
-                                </div>
-
-                                {expandSupplierList && (
-                                    <div className="bg-gray-100 dark:bg-black/20 p-1 animate-in slide-in-from-top-2 border-t border-gray-200 dark:border-white/5 max-h-40 overflow-y-auto">
-                                        {suppliers
-                                            .filter(s => !supplierSearchTerm || s.name.toLowerCase().includes(supplierSearchTerm.toLowerCase()))
-                                            .map(s => (
-                                                <button key={s.id} onClick={() => addTempExternalItem(s)} className="w-full flex items-center gap-3 p-3 hover:bg-white dark:hover:bg-white/5 transition-colors text-left border-b last:border-b-0 border-gray-200 dark:border-white/5">
-                                                    <Plus size={16} className="text-gray-400 dark:text-white/50" /> <span className="font-medium text-gray-700 dark:text-white/80">{s.name}</span>
-                                                </button>
-                                            ))}
-                                    </div>
-                                )}
-                            </div>
-                        </div>
-                    </div>
-
-                    {/* RIGHT COLUMN: SELECTED ITEMS */}
-                    <div className="shrink-0 sm:flex-[0.8] bg-gray-100 dark:bg-black/20 border-l border-gray-200 dark:border-white/10 flex flex-col min-w-0">
-                        <div className="p-6 border-b border-gray-200 dark:border-white/10 flex justify-between items-center">
-                            <h3 className="font-bold text-gray-900 dark:text-white">Material ({tempItems.length})</h3>
-                            <button onClick={handleCloseCreateModal} className="text-gray-400 dark:text-white/50 hover:text-gray-900 dark:hover:text-white p-2 bg-white dark:bg-white/5 rounded-full"><X size={18} /></button>
-                        </div>
-                        <div className="h-auto sm:flex-1 sm:overflow-y-auto p-6 space-y-3">
-                            {tempItems.length === 0 && <div className="h-full flex flex-col items-center justify-center text-gray-400 dark:text-white/30"><Box size={40} className="mb-3 opacity-50" /><p>Leer.</p></div>}
-                            {tempItems.map((item) => (
-                                <div key={item.uniqueId} className="bg-white dark:bg-white/5 rounded-xl p-4 shadow-sm dark:shadow-lg border border-gray-200 dark:border-white/10">
-                                    <div className="flex justify-between items-start mb-3">
-                                        <div className="flex-1 min-w-0 pr-3">
-                                            {item.type === 'Stock' ? (
-                                                <>
-                                                    <div className="font-bold text-gray-900 dark:text-white truncate">{item.article?.name}</div>
-                                                    <div className="text-xs text-gray-500 dark:text-white/50 flex items-center gap-1 mt-1">
-                                                        <MapPin size={10} /> {item.article?.category || 'Regal?'} / {item.article?.location || 'Fach?'}
-                                                    </div>
-                                                </>
-                                            ) : (
-                                                <>
-                                                    <div className="text-[10px] text-purple-500 dark:text-purple-300 uppercase font-bold mb-1">Manuell / Extern</div>
-                                                    <input
-                                                        className="w-full bg-transparent border-b border-gray-300 dark:border-white/20 text-gray-900 dark:text-white font-bold focus:outline-none focus:border-purple-500 pb-1"
-                                                        value={item.customName}
-                                                        onChange={(e) => updateTempItem(item.uniqueId, 'customName', e.target.value)}
-                                                        placeholder="Bezeichnung..."
-                                                    />
-                                                </>
-                                            )}
-                                        </div>
-                                        <div className="flex items-center gap-2 shrink-0">
-                                            <button onClick={() => updateTempItem(item.uniqueId, 'amount', Math.max(1, item.amount - 1))} className="w-7 h-7 rounded-lg bg-gray-100 dark:bg-white/10 hover:bg-gray-200 dark:hover:bg-white/20 flex items-center justify-center text-gray-700 dark:text-white"><Minus size={14} /></button>
-                                            <span className="w-8 text-center font-bold text-gray-900 dark:text-white">{item.amount}</span>
-                                            <button onClick={() => updateTempItem(item.uniqueId, 'amount', item.amount + 1)} className="w-7 h-7 rounded-lg bg-gray-100 dark:bg-white/10 hover:bg-gray-200 dark:hover:bg-white/20 flex items-center justify-center text-gray-700 dark:text-white"><Plus size={14} /></button>
-                                            <button onClick={() => removeTempItem(item.uniqueId)} className="ml-2 text-gray-400 dark:text-white/30 hover:text-rose-500 dark:hover:text-rose-400"><X size={18} /></button>
-                                        </div>
-                                    </div>
-
-                                    {/* NOTES for temp item */}
-                                    {item.type === 'External' && (
-                                        <div className="mb-2">
-                                            <label className="text-[10px] text-gray-400 dark:text-white/40 uppercase font-bold whitespace-nowrap block mb-1">Notiz an Lieferant / Lager:</label>
-                                            <input
-                                                className="w-full bg-gray-50 dark:bg-black/30 text-gray-900 dark:text-white text-xs p-2 rounded-lg border border-gray-200 dark:border-white/10 focus:outline-none focus:border-gray-300 dark:focus:border-white/30"
-                                                placeholder="z.B. Nur Originalteile..."
-                                                value={item.notes || ''}
-                                                onChange={(e) => updateTempItem(item.uniqueId, 'notes', e.target.value)}
-                                            />
-                                        </div>
-                                    )}
-
-                                    {item.type === 'External' && (
-                                        <div
-                                            className={`flex gap-2 items-center mt-2 p-1 rounded-lg border border-transparent transition-all ${item.isDragging ? 'bg-emerald-500/10 border-emerald-500 border-dashed' : ''}`}
-                                            onDragEnter={(e) => handleDragEnter(e, item.uniqueId)}
-                                            onDragOver={(e) => handleDragOver(e, item.uniqueId)}
-                                            onDragLeave={(e) => handleDragLeave(e, item.uniqueId)}
-                                            onDrop={(e) => handleDrop(e, item.uniqueId)}
-                                        >
-                                            <div className="bg-gray-50 dark:bg-black/30 rounded-lg p-2 border border-gray-200 dark:border-white/10 flex-1 flex items-center gap-2">
-                                                <label className="text-[10px] text-gray-400 dark:text-white/40 uppercase font-bold whitespace-nowrap">Vorgang:</label>
-                                                <input className="w-full bg-transparent text-gray-900 dark:text-white text-sm focus:outline-none font-mono" placeholder="Optional..." value={item.externalReference || ''} onChange={(e) => updateTempItem(item.uniqueId, 'externalReference', e.target.value)} />
-                                            </div>
-
-                                            {/* PASTE BUTTON */}
-                                            <button
-                                                onClick={() => handlePasteAttachment(item.uniqueId)}
-                                                className="h-10 w-10 rounded-lg flex items-center justify-center border bg-white dark:bg-white/10 text-gray-400 dark:text-white/40 border-gray-200 dark:border-white/10 hover:bg-gray-50 dark:hover:bg-white/20 hover:text-gray-900 dark:hover:text-white transition-all shrink-0"
-                                                title="Bild aus Zwischenablage einfügen"
-                                                type="button"
-                                            >
-                                                <Clipboard size={18} />
-                                            </button>
-
-                                            {/* ATTACHMENT BUTTON */}
-                                            <div>
-                                                <input
-                                                    id={'file-upload-' + item.uniqueId}
-                                                    type="file"
-                                                    accept="image/*,application/pdf"
-                                                    className="hidden"
-                                                    onChange={(e) => handleFileUpload(item.uniqueId, e.target.files)}
-                                                />
-                                                <button
-                                                    onClick={() => document.getElementById('file-upload-' + item.uniqueId)?.click()}
-                                                    className={`h-10 w-10 rounded-lg flex items-center justify-center border transition-all shrink-0 ${item.attachmentData ? 'bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 border-emerald-500/50' : 'bg-white dark:bg-white/10 text-gray-400 dark:text-white/40 border-gray-200 dark:border-white/10 hover:bg-gray-50 dark:hover:bg-white/20 hover:text-gray-900 dark:hover:text-white'}`}
-                                                    title={item.attachmentData ? "Datei angehängt (Klicken zum Ändern)" : "Lieferschein anhängen (Drag & Drop)"}
-                                                >
-                                                    <Paperclip size={18} />
-                                                </button>
-                                            </div>
-                                        </div>
-                                    )}
-                                </div>
-                            ))}
-                        </div>
-                        <div className="p-6 border-t border-gray-200 dark:border-white/10 bg-gray-50/50 dark:bg-white/5 flex justify-end gap-3">
-                            <Button variant="secondary" onClick={handleCloseCreateModal}>Abbrechen</Button>
-                            <Button onClick={handleFinalizeCreate} disabled={isSubmitting || !newComm.name} className="bg-emerald-600 hover:bg-emerald-500" icon={isSubmitting ? <Loader2 className="animate-spin" /> : isEditMode ? <Save size={18} /> : <Plus size={18} />}>{isEditMode ? 'Speichern' : 'Anlegen'}</Button>
-                        </div>
-                    </div>
-                </div>
-            </GlassModal>
-
-            {/* POST CREATE LABEL OPTION MODAL */}
-            <GlassModal isOpen={!!showLabelOptionsModal} onClose={() => { setShowLabelOptionsModal(null); handleCloseCreateModal(); }} className="max-w-md text-center">
-                <div className="p-6">
-                    <Tag size={48} className="mx-auto text-blue-500 dark:text-blue-400 mb-4" />
-                    <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-2">Kommission erstellt!</h2>
-                    <p className="text-gray-600 dark:text-white/60 mb-6">Möchtest du direkt ein Etikett für das Regal/die Box drucken?</p>
-
-                    <div className="space-y-3">
-                        <Button onClick={() => handleSinglePrint(showLabelOptionsModal!)} className="w-full py-3 bg-emerald-600 hover:bg-emerald-500" icon={<Printer size={18} />}>Sofort drucken</Button>
-                        <Button onClick={() => handleAddToQueue(showLabelOptionsModal!, newComm.name)} className="w-full py-3 bg-blue-600 hover:bg-blue-500" icon={<Layers size={18} />}>Später drucken (Warteschlange)</Button>
-                        <Button onClick={() => { setShowLabelOptionsModal(null); handleCloseCreateModal(); }} variant="secondary" className="w-full">Schließen</Button>
-                    </div>
-                </div>
-            </GlassModal>
-
-            {/* UPDATE LABEL CONFIRM MODAL */}
-            <GlassModal isOpen={showLabelUpdateModal && !!activeCommission} onClose={() => setShowLabelUpdateModal(false)} className="max-w-md text-center">
-                <div className="p-6">
-                    <AlertTriangle size={48} className="mx-auto text-amber-500 dark:text-amber-400 mb-4" />
-                    <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-2">Etikett aktualisieren?</h2>
-                    <p className="text-gray-600 dark:text-white/60 mb-6">
-                        Du hast Änderungen an Rückständen oder Notizen vorgenommen. Das Etikett ist nicht mehr aktuell.
-                    </p>
-
-                    <div className="space-y-3">
-                        <Button onClick={() => activeCommission && handleSinglePrint(activeCommission.id)} className="w-full py-3 bg-emerald-600 hover:bg-emerald-500" icon={<Printer size={18} />}>Neues Etikett drucken</Button>
-                        <Button onClick={() => activeCommission && handleAddToQueue(activeCommission.id, activeCommission.name)} className="w-full py-3 bg-blue-600 hover:bg-blue-500" icon={<Layers size={18} />}>Zur Druckwarteschlange</Button>
-                        <Button onClick={() => setShowLabelUpdateModal(false)} variant="secondary" className="w-full">Nein, danke</Button>
-                    </div>
-                </div>
-            </GlassModal>
-
-            {/* DETAIL MODAL (Refactored) */}
-            <CommissionDetailModal
-                isOpen={showPrepareModal && !!activeCommission}
-                onClose={handleClosePrepare}
-                commission={activeCommission}
-                items={commItems}
-                localHistoryLogs={localHistoryLogs}
-                allItemsPicked={allItemsPicked}
-                hasBackorders={hasBackorders}
-                isSubmitting={isSubmitting}
-                onSetReady={handleSetReadyTrigger}
-                onWithdraw={handleWithdrawTrigger}
-                onResetStatus={executeResetStatus}
-                onRevertWithdraw={executeRevertWithdrawal}
-                onInitReturn={handleInitReturn}
-                onReturnToReady={handleReturnToReady}
-                onCompleteReturn={handleCompleteReturn}
-                onEdit={(e) => activeCommission && handleEditCommission(activeCommission, e)}
-                onPrint={() => handleSinglePrint()}
-                onTogglePicked={toggleActiveItemPicked}
-                onToggleBackorder={toggleBackorder}
-                onSaveNote={saveItemNote}
-            />
-
-            {/* CONFIRM READY MODAL */}
-            <GlassModal isOpen={showConfirmReadyModal} onClose={() => setShowConfirmReadyModal(false)} className="max-w-sm">
-                <div className="p-6">
-                    <div className="flex items-center gap-3 mb-3 text-emerald-500 dark:text-emerald-400"><AlertTriangle size={24} /><h3 className="text-lg font-bold text-gray-900 dark:text-white">Bereitstellen bestätigen?</h3></div>
-                    <p className="text-sm text-gray-600 dark:text-white/70 mb-6">Bestand für {commItems.filter(i => i.type === 'Stock').length} Artikel wird abgebucht.</p>
-                    <div className="flex gap-3 justify-end">
-                        <Button variant="secondary" onClick={() => setShowConfirmReadyModal(false)}>Abbrechen</Button>
-                        <Button onClick={executeSetReady} disabled={isSubmitting} className="bg-emerald-600 hover:bg-emerald-500">{isSubmitting ? <Loader2 className="animate-spin" /> : 'Ja, Buchen'}</Button>
-                    </div>
-                </div>
-            </GlassModal>
-
-            {/* NEW: CLEANUP MODAL */}
-            <CommissionCleanupModal
-                isOpen={showCleanupModal}
-                onClose={() => setShowCleanupModal(false)}
-                onCleanupComplete={() => { refreshCommissions(); }}
-            />
-
-            {/* CONFIRM WITHDRAW MODAL */}
-            <GlassModal isOpen={showConfirmWithdrawModal} onClose={() => setShowConfirmWithdrawModal(false)} className="max-w-sm">
-                <div className="p-6">
-                    <div className="flex items-center gap-3 mb-3 text-purple-500 dark:text-purple-400"><Truck size={24} /><h3 className="text-lg font-bold text-gray-900 dark:text-white">Entnahme bestätigen?</h3></div>
-                    <p className="text-sm text-gray-600 dark:text-white/70 mb-6">Kommission wird als "Entnommen" markiert und archiviert.</p>
-                    <div className="flex gap-3 justify-end">
-                        <Button variant="secondary" onClick={() => setShowConfirmWithdrawModal(false)}>Abbrechen</Button>
-                        <Button onClick={executeWithdraw} disabled={isSubmitting} className="bg-purple-600 hover:bg-purple-500">{isSubmitting ? <Loader2 className="animate-spin" /> : 'Ja, Entnehmen'}</Button>
-                    </div>
-                </div>
-            </GlassModal>
-
-            {/* DELETE CONFIRMATION MODAL */}
-            <GlassModal isOpen={!!deleteTarget} onClose={() => setDeleteTarget(null)} className="max-w-sm text-center">
-                {deleteTarget && (
-                    <div className="p-6">
-                        <div className={`w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4 ${deleteTarget.mode === 'trash' ? 'bg-rose-100 dark:bg-rose-500/10 text-rose-500 dark:text-rose-400' : 'bg-red-100 dark:bg-red-600/20 text-red-500'}`}>
-                            <Trash2 size={32} />
-                        </div>
-                        <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2">
-                            {deleteTarget.mode === 'trash' ? 'In Papierkorb verschieben?' : 'Endgültig löschen?'}
-                        </h3>
-                        <p className="text-gray-600 dark:text-white/60 mb-6">
-                            {deleteTarget.mode === 'trash'
-                                ? `Die Kommission "${deleteTarget.name}" wird in den Papierkorb verschoben.`
-                                : `WARNUNG: "${deleteTarget.name}" wird unwiderruflich gelöscht. Dies kann nicht rückgängig gemacht werden.`}
-                        </p>
-                        <div className="flex gap-3 justify-center">
-                            <Button variant="secondary" onClick={() => setDeleteTarget(null)}>Abbrechen</Button>
-                            <Button
-                                onClick={executeDelete}
-                                disabled={isSubmitting}
-                                className={deleteTarget.mode === 'trash' ? 'bg-rose-600 hover:bg-rose-500' : 'bg-red-600 hover:bg-red-500'}
-                            >
-                                {isSubmitting ? <Loader2 className="animate-spin" /> : (deleteTarget.mode === 'trash' ? 'Verschieben' : 'Löschen')}
-                            </Button>
-                        </div>
-                    </div>
-                )}
-            </GlassModal>
-
-
-
         </div>
+    );
+
+    const isWidePanel = sidePanelMode === 'create' || sidePanelMode === 'edit';
+
+    return (
+        <MasterDetailLayout
+            isOpen={sidePanelMode !== 'none'}
+            onClose={handleCloseSidePanel}
+            title={getSidePanelTitle()}
+            listContent={listContent}
+            detailContent={renderSidePanelContent()}
+            panelWidth={'35%'}
+            hideHeader={isWidePanel}
+            contentClassName={isWidePanel ? 'p-0 overflow-hidden' : 'p-6 overflow-y-auto custom-scrollbar'}
+        >
+            <GlassModal isOpen={showConfirmReadyModal} onClose={() => setShowConfirmReadyModal(false)} className="max-w-sm">
+                <div className="p-6 text-center">
+                    <CheckCircle2 size={48} className="mx-auto text-emerald-400 mb-4" />
+                    <h3 className="text-xl font-bold text-white mb-2">Bereitstellen?</h3>
+                    <p className="text-white/60 mb-6">Lagerbestände werden gebucht.</p>
+                    <div className="flex gap-3"><Button variant="secondary" onClick={() => setShowConfirmReadyModal(false)} className="flex-1">Abbrechen</Button><Button onClick={executeSetReady} className="flex-1 bg-emerald-600 hover:bg-emerald-500">OK</Button></div>
+                </div>
+            </GlassModal>
+
+            <GlassModal isOpen={showConfirmWithdrawModal} onClose={() => setShowConfirmWithdrawModal(false)} className="max-w-sm">
+                <div className="p-6 text-center">
+                    <LogOut size={48} className="mx-auto text-purple-400 mb-4" />
+                    <h3 className="text-xl font-bold text-white mb-2">Entnehmen & Abschließen?</h3>
+                    <div className="flex gap-3 mt-6"><Button variant="secondary" onClick={() => setShowConfirmWithdrawModal(false)} className="flex-1">Abbrechen</Button><Button onClick={executeWithdraw} className="flex-1 bg-purple-600 hover:bg-purple-500">OK</Button></div>
+                </div>
+            </GlassModal>
+
+            {showLabelUpdateModal && activeCommission && (
+                <GlassModal isOpen={true} onClose={() => setShowLabelUpdateModal(false)} className="max-w-sm text-center">
+                    <div className="p-6">
+                        <AlertTriangle size={48} className="mx-auto text-amber-500 mb-4" />
+                        <h3 className="text-lg font-bold text-white mb-2">Etikett aktualisieren?</h3>
+                        <p className="text-white/60 mb-4">Daten geändert.</p>
+                        <div className="space-y-2">
+                            <Button onClick={() => handleSinglePrint(activeCommission!.id)} className="w-full">Drucken</Button>
+                            <Button onClick={() => setShowLabelUpdateModal(false)} variant="secondary" className="w-full">Nein</Button>
+                        </div>
+                    </div>
+                </GlassModal>
+            )}
+
+            <CommissionCleanupModal isOpen={showCleanupModal} onClose={() => setShowCleanupModal(false)} />
+
+        </MasterDetailLayout>
     );
 };
 

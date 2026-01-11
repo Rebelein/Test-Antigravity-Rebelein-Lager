@@ -1,18 +1,18 @@
-
 import { useState, useEffect } from 'react';
 import { supabase } from '../supabaseClient';
 import { Article, Warehouse, Supplier } from '../types';
 import { useAuth } from '../contexts/AuthContext';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 
 export const useInventoryData = (viewMode: 'primary' | 'secondary') => {
-    const { profile, loading: authLoading, updateWarehousePreference } = useAuth();
+    const { profile, loading: authLoading } = useAuth();
+    const queryClient = useQueryClient();
 
-    const [articles, setArticles] = useState<Article[]>([]);
-    const [warehouses, setWarehouses] = useState<Warehouse[]>([]);
-    const [suppliers, setSuppliers] = useState<Supplier[]>([]);
-    const [loading, setLoading] = useState(true);
+    const activeWarehouseId = viewMode === 'primary'
+        ? profile?.primary_warehouse_id
+        : profile?.secondary_warehouse_id;
 
-    // History State
+    // History State (Keep manual for now as it is on-demand)
     const [articleHistory, setArticleHistory] = useState<any[]>([]);
     const [historyLoading, setHistoryLoading] = useState(false);
 
@@ -32,48 +32,55 @@ export const useInventoryData = (viewMode: 'primary' | 'secondary') => {
         supplierSku: item.supplier_sku,
         productUrl: item.product_url,
         image: item.image_url,
-        onOrderDate: item.on_order_date
+        onOrderDate: item.on_order_date,
+        lastCountedAt: item.last_counted_at
     });
 
-    const fetchWarehouses = async () => {
-        const { data } = await supabase.from('warehouses').select('*').order('name');
-        if (data) {
-            setWarehouses(data.map((w: any) => ({
+    // 1. Fetch Warehouses
+    const { data: warehouses = [] } = useQuery({
+        queryKey: ['warehouses'],
+        queryFn: async () => {
+            const { data } = await supabase.from('warehouses').select('*').order('name');
+            return data?.map((w: any) => ({
                 id: w.id,
                 name: w.name,
                 type: w.type,
                 location: w.location
-            })));
-        }
-    };
+            })) as Warehouse[] || [];
+        },
+        enabled: !authLoading,
+        staleTime: 1000 * 60 * 60, // 1 hour
+    });
 
-    const fetchSuppliers = async () => {
-        const { data } = await supabase.from('suppliers').select('*').order('name');
-        if (data) {
-            setSuppliers(data);
-        }
-    };
+    // 2. Fetch Suppliers
+    const { data: suppliers = [] } = useQuery({
+        queryKey: ['suppliers'],
+        queryFn: async () => {
+            const { data } = await supabase.from('suppliers').select('*').order('name');
+            return data as Supplier[] || [];
+        },
+        enabled: !authLoading,
+        staleTime: 1000 * 60 * 60, // 1 hour
+    });
 
-    const fetchArticles = async () => {
-        try {
-            setLoading(true);
-            const activeWarehouseId = viewMode === 'primary'
-                ? profile?.primary_warehouse_id
-                : profile?.secondary_warehouse_id;
+    // 3. Fetch Articles (Main Data)
+    const { data: articles = [], isLoading: loading, refetch } = useQuery({
+        queryKey: ['articles', activeWarehouseId],
+        queryFn: async () => {
+            if (!activeWarehouseId) return [];
 
-            let query = supabase.from('articles').select('*');
+            // NOTE: In future we can add pagination here
+            const { data, error } = await supabase
+                .from('articles')
+                .select('*')
+                .eq('warehouse_id', activeWarehouseId);
 
-            if (activeWarehouseId) {
-                query = query.eq('warehouse_id', activeWarehouseId);
-            } else {
-                query = query.eq('id', '00000000-0000-0000-0000-000000000000');
-            }
-
-            const { data, error } = await query;
-            if (error) { console.error('Error fetching articles:', error); return; }
-            if (data) setArticles(data.map(mapArticleFromDB));
-        } catch (error) { console.error('Unexpected error:', error); } finally { setLoading(false); }
-    };
+            if (error) throw error;
+            return data.map(mapArticleFromDB);
+        },
+        enabled: !!activeWarehouseId && !authLoading,
+        staleTime: 1000 * 60 * 5, // 5 minutes fresh
+    });
 
     const fetchHistory = async (articleId: string) => {
         setHistoryLoading(true);
@@ -90,36 +97,28 @@ export const useInventoryData = (viewMode: 'primary' | 'secondary') => {
         } catch (err) { console.error("Error fetching history:", err); } finally { setHistoryLoading(false); }
     };
 
-    // Initial fetch
-    useEffect(() => {
-        if (!authLoading) {
-            fetchWarehouses();
-            fetchSuppliers();
-        }
-    }, [authLoading]);
-
-    // Fetch on view change
-    useEffect(() => {
-        if (!authLoading) {
-            fetchArticles();
-        }
-    }, [authLoading, viewMode, profile?.primary_warehouse_id, profile?.secondary_warehouse_id]);
-
     // Realtime Subscription
     useEffect(() => {
+        if (!activeWarehouseId) return;
+
         const channel = supabase
-            .channel('articles-changes')
+            .channel(`articles-${activeWarehouseId}`)
             .on(
                 'postgres_changes',
-                { event: '*', schema: 'public', table: 'articles' },
+                { event: '*', schema: 'public', table: 'articles', filter: `warehouse_id=eq.${activeWarehouseId}` },
                 (payload) => {
-                    if (payload.eventType === 'INSERT') {
-                        setArticles((prev) => [...prev, mapArticleFromDB(payload.new)]);
-                    } else if (payload.eventType === 'UPDATE') {
-                        setArticles((prev) => prev.map((a) => a.id === payload.new.id ? mapArticleFromDB(payload.new) : a));
-                    } else if (payload.eventType === 'DELETE') {
-                        setArticles((prev) => prev.filter((a) => a.id !== payload.old.id));
-                    }
+                    queryClient.setQueryData(['articles', activeWarehouseId], (oldData: Article[] | undefined) => {
+                        if (!oldData) return [];
+
+                        if (payload.eventType === 'INSERT') {
+                            return [...oldData, mapArticleFromDB(payload.new)];
+                        } else if (payload.eventType === 'UPDATE') {
+                            return oldData.map((a) => a.id === payload.new.id ? mapArticleFromDB(payload.new) : a);
+                        } else if (payload.eventType === 'DELETE') {
+                            return oldData.filter((a) => a.id !== payload.old.id);
+                        }
+                        return oldData;
+                    });
                 }
             )
             .subscribe();
@@ -127,15 +126,21 @@ export const useInventoryData = (viewMode: 'primary' | 'secondary') => {
         return () => {
             supabase.removeChannel(channel);
         };
-    }, []);
+    }, [activeWarehouseId, queryClient]);
 
 
     const updateLocalArticle = (id: string, updates: Partial<Article>) => {
-        setArticles(prev => prev.map(a => a.id === id ? { ...a, ...updates } : a));
+        queryClient.setQueryData(['articles', activeWarehouseId], (oldData: Article[] | undefined) => {
+            if (!oldData) return [];
+            return oldData.map(a => a.id === id ? { ...a, ...updates } : a);
+        });
     };
 
     const removeLocalArticle = (id: string) => {
-        setArticles(prev => prev.filter(a => a.id !== id));
+        queryClient.setQueryData(['articles', activeWarehouseId], (oldData: Article[] | undefined) => {
+            if (!oldData) return [];
+            return oldData.filter(a => a.id !== id);
+        });
     };
 
     return {
@@ -146,7 +151,7 @@ export const useInventoryData = (viewMode: 'primary' | 'secondary') => {
         articleHistory,
         historyLoading,
         fetchHistory,
-        requestRefresh: fetchArticles,
+        requestRefresh: refetch,
         updateLocalArticle,
         removeLocalArticle
     };

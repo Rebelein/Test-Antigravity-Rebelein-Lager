@@ -7,6 +7,9 @@ import { supabase } from '../supabaseClient';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { GoogleGenAI, Type } from "@google/genai";
+import { MasterDetailLayout } from '../components/MasterDetailLayout';
+import { OrderDetailContent } from '../components/orders/OrderDetailContent';
+import { OrderProposalContent } from '../components/orders/OrderProposalContent';
 
 const Orders: React.FC = () => {
     const navigate = useNavigate();
@@ -28,14 +31,6 @@ const Orders: React.FC = () => {
     }, [proposals]);
     const [loadingProposals, setLoadingProposals] = useState(true);
 
-    // Proposal Modal State
-    const [selectedProposal, setSelectedProposal] = useState<OrderProposal | null>(null);
-    const [selectedItemIds, setSelectedItemIds] = useState<Set<string>>(new Set());
-    const [proposalQuantities, setProposalQuantities] = useState<Record<string, number>>({}); // Edited quantities
-    const [newOrderNumber, setNewOrderNumber] = useState(''); // Supplier Order Number
-    const [newCommissionNumber, setNewCommissionNumber] = useState(''); // Internal Commission Number
-    const [commissionCopied, setCommissionCopied] = useState(false);
-
     // --- PENDING ORDERS STATE ---
     const [pendingOrders, setPendingOrders] = useState<Order[]>([]);
     const [pickupOrders, setPickupOrders] = useState<Order[]>([]); // New state for 'ReadyForPickup'
@@ -45,51 +40,35 @@ const Orders: React.FC = () => {
     const [completedOrders, setCompletedOrders] = useState<Order[]>([]);
     const [loadingCompleted, setLoadingCompleted] = useState(false);
 
-    // --- ORDER DETAIL / RECEIVING STATE ---
+    // --- DETAIL VIEW STATE ---
     const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
-    const [receivingItems, setReceivingItems] = useState<(OrderItem & { currentReceiveAmount: number, articleName?: string, articleSku?: string, maxQty: number, customName?: string, customSku?: string })[]>([]);
-    const [loadingDetails, setLoadingDetails] = useState(false);
-    const [showVehicleDecision, setShowVehicleDecision] = useState(false); // Modal for Vehicle choice
-    const [isSubmitting, setIsSubmitting] = useState(false);
-
-    // --- SKU COPY MODAL STATE ---
-    const [showSkuCopyModal, setShowSkuCopyModal] = useState(false);
-    const [copiedSkuIds, setCopiedSkuIds] = useState<Set<string>>(new Set());
+    const [selectedProposal, setSelectedProposal] = useState<OrderProposal | null>(null);
 
     // --- MANUAL ORDER WIZARD STATE ---
     const [showManualModal, setShowManualModal] = useState(false);
     const [manualWarehouses, setManualWarehouses] = useState<Warehouse[]>([]);
-
-    // Single View State
     const [manualWarehouseId, setManualWarehouseId] = useState('');
     const [manualSourceType, setManualSourceType] = useState<'primary' | 'secondary' | 'other' | null>(null);
     const [manualCommissionNumber, setManualCommissionNumber] = useState('');
     const [manualSupplierName, setManualSupplierName] = useState('');
-
-    // AI States
     const [manualAiFile, setManualAiFile] = useState<File | null>(null);
     const [manualAiPreview, setManualAiPreview] = useState<string | null>(null);
     const [isManualAnalyzing, setIsManualAnalyzing] = useState(false);
     const [manualScannedItems, setManualScannedItems] = useState<{ sku: string, name: string, quantity: number, foundArticle?: Article, isFound: boolean }[]>([]);
+    const [isSubmitting, setIsSubmitting] = useState(false);
     const manualFileInputRef = useRef<HTMLInputElement>(null);
-
-    // --- NEW: DRAG & DROP STATE ---
     const [isDragging, setIsDragging] = useState(false);
 
     // --- IMPORT TAB STATE ---
     const [importCandidates, setImportCandidates] = useState<any[]>([]);
     const [loadingImport, setLoadingImport] = useState(false);
-
-    // --- ADD ARTICLE MODAL STATE (FOR IMPORT) ---
     const [isAddModalOpen, setIsAddModalOpen] = useState(false);
     const [importDataForModal, setImportDataForModal] = useState<Partial<Article> & { orderItemId: string } | null>(null);
-    const [suppliers, setSuppliers] = useState<Supplier[]>([]); // Need full supplier list for modal
+    const [suppliers, setSuppliers] = useState<Supplier[]>([]);
 
 
     useEffect(() => {
         fetchProposals();
-        fetchPendingOrders();
-        fetchCompletedOrders();
         fetchPendingOrders();
         fetchCompletedOrders();
         fetchManualWarehouses();
@@ -97,7 +76,6 @@ const Orders: React.FC = () => {
         fetchSuppliers();
     }, [profile?.primary_warehouse_id]);
 
-    // Clean up old completed orders on mount
     useEffect(() => {
         cleanupOldOrders();
     }, []);
@@ -189,9 +167,7 @@ const Orders: React.FC = () => {
             orderItemId: item.id,
             name: item.name,
             sku: item.sku,
-            // Pre-fill supplier if name matches
             supplier: item.supplier,
-            // Default location
             location: 'Lager'
         });
         setIsAddModalOpen(true);
@@ -199,21 +175,14 @@ const Orders: React.FC = () => {
 
     const handleImportSuccess = async (newArticleId: string) => {
         if (!importDataForModal) return;
-
-        // Link the order item to the new article
-        // This ensures it doesn't show up in the import list anymore (which filters by article_id IS NULL)
         try {
             await supabase.from('order_items').update({ article_id: newArticleId }).eq('id', importDataForModal.orderItemId);
-
-            // Remove from local list to avoid refetch
             setImportCandidates(prev => prev.filter(c => c.id !== importDataForModal.orderItemId));
-
             alert("Artikel erfolgreich angelegt und verknüpft!");
         } catch (e: any) {
             alert("Fehler beim Verknüpfen: " + e.message);
         }
     };
-
 
     const fetchProposals = async () => {
         setLoadingProposals(true);
@@ -233,7 +202,7 @@ const Orders: React.FC = () => {
                     price: item.price || 0,
                     warehouseId: item.warehouse_id,
                     supplier: item.supplier,
-                    supplierSku: item.supplier_sku, // Ensure we map this for CSV
+                    supplierSku: item.supplier_sku,
                     onOrderDate: item.on_order_date,
                 }));
 
@@ -249,7 +218,6 @@ const Orders: React.FC = () => {
                 const whMap = new Map<string, string>();
                 if (whData) whData.forEach((w: any) => whMap.set(w.id, w.name));
 
-                // Fetch Suppliers to get CSV Format
                 const { data: supData } = await supabase.from('suppliers').select('name, csv_format');
                 const supCsvMap = new Map<string, string>();
                 if (supData) supData.forEach((s: any) => supCsvMap.set(s.name, s.csv_format));
@@ -316,6 +284,10 @@ const Orders: React.FC = () => {
                 pending: pending.length,
                 commission: pickup.length
             }));
+
+            // Note: If we had a currently selected order, we might want to update it if it changed, 
+            // but MasterDetailLayout content components usually handle their own data fetching or we pass fresh data.
+            // But here we rely on the list refresh. The detail component fetches its own items.
         }
         setLoadingPending(false);
     };
@@ -352,9 +324,28 @@ const Orders: React.FC = () => {
             await supabase.from('orders').delete().eq('id', orderId);
             fetchCompletedOrders();
             fetchPendingOrders();
+            if (selectedOrder?.id === orderId) {
+                handleCloseDetail();
+            }
         } catch (e: any) {
             alert("Fehler: " + e.message);
         }
+    };
+
+    const handleDownloadCsv = (order: Order) => {
+        supabase.from('order_items').select('*, articles(name, sku, supplier_sku)').eq('order_id', order.id)
+            .then(({ data }) => {
+                if (!data) return;
+                const csvContent = "data:text/csv;charset=utf-8,"
+                    + "Artikelnummer;Bezeichnung;Menge\n"
+                    + data.map((i: any) => `${i.articles?.supplier_sku || i.articles?.sku || i.custom_sku || ''};${i.articles?.name || i.custom_name};${i.quantity_ordered}`).join("\n");
+                const encodedUri = encodeURI(csvContent);
+                const link = document.createElement("a");
+                link.setAttribute("href", encodedUri);
+                link.setAttribute("download", `Bestellung_${order.supplier}_${order.date}.csv`);
+                document.body.appendChild(link);
+                link.click();
+            });
     };
 
     // --- MANUAL ORDER LOGIC ---
@@ -369,7 +360,6 @@ const Orders: React.FC = () => {
         setManualSupplierName('');
         setShowManualModal(true);
 
-        // Auto-Select Primary if available
         if (profile?.primary_warehouse_id) {
             handleManualWarehouseSelect(profile.primary_warehouse_id, 'primary');
         }
@@ -379,7 +369,6 @@ const Orders: React.FC = () => {
         setManualWarehouseId(whId);
         setManualSourceType(type);
 
-        // Fetch next Commission Number
         try {
             const { count } = await supabase.from('orders')
                 .select('*', { count: 'exact', head: true })
@@ -477,14 +466,12 @@ const Orders: React.FC = () => {
 
                 const scanned = result.items || [];
 
-                // MATCHING LOGIC
                 const matchedItems = await Promise.all(scanned.map(async (item: any) => {
                     let query = supabase.from('articles')
                         .select('*')
                         .or(`sku.eq.${item.sku},supplier_sku.eq.${item.sku},ean.eq.${item.sku}`)
                         .limit(1);
 
-                    // Filter by selected warehouse if available to avoid cross-warehouse matching
                     if (manualWarehouseId) {
                         query = query.eq('warehouse_id', manualWarehouseId);
                     }
@@ -540,10 +527,8 @@ const Orders: React.FC = () => {
 
                 if (item.isFound && item.foundArticle) {
                     payload.article_id = item.foundArticle.id;
-                    // Mark article as ordered
                     await supabase.from('articles').update({ on_order_date: new Date().toISOString() }).eq('id', item.foundArticle.id);
                 } else {
-                    // Custom Item
                     payload.custom_name = item.name;
                     payload.custom_sku = item.sku;
                 }
@@ -556,7 +541,6 @@ const Orders: React.FC = () => {
             alert("Bestellung erfolgreich angelegt!");
             setShowManualModal(false);
             fetchPendingOrders();
-            // Update proposals because items might have been removed from proposal list (on_order_date set)
             fetchProposals();
             setActiveTab('pending');
 
@@ -567,315 +551,45 @@ const Orders: React.FC = () => {
         }
     };
 
-    // --- CREATE ORDER LOGIC (EXISTING) ---
+    // --- VIEW HANDLERS ---
 
-    const handleOpenProposal = async (proposal: OrderProposal) => {
+    // Open Proposal -> Detail Layout
+    const handleOpenProposal = (proposal: OrderProposal) => {
+        setSelectedOrder(null);
         setSelectedProposal(proposal);
-        setNewOrderNumber('');
-        setShowSkuCopyModal(false);
-        setCopiedSkuIds(new Set());
-        setCommissionCopied(false);
-        setNewCommissionNumber('Lade...');
-
-        try {
-            const { count } = await supabase.from('orders')
-                .select('*', { count: 'exact', head: true })
-                .eq('warehouse_id', proposal.warehouseId);
-
-            const nextNum = (count || 0) + 1;
-            const safeWhName = proposal.warehouseName.replace(/[^a-zA-Z0-9]/g, '');
-            const generated = `${safeWhName}-${nextNum.toString().padStart(4, '0')}`;
-            setNewCommissionNumber(generated);
-        } catch (e) {
-            setNewCommissionNumber('');
-        }
-
-        const initialSelected = new Set<string>();
-        const initialQuantities: Record<string, number> = {};
-
-        proposal.articles.forEach(a => {
-            initialSelected.add(a.article.id);
-            initialQuantities[a.article.id] = a.missingAmount;
-        });
-
-        setSelectedItemIds(initialSelected);
-        setProposalQuantities(initialQuantities);
     };
 
-    const handleCopyCommission = () => {
-        if (newCommissionNumber) {
-            navigator.clipboard.writeText(newCommissionNumber);
-            setCommissionCopied(true);
-            setTimeout(() => setCommissionCopied(false), 2000);
-        }
-    };
-
-    const handleCloseProposal = () => {
+    // Open Order -> Detail Layout
+    const handleOpenOrder = (order: Order) => {
         setSelectedProposal(null);
-        setShowSkuCopyModal(false);
-    };
-
-    const toggleProposalItem = (articleId: string) => {
-        const newSet = new Set(selectedItemIds);
-        if (newSet.has(articleId)) newSet.delete(articleId); else newSet.add(articleId);
-        setSelectedItemIds(newSet);
-    };
-
-    const updateProposalQuantity = (articleId: string, delta: number) => {
-        setProposalQuantities(prev => ({
-            ...prev,
-            [articleId]: Math.max(1, (prev[articleId] || 0) + delta)
-        }));
-    };
-
-    const handleProposalCsvDownload = () => {
-        if (!selectedProposal) return;
-
-        const itemsToExport = selectedProposal.articles.filter(a => selectedItemIds.has(a.article.id));
-        if (itemsToExport.length === 0) return;
-
-        const format = selectedProposal.csvFormat || "{{sku}};{{amount}}";
-        let csvContent = "data:text/csv;charset=utf-8,";
-        const rows = itemsToExport.map(item => {
-            const amount = proposalQuantities[item.article.id] || item.missingAmount;
-            let row = format;
-            row = row.replace(/{{sku}}/g, item.article.supplierSku || item.article.sku || '');
-            row = row.replace(/{{amount}}/g, amount.toString());
-            row = row.replace(/{{name}}/g, item.article.name);
-            return row;
-        });
-
-        csvContent += rows.join("\n");
-        const encodedUri = encodeURI(csvContent);
-        const link = document.createElement("a");
-        link.setAttribute("href", encodedUri);
-        link.setAttribute("download", `Bestellung_${selectedProposal.supplier}_${new Date().toISOString().split('T')[0]}.csv`);
-        document.body.appendChild(link);
-        link.click();
-    };
-
-    const createOrder = async () => {
-        if (!selectedProposal || !user) return;
-        try {
-            if (selectedItemIds.size === 0) return;
-
-            const { data: orderData, error } = await supabase
-                .from('orders')
-                .insert({
-                    supplier: selectedProposal.supplier,
-                    date: new Date().toISOString(),
-                    status: 'Ordered',
-                    item_count: selectedItemIds.size,
-                    total: 0,
-                    warehouse_id: selectedProposal.warehouseId,
-                    supplier_order_number: newOrderNumber,
-                    commission_number: newCommissionNumber
-                })
-                .select().single();
-
-            if (error) throw error;
-
-            const itemsToOrder = selectedProposal.articles.filter(a => selectedItemIds.has(a.article.id));
-
-            for (const item of itemsToOrder) {
-                const qty = proposalQuantities[item.article.id] || item.missingAmount;
-                await supabase.from('order_items').insert({
-                    order_id: orderData.id,
-                    article_id: item.article.id,
-                    quantity_ordered: qty
-                });
-                await supabase.from('articles').update({ on_order_date: new Date().toISOString() }).eq('id', item.article.id);
-            }
-
-            await logOrderEvent(orderData.id, 'Neue Bestellung', `Bestellung bei ${selectedProposal.supplier}`);
-
-            alert("Bestellung erfolgreich erstellt!");
-            handleCloseProposal();
-            fetchProposals();
-            fetchPendingOrders();
-            setActiveTab('pending');
-        } catch (e: any) { alert("Fehler: " + e.message); }
-    };
-
-    // --- RECEIVING LOGIC (UPDATED) ---
-
-    const handleOpenOrder = async (order: Order) => {
         setSelectedOrder(order);
-        setLoadingDetails(true);
-        setShowVehicleDecision(false);
-        setShowSkuCopyModal(false);
-
-        try {
-            const { data } = await supabase
-                .from('order_items')
-                .select('*, articles(name, sku, supplier_sku, stock)')
-                .eq('order_id', order.id);
-
-            if (data) {
-                const isPickup = order.status === 'ReadyForPickup';
-
-                const mappedItems = data.map((item: any) => {
-                    const remaining = item.quantity_ordered - item.quantity_received;
-                    const effectiveMaxQty = isPickup ? item.quantity_received : remaining;
-                    const defaultAmount = isPickup ? item.quantity_received : Math.max(0, remaining);
-
-                    return {
-                        id: item.id,
-                        articleId: item.article_id, // CamelCase
-                        quantityOrdered: item.quantity_ordered, // CamelCase
-                        quantityReceived: item.quantity_received, // CamelCase
-                        articleName: item.articles?.name || item.custom_name, // Fallback to custom name
-                        articleSku: item.articles?.supplier_sku || item.articles?.sku || item.custom_sku,
-                        customName: item.custom_name, // Store custom properties
-                        customSku: item.custom_sku,
-                        currentReceiveAmount: defaultAmount,
-                        maxQty: effectiveMaxQty
-                    };
-                });
-                setReceivingItems(mappedItems);
-            }
-        } catch (e) { console.error(e); }
-        finally { setLoadingDetails(false); }
     };
 
-    const handleAmountChange = (index: number, val: number) => {
-        const newItems = [...receivingItems];
-        newItems[index].currentReceiveAmount = val;
-        setReceivingItems(newItems);
+    const handleCloseDetail = () => {
+        setSelectedOrder(null);
+        setSelectedProposal(null);
     };
 
-    const handlePreReceive = () => {
-        if (!selectedOrder) return;
-        const totalReceiving = receivingItems.reduce((sum, item) => sum + item.currentReceiveAmount, 0);
-        if (totalReceiving === 0) {
-            alert("Bitte Menge angeben.");
-            return;
-        }
+    const handleOrderCreated = () => {
+        handleCloseDetail();
+        fetchProposals();
+        fetchPendingOrders();
+        setActiveTab('pending');
+    }
 
-        if (selectedOrder.warehouseType === 'Vehicle') {
-            const isFullReceive = receivingItems.every(i => i.currentReceiveAmount === i.maxQty);
-            if (isFullReceive) {
-                setShowVehicleDecision(true);
-                return;
-            }
-        }
-        executeReceipt('Direct');
-    };
-
-    const executeReceipt = async (mode: 'Direct' | 'Commission') => {
-        if (!selectedOrder || !user) return;
-        setIsSubmitting(true);
-
-        try {
-            let allCompleted = true;
-            const isPickup = selectedOrder.status === 'ReadyForPickup';
-
-            for (const item of receivingItems) {
-                if (item.currentReceiveAmount > 0) {
-                    if (!isPickup) {
-                        const newReceivedTotal = item.quantityReceived + item.currentReceiveAmount;
-                        await supabase.from('order_items').update({
-                            quantity_received: newReceivedTotal
-                        }).eq('id', item.id);
-                    }
-
-                    // Only book stock if it's a real article (not custom) AND mode is Direct
-                    if (mode === 'Direct' && item.articleId) {
-                        const { data: art } = await supabase.from('articles').select('stock').eq('id', item.articleId).single();
-                        if (art) {
-                            const newStock = art.stock + item.currentReceiveAmount;
-                            const updates: any = { stock: newStock };
-
-                            if (!isPickup && (item.quantityReceived + item.currentReceiveAmount) >= item.quantityOrdered) {
-                                updates.on_order_date = null;
-                            }
-
-                            await supabase.from('articles').update(updates).eq('id', item.articleId);
-
-                            await supabase.from('stock_movements').insert({
-                                article_id: item.articleId,
-                                user_id: user.id,
-                                amount: item.currentReceiveAmount,
-                                type: 'receive_goods',
-                                reference: `Bestellung: ${selectedOrder.supplier}`
-                            });
-                        }
-                    } else if (!item.articleId) {
-                        // Custom items: Just marked as received in DB (done above), no stock update
-                    }
-                }
-
-                if (!isPickup) {
-                    if ((item.quantityReceived + item.currentReceiveAmount) < item.quantityOrdered) {
-                        allCompleted = false;
-                    }
-                }
-            }
-
-            let newStatus = allCompleted ? 'Received' : 'PartiallyReceived';
-            if (mode === 'Commission' && allCompleted) {
-                newStatus = 'ReadyForPickup';
-            }
-            if (isPickup) {
-                newStatus = 'Received';
-            }
-
-            await supabase.from('orders').update({ status: newStatus }).eq('id', selectedOrder.id);
-
-            await logOrderEvent(selectedOrder.id, 'Wareneingang', `Status: ${translateStatus(newStatus)}`);
-
-            setSelectedOrder(null);
-            setShowVehicleDecision(false);
-            fetchPendingOrders();
-            fetchCompletedOrders();
-
-        } catch (e: any) {
-            alert("Fehler: " + e.message);
-        } finally {
-            setIsSubmitting(false);
+    const handleOrderUpdate = () => {
+        fetchPendingOrders();
+        fetchCompletedOrders();
+        // Don't close details here, user might want to continue receiving or review status
+        if (selectedOrder) {
+            // Refresh selected order status if needed (though local update handles items)
+            // We can re-fetch just the order status if we want live status update in list
         }
     };
 
-    const handleDownloadCsv = (order: Order) => {
-        supabase.from('order_items').select('*, articles(name, sku, supplier_sku)').eq('order_id', order.id)
-            .then(({ data }) => {
-                if (!data) return;
-                const csvContent = "data:text/csv;charset=utf-8,"
-                    + "Artikelnummer;Bezeichnung;Menge\n"
-                    + data.map((i: any) => `${i.articles?.supplier_sku || i.articles?.sku || i.custom_sku || ''};${i.articles?.name || i.custom_name};${i.quantity_ordered}`).join("\n");
-                const encodedUri = encodeURI(csvContent);
-                const link = document.createElement("a");
-                link.setAttribute("href", encodedUri);
-                link.setAttribute("download", `Bestellung_${order.supplier}_${order.date}.csv`);
-                document.body.appendChild(link);
-                link.click();
-            });
-    };
 
-    const handleCopySku = (sku: string, id: string) => {
-        if (!sku) return;
-        navigator.clipboard.writeText(sku);
-        setCopiedSkuIds(prev => new Set(prev).add(id));
-    };
-
-    const translateStatus = (status: string) => {
-        switch (status) {
-            case 'Draft': return 'Entwurf';
-            case 'Ordered': return 'Bestellt';
-            case 'PartiallyReceived': return 'Teilw. Erhalten';
-            case 'Received': return 'Erhalten';
-            case 'ReadyForPickup': return 'Abholbereit';
-            default: return status;
-        }
-    };
-
-    // Helper for Warehouse Switch Name
-    const getWarehouseName = (id: string | undefined) => {
-        if (!id) return '';
-        return manualWarehouses.find(w => w.id === id)?.name || 'Lager';
-    };
-
-    return (
+    // --- LIST CONTENT RENDER ---
+    const renderListContent = () => (
         <div className="space-y-6 pb-24">
             <header className="flex justify-between items-start">
                 <div>
@@ -914,7 +628,6 @@ const Orders: React.FC = () => {
             {/* --- CONTENT: PROPOSALS --- */}
             {activeTab === 'proposals' && (
                 <div className="space-y-6">
-                    {/* Proposals List (Unchanged) */}
                     {loadingProposals ? <Loader2 className="animate-spin text-blue-400 mx-auto" /> : (
                         Object.keys(groupedProposals).length === 0 ? (
                             <div className="text-center text-white/30 py-10 border border-dashed border-white/10 rounded-xl">Keine Nachbestellungen nötig.</div>
@@ -923,7 +636,11 @@ const Orders: React.FC = () => {
                                 <div key={supplier} className="space-y-3">
                                     <h3 className="text-white/50 text-xs font-bold uppercase tracking-wider pl-2">{supplier}</h3>
                                     {(proposals as OrderProposal[]).map((prop, idx) => (
-                                        <GlassCard key={idx} className="cursor-pointer hover:bg-white/5 transition-colors" onClick={() => handleOpenProposal(prop)}>
+                                        <GlassCard
+                                            key={idx}
+                                            className={`cursor-pointer hover:bg-white/5 transition-colors ${selectedProposal === prop ? 'border-blue-500/50 bg-blue-500/10' : ''}`}
+                                            onClick={() => handleOpenProposal(prop)}
+                                        >
                                             <div className="flex justify-between items-center">
                                                 <div className="flex items-center gap-3">
                                                     <div className="w-10 h-10 rounded-full bg-blue-500/20 flex items-center justify-center text-blue-300"><ShoppingCart size={18} /></div>
@@ -991,7 +708,7 @@ const Orders: React.FC = () => {
                     {pendingOrders.map(order => (
                         <GlassCard
                             key={order.id}
-                            className="flex flex-col gap-3 cursor-pointer hover:bg-white/5 transition-colors group"
+                            className={`flex flex-col gap-3 cursor-pointer hover:bg-white/5 transition-colors group ${selectedOrder?.id === order.id ? 'border-blue-500/50 bg-blue-500/10' : ''}`}
                             onClick={() => handleOpenOrder(order)}
                         >
                             <div className="flex justify-between items-start">
@@ -1039,7 +756,7 @@ const Orders: React.FC = () => {
                         completedOrders.map(order => (
                             <GlassCard
                                 key={order.id}
-                                className="flex flex-col gap-3 cursor-pointer hover:bg-white/5 transition-colors group opacity-70 hover:opacity-100"
+                                className={`flex flex-col gap-3 cursor-pointer hover:bg-white/5 transition-colors group opacity-70 hover:opacity-100 ${selectedOrder?.id === order.id ? 'border-blue-500/50 bg-blue-500/10' : ''}`}
                                 onClick={() => handleOpenOrder(order)}
                             >
                                 <div className="flex justify-between items-start">
@@ -1073,7 +790,7 @@ const Orders: React.FC = () => {
                     {pickupOrders.map(order => (
                         <GlassCard
                             key={order.id}
-                            className="flex flex-col gap-3 cursor-pointer hover:bg-white/5 transition-colors group border-amber-500/30 bg-amber-500/5"
+                            className={`flex flex-col gap-3 cursor-pointer hover:bg-white/5 transition-colors group border-amber-500/30 bg-amber-500/5 ${selectedOrder?.id === order.id ? 'border-amber-400/50 bg-amber-500/20' : ''}`}
                             onClick={() => handleOpenOrder(order)}
                         >
                             <div className="flex justify-between items-start">
@@ -1106,115 +823,33 @@ const Orders: React.FC = () => {
                     {pickupOrders.length === 0 && <div className="text-center text-white/30 py-8">Keine Kommissionen zur Abholung bereit.</div>}
                 </div>
             )}
+        </div>
+    );
 
-            {/* --- MODAL: ORDER DETAILS --- */}
-            {selectedOrder && (
-                <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-in fade-in">
-                    <div className="w-full max-w-lg bg-[#1a1d24] border border-white/10 rounded-2xl shadow-xl flex flex-col max-h-[90vh] relative">
-                        <div className="p-4 border-b border-white/10 flex justify-between items-center bg-white/5">
-                            <div>
-                                <h2 className="text-lg font-bold text-white">Bestellung Details</h2>
-                                <p className="text-sm text-white/50">{selectedOrder.supplier} • {new Date(selectedOrder.date).toLocaleDateString()}</p>
-                            </div>
-                            <button onClick={() => setSelectedOrder(null)} className="p-2 rounded-full hover:bg-white/10"><X size={20} /></button>
-                        </div>
-
-                        <div className="flex-1 overflow-y-auto p-4 space-y-4">
-                            {loadingDetails ? <Loader2 className="animate-spin mx-auto text-blue-400" /> :
-                                receivingItems.map((item, idx) => (
-                                    <div key={item.id} className="p-3 rounded-xl bg-white/5 border border-white/5">
-                                        <div className="flex justify-between items-start mb-3">
-                                            <div>
-                                                <div className="text-sm font-bold text-white">{item.articleName || item.customName || 'Unbekannt'}</div>
-                                                <div className="text-xs text-white/50 flex gap-2">
-                                                    <span>Art-Nr: {item.articleSku || item.customSku || '-'}</span>
-                                                    {!item.articleId && <span className="text-amber-400 font-bold bg-amber-900/30 px-1 rounded">Manuell</span>}
-                                                </div>
-                                            </div>
-                                            <div className="text-right">
-                                                <div className="text-xs text-white/50">Erhalten / Bestellt</div>
-                                                <div className="text-sm font-bold"><span className="text-emerald-400">{item.quantityReceived}</span> / {item.quantityOrdered}</div>
-                                            </div>
-                                        </div>
-
-                                        {selectedOrder.status !== 'Received' && (
-                                            <div className="space-y-2">
-                                                <div className="flex items-center justify-between text-xs">
-                                                    <span className="text-white/40">{selectedOrder.status === 'ReadyForPickup' ? 'Zu verladen:' : 'Offener Eingang:'}</span>
-                                                    <span className={`${item.currentReceiveAmount === item.maxQty ? 'text-emerald-400' : 'text-amber-400'} font-bold`}>
-                                                        +{item.currentReceiveAmount}
-                                                    </span>
-                                                </div>
-                                                <div className="flex items-center gap-3">
-                                                    <input
-                                                        type="range"
-                                                        min="0"
-                                                        max={item.maxQty}
-                                                        value={item.currentReceiveAmount}
-                                                        onChange={(e) => handleAmountChange(idx, parseInt(e.target.value))}
-                                                        className="flex-1 h-2 bg-white/20 rounded-lg appearance-none cursor-pointer accent-emerald-500"
-                                                        disabled={item.maxQty === 0}
-                                                    />
-                                                </div>
-                                            </div>
-                                        )}
-                                        {selectedOrder.status === 'Received' && (
-                                            <div className="bg-emerald-500/10 text-emerald-400 text-xs font-bold px-2 py-1 rounded text-center">
-                                                Vollständig Erhalten
-                                            </div>
-                                        )}
-                                    </div>
-                                ))
-                            }
-                        </div>
-
-                        <div className="p-4 border-t border-white/10 bg-black/20 flex flex-col gap-3">
-                            <div className="flex gap-3">
-                                <Button variant="secondary" onClick={() => setSelectedOrder(null)} className="flex-1">Schließen</Button>
-                                {selectedOrder.status === 'ReadyForPickup' ? (
-                                    <Button onClick={() => executeReceipt('Direct')} icon={<Truck size={16} />} className="flex-1 bg-emerald-600 hover:bg-emerald-500">
-                                        Abholen / Verladen
-                                    </Button>
-                                ) : selectedOrder.status !== 'Received' && (
-                                    <Button onClick={handlePreReceive} icon={<PackageCheck size={16} />} className="flex-1 bg-emerald-600 hover:bg-emerald-500">
-                                        Alles Erhalten
-                                    </Button>
-                                )}
-                            </div>
-                        </div>
-
-                        {showVehicleDecision && (
-                            <div className="absolute inset-0 bg-black/90 backdrop-blur-md z-50 flex flex-col items-center justify-center p-6 animate-in fade-in rounded-2xl text-center">
-                                <div className="w-16 h-16 rounded-full bg-blue-500/20 flex items-center justify-center text-blue-300 mb-4">
-                                    <Truck size={32} />
-                                </div>
-                                <h3 className="text-xl font-bold text-white mb-2">Fahrzeugbestellung</h3>
-                                <p className="text-sm text-white/60 mb-8 max-w-xs">
-                                    Die Ware ist vollständig da. Soll sie direkt ins Fahrzeug gebucht oder zur Abholung bereitgestellt werden?
-                                </p>
-
-                                <div className="flex flex-col gap-3 w-full">
-                                    <button
-                                        onClick={() => executeReceipt('Direct')}
-                                        className="w-full py-4 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold flex items-center justify-center gap-2 shadow-lg shadow-emerald-500/20"
-                                    >
-                                        <PackageCheck size={20} /> Direkt Verladen (Bestand +)
-                                    </button>
-                                    <button
-                                        onClick={() => executeReceipt('Commission')}
-                                        className="w-full py-4 rounded-xl bg-white/10 hover:bg-white/20 text-white font-bold flex items-center justify-center gap-2 border border-white/10"
-                                    >
-                                        <Archive size={20} /> Als Kommission bereitstellen
-                                    </button>
-                                    <button onClick={() => setShowVehicleDecision(false)} className="mt-4 text-xs text-white/40 hover:text-white">Abbrechen</button>
-                                </div>
-                            </div>
-                        )}
-                    </div>
-                </div>
-            )}
-
-            {/* ADD ARTICLE MODAL FOR IMPORT */}
+    // --- MAIN RENDER ---
+    return (
+        <MasterDetailLayout
+            title="Bestellwesen"
+            listContent={renderListContent()}
+            detailContent={
+                selectedProposal ? (
+                    <OrderProposalContent
+                        proposal={selectedProposal}
+                        onClose={handleCloseDetail}
+                        onOrderCreated={handleOrderCreated}
+                    />
+                ) : selectedOrder ? (
+                    <OrderDetailContent
+                        order={selectedOrder}
+                        onClose={handleCloseDetail}
+                        onUpdate={handleOrderUpdate}
+                    />
+                ) : null
+            }
+            isOpen={!!selectedOrder || !!selectedProposal}
+            onClose={handleCloseDetail}
+        >
+            {/* ADD ARTICLE MODAL FOR IMPORT - Stays Global */}
             <AddArticleModal
                 isOpen={isAddModalOpen}
                 onClose={() => setIsAddModalOpen(false)}
@@ -1226,7 +861,7 @@ const Orders: React.FC = () => {
                 existingCategories={[]}
             />
 
-            {/* --- MODAL: MANUAL ORDER WIZARD (RE-DESIGNED SINGLE PAGE) --- */}
+            {/* --- MODAL: MANUAL ORDER WIZARD --- */}
             {showManualModal && (
                 <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/90 backdrop-blur-md animate-in fade-in">
                     <div className="w-full max-w-md bg-[#1a1d24] border border-white/10 rounded-2xl shadow-xl flex flex-col max-h-[90vh]">
@@ -1249,7 +884,7 @@ const Orders: React.FC = () => {
                                             <button
                                                 onClick={() => handleManualWarehouseSelect(profile.primary_warehouse_id!, 'primary')}
                                                 className={`p-2 rounded-md transition-all ${manualSourceType === 'primary' ? 'bg-emerald-600 text-white shadow-lg' : 'text-white/40 hover:text-white'}`}
-                                                title={getWarehouseName(profile.primary_warehouse_id)}
+                                                title={manualWarehouses.find(w => w.id === profile.primary_warehouse_id)?.name}
                                             >
                                                 <WarehouseIcon size={20} />
                                             </button>
@@ -1257,7 +892,7 @@ const Orders: React.FC = () => {
                                                 <button
                                                     onClick={() => handleManualWarehouseSelect(profile.secondary_warehouse_id!, 'secondary')}
                                                     className={`p-2 rounded-md transition-all ${manualSourceType === 'secondary' ? 'bg-blue-600 text-white shadow-lg' : 'text-white/40 hover:text-white'}`}
-                                                    title={getWarehouseName(profile.secondary_warehouse_id)}
+                                                    title={manualWarehouses.find(w => w.id === profile.secondary_warehouse_id)?.name}
                                                 >
                                                     <Truck size={20} />
                                                 </button>
@@ -1380,140 +1015,7 @@ const Orders: React.FC = () => {
                     </div>
                 </div>
             )}
-
-            {/* PROPOSAL MODAL (Existing code...) */}
-            {selectedProposal && (
-                <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-in fade-in">
-                    <div className="w-full max-w-lg bg-[#1a1d24] border border-white/10 rounded-2xl shadow-xl flex flex-col max-h-[90vh] relative">
-                        <div className="p-4 border-b border-white/10 flex justify-between items-center bg-white/5">
-                            <div>
-                                <h2 className="text-lg font-bold text-white">Bestellvorschlag</h2>
-                                <p className="text-sm text-white/50">{selectedProposal.supplier}</p>
-                            </div>
-                            <button onClick={handleCloseProposal} className="p-2 rounded-full hover:bg-white/10"><X size={20} /></button>
-                        </div>
-                        <div className="flex-1 overflow-y-auto p-4 space-y-3">
-                            {selectedProposal.articles.map((item) => (
-                                <div
-                                    key={item.article.id}
-                                    className={`flex flex-col p-3 rounded-xl border transition-colors ${selectedItemIds.has(item.article.id) ? 'bg-emerald-500/5 border-emerald-500/30' : 'bg-white/5 border-white/5'}`}
-                                >
-                                    <div className="flex items-start gap-3 mb-2" onClick={() => toggleProposalItem(item.article.id)}>
-                                        <div className={`mt-0.5 w-5 h-5 rounded border flex items-center justify-center cursor-pointer ${selectedItemIds.has(item.article.id) ? 'bg-emerald-500 border-emerald-500 text-white' : 'border-white/30'}`}>
-                                            {selectedItemIds.has(item.article.id) && <Check size={12} />}
-                                        </div>
-                                        <div className="flex-1 cursor-pointer">
-                                            <div className="text-sm font-bold text-white line-clamp-2">{item.article.name}</div>
-                                            <div className="text-xs text-white/50 flex gap-2">
-                                                <span>Lager: {item.article.stock} / Soll: {item.article.targetStock}</span>
-                                                <span className="font-mono text-white/30">{item.article.supplierSku}</span>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    {selectedItemIds.has(item.article.id) && (
-                                        <div className="flex items-center gap-3 pl-8">
-                                            <div className="text-xs text-white/40">Menge:</div>
-                                            <div className="flex items-center bg-black/30 rounded-lg border border-white/10">
-                                                <button onClick={() => updateProposalQuantity(item.article.id, -1)} className="p-2 hover:bg-white/10 rounded-l-lg text-white"><Minus size={14} /></button>
-                                                <div className="w-12 text-center font-bold text-white text-sm">
-                                                    {proposalQuantities[item.article.id] || item.missingAmount}
-                                                </div>
-                                                <button onClick={() => updateProposalQuantity(item.article.id, 1)} className="p-2 hover:bg-white/10 rounded-r-lg text-white"><Plus size={14} /></button>
-                                            </div>
-                                        </div>
-                                    )}
-                                </div>
-                            ))}
-                        </div>
-                        <div className="p-4 border-t border-white/10 bg-black/20 space-y-4">
-                            <div className="grid grid-cols-2 gap-3">
-                                <div>
-                                    <label className="text-xs text-white/50 mb-1 block">Auftrags-Nr. (Lieferant)</label>
-                                    <input
-                                        className="w-full bg-white/5 border border-white/10 rounded-lg p-2 text-sm text-white focus:outline-none focus:border-emerald-500/50"
-                                        placeholder="z.B. 2024-9988"
-                                        value={newOrderNumber}
-                                        onChange={e => setNewOrderNumber(e.target.value)}
-                                    />
-                                </div>
-                                <div>
-                                    <label className="text-xs text-white/50 mb-1 block flex justify-between">
-                                        <span>Kommission (Intern)</span>
-                                        {commissionCopied && <span className="text-emerald-400 font-bold">Kopiert!</span>}
-                                    </label>
-                                    <div className="relative group cursor-pointer" onClick={handleCopyCommission}>
-                                        <input
-                                            className="w-full bg-white/5 border border-white/10 rounded-lg p-2 pr-8 text-sm text-white focus:outline-none focus:border-emerald-500/50 cursor-pointer"
-                                            placeholder="Automatisch..."
-                                            value={newCommissionNumber}
-                                            readOnly
-                                        />
-                                        <div className="absolute right-2 top-2 text-white/30 group-hover:text-white">
-                                            {commissionCopied ? <Check size={16} className="text-emerald-400" /> : <Copy size={16} />}
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                            <button onClick={() => setShowSkuCopyModal(true)} className="w-full py-2.5 rounded-xl border border-white/10 bg-white/5 hover:bg-white/10 text-white text-xs font-bold flex items-center justify-center gap-2 transition-colors">
-                                <Copy size={14} /> Artikel-Nrn. kopieren
-                            </button>
-                            <div className="flex gap-3">
-                                <Button variant="secondary" onClick={handleProposalCsvDownload} icon={<FileText size={16} />} className="flex-1 bg-white/5 hover:bg-white/10">CSV Export</Button>
-                                <Button onClick={createOrder} disabled={selectedItemIds.size === 0} className="flex-[2] bg-emerald-600 hover:bg-emerald-500">Bestellen ({selectedItemIds.size})</Button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            )}
-
-            {/* --- MODAL: COPY SKU LIST --- */}
-            {showSkuCopyModal && selectedProposal && (
-                <div className="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-black/90 backdrop-blur-md animate-in fade-in">
-                    <div className="w-full max-w-md bg-[#1a1d24] border border-white/10 rounded-2xl shadow-xl flex flex-col max-h-[80vh]">
-                        <div className="p-4 border-b border-white/10 flex justify-between items-center bg-white/5">
-                            <div>
-                                <h2 className="text-lg font-bold text-white">Artikel kopieren</h2>
-                                <p className="text-sm text-white/50">{selectedProposal.supplier}</p>
-                            </div>
-                            <button onClick={() => setShowSkuCopyModal(false)} className="p-2 rounded-full hover:bg-white/10"><X size={20} /></button>
-                        </div>
-                        <div className="flex-1 overflow-y-auto p-4 space-y-2">
-                            <div className="text-xs text-white/40 mb-2 uppercase font-bold tracking-wider">Ausgewählte Positionen:</div>
-                            {selectedProposal.articles
-                                .filter(item => selectedItemIds.has(item.article.id))
-                                .map(item => {
-                                    const isCopied = copiedSkuIds.has(item.article.id);
-                                    return (
-                                        <div
-                                            key={item.article.id}
-                                            onClick={() => handleCopySku(item.article.supplierSku || item.article.sku || '', item.article.id)}
-                                            className={`p-3 rounded-xl border cursor-pointer transition-all flex justify-between items-center group ${isCopied
-                                                ? 'bg-emerald-500/20 border-emerald-500/50'
-                                                : 'bg-white/5 border-white/5 hover:bg-white/10'
-                                                }`}
-                                        >
-                                            <div className="flex-1 min-w-0 pr-3">
-                                                <div className={`text-sm font-bold truncate ${isCopied ? 'text-emerald-400' : 'text-white'}`}>
-                                                    {item.article.name}
-                                                </div>
-                                                <div className="text-xs font-mono text-white/50 flex items-center gap-2">
-                                                    {item.article.supplierSku || 'Keine Art-Nr.'}
-                                                </div>
-                                            </div>
-                                            <div className={`p-2 rounded-lg ${isCopied ? 'bg-emerald-500 text-white' : 'bg-black/20 text-white/30 group-hover:text-white'}`}>
-                                                {isCopied ? <Check size={16} /> : <Copy size={16} />}
-                                            </div>
-                                        </div>
-                                    );
-                                })}
-                        </div>
-                        <div className="p-4 border-t border-white/10 bg-black/20">
-                            <Button onClick={() => setShowSkuCopyModal(false)} className="w-full bg-white/10 hover:bg-white/20">Schließen</Button>
-                        </div>
-                    </div>
-                </div>
-            )}
-        </div>
+        </MasterDetailLayout>
     );
 };
 

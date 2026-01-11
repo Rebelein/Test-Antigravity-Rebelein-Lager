@@ -14,8 +14,8 @@ interface InventoryToolbarProps {
     setSearchTerm: (term: string) => void;
     activeFilter: string;
     setActiveFilter: (filter: string) => void;
-    sortConfig: { key: 'location' | 'name'; direction: 'asc' | 'desc' };
-    setSortConfig: (config: { key: 'location' | 'name'; direction: 'asc' | 'desc' }) => void;
+    sortConfig: { key: string; direction: 'asc' | 'desc' };
+    setSortConfig: (config: { key: string; direction: 'asc' | 'desc' }) => void;
 }
 
 export const InventoryToolbar: React.FC<InventoryToolbarProps> = ({

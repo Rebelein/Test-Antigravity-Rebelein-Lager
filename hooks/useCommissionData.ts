@@ -249,11 +249,13 @@ export const useCommissionData = (activeTab: CommissionTab) => {
 
     // Realtime Subscription
     useEffect(() => {
+        if (!profile?.primary_warehouse_id) return;
+
         const channel = supabase
-            .channel('commissions-realtime-hook')
+            .channel(`commissions-${profile.primary_warehouse_id}`)
             .on(
                 'postgres_changes',
-                { event: '*', schema: 'public', table: 'commissions' },
+                { event: '*', schema: 'public', table: 'commissions', filter: `warehouse_id=eq.${profile.primary_warehouse_id}` },
                 () => {
                     fetchCommissions();
                     fetchTabCounts();
@@ -262,6 +264,11 @@ export const useCommissionData = (activeTab: CommissionTab) => {
             .on(
                 'postgres_changes',
                 { event: '*', schema: 'public', table: 'commission_items' },
+                // Note: filtering commission_items by warehouse via join is not supported in realtime. 
+                // We rely on the fact that usually commission items update alongside commission or we accept some extra traffic here.
+                // Ideally we would filter by commission_id but we want ANY commission change in this warehouse.
+                // Optimization: Maybe only refetch if the commission_id belongs to a commission we have loaded?
+                // For now, simple refetch is safer to ensure consistency.
                 () => {
                     fetchCommissions();
                 }
@@ -271,7 +278,7 @@ export const useCommissionData = (activeTab: CommissionTab) => {
         return () => {
             supabase.removeChannel(channel);
         };
-    }, [fetchCommissions, fetchTabCounts]);
+    }, [fetchCommissions, fetchTabCounts, profile?.primary_warehouse_id]);
 
     return {
         commissions,

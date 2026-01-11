@@ -1,18 +1,23 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { GlassCard, StatusBadge, Button, GlassModal } from '../components/UIComponents';
-import { AlertTriangle, Wrench, User, CheckCircle2, FileText, ArrowRight, Grid, Database, X, Play, RefreshCw, Check, Copy, Settings, Factory, Warehouse, Tag, Maximize2, Minimize2, PhoneCall, StickyNote, Save, Undo2, Library, Plus, MessageSquare, Monitor, Smartphone, ShoppingCart, LayoutTemplate } from 'lucide-react';
+import { AlertTriangle, Wrench, User, CheckCircle2, FileText, ArrowRight, Grid, Database, X, Play, RefreshCw, Check, Copy, Settings, Factory, Warehouse, Tag, Maximize2, Minimize2, PhoneCall, StickyNote, Save, Undo2, Library, Plus, MessageSquare, Monitor, Smartphone, ShoppingCart, LayoutTemplate, Lock, Unlock } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { initializeDatabase, MANUAL_SETUP_SQL } from '../utils/dbInit';
 import { useAuth } from '../contexts/AuthContext';
 import { useTheme } from '../contexts/ThemeContext';
-import { CommissionDetailModal } from '../components/CommissionDetailModal';
+import { CommissionDetailContent } from '../components/CommissionDetailContent';
+import { MachineDetailContent } from '../components/machines/MachineDetailContent';
+import { KeyHandoverContent } from '../components/KeyComponents';
 import { supabase } from '../supabaseClient';
-import { Machine, MachineStatus, Commission, UserProfile, Key } from '../types'; // Added Key
+import { Machine, MachineStatus, Commission, UserProfile, Key, Article, Supplier } from '../types';
+import { CommissionEditContent } from '../components/commissions/CommissionEditContent';
+import { CommissionOfficeContent } from '../components/CommissionOfficeContent';
 import { formatDistanceToNow } from 'date-fns';
 import { de } from 'date-fns/locale';
 import { Responsive, WidthProvider } from 'react-grid-layout';
 import 'react-grid-layout/css/styles.css';
 import 'react-resizable/css/styles.css';
+import { toast } from 'sonner'; // Added toast import
 import { Key as KeyIcon } from 'lucide-react'; // Added KeyIcon
 
 const ResponsiveGridLayout = WidthProvider(Responsive);
@@ -39,6 +44,16 @@ const Dashboard: React.FC = () => {
     const [repairMachines, setRepairMachines] = useState<Machine[]>([]);
     const [rentedKeys, setRentedKeys] = useState<Key[]>([]); // New State
 
+    // Helper Data for Create Modal
+    const [suppliers, setSuppliers] = useState<Supplier[]>([]);
+    const [availableArticles, setAvailableArticles] = useState<Article[]>([]);
+    const [showCreateCommissionModal, setShowCreateCommissionModal] = useState(false);
+
+    // Split View / Modal States for Machines & Keys
+    const [selectedMachine, setSelectedMachine] = useState<Machine | null>(null);
+    const [selectedKey, setSelectedKey] = useState<Key | null>(null);
+    const [allUsers, setAllUsers] = useState<UserProfile[]>([]);
+
     const [draftCommissions, setDraftCommissions] = useState<Commission[]>([]);
     const [readyCommissions, setReadyCommissions] = useState<Commission[]>([]);
     const [returnCommissions, setReturnCommissions] = useState<Commission[]>([]);
@@ -54,12 +69,12 @@ const Dashboard: React.FC = () => {
 
     // ... (feature states unchanged)
     const [isCommissionTileFullscreen, setIsCommissionTileFullscreen] = useState(false);
-    const [processingCommission, setProcessingCommission] = useState<Commission | null>(null);
     const [viewingCommission, setViewingCommission] = useState<Commission | null>(null);
-    const [officeNoteInput, setOfficeNoteInput] = useState('');
-    const [isOfficeProcessed, setIsOfficeProcessed] = useState(false);
     const [isSavingProcess, setIsSavingProcess] = useState(false);
     const [mobileTab, setMobileTab] = useState<'draft' | 'ready' | 'returns'>('draft');
+
+    // Split View Status
+    const isSplitView = !!selectedMachine || !!selectedKey || !!viewingCommission;
 
     // --- LAYOUT STATE ---
     // Added 'keys' tile to layout. Adjusted heights/widths to fit.
@@ -92,8 +107,34 @@ const Dashboard: React.FC = () => {
     });
 
     const handleLayoutChange = (layout: any, allLayouts: any) => {
+        if (isSplitView) return; // Prevent saving temporary split-view layout
         setLayouts(allLayouts);
         localStorage.setItem('dashboard_layouts', JSON.stringify(allLayouts));
+    };
+
+    const toggleTileLock = (tileId: string) => {
+        const currentBreakpoint = 'lg'; // Simplified for now, usually we check screen width or just update all
+        const nextLayouts = { ...layouts };
+
+        // Update for all breakpoints to keep consistent behavior
+        Object.keys(nextLayouts).forEach(bk => {
+            nextLayouts[bk] = nextLayouts[bk].map((item: any) => {
+                if (item.i === tileId) {
+                    return { ...item, static: !item.static };
+                }
+                return item;
+            });
+        });
+
+        setLayouts(nextLayouts);
+        localStorage.setItem('dashboard_layouts', JSON.stringify(nextLayouts));
+    };
+
+    const isTileLocked = (tileId: string) => {
+        // Check current layout (lg as default fallback)
+        const layout = layouts.lg || layouts.md || [];
+        const item = layout.find((i: any) => i.i === tileId);
+        return item?.static || false;
     };
 
     const resetLayout = () => {
@@ -117,6 +158,31 @@ const Dashboard: React.FC = () => {
         } catch (error) {
             console.error("Error fetching keys:", error);
         }
+    }, []);
+
+    const fetchSuppliers = useCallback(async () => {
+        try {
+            const { data } = await supabase.from('suppliers').select('*').order('name');
+            if (data) setSuppliers(data);
+        } catch (e) { console.error(e); }
+    }, []);
+
+    const fetchArticles = useCallback(async () => {
+        if (!profile?.primary_warehouse_id) return;
+        try {
+            const { data } = await supabase.from('articles').select('*').eq('warehouse_id', profile.primary_warehouse_id);
+            if (data) {
+                const mapped = data.map((item: any) => ({ ...item, image: item.image_url }));
+                setAvailableArticles(mapped);
+            }
+        } catch (e) { console.error(e); }
+    }, [profile?.primary_warehouse_id]);
+
+    const fetchUsers = useCallback(async () => {
+        try {
+            const { data } = await supabase.from('profiles').select('*');
+            if (data) setAllUsers(data);
+        } catch (e) { console.error(e); }
     }, []);
 
     const fetchMachinesData = useCallback(async () => {
@@ -278,7 +344,15 @@ const Dashboard: React.FC = () => {
     useEffect(() => {
         const loadInitialData = async () => {
             setIsLoading(true);
-            await Promise.all([fetchMachinesData(), fetchCommissionsData(), fetchRecentEvents(), fetchKeysData()]);
+            await Promise.all([
+                fetchMachinesData(),
+                fetchCommissionsData(),
+                fetchRecentEvents(),
+                fetchKeysData(),
+                fetchSuppliers(),
+                fetchArticles(),
+                fetchUsers()
+            ]);
             setIsLoading(false);
         };
 
@@ -311,28 +385,30 @@ const Dashboard: React.FC = () => {
         return () => {
             supabase.removeChannel(channel);
         };
-    }, [fetchMachinesData, fetchCommissionsData, fetchRecentEvents, fetchKeysData]);
+    }, [fetchMachinesData, fetchCommissionsData, fetchRecentEvents, fetchKeysData, fetchSuppliers, fetchArticles, fetchUsers]);
 
     // --- COMMISSION OFFICE PROCESSING ---
     const handleCommissionClick = (comm: Commission) => {
-        setProcessingCommission(comm);
-        setOfficeNoteInput(comm.office_notes || '');
-        setIsOfficeProcessed(comm.is_processed || false);
+        setViewingCommission(comm);
     };
 
-    const saveCommissionProcess = async () => {
-        if (!processingCommission) return;
+    const handleSaveOfficeData = async (isProcessed: boolean, notes: string) => {
+        if (!viewingCommission) return;
         setIsSavingProcess(true);
         try {
             await supabase.from('commissions').update({
-                is_processed: isOfficeProcessed,
-                office_notes: officeNoteInput
-            }).eq('id', processingCommission.id);
+                is_processed: isProcessed,
+                office_notes: notes
+            }).eq('id', viewingCommission.id);
 
-            setProcessingCommission(null);
-            fetchCommissionsData(); // Optimistic update (Realtime should also trigger)
+            // Optimistic update
+            const updated = { ...viewingCommission, is_processed: isProcessed, office_notes: notes };
+            setViewingCommission(updated as any);
+
+            fetchCommissionsData();
+            toast.success("Verwaltungsdaten gespeichert");
         } catch (err: any) {
-            alert("Fehler: " + err.message);
+            toast.error("Fehler beim Speichern: " + err.message);
         } finally {
             setIsSavingProcess(false);
         }
@@ -378,14 +454,26 @@ const Dashboard: React.FC = () => {
     // Helper to render Commission Tile Content (to avoid duplication)
     const renderCommissionTileContent = (isFullscreen: boolean) => (
         <>
-            <div className="drag-handle cursor-move px-6 py-5 border-b border-gray-200 dark:border-white/10 bg-white/50 dark:bg-white/5 backdrop-blur-xl flex items-center gap-2 shrink-0">
+            <div className={`drag-handle px-6 py-5 border-b border-gray-200 dark:border-white/10 bg-white/50 dark:bg-white/5 backdrop-blur-xl flex items-center gap-2 shrink-0 ${isTileLocked('commissions') ? 'cursor-default' : 'cursor-move'}`}>
                 <Factory size={20} className="text-emerald-500 dark:text-emerald-400" />
                 <h2 className="text-xl font-bold text-gray-900 dark:text-white flex-1">Kommissionen</h2>
+
+                {/* Lock Button */}
+                <button
+                    onMouseDown={(e) => e.stopPropagation()}
+                    onTouchStart={(e) => e.stopPropagation()}
+                    onClick={() => toggleTileLock('commissions')}
+                    className="p-2 bg-white/50 dark:bg-white/5 rounded-lg text-gray-400 dark:text-white/40 hover:text-gray-900 dark:hover:text-white transition-colors mr-2"
+                    title={isTileLocked('commissions') ? "Kachel entsperren" : "Kachel sperren"}
+                >
+                    {isTileLocked('commissions') ? <Lock size={16} className="text-rose-500" /> : <Unlock size={16} />}
+                </button>
 
                 {/* Add Commission Button */}
                 <button
                     onMouseDown={(e) => e.stopPropagation()}
-                    onClick={() => navigate('/commissions', { state: { openCreateModal: true, returnTo: '/dashboard' } })}
+                    onTouchStart={(e) => e.stopPropagation()}
+                    onClick={() => setShowCreateCommissionModal(true)}
                     className="p-2 bg-white/50 dark:bg-white/5 rounded-lg text-gray-400 dark:text-white/40 hover:text-gray-900 dark:hover:text-white transition-colors mr-2"
                     title="Neue Kommission erstellen"
                 >
@@ -395,6 +483,7 @@ const Dashboard: React.FC = () => {
                 {/* Fullscreen Toggle */}
                 <button
                     onMouseDown={(e) => e.stopPropagation()}
+                    onTouchStart={(e) => e.stopPropagation()}
                     onClick={() => setIsCommissionTileFullscreen(!isFullscreen)}
                     className="p-2 bg-white/50 dark:bg-white/5 rounded-lg text-gray-400 dark:text-white/40 hover:text-gray-900 dark:hover:text-white transition-colors mr-2"
                 >
@@ -403,6 +492,7 @@ const Dashboard: React.FC = () => {
 
                 <button
                     onMouseDown={(e) => e.stopPropagation()}
+                    onTouchStart={(e) => e.stopPropagation()}
                     onClick={() => navigate('/commissions')}
                     className="text-gray-400 dark:text-white/40 hover:text-gray-900 dark:hover:text-white"
                 >
@@ -451,7 +541,7 @@ const Dashboard: React.FC = () => {
                             return (
                                 <div
                                     key={c.id}
-                                    onClick={() => setViewingCommission(c)}
+                                    onClick={(e) => { e.stopPropagation(); setViewingCommission(c); }}
                                     className={`p-3 rounded-xl cursor-pointer transition-all relative group border ${hasBackorder ? 'bg-red-500/10 border-red-500 hover:bg-red-500/20' :
                                         c.status === 'Preparing' ? 'bg-amber-500/10 border-amber-500/50 hover:bg-amber-500/20' : // NEW YELLOW STYLE
                                             'bg-white/50 dark:bg-white/5 border-gray-200 dark:border-white/10 hover:bg-gray-100 dark:hover:bg-white/10'
@@ -495,7 +585,7 @@ const Dashboard: React.FC = () => {
                             return (
                                 <div
                                     key={c.id}
-                                    onClick={() => handleCommissionClick(c)}
+                                    onClick={(e) => { e.stopPropagation(); handleCommissionClick(c); }}
                                     className={`
                                         p-3 rounded-xl cursor-pointer transition-all relative group border
                                         ${needsProcessing ? 'bg-emerald-500/10 dark:bg-emerald-500/20 border-emerald-500 animate-border-pulse-green' : 'bg-white/50 dark:bg-white/5 border-emerald-500/30 hover:bg-gray-100 dark:hover:bg-white/10'}
@@ -542,7 +632,7 @@ const Dashboard: React.FC = () => {
                         {returnCommissions.map(c => (
                             <div
                                 key={c.id}
-                                onClick={() => handleCommissionClick(c)}
+                                onClick={(e) => { e.stopPropagation(); handleCommissionClick(c); }}
                                 className={`p-3 rounded-xl border cursor-pointer transition-all hover:bg-gray-100 dark:hover:bg-white/10 ${c.status === 'ReturnReady' ? 'bg-purple-500/10 dark:bg-purple-500/20 border-purple-500 text-purple-800 dark:text-purple-100' : 'bg-white/50 dark:bg-white/5 border-purple-500/30'}`}
                             >
                                 <div className="flex justify-between items-start">
@@ -594,273 +684,354 @@ const Dashboard: React.FC = () => {
                 </div>
             </header>
 
-            {/* --- DASHBOARD GRID --- */}
-            {/* If Commission is Fullscreen, we render it OUTSIDE the grid as a fixed overlay */}
+            {/* --- DASHBOARD GRID (Note: Split View Logic Added) --- */}
+
+            {/* Fullscreen Overlay (unchanged) */}
             {isCommissionTileFullscreen && (
                 <div className="fixed inset-4 z-[100]">
                     <GlassCard className="flex flex-col p-0 overflow-hidden border-none bg-white/95 dark:bg-gray-900/95 backdrop-blur-xl border border-gray-200 dark:border-white/20 shadow-2xl rounded-3xl h-full" contentClassName="!p-0 flex flex-col h-full">
-                        {/* ... Commission Tile Content (Duplicated/Extracted for reuse would be better, but keeping inline for now) ... */}
                         {renderCommissionTileContent(true)}
                     </GlassCard>
                 </div>
             )}
 
-            <ResponsiveGridLayout
-                className="layout"
-                layouts={layouts}
-                breakpoints={{ lg: 1200, md: 996, sm: 768, xs: 480, xxs: 0 }}
-                cols={{ lg: 2, md: 2, sm: 1, xs: 1, xxs: 1 }}
-                rowHeight={100}
-                onLayoutChange={handleLayoutChange}
-                isDraggable={!isCommissionTileFullscreen}
-                isResizable={!isCommissionTileFullscreen}
-                draggableHandle=".drag-handle"
-            >
-                {/* --- TILE 1: MASCHINENSTATUS --- */}
-                <div key="machines">
-                    <GlassCard className="flex flex-col h-full p-0 overflow-hidden border-none bg-white/80 dark:bg-white/5" contentClassName="!p-0 flex flex-col h-full">
-                        <div className="drag-handle cursor-move px-6 py-5 border-b border-gray-200 dark:border-white/10 bg-white/50 dark:bg-white/5 backdrop-blur-xl flex justify-between items-center shrink-0">
-                            <h2 className="text-xl font-bold text-gray-900 dark:text-white">Maschinenstatus</h2>
-                            <button
-                                onMouseDown={(e) => e.stopPropagation()}
-                                onClick={() => navigate('/machines')}
-                                className="text-gray-400 dark:text-white/40 hover:text-gray-900 dark:hover:text-white"
+            <div className="flex flex-row h-[calc(100vh-140px)] overflow-hidden gap-4 pb-4">
+                {/* LEFT: GRID AREA */}
+                {(() => {
+                    return (
+                        <div
+                            onClick={() => {
+                                if (isSplitView) {
+                                    setViewingCommission(null);
+                                    setSelectedMachine(null);
+                                    setSelectedKey(null);
+                                }
+                            }}
+                            className={`transition-all duration-300 ease-in-out h-full overflow-y-auto custom-scrollbar ${isSplitView ? 'w-[60%] pr-2' : 'w-full'}`}
+                        >
+                            <ResponsiveGridLayout
+                                className="layout"
+                                layouts={layouts}
+                                // If split view, force 1 column for stacking
+                                breakpoints={{ lg: 1200, md: 996, sm: 768, xs: 480, xxs: 0 }}
+                                cols={isSplitView ? { lg: 1, md: 1, sm: 1, xs: 1, xxs: 1 } : { lg: 4, md: 3, sm: 2, xs: 1, xxs: 1 }}
+                                rowHeight={100}
+                                onLayoutChange={handleLayoutChange}
+                                isDraggable={!isCommissionTileFullscreen && !isSplitView}
+                                isResizable={!isCommissionTileFullscreen && !isSplitView}
+                                draggableHandle=".drag-handle"
                             >
-                                <ArrowRight size={20} />
-                            </button>
-                        </div>
-
-                        <div className="flex-1 grid grid-cols-2 divide-x divide-gray-200 dark:divide-white/10 overflow-hidden">
-                            {/* Left: Verliehen (Rented) */}
-                            <div className="p-4 flex flex-col gap-3 overflow-hidden h-full">
-                                <div className="flex justify-between items-center mb-2 shrink-0">
-                                    <span className="text-sm font-bold text-white">Verliehen ({rentedMachines.length})</span>
-                                </div>
-
-                                <div className="space-y-3 overflow-y-auto flex-1 min-h-0 pr-1 pb-4">
-                                    {rentedMachines.length === 0 && <div className="text-xs text-gray-400 dark:text-white/30 italic">Keine Maschinen verliehen.</div>}
-                                    {rentedMachines.map(m => (
-                                        <div key={m.id} onClick={() => navigate('/machines')} className="group cursor-pointer">
-                                            <div className="font-medium text-gray-900 dark:text-white text-sm group-hover:text-emerald-600 dark:group-hover:text-emerald-300 transition-colors truncate">{m.name}</div>
-                                            <div className="flex items-center gap-1.5 mt-1">
-                                                <User size={12} className="text-amber-500 dark:text-amber-400" />
-                                                <span className="text-xs text-gray-500 dark:text-white/50 truncate">{m.profiles?.full_name || m.externalBorrower || 'Unbekannt'}</span>
+                                {/* --- TILE 1: MASCHINENSTATUS --- */}
+                                <div key="machines">
+                                    <GlassCard className="flex flex-col h-full p-0 overflow-hidden border-none bg-white/80 dark:bg-white/5" contentClassName="!p-0 flex flex-col h-full">
+                                        <div className={`drag-handle px-6 py-5 border-b border-gray-200 dark:border-white/10 bg-white/50 dark:bg-white/5 backdrop-blur-xl flex justify-between items-center shrink-0 ${isTileLocked('machines') ? 'cursor-default' : 'cursor-move'}`}>
+                                            <h2 className="text-xl font-bold text-gray-900 dark:text-white">Maschinenstatus</h2>
+                                            <div className="flex gap-2">
+                                                <button
+                                                    onMouseDown={(e) => e.stopPropagation()}
+                                                    onTouchStart={(e) => e.stopPropagation()}
+                                                    onClick={() => toggleTileLock('machines')}
+                                                    className="p-2 text-gray-400 dark:text-white/40 hover:text-gray-900 dark:hover:text-white transition-colors"
+                                                >
+                                                    {isTileLocked('machines') ? <Lock size={16} className="text-rose-500" /> : <Unlock size={16} />}
+                                                </button>
+                                                <button
+                                                    onMouseDown={(e) => e.stopPropagation()}
+                                                    onTouchStart={(e) => e.stopPropagation()}
+                                                    onClick={() => navigate('/machines')}
+                                                    className="text-gray-400 dark:text-white/40 hover:text-gray-900 dark:hover:text-white"
+                                                >
+                                                    <ArrowRight size={20} />
+                                                </button>
                                             </div>
                                         </div>
-                                    ))}
-                                </div>
-                            </div>
 
-                            {/* Right: Reparatur (Repair) */}
-                            <div className="p-4 flex flex-col gap-3 overflow-hidden h-full">
-                                <div className="flex justify-between items-center mb-2 shrink-0">
-                                    <span className="text-sm font-bold text-rose-400">Reparatur ({repairMachines.length})</span>
-                                </div>
-
-                                <div className="space-y-3 overflow-y-auto flex-1 min-h-0 pr-1 pb-4">
-                                    {repairMachines.length === 0 && <div className="text-xs text-gray-400 dark:text-white/30 italic">Keine Defekte.</div>}
-                                    {repairMachines.map(m => (
-                                        <div key={m.id} onClick={() => navigate('/machines')} className="group cursor-pointer">
-                                            <div className="font-medium text-gray-900 dark:text-white text-sm group-hover:text-rose-500 dark:group-hover:text-rose-300 transition-colors truncate">{m.name}</div>
-                                            <div className="flex items-center gap-1.5 mt-1">
-                                                <Wrench size={12} className="text-rose-500" />
-                                                <span className="text-xs text-gray-500 dark:text-white/50 truncate italic">{m.notes || 'Keine Notiz'}</span>
-                                            </div>
-                                        </div>
-                                    ))}
-                                </div>
-                            </div>
-                        </div>
-                    </GlassCard>
-                </div>
-
-                {/* --- TILE 1.5: KEY STATUS (NEW) --- */}
-                <div key="keys">
-                    <GlassCard className="flex flex-col h-full p-0 overflow-hidden border-none bg-white/80 dark:bg-white/5" contentClassName="!p-0 flex flex-col h-full">
-                        <div className="drag-handle cursor-move px-6 py-5 border-b border-gray-200 dark:border-white/10 bg-white/50 dark:bg-white/5 backdrop-blur-xl flex justify-between items-center shrink-0">
-                            <h2 className="text-xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
-                                <KeyIcon size={20} className="text-amber-500" /> Ausgeliehen
-                            </h2>
-                            <button
-                                onMouseDown={(e) => e.stopPropagation()}
-                                onClick={() => navigate('/keys')}
-                                className="text-gray-400 dark:text-white/40 hover:text-gray-900 dark:hover:text-white"
-                            >
-                                <ArrowRight size={20} />
-                            </button>
-                        </div>
-
-                        <div className="p-4 flex flex-col gap-3 overflow-hidden h-full">
-                            <div className="flex justify-between items-center mb-2 shrink-0">
-                                <span className="text-sm font-bold text-white">Schlüssel in Verwendung ({rentedKeys.length})</span>
-                            </div>
-
-                            <div className="space-y-3 overflow-y-auto flex-1 min-h-0 pr-1 pb-4">
-                                {rentedKeys.length === 0 && <div className="text-xs text-gray-400 dark:text-white/30 italic">Alle Schlüssel im Kasten.</div>}
-                                {rentedKeys.map(k => (
-                                    <div key={k.id} onClick={() => navigate('/keys')} className="group cursor-pointer p-2 rounded hover:bg-white/5 border border-transparent hover:border-white/5">
-                                        <div className="flex justify-between items-start">
-                                            <div className="font-medium text-gray-900 dark:text-white text-sm group-hover:text-amber-400 transition-colors truncate">{k.name}</div>
-                                            <span className="text-xs font-mono text-emerald-400">#{k.slot_number}</span>
-                                        </div>
-                                        <div className="flex items-center gap-1.5 mt-1">
-                                            <User size={12} className="text-amber-500/70" />
-                                            <span className="text-xs text-gray-500 dark:text-white/50 truncate">{k.holder_name || 'Unbekannt'}</span>
-                                        </div>
-                                    </div>
-                                ))}
-                            </div>
-                        </div>
-                    </GlassCard>
-                </div>
-
-                {/* --- TILE 2: KOMMISSIONEN --- */}
-                <div key="commissions">
-                    {/* If fullscreen, we render a placeholder here or nothing? RGL needs the item to exist. We render it, but maybe empty or hidden if fullscreen? 
-                        Actually, if we render it hidden, RGL might get confused. 
-                        Let's render the content here normally. If fullscreen is active, this tile stays here but the "Fullscreen" version is on top.
-                    */}
-                    <GlassCard className={`flex flex-col h-full p-0 overflow-hidden border-none bg-white/80 dark:bg-white/5`} contentClassName="!p-0 flex flex-col h-full">
-                        {renderCommissionTileContent(false)}
-                    </GlassCard>
-                </div>
-
-                {/* --- TILE 3: EREIGNISLISTE --- */}
-                <div key="events">
-                    <GlassCard className="flex flex-col h-full p-0 overflow-hidden border-none bg-white/80 dark:bg-white/5" contentClassName="!p-0 flex flex-col h-full">
-                        <div className="drag-handle cursor-move px-6 py-5 border-b border-gray-200 dark:border-white/10 bg-white/50 dark:bg-white/5 backdrop-blur-xl flex items-center gap-2 shrink-0">
-                            <StickyNote size={20} className="text-blue-500 dark:text-blue-400" />
-                            <h2 className="text-xl font-bold text-gray-900 dark:text-white">Letzte Aktivitäten</h2>
-                        </div>
-
-                        <div className="p-0 overflow-y-auto flex-1 min-h-0 pb-12">
-                            {recentEvents.length === 0 ? (
-                                <div className="p-8 text-center text-gray-400 dark:text-white/30 italic">
-                                    Noch keine Aktivitäten verzeichnet.
-                                </div>
-                            ) : (
-                                <div className="divide-y divide-gray-200 dark:divide-white/5">
-                                    {recentEvents.map((event) => (
-                                        <div key={`${event.type}-${event.id}`} className="p-4 flex items-start gap-4 hover:bg-gray-50 dark:hover:bg-white/5 transition-colors">
-                                            {/* Icon based on type */}
-                                            <div className={`mt-1 w-8 h-8 rounded-full flex items-center justify-center shrink-0 
-                                                ${event.type === 'machine' ? 'bg-amber-500/10 text-amber-600 dark:text-amber-400' : ''}
-                                                ${event.type === 'commission' ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400' : ''}
-                                                ${event.type === 'order' ? 'bg-purple-500/10 text-purple-600 dark:text-purple-400' : ''}
-                                                ${event.type === 'key' ? 'bg-blue-500/10 text-blue-600 dark:text-blue-400' : ''}
-                                            `}>
-                                                {event.type === 'machine' && <Wrench size={14} />}
-                                                {event.type === 'commission' && <CheckCircle2 size={14} />}
-                                                {event.type === 'order' && <ShoppingCart size={14} />}
-                                                {event.type === 'key' && <KeyIcon size={14} />}
-                                            </div>
-
-                                            <div className="flex-1 min-w-0">
-                                                <div className="flex justify-between items-start">
-                                                    <span className="text-sm font-bold text-gray-900 dark:text-white truncate">
-                                                        {event.user_name}
-                                                    </span>
-                                                    <span className="text-xs text-gray-400 dark:text-white/40 whitespace-nowrap ml-2">
-                                                        {formatDistanceToNow(new Date(event.created_at), { addSuffix: true, locale: de })}
-                                                    </span>
+                                        <div className="flex-1 grid grid-cols-2 divide-x divide-gray-200 dark:divide-white/10 overflow-hidden">
+                                            {/* Left: Verliehen (Rented) */}
+                                            <div className="p-4 flex flex-col gap-3 overflow-hidden h-full">
+                                                <div className="flex justify-between items-center mb-2 shrink-0">
+                                                    <span className="text-sm font-bold text-white">Verliehen ({rentedMachines.length})</span>
                                                 </div>
-                                                <p className="text-sm text-gray-600 dark:text-white/70 mt-0.5">
-                                                    <span className="font-medium text-gray-500 dark:text-white/50 uppercase text-[10px] tracking-wider mr-2 border border-gray-200 dark:border-white/10 px-1.5 py-0.5 rounded">
-                                                        {event.type === 'machine' ? 'Gerät' : event.type === 'commission' ? 'Kommission' : event.type === 'key' ? 'Schlüssel' : 'Bestellung'}
-                                                    </span>
-                                                    <span className="font-bold text-gray-900 dark:text-white mr-1">
-                                                        {event.entity_name}:
-                                                    </span>
-                                                    {event.details}
-                                                </p>
+
+                                                <div className="space-y-3 overflow-y-auto flex-1 min-h-0 pr-1 pb-4">
+                                                    {rentedMachines.length === 0 && <div className="text-xs text-gray-400 dark:text-white/30 italic">Keine Maschinen verliehen.</div>}
+                                                    {rentedMachines.map(m => (
+                                                        <div key={m.id} onClick={(e) => { e.stopPropagation(); setSelectedMachine(m); }} className="group cursor-pointer">
+                                                            <div className="font-medium text-gray-900 dark:text-white text-sm group-hover:text-emerald-600 dark:group-hover:text-emerald-300 transition-colors truncate">{m.name}</div>
+                                                            <div className="flex items-center gap-1.5 mt-1">
+                                                                <User size={12} className="text-amber-500 dark:text-amber-400" />
+                                                                <span className="text-xs text-gray-500 dark:text-white/50 truncate">{m.profiles?.full_name || m.externalBorrower || 'Unbekannt'}</span>
+                                                            </div>
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            </div>
+
+                                            {/* Right: Reparatur (Repair) */}
+                                            <div className="p-4 flex flex-col gap-3 overflow-hidden h-full">
+                                                <div className="flex justify-between items-center mb-2 shrink-0">
+                                                    <span className="text-sm font-bold text-rose-400">Reparatur ({repairMachines.length})</span>
+                                                </div>
+
+                                                <div className="space-y-3 overflow-y-auto flex-1 min-h-0 pr-1 pb-4">
+                                                    {repairMachines.length === 0 && <div className="text-xs text-gray-400 dark:text-white/30 italic">Keine Defekte.</div>}
+                                                    {repairMachines.map(m => (
+                                                        <div key={m.id} onClick={(e) => { e.stopPropagation(); setSelectedMachine(m); }} className="group cursor-pointer">
+                                                            <div className="font-medium text-gray-900 dark:text-white text-sm group-hover:text-rose-500 dark:group-hover:text-rose-300 transition-colors truncate">{m.name}</div>
+                                                            <div className="flex items-center gap-1.5 mt-1">
+                                                                <Wrench size={12} className="text-rose-500" />
+                                                                <span className="text-xs text-gray-500 dark:text-white/50 truncate italic">{m.notes || 'Keine Notiz'}</span>
+                                                            </div>
+                                                        </div>
+                                                    ))}
+                                                </div>
                                             </div>
                                         </div>
-                                    ))}
+                                    </GlassCard>
+                                </div>
+
+                                {/* --- TILE 1.5: KEY STATUS (NEW) --- */}
+                                <div key="keys">
+                                    <GlassCard className="flex flex-col h-full p-0 overflow-hidden border-none bg-white/80 dark:bg-white/5" contentClassName="!p-0 flex flex-col h-full">
+                                        <div className={`drag-handle px-6 py-5 border-b border-gray-200 dark:border-white/10 bg-white/50 dark:bg-white/5 backdrop-blur-xl flex justify-between items-center shrink-0 ${isTileLocked('keys') ? 'cursor-default' : 'cursor-move'}`}>
+                                            <h2 className="text-xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
+                                                <KeyIcon size={20} className="text-amber-500" /> Ausgeliehen
+                                            </h2>
+                                            <div className="flex gap-2">
+                                                <button
+                                                    onMouseDown={(e) => e.stopPropagation()}
+                                                    onTouchStart={(e) => e.stopPropagation()}
+                                                    onClick={() => toggleTileLock('keys')}
+                                                    className="p-2 text-gray-400 dark:text-white/40 hover:text-gray-900 dark:hover:text-white transition-colors"
+                                                >
+                                                    {isTileLocked('keys') ? <Lock size={16} className="text-rose-500" /> : <Unlock size={16} />}
+                                                </button>
+                                                <button
+                                                    onMouseDown={(e) => e.stopPropagation()}
+                                                    onTouchStart={(e) => e.stopPropagation()}
+                                                    onClick={() => navigate('/keys')}
+                                                    className="text-gray-400 dark:text-white/40 hover:text-gray-900 dark:hover:text-white"
+                                                >
+                                                    <ArrowRight size={20} />
+                                                </button>
+                                            </div>
+                                        </div>
+
+                                        <div className="p-4 flex flex-col gap-3 overflow-hidden h-full">
+                                            <div className="flex justify-between items-center mb-2 shrink-0">
+                                                <span className="text-sm font-bold text-white">Schlüssel in Verwendung ({rentedKeys.length})</span>
+                                            </div>
+
+                                            <div className="space-y-3 overflow-y-auto flex-1 min-h-0 pr-1 pb-4">
+                                                {rentedKeys.length === 0 && <div className="text-xs text-gray-400 dark:text-white/30 italic">Alle Schlüssel im Kasten.</div>}
+                                                {rentedKeys.map(k => (
+                                                    <div key={k.id} onClick={(e) => { e.stopPropagation(); setSelectedKey(k); }} className="group cursor-pointer p-2 rounded hover:bg-white/5 border border-transparent hover:border-white/5">
+                                                        <div className="flex justify-between items-start">
+                                                            <div className="font-medium text-gray-900 dark:text-white text-sm group-hover:text-amber-400 transition-colors truncate">{k.name}</div>
+                                                            <span className="text-xs font-mono text-emerald-400">#{k.slot_number}</span>
+                                                        </div>
+                                                        <div className="flex items-center gap-1.5 mt-1">
+                                                            <User size={12} className="text-amber-500/70" />
+                                                            <span className="text-xs text-gray-500 dark:text-white/50 truncate">{k.holder_name || 'Unbekannt'}</span>
+                                                        </div>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    </GlassCard>
+                                </div>
+
+                                {/* --- TILE 2: KOMMISSIONEN --- */}
+                                <div key="commissions">
+                                    <GlassCard className={`flex flex-col h-full p-0 overflow-hidden border-none bg-white/80 dark:bg-white/5`} contentClassName="!p-0 flex flex-col h-full">
+                                        {renderCommissionTileContent(false)}
+                                    </GlassCard>
+                                </div>
+
+                                {/* --- TILE 3: EREIGNISLISTE --- */}
+                                <div key="events">
+                                    <GlassCard className="flex flex-col h-full p-0 overflow-hidden border-none bg-white/80 dark:bg-white/5" contentClassName="!p-0 flex flex-col h-full">
+                                        <div className={`drag-handle px-6 py-5 border-b border-gray-200 dark:border-white/10 bg-white/50 dark:bg-white/5 backdrop-blur-xl flex items-center gap-2 shrink-0 ${isTileLocked('events') ? 'cursor-default' : 'cursor-move'}`}>
+                                            <StickyNote size={20} className="text-blue-500 dark:text-blue-400" />
+                                            <h2 className="text-xl font-bold text-gray-900 dark:text-white flex-1">Letzte Aktivitäten</h2>
+                                            <button
+                                                onMouseDown={(e) => e.stopPropagation()}
+                                                onTouchStart={(e) => e.stopPropagation()}
+                                                onClick={() => toggleTileLock('events')}
+                                                className="p-2 text-gray-400 dark:text-white/40 hover:text-gray-900 dark:hover:text-white transition-colors"
+                                            >
+                                                {isTileLocked('events') ? <Lock size={16} className="text-rose-500" /> : <Unlock size={16} />}
+                                            </button>
+                                        </div>
+
+                                        <div className="p-0 overflow-y-auto flex-1 min-h-0 pb-12">
+                                            {recentEvents.length === 0 ? (
+                                                <div className="p-8 text-center text-gray-400 dark:text-white/30 italic">
+                                                    Noch keine Aktivitäten verzeichnet.
+                                                </div>
+                                            ) : (
+                                                <div className="divide-y divide-gray-200 dark:divide-white/5">
+                                                    {recentEvents.map((event) => (
+                                                        <div key={`${event.type}-${event.id}`} className="p-4 flex items-start gap-4 hover:bg-gray-50 dark:hover:bg-white/5 transition-colors">
+                                                            {/* Icon based on type */}
+                                                            <div className={`mt-1 w-8 h-8 rounded-full flex items-center justify-center shrink-0 
+                                                                ${event.type === 'machine' ? 'bg-amber-500/10 text-amber-600 dark:text-amber-400' : ''}
+                                                                ${event.type === 'commission' ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400' : ''}
+                                                                ${event.type === 'order' ? 'bg-purple-500/10 text-purple-600 dark:text-purple-400' : ''}
+                                                                ${event.type === 'key' ? 'bg-blue-500/10 text-blue-600 dark:text-blue-400' : ''}
+                                                            `}>
+                                                                {event.type === 'machine' && <Wrench size={14} />}
+                                                                {event.type === 'commission' && <CheckCircle2 size={14} />}
+                                                                {event.type === 'order' && <ShoppingCart size={14} />}
+                                                                {event.type === 'key' && <KeyIcon size={14} />}
+                                                            </div>
+
+                                                            <div className="flex-1 min-w-0">
+                                                                <div className="flex justify-between items-start">
+                                                                    <span className="text-sm font-bold text-gray-900 dark:text-white truncate">
+                                                                        {event.user_name}
+                                                                    </span>
+                                                                    <span className="text-xs text-gray-400 dark:text-white/40 whitespace-nowrap ml-2">
+                                                                        {formatDistanceToNow(new Date(event.created_at), { addSuffix: true, locale: de })}
+                                                                    </span>
+                                                                </div>
+                                                                <p className="text-sm text-gray-600 dark:text-white/70 mt-0.5">
+                                                                    <span className="font-medium text-gray-500 dark:text-white/50 uppercase text-[10px] tracking-wider mr-2 border border-gray-200 dark:border-white/10 px-1.5 py-0.5 rounded">
+                                                                        {event.type === 'machine' ? 'Gerät' : event.type === 'commission' ? 'Kommission' : event.type === 'key' ? 'Schlüssel' : 'Bestellung'}
+                                                                    </span>
+                                                                    <span className="font-bold text-gray-900 dark:text-white mr-1">
+                                                                        {event.entity_name}:
+                                                                    </span>
+                                                                    {event.details}
+                                                                </p>
+                                                            </div>
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            )}
+                                        </div>
+                                    </GlassCard>
+                                </div>
+                            </ResponsiveGridLayout>
+                            <div className="h-24" /> {/* Spacer */}
+                        </div>
+                    );
+                })()}
+
+                {/* RIGHT: DETAIL PANEL */}
+                {(() => {
+                    if (!isSplitView) return null;
+
+                    return (
+                        <div className="w-[40%] bg-transparent h-full animate-in slide-in-from-right-10 duration-300">
+                            {/* MACHINE CONTENT */}
+                            {selectedMachine && (
+                                <div className="h-full bg-[#0a0a0a] rounded-2xl border border-white/10 shadow-xl overflow-hidden flex flex-col relative">
+                                    <div className="absolute top-4 right-4 z-50">
+                                        <button onClick={() => setSelectedMachine(null)} className="p-2 bg-black/50 hover:bg-white/10 rounded-full text-white/50 hover:text-white transition-colors">
+                                            <X size={20} />
+                                        </button>
+                                    </div>
+                                    <div className="flex-1 overflow-y-auto custom-scrollbar">
+                                        <MachineDetailContent
+                                            machine={selectedMachine}
+                                            users={allUsers}
+                                            onClose={() => setSelectedMachine(null)}
+                                            onUpdate={() => {
+                                                fetchMachinesData();
+                                                fetchRecentEvents();
+                                            }}
+                                        />
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* KEY CONTENT */}
+                            {selectedKey && (
+                                <div className="h-full bg-[#0a0a0a] rounded-2xl border border-white/10 shadow-xl overflow-hidden flex flex-col relative">
+                                    {/* onClose is passed to content, but we can also add a close button here if header allows */}
+                                    <KeyHandoverContent
+                                        selectedKeys={[selectedKey]}
+                                        type="return"
+                                        onClose={() => setSelectedKey(null)}
+                                        onSave={() => {
+                                            fetchKeysData();
+                                            fetchRecentEvents();
+                                            setSelectedKey(null);
+                                        }}
+                                    />
+                                </div>
+                            )}
+
+                            {/* COMMISSION CONTENT */}
+                            {viewingCommission && (
+                                <div className="h-full bg-[#0a0a0a] rounded-2xl border border-white/10 shadow-xl overflow-hidden flex flex-col relative">
+                                    {/* Conditional Render based on Status */}
+                                    {['Draft', 'Preparing'].includes(viewingCommission.status) ? (
+                                        <CommissionDetailContent
+                                            commission={viewingCommission}
+                                            items={(viewingCommission as any).commission_items || []}
+                                            localHistoryLogs={[]}
+                                            allItemsPicked={false}
+                                            hasBackorders={false}
+                                            isSubmitting={false}
+                                            onSetReady={() => toast.info("Bitte in der Kommissionierungs-Ansicht durchführen")}
+                                            onWithdraw={() => toast.info("Bitte in der Kommissionierungs-Ansicht durchführen")}
+                                            onResetStatus={() => toast.info("Bitte in der Kommissionierungs-Ansicht durchführen")}
+                                            onRevertWithdraw={() => toast.info("Bitte in der Kommissionierungs-Ansicht durchführen")}
+                                            onInitReturn={() => toast.info("Bitte in der Kommissionierungs-Ansicht durchführen")}
+                                            onReturnToReady={() => toast.info("Bitte in der Kommissionierungs-Ansicht durchführen")}
+                                            onCompleteReturn={() => toast.info("Bitte in der Kommissionierungs-Ansicht durchführen")}
+                                            onEdit={(e) => {
+                                                e.stopPropagation();
+                                                setViewingCommission(null);
+                                                navigate('/commissions', { state: { editCommissionId: viewingCommission.id } });
+                                            }}
+                                            onPrint={() => toast.info("Drucken...")}
+                                            onTogglePicked={() => { }}
+                                            onToggleBackorder={() => { }}
+                                            onSaveNote={() => { }}
+                                            onClose={() => setViewingCommission(null)}
+                                            onSaveOfficeData={handleSaveOfficeData}
+                                        />
+                                    ) : (
+                                        <CommissionOfficeContent
+                                            commission={viewingCommission}
+                                            onClose={() => setViewingCommission(null)}
+                                            onSave={handleSaveOfficeData}
+                                            isSaving={isSavingProcess}
+                                        />
+                                    )}
                                 </div>
                             )}
                         </div>
-                    </GlassCard>
-                </div>
-            </ResponsiveGridLayout>
+                    );
+                })()}
+            </div>
 
 
             {/* --- UTILITY MODALS (App Drawer & SQL Fix) --- */}
 
-            {/* COMMISSION DETAIL MODAL */}
-            {viewingCommission && (
-                <CommissionDetailModal
-                    commission={viewingCommission}
-                    onClose={() => setViewingCommission(null)}
-                    onEdit={() => navigate('/commissions', { state: { editCommissionId: viewingCommission.id, returnTo: '/dashboard' } })}
-                />
+            {/* CREATE COMMISSION MODAL (Directly on Dashboard) */}
+            {showCreateCommissionModal && (
+                <div className="fixed inset-0 z-[150] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
+                    <div className="w-full max-w-5xl h-[85vh] overflow-hidden rounded-2xl bg-[#0a0a0a] border border-white/10 shadow-2xl flex flex-col relative">
+                        <CommissionEditContent
+                            isEditMode={false}
+                            initialCommission={null}
+                            primaryWarehouseId={profile?.primary_warehouse_id || null}
+                            availableArticles={availableArticles}
+                            suppliers={suppliers}
+                            onSave={() => { setShowCreateCommissionModal(false); fetchCommissionsData(); }}
+                            onClose={() => setShowCreateCommissionModal(false)}
+                        />
+                    </div>
+                </div>
             )}
 
-            {/* PROCESS COMMISSION MODAL */}
-            {
-                processingCommission && (
-                    <div className="fixed inset-0 z-[150] flex items-center justify-center p-4 bg-black/40 backdrop-blur-md animate-in fade-in">
-                        <GlassCard className="w-full max-w-md">
-                            <div className="flex justify-between items-start mb-4">
-                                <div>
-                                    <h2 className="text-xl font-bold text-white">Kommission bearbeiten</h2>
-                                    <p className="text-sm text-white/50">{processingCommission.name}
-                                        {processingCommission.status === 'ReturnReady' && <span className="ml-2 text-purple-400 font-bold">(Retoure Abholbereit)</span>}
-                                        {processingCommission.status === 'ReturnPending' && <span className="ml-2 text-orange-400 font-bold">(Retoure Angemeldet)</span>}
-                                    </p>
-                                </div>
-                                <button onClick={() => setProcessingCommission(null)} className="text-white/50 hover:text-white"><X size={20} /></button>
-                            </div>
 
-                            <div className="space-y-6">
-                                {/* Checkbox */}
-                                <div
-                                    className={`p-4 rounded-xl border cursor-pointer transition-all flex items-center gap-4 ${isOfficeProcessed ? 'bg-emerald-500/20 border-emerald-500' : 'bg-white/5 border-white/10 hover:bg-white/10'}`}
-                                    onClick={() => setIsOfficeProcessed(!isOfficeProcessed)}
-                                >
-                                    <div className={`w-6 h-6 rounded border flex items-center justify-center shrink-0 transition-colors ${isOfficeProcessed ? 'bg-emerald-500 border-emerald-500 text-white' : 'border-white/30'}`}>
-                                        {isOfficeProcessed && <Check size={16} />}
-                                    </div>
-                                    <div>
-                                        <div className="font-bold text-white">Büro: Gesehen / Bearbeitet</div>
-                                        <div className="text-xs text-white/50">Markiere den Vorgang als "in Bearbeitung" oder "Erledigt".</div>
-                                    </div>
-                                </div>
 
-                                {/* Notes */}
-                                <div>
-                                    <label className="text-xs text-white/50 font-bold uppercase mb-2 block flex items-center gap-2">
-                                        <StickyNote size={12} /> Büro Notizen
-                                    </label>
-                                    <textarea
-                                        className="w-full bg-white/5 border border-white/10 rounded-xl p-3 text-white focus:outline-none focus:ring-1 focus:ring-emerald-500/50 min-h-[100px]"
-                                        placeholder="z.B. Termin vereinbart am 12.12. / Kunde ruft an..."
-                                        value={officeNoteInput}
-                                        onChange={e => setOfficeNoteInput(e.target.value)}
-                                    />
-                                    <div className="flex gap-2 mt-2 overflow-x-auto no-scrollbar">
-                                        {['Termin vereinbart', 'Kunde informiert', 'Abholung bestätigt', 'Großhändler beauftragt'].map(tag => (
-                                            <button
-                                                key={tag}
-                                                onClick={() => setOfficeNoteInput(prev => (prev ? prev + '\n' : '') + tag)}
-                                                className="px-3 py-1 rounded-full bg-white/5 border border-white/10 text-xs text-white/60 hover:bg-white/10 whitespace-nowrap"
-                                            >
-                                                + {tag}
-                                            </button>
-                                        ))}
-                                    </div>
-                                </div>
-                            </div>
 
-                            <div className="flex gap-3 mt-6 justify-end">
-                                <Button variant="secondary" onClick={() => setProcessingCommission(null)}>Abbrechen</Button>
-                                <Button onClick={saveCommissionProcess} disabled={isSavingProcess} className="bg-emerald-600 hover:bg-emerald-500">
-                                    {isSavingProcess ? 'Speichert...' : 'Speichern'}
-                                </Button>
-                            </div>
-                        </GlassCard>
-                    </div>
-                )
-            }
 
             {/* APP DRAWER MODAL */}
             <GlassModal

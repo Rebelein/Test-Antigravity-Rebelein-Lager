@@ -310,7 +310,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
                     updateAvailable ? 'mt-12' : ''
                 )}
             >
-                <div className="max-w-7xl mx-auto">
+                <div className="w-full">
                     <AnimatePresence mode="wait">
                         <motion.div
                             key={location.pathname}

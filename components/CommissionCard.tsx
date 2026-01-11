@@ -52,14 +52,15 @@ export const CommissionCard: React.FC<CommissionCardProps> = ({
             exit={{ opacity: 0, scale: 0.95 }}
             whileHover={{ scale: 1.02, y: -2 }}
             className={`
-                group relative p-4 rounded-xl border backdrop-blur-md cursor-pointer transition-all duration-300
+                group relative p-4 rounded-3xl border border-current cursor-pointer transition-all duration-300 overflow-hidden
+                bg-[#1A1C23] hover:bg-[#22252E]
                 ${colorClass}
-                border-opacity-20 hover:border-opacity-40 shadow-lg hover:shadow-xl
+                border-opacity-20 hover:border-opacity-40 shadow-xl shadow-black/80
             `}
             onClick={() => onClick(commission)}
         >
             {/* Left Border Indicator */}
-            <div className={`absolute left-0 top-0 bottom-0 w-1.5 rounded-l-xl transition-all duration-300 ${isTrash || isWithdrawn ? 'bg-gray-500' : 'bg-current opacity-50 group-hover:opacity-100'}`} />
+            <div className={`absolute left-0 top-0 bottom-0 w-1.5 rounded-l-3xl transition-all duration-300 ${isTrash || isWithdrawn ? 'bg-gray-500' : 'bg-current opacity-50 group-hover:opacity-100'}`} />
 
             <div className="flex justify-between items-start mb-3 pl-3">
                 <div>
@@ -181,9 +182,10 @@ export const CommissionCard: React.FC<CommissionCardProps> = ({
                 {/* Withdrawn/Trash Info */}
                 {(isTrash || isWithdrawn) && (
                     <div className="flex items-center justify-between mt-2 pt-2 border-t border-white/5">
-                        <div className="text-xs text-gray-500 flex items-center">
-                            <Clock size={12} className="mr-1" />
-                            {new Date(commission.updated_at).toLocaleDateString()}
+                        <div className={`text-xs flex items-center font-medium ${isTrash ? 'text-rose-300' : 'text-blue-300'}`}>
+                            {isTrash ? <Trash2 size={12} className="mr-1.5" /> : <Clock size={12} className="mr-1.5" />}
+                            {isTrash ? 'Gelöscht: ' : ''}
+                            {new Date(isTrash && commission.deleted_at ? commission.deleted_at : commission.updated_at).toLocaleDateString()}
                         </div>
                         {isTrash && onRestore && (
                             <button
