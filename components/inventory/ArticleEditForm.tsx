@@ -131,11 +131,21 @@ export const ArticleEditForm: React.FC<ArticleEditFormProps> = ({
         }
     }, [initialArticle, isEditMode]); // removed isOpen dependency as this is not a modal
 
-    const resetForm = () => {
-        setNewArticle({ name: '', ean: '', category: '', stock: 0, targetStock: 0, location: '', image: '' });
+    const resetForm = (preserveCategory = false) => {
+        setNewArticle(prev => ({
+            name: '',
+            ean: '',
+            category: preserveCategory ? prev.category : '',
+            stock: 0,
+            targetStock: 0,
+            location: '',
+            image: ''
+        }));
         setTempSkus([]);
         setTempSuppliers([]);
-        setIsManualCategory(false);
+        if (!preserveCategory) {
+            setIsManualCategory(false);
+        }
         setAiAnalysisResult(null);
         setAiSelectedFile(null);
         setAiImagePreview(null);
@@ -152,8 +162,7 @@ export const ArticleEditForm: React.FC<ArticleEditFormProps> = ({
             }, shouldClose);
 
             if (!shouldClose) {
-                resetForm();
-                // Optional: Success Toast or Feedback here
+                resetForm(true); // Persist category
             }
         } catch (error) {
             console.error(error);
@@ -161,6 +170,7 @@ export const ArticleEditForm: React.FC<ArticleEditFormProps> = ({
             setIsSubmitting(false);
         }
     };
+
 
     // --- LOGIC: SKUs ---
     const addTempSku = (sku = tempSkuInput) => {
@@ -664,6 +674,12 @@ export const ArticleEditForm: React.FC<ArticleEditFormProps> = ({
                                                     {s.isPreferred && <span className="text-[9px] bg-emerald-500/20 text-emerald-400 px-1 rounded uppercase tracking-wider">Main</span>}
                                                 </div>
                                                 {s.supplierSku && <div className="text-[10px] text-white/50 font-mono mt-0.5">#{s.supplierSku}</div>}
+                                                {s.url && (
+                                                    <div className="flex items-center gap-1 text-[10px] text-emerald-400/80 mt-0.5" title={s.url}>
+                                                        <Globe size={10} />
+                                                        <span className="truncate max-w-[120px]">Link hinterlegt</span>
+                                                    </div>
+                                                )}
                                             </div>
                                             <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                                                 <button onClick={() => togglePreferredSupplier(idx)} className={`p-1.5 rounded transition-colors ${s.isPreferred ? 'text-emerald-400' : 'text-white/20 hover:text-yellow-400'}`}><Star size={12} fill={s.isPreferred ? "currentColor" : "none"} /></button>
