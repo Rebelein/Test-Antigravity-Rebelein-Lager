@@ -304,21 +304,93 @@ export const ArticleEditForm: React.FC<ArticleEditFormProps> = ({
         setIsAnalyzing(false); setShowAiScan(false);
     };
 
-    const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-        if (!e.target.files?.length) return;
+    const uploadFile = async (file: File) => {
         setIsUploading(true);
         try {
-            const file = e.target.files[0];
             const fileExt = file.name.split('.').pop();
             const fileName = `${Math.random().toString(36).substring(2)}_${Date.now()}.${fileExt}`;
             const { error } = await supabase.storage.from('article-images').upload(fileName, file);
             if (error) throw error;
             const { data } = supabase.storage.from('article-images').getPublicUrl(fileName);
             setNewArticle(prev => ({ ...prev, image: data.publicUrl }));
-        } catch (e: any) { alert("Upload failed: " + e.message); } finally { setIsUploading(false); }
+        } catch (e: any) {
+            alert("Upload failed: " + e.message);
+        } finally {
+            setIsUploading(false);
+        }
     };
 
-    const handleAutoLocation = async () => { /* Mock */ };
+    const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        if (!e.target.files?.length) return;
+        await uploadFile(e.target.files[0]);
+    };
+
+    const handlePasteImage = async () => {
+        try {
+            const items = await navigator.clipboard.read();
+            for (const item of items) {
+                if (item.types.some(type => type.startsWith('image/'))) {
+                    const blob = await item.getType(item.types.find(type => type.startsWith('image/'))!);
+                    const file = new File([blob], "pasted_image.png", { type: blob.type });
+                    await uploadFile(file);
+                    return;
+                }
+            }
+            alert("Kein Bild in der Zwischenablage gefunden.");
+        } catch (err) {
+            console.error(err);
+            // Fallback for older browsers or permission issues (though read() is stricter)
+            alert("Zugriff auf Zwischenablage fehlgeschlagen oder nicht unterstützt.");
+        }
+    };
+
+    const handleAutoLocation = async () => {
+        if (!newArticle.category) {
+            alert("Bitte zuerst ein Regal auswählen.");
+            return;
+        }
+
+        try {
+            // Find last location in this category
+            const { data } = await supabase
+                .from('articles')
+                .select('location')
+                .eq('category', newArticle.category)
+                .not('location', 'is', null)
+                .order('created_at', { ascending: false }) // Or order by location? Alphanumeric sort is tricky in SQL. Created_at might be better proxy for "latest added".
+                .limit(5); // Fetch detailed list to analyze client side if needed, but let's try mostly recent.
+
+            if (!data || data.length === 0) {
+                // No articles? Suggest start.
+                setNewArticle(prev => ({ ...prev, location: 'A-01' }));
+                return;
+            }
+
+            // Simple heuristic: Try to find pattern in most recent location
+            const lastLoc = data[0].location;
+            // Match any prefix (letters, spaces, dashes) followed by a number at the end
+            const match = lastLoc?.match(/^(.+?)(\d+)$/);
+
+            if (match) {
+                const prefix = match[1];
+                const numStr = match[2];
+                const num = parseInt(numStr);
+                const nextNum = num + 1;
+
+                // Preserve padding if existing number starts with 0 and is longer than 1
+                const shouldPad = numStr.startsWith('0') && numStr.length > 1;
+                const nextNumStr = shouldPad
+                    ? nextNum.toString().padStart(numStr.length, '0')
+                    : nextNum.toString();
+
+                setNewArticle(prev => ({ ...prev, location: `${prefix}${nextNumStr}` }));
+            } else {
+                // Determine valid default fallback if no pattern
+                setNewArticle(prev => ({ ...prev, location: (lastLoc || '') + '-new' }));
+            }
+
+        } catch (e) { console.error(e); }
+    };
 
     return (
         <div className="h-full flex flex-col bg-[#1a1d24] sm:bg-transparent">
@@ -383,14 +455,17 @@ export const ArticleEditForm: React.FC<ArticleEditFormProps> = ({
                     <div className="flex flex-col gap-6">
                         {/* Image Section */}
                         <div className="flex gap-4">
-                            <div className="w-24 h-24 shrink-0 rounded-2xl border-2 border-dashed border-white/10 bg-white/5 flex items-center justify-center relative overflow-hidden group hover:border-white/20">
-                                <input type="file" ref={fileInputRef} className="hidden" accept="image/*" onChange={handleFileUpload} />
-                                {isUploading ? <Loader2 className="animate-spin text-emerald-400" /> : newArticle.image ? <img src={newArticle.image} className="w-full h-full object-cover" /> : <div onClick={() => fileInputRef.current?.click()} className="flex flex-col items-center cursor-pointer text-white/30"><ImageIcon size={20} /><span className="text-[9px]">Bild</span></div>}
-                                {newArticle.image && !isUploading && <button onClick={() => setNewArticle(prev => ({ ...prev, image: '' }))} className="absolute inset-0 bg-black/60 flex items-center justify-center opacity-0 group-hover:opacity-100 text-red-300"><Trash2 size={16} /></button>}
+                            <div
+                                onClick={() => fileInputRef.current?.click()}
+                                className="w-24 h-24 shrink-0 rounded-2xl border-2 border-dashed border-white/10 bg-white/5 flex items-center justify-center relative overflow-hidden group hover:border-white/20 cursor-pointer"
+                            >
+                                <input type="file" ref={fileInputRef} className="hidden" accept="image/*" onChange={handleFileUpload} onClick={(e) => e.stopPropagation()} />
+                                {isUploading ? <Loader2 className="animate-spin text-emerald-400" /> : newArticle.image ? <img src={newArticle.image} className="w-full h-full object-cover" /> : <div className="flex flex-col items-center text-white/30"><ImageIcon size={20} /><span className="text-[9px]">Bild</span></div>}
+                                {newArticle.image && !isUploading && <button onClick={(e) => { e.stopPropagation(); setNewArticle(prev => ({ ...prev, image: '' })); }} className="absolute inset-0 bg-black/60 flex items-center justify-center opacity-0 group-hover:opacity-100 text-red-300"><Trash2 size={16} /></button>}
                             </div>
                             <div className="flex flex-col justify-center gap-2">
                                 {!newArticle.image && !isUploading && (
-                                    <button type="button" onClick={() => { }} className="px-3 py-2 rounded-xl bg-white/5 border border-white/10 text-xs text-white/60 hover:text-white flex items-center gap-2"><Clipboard size={14} /> Einfügen</button>
+                                    <button type="button" onClick={handlePasteImage} className="px-3 py-2 rounded-xl bg-white/5 border border-white/10 text-xs text-white/60 hover:text-white flex items-center gap-2"><Clipboard size={14} /> Einfügen</button>
                                 )}
                             </div>
                         </div>
