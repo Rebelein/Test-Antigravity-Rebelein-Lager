@@ -269,14 +269,14 @@ export const ArticleEditForm: React.FC<ArticleEditFormProps> = ({
                 await new Promise((resolve) => { reader.onload = resolve; reader.readAsDataURL(aiSelectedFile); });
                 const base64Data = (reader.result as string).split(',')[1];
                 response = await ai.models.generateContent({
-                    model: "gemini-2.0-flash-exp",
+                    model: "gemini-2.5-flash",
                     contents: [{ inlineData: { mimeType: aiSelectedFile.type, data: base64Data } }, { text: systemPrompt }],
                     config: { responseMimeType: "application/json", responseSchema: schema }
                 });
             } else if (aiMode === 'link' && aiUrlInput) {
                 // ... same logic
                 response = await ai.models.generateContent({
-                    model: "gemini-2.0-flash-exp",
+                    model: "gemini-2.5-flash",
                     contents: `${systemPrompt} JSON schema: ${JSON.stringify(schema)} Link: ${aiUrlInput}`,
                     config: { tools: [{ googleSearch: {} }] }
                 });
