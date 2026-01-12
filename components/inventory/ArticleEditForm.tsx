@@ -246,7 +246,22 @@ export const ArticleEditForm: React.FC<ArticleEditFormProps> = ({
                     product_url: { type: Type.STRING, nullable: true }
                 }
             };
-            const systemPrompt = `Extract product data. Context Suppliers: ${supplierNames}. Rules: Extract EXACT supplier name if found. Extract SKUs.`;
+            const systemPrompt = `
+            Analyze the product image or screenshot to extract structured data.
+            
+            CONTEXT (Known Suppliers): ${supplierNames}
+            
+            TASKS:
+            1. **Product Name**: Extract the full product title.
+            2. **Supplier**: Identify the supplier or wholesaler. Look for logos, website headers, or the domain in the browser address bar. Try to match with the "Known Suppliers" list.
+            3. **Supplier SKU (Art-Nr)**: Look specifically for the supplier's article number (often labeled as "Art-Nr.", "Bestell-Nr.", "Ref", "Item No."). This is NOT the EAN.
+            4. **URL**: If the image is a browser screenshot and shows the address bar, transcribe the URL exactly.
+            5. **EAN/GTIN**: Extract if visible.
+            
+            OUTPUT RULES:
+            - If exact supplier match found in context, use that name.
+            - "supplier_sku" text is critical.
+            `;
 
             let response;
             if (aiMode === 'image' && aiSelectedFile) {
@@ -254,14 +269,14 @@ export const ArticleEditForm: React.FC<ArticleEditFormProps> = ({
                 await new Promise((resolve) => { reader.onload = resolve; reader.readAsDataURL(aiSelectedFile); });
                 const base64Data = (reader.result as string).split(',')[1];
                 response = await ai.models.generateContent({
-                    model: "gemini-2.5-flash",
+                    model: "gemini-2.0-flash-exp",
                     contents: [{ inlineData: { mimeType: aiSelectedFile.type, data: base64Data } }, { text: systemPrompt }],
                     config: { responseMimeType: "application/json", responseSchema: schema }
                 });
             } else if (aiMode === 'link' && aiUrlInput) {
                 // ... same logic
                 response = await ai.models.generateContent({
-                    model: "gemini-2.5-flash-lite",
+                    model: "gemini-2.0-flash-exp",
                     contents: `${systemPrompt} JSON schema: ${JSON.stringify(schema)} Link: ${aiUrlInput}`,
                     config: { tools: [{ googleSearch: {} }] }
                 });
@@ -290,7 +305,13 @@ export const ArticleEditForm: React.FC<ArticleEditFormProps> = ({
             });
         }
         if (data.supplier_name) {
-            const match = suppliers.find(s => s.name.toLowerCase().includes(data.supplier_name.toLowerCase()));
+            const aiName = data.supplier_name.toLowerCase();
+            // Fuzzy match: check if one includes the other in either direction
+            const match = suppliers.find(s => {
+                const dbName = s.name.toLowerCase();
+                return dbName.includes(aiName) || aiName.includes(dbName);
+            });
+
             if (match && !tempSuppliers.some(s => s.supplierId === match.id)) {
                 setTempSuppliers(prev => [...prev, {
                     supplierId: match.id,
@@ -341,6 +362,27 @@ export const ArticleEditForm: React.FC<ArticleEditFormProps> = ({
             console.error(err);
             // Fallback for older browsers or permission issues (though read() is stricter)
             alert("Zugriff auf Zwischenablage fehlgeschlagen oder nicht unterstützt.");
+        }
+    };
+
+    const handlePasteAiImage = async () => {
+        try {
+            const items = await navigator.clipboard.read();
+            for (const item of items) {
+                if (item.types.some(type => type.startsWith('image/'))) {
+                    const blob = await item.getType(item.types.find(type => type.startsWith('image/'))!);
+                    const file = new File([blob], "ai_pasted_image.png", { type: blob.type });
+                    setAiSelectedFile(file);
+                    const r = new FileReader();
+                    r.onload = x => setAiImagePreview(x.target?.result as string);
+                    r.readAsDataURL(file);
+                    return;
+                }
+            }
+            alert("Kein Bild in der Zwischenablage gefunden.");
+        } catch (err) {
+            console.error(err);
+            alert("Zugriff auf Zwischenablage fehlgeschlagen.");
         }
     };
 
@@ -425,13 +467,20 @@ export const ArticleEditForm: React.FC<ArticleEditFormProps> = ({
                         {!aiAnalysisResult ? (
                             <div className="space-y-3">
                                 {aiMode === 'image' && (
-                                    <div className="relative w-full aspect-[21/9] rounded-lg border-2 border-dashed border-white/20 bg-white/5 flex flex-col items-center justify-center cursor-pointer hover:border-purple-500/50" onClick={() => aiFileInputRef.current?.click()}>
-                                        {aiImagePreview ? (
-                                            <div className="relative w-full h-full"><img src={aiImagePreview} className="w-full h-full object-contain" /><button onClick={(e) => { e.stopPropagation(); setAiImagePreview(null); setAiSelectedFile(null); }} className="absolute top-2 right-2 p-1 bg-black/50 rounded-full text-white"><X size={14} /></button></div>
-                                        ) : (
-                                            <div className="text-center text-white/40"><FileImage className="mx-auto mb-2 opacity-50" size={24} /><span className="text-xs">Bild hier ablegen</span></div>
+                                    <div className="flex flex-col gap-2">
+                                        <div className="relative w-full aspect-[21/9] rounded-lg border-2 border-dashed border-white/20 bg-white/5 flex flex-col items-center justify-center cursor-pointer hover:border-purple-500/50" onClick={() => aiFileInputRef.current?.click()}>
+                                            {aiImagePreview ? (
+                                                <div className="relative w-full h-full"><img src={aiImagePreview} className="w-full h-full object-contain" /><button onClick={(e) => { e.stopPropagation(); setAiImagePreview(null); setAiSelectedFile(null); }} className="absolute top-2 right-2 p-1 bg-black/50 rounded-full text-white"><X size={14} /></button></div>
+                                            ) : (
+                                                <div className="text-center text-white/40"><FileImage className="mx-auto mb-2 opacity-50" size={24} /><span className="text-xs">Bild hier ablegen</span></div>
+                                            )}
+                                            <input type="file" ref={aiFileInputRef} className="hidden" accept="image/*" onChange={(e) => { if (e.target.files?.[0]) { setAiSelectedFile(e.target.files[0]); const r = new FileReader(); r.onload = x => setAiImagePreview(x.target?.result as string); r.readAsDataURL(e.target.files[0]); } }} />
+                                        </div>
+                                        {!aiImagePreview && (
+                                            <button type="button" onClick={handlePasteAiImage} className="w-full py-2 rounded-lg bg-white/5 border border-white/10 text-xs text-white/60 hover:text-white flex items-center justify-center gap-2 hover:bg-white/10 transition-colors">
+                                                <Clipboard size={14} /> Aus Zwischenablage einfügen
+                                            </button>
                                         )}
-                                        <input type="file" ref={aiFileInputRef} className="hidden" accept="image/*" onChange={(e) => { if (e.target.files?.[0]) { setAiSelectedFile(e.target.files[0]); const r = new FileReader(); r.onload = x => setAiImagePreview(x.target?.result as string); r.readAsDataURL(e.target.files[0]); } }} />
                                     </div>
                                 )}
                                 {aiMode === 'link' && (
@@ -448,154 +497,182 @@ export const ArticleEditForm: React.FC<ArticleEditFormProps> = ({
                     </div>
                 )}
 
-                {/* Content Layout */}
-                <div className="md:grid md:grid-cols-2 md:gap-8 h-full pb-20 md:pb-0">
+                {/* Content Layout - Modernized */}
+                <div className="flex flex-col gap-6 pb-20 md:pb-0">
 
-                    {/* LEFT COLUMN: Image & Basic Info */}
-                    <div className="flex flex-col gap-6">
-                        {/* Image Section */}
-                        <div className="flex gap-4">
+                    {/* FULL WIDTH NAME - Top Position */}
+                    <div>
+                        <label className="text-xs text-blue-300/70 font-bold uppercase tracking-wider mb-1 block">Bezeichnung</label>
+                        <input
+                            className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white text-xl font-bold focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500/50 transition-all placeholder:text-white/20"
+                            value={newArticle.name}
+                            onChange={e => setNewArticle({ ...newArticle, name: e.target.value })}
+                            placeholder="Artikelbezeichnung..."
+                        />
+                    </div>
+
+                    {/* SECOND ROW: Image & Secondary Info */}
+                    <div className="flex flex-col md:flex-row gap-6 items-start">
+
+                        {/* Image Column */}
+                        <div className="flex items-center gap-4 shrink-0">
                             <div
                                 onClick={() => fileInputRef.current?.click()}
-                                className="w-24 h-24 shrink-0 rounded-2xl border-2 border-dashed border-white/10 bg-white/5 flex items-center justify-center relative overflow-hidden group hover:border-white/20 cursor-pointer"
+                                className="w-28 h-28 shrink-0 rounded-2xl border-2 border-dashed border-white/10 bg-white/5 flex items-center justify-center relative overflow-hidden group hover:border-white/20 cursor-pointer transition-all hover:bg-white/10"
                             >
                                 <input type="file" ref={fileInputRef} className="hidden" accept="image/*" onChange={handleFileUpload} onClick={(e) => e.stopPropagation()} />
-                                {isUploading ? <Loader2 className="animate-spin text-emerald-400" /> : newArticle.image ? <img src={newArticle.image} className="w-full h-full object-cover" /> : <div className="flex flex-col items-center text-white/30"><ImageIcon size={20} /><span className="text-[9px]">Bild</span></div>}
-                                {newArticle.image && !isUploading && <button onClick={(e) => { e.stopPropagation(); setNewArticle(prev => ({ ...prev, image: '' })); }} className="absolute inset-0 bg-black/60 flex items-center justify-center opacity-0 group-hover:opacity-100 text-red-300"><Trash2 size={16} /></button>}
+                                {isUploading ? <Loader2 className="animate-spin text-emerald-400" /> : newArticle.image ? <img src={newArticle.image} className="w-full h-full object-cover" /> : <div className="flex flex-col items-center text-white/30"><ImageIcon size={24} /><span className="text-[10px] mt-1">Bild</span></div>}
+                                {newArticle.image && !isUploading && <button onClick={(e) => { e.stopPropagation(); setNewArticle(prev => ({ ...prev, image: '' })); }} className="absolute inset-0 bg-black/60 flex items-center justify-center opacity-0 group-hover:opacity-100 text-red-300 transition-opacity"><Trash2 size={20} /></button>}
                             </div>
-                            <div className="flex flex-col justify-center gap-2">
+                            <div className="flex flex-col gap-2">
+                                <button type="button" onClick={() => fileInputRef.current?.click()} className="md:hidden px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-xs text-white/60 hover:text-white">Upload</button>
                                 {!newArticle.image && !isUploading && (
-                                    <button type="button" onClick={handlePasteImage} className="px-3 py-2 rounded-xl bg-white/5 border border-white/10 text-xs text-white/60 hover:text-white flex items-center gap-2"><Clipboard size={14} /> Einfügen</button>
+                                    <button type="button" onClick={handlePasteImage} className="w-10 h-10 md:w-auto md:h-auto md:px-3 md:py-2 rounded-xl bg-white/5 border border-white/10 text-xs text-white/60 hover:text-white flex items-center justify-center gap-2 hover:bg-white/10 transition-colors" title="Aus Zwischenablage einfügen">
+                                        <Clipboard size={16} />
+                                        <span className="hidden md:inline">Einfügen</span>
+                                    </button>
                                 )}
                             </div>
                         </div>
 
-                        {/* Main Fields */}
-                        <div className="space-y-4">
-                            <div><label className="text-xs text-white/50 mb-1 block">Bezeichnung</label><input className="w-full bg-white/5 border border-white/10 rounded-xl p-3 text-white text-base font-medium focus:ring-1 focus:ring-emerald-500/50" value={newArticle.name} onChange={e => setNewArticle({ ...newArticle, name: e.target.value })} placeholder="Artikelname" /></div>
-                            <div><label className="text-xs text-white/50 mb-1 block">EAN / Barcode</label><input className="w-full bg-white/5 border border-white/10 rounded-xl p-3 text-white focus:ring-1 focus:ring-emerald-500/50" value={newArticle.ean} onChange={e => setNewArticle({ ...newArticle, ean: e.target.value })} placeholder="EAN" /></div>
+                        {/* Secondary Info Column - EAN & Stock */}
+                        <div className="flex-1 w-full space-y-4">
+
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div>
+                                    <label className="text-xs text-white/40 mb-1 block">EAN / Barcode</label>
+                                    <input className="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-2 text-white/80 font-mono text-sm focus:ring-1 focus:ring-white/20" value={newArticle.ean} onChange={e => setNewArticle({ ...newArticle, ean: e.target.value })} placeholder="EAN Scannen..." />
+                                </div>
+
+                                {/* Stock - Inline for desktop */}
+                                <div className="grid grid-cols-2 gap-3">
+                                    <div className="bg-black/20 p-2 rounded-xl border border-white/5 flex flex-col justify-center">
+                                        <span className="text-[10px] text-emerald-400 font-bold uppercase mb-0.5">Ist</span>
+                                        <input type="number" className="bg-transparent border-none p-0 text-emerald-400 font-bold text-lg w-full focus:ring-0" value={newArticle.stock} onChange={e => setNewArticle({ ...newArticle, stock: parseInt(e.target.value) || 0 })} />
+                                    </div>
+                                    <div className="bg-black/20 p-2 rounded-xl border border-white/5 flex flex-col justify-center">
+                                        <span className="text-[10px] text-blue-400 font-bold uppercase mb-0.5">Soll</span>
+                                        <input type="number" className="bg-transparent border-none p-0 text-blue-400 font-bold text-lg w-full focus:ring-0" value={newArticle.targetStock} onChange={e => setNewArticle({ ...newArticle, targetStock: parseInt(e.target.value) || 0 })} />
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     </div>
 
-                    {/* RIGHT COLUMN: Stock, Location, Suppliers */}
-                    <div className="flex flex-col gap-6 mt-6 md:mt-0">
-                        {/* Stock Grid */}
-                        <div className="grid grid-cols-2 gap-3 bg-black/20 p-3 rounded-xl border border-white/5">
-                            <div><label className="text-[10px] text-emerald-400 block mb-1 font-bold">Ist</label><input type="number" className="w-full bg-emerald-500/10 border border-emerald-500/30 rounded-lg p-2 text-white font-bold" value={newArticle.stock} onChange={e => setNewArticle({ ...newArticle, stock: parseInt(e.target.value) || 0 })} /></div>
-                            <div><label className="text-[10px] text-blue-400 block mb-1 font-bold">Soll</label><input type="number" className="w-full bg-blue-500/10 border border-blue-500/30 rounded-lg p-2 text-white font-bold" value={newArticle.targetStock} onChange={e => setNewArticle({ ...newArticle, targetStock: parseInt(e.target.value) || 0 })} /></div>
+                    {/* LOCATION HEADER BAR */}
+                    <div className="bg-gradient-to-r from-white/5 to-transparent p-4 rounded-2xl border border-white/5 flex flex-col md:flex-row gap-4 items-center">
+                        <div className="flex-1 w-full">
+                            <label className="text-xs text-white/40 mb-1.5 block flex items-center gap-1"><Layers size={12} /> Regal / Kategorie</label>
+                            {isManualCategory ? (
+                                <div className="flex gap-2">
+                                    <input className="flex-1 bg-black/40 border border-white/10 rounded-xl px-3 py-2 text-white" value={newArticle.category} onChange={e => setNewArticle({ ...newArticle, category: e.target.value })} placeholder="Kategorie benennen..." autoFocus />
+                                    <button onClick={() => setIsManualCategory(false)} className="p-2 bg-white/10 rounded-xl text-white/60 hover:text-white border border-white/5"><ChevronDown size={20} /></button>
+                                </div>
+                            ) : (
+                                <div className="relative w-full">
+                                    <select className="w-full bg-black/40 border border-white/10 rounded-xl py-2.5 pl-3 pr-10 text-white appearance-none text-sm font-medium" value={newArticle.category} onChange={e => e.target.value === '___NEW___' ? (setNewArticle({ ...newArticle, category: '' }), setIsManualCategory(true)) : setNewArticle({ ...newArticle, category: e.target.value })}>
+                                        <option value="" disabled>Kategorie wählen...</option>
+                                        {distinctCategories.map(c => <option key={c} value={c}>{c}</option>)}
+                                        <option value="___NEW___" className="text-emerald-400 font-bold">+ Neue Kategorie</option>
+                                    </select>
+                                    <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 text-white/50 pointer-events-none" size={16} />
+                                </div>
+                            )}
                         </div>
 
-                        {/* Location */}
-                        <div className="space-y-4">
-                            <div>
-                                <label className="text-xs text-white/50 block mb-1">Regal</label>
-                                {isManualCategory ? (
-                                    <div className="flex gap-2">
-                                        <input className="w-full bg-white/5 border border-white/10 rounded-xl p-3 text-white" value={newArticle.category} onChange={e => setNewArticle({ ...newArticle, category: e.target.value })} placeholder="Regal" />
-                                        {distinctCategories.length > 0 && <button onClick={() => setIsManualCategory(false)} className="p-3 bg-white/10 rounded-xl text-white/60 hover:text-white"><Layers size={20} /></button>}
-                                    </div>
-                                ) : (
-                                    <div className="relative w-full">
-                                        <select className="w-full bg-white/5 border border-white/10 rounded-xl py-3 pl-4 pr-10 text-white appearance-none" value={newArticle.category} onChange={e => e.target.value === '___NEW___' ? (setNewArticle({ ...newArticle, category: '' }), setIsManualCategory(true)) : setNewArticle({ ...newArticle, category: e.target.value })}>
-                                            <option value="" disabled className="bg-gray-900">Wählen...</option>
-                                            {distinctCategories.map(c => <option key={c} value={c} className="bg-gray-900">{c}</option>)}
-                                            <option value="___NEW___" className="bg-gray-900 text-emerald-400 font-bold">+ Neu</option>
-                                        </select>
-                                        <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 text-white/50" size={16} />
-                                    </div>
-                                )}
+                        <div className="hidden md:block w-px h-10 bg-white/10 mx-2"></div>
+
+                        <div className="flex-1 w-full">
+                            <label className="text-xs text-white/40 mb-1.5 block flex items-center gap-1"><Hash size={12} /> Lagerort / Fach</label>
+                            <div className="flex gap-2 relative group">
+                                <input
+                                    className="w-full bg-black/40 border border-white/10 rounded-xl px-3 py-2 text-white font-mono transition-colors group-hover:border-white/20 focus:border-emerald-500/50 focus:ring-1 focus:ring-emerald-500/50"
+                                    value={newArticle.location}
+                                    onChange={e => setNewArticle({ ...newArticle, location: e.target.value })}
+                                    placeholder="z.B. A-01"
+                                />
+                                <button
+                                    onClick={handleAutoLocation}
+                                    className="absolute right-1 top-1 py-1 px-3 h-[calc(100%-8px)] rounded-lg bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border border-emerald-500/20 active:scale-95 transition-all text-xs font-bold flex items-center gap-2"
+                                    title="Nächstes freies Fach vorschlagen"
+                                >
+                                    <Wand2 size={14} /> Auto
+                                </button>
                             </div>
-                            <div>
-                                <label className="text-xs text-white/50 block mb-1">Fach</label>
-                                <div className="flex gap-2">
-                                    <input className="w-full bg-white/5 border border-white/10 rounded-xl p-3 text-white" value={newArticle.location} onChange={e => setNewArticle({ ...newArticle, location: e.target.value })} placeholder="A-01" />
-                                    <button onClick={handleAutoLocation} className="px-3 bg-white/10 rounded-xl text-emerald-400 hover:text-emerald-300"><Wand2 size={18} /></button>
-                                </div>
+                        </div>
+                    </div>
+
+                    {/* DETAILS GRID */}
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+
+                        {/* SKUs Panel */}
+                        <div className="bg-white/[0.02] border border-white/5 rounded-2xl p-4 flex flex-col gap-3">
+                            <label className="text-xs text-white/40 font-bold uppercase tracking-wider flex items-center justify-between">
+                                <span>Alternative SKUs</span>
+                                <span className="bg-white/10 text-white/60 px-1.5 py-0.5 rounded text-[10px]">{tempSkus.length}</span>
+                            </label>
+
+                            <div className="flex gap-2">
+                                <input className="flex-1 bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-sm text-white font-mono placeholder:text-white/20 focus:bg-white/10 transition-colors outline-none" value={tempSkuInput} onChange={e => setTempSkuInput(e.target.value)} onKeyDown={e => e.key === 'Enter' && addTempSku()} placeholder="Neue SKU..." />
+                                <button type="button" onClick={() => addTempSku()} className="px-3 bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg text-white/60 hover:text-white transition-colors"><Plus size={18} /></button>
+                            </div>
+
+                            <div className="flex flex-wrap gap-2 mt-1">
+                                {tempSkus.length === 0 && <div className="text-xs text-white/20 italic p-2">Keine weiteren SKUs</div>}
+                                {tempSkus.map((s, idx) => (
+                                    <div key={idx} className={`flex items-center gap-2 pl-3 pr-1 py-1.5 rounded-lg border text-xs transition-all ${s.isPreferred ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-300' : 'bg-white/5 border-white/5 text-white/70 hover:bg-white/10'}`}>
+                                        <span className="font-mono">{s.sku}</span>
+                                        <div className="flex gap-0.5 border-l border-white/10 ml-1 pl-1">
+                                            <button onClick={() => togglePreferredSku(idx)} className={`p-1 hover:text-white rounded ${s.isPreferred ? 'text-emerald-400' : 'text-white/20'}`}><Star size={12} fill={s.isPreferred ? "currentColor" : "none"} /></button>
+                                            <button onClick={() => removeTempSku(idx)} className="p-1 hover:text-rose-400 text-white/30 rounded"><X size={12} /></button>
+                                        </div>
+                                    </div>
+                                ))}
                             </div>
                         </div>
 
-                        {/* Suppliers & SKUs */}
-                        <div className="space-y-6 pt-2 border-t border-white/5">
-                            <div className="space-y-2">
-                                <label className="text-xs text-white/50 block flex items-center gap-1"><Hash size={12} /> SKUs</label>
+                        {/* Suppliers Panel */}
+                        <div className="bg-white/[0.02] border border-white/5 rounded-2xl p-4 flex flex-col gap-3">
+                            <label className="text-xs text-white/40 font-bold uppercase tracking-wider flex items-center justify-between">
+                                <span>Lieferanten</span>
+                                <span className="bg-white/10 text-white/60 px-1.5 py-0.5 rounded text-[10px]">{tempSuppliers.length}</span>
+                            </label>
+
+                            <div className="bg-black/20 p-3 rounded-xl border border-white/5 space-y-2">
                                 <div className="flex gap-2">
-                                    <input className="flex-1 bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-sm text-white font-mono" value={tempSkuInput} onChange={e => setTempSkuInput(e.target.value)} onKeyDown={e => e.key === 'Enter' && addTempSku()} placeholder="123-456" />
-                                    <button type="button" onClick={() => addTempSku()} className="px-3 bg-white/10 hover:bg-white/20 rounded-lg"><Plus size={16} /></button>
+                                    <select className="flex-1 bg-transparent text-white text-xs outline-none" value={tempSupplierSelect} onChange={e => setTempSupplierSelect(e.target.value)}>
+                                        <option value="" className="bg-gray-900 text-gray-400">Lieferant auswählen...</option>
+                                        {suppliers.map(s => <option key={s.id} value={s.id} className="bg-gray-900">{s.name}</option>)}
+                                    </select>
+                                    <button onClick={addTempSupplier} disabled={!tempSupplierSelect} className="p-2 bg-white/10 hover:bg-white/20 text-white rounded-lg transition-colors disabled:opacity-50" title={editingSupplierIdx !== null ? 'Speichern' : 'Hinzufügen'}>
+                                        {editingSupplierIdx !== null ? <CheckCircle2 size={18} /> : <Plus size={18} />}
+                                    </button>
                                 </div>
-                                <div className="flex flex-wrap gap-2">
-                                    {tempSkus.map((s, idx) => (
-                                        <div key={idx} className={`flex items-center gap-1 pl-2 pr-1 py-1 rounded-lg border text-xs ${s.isPreferred ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-200' : 'bg-white/5 border-white/10 text-white/60'}`}>
-                                            <span>{s.sku}</span>
-                                            <div className="flex gap-1 ml-1 pl-1 border-l border-white/10">
-                                                <button onClick={() => togglePreferredSku(idx)} className={`hover:text-white ${s.isPreferred ? 'text-emerald-400' : 'text-white/20'}`}><Star size={10} fill={s.isPreferred ? "currentColor" : "none"} /></button>
-                                                <button onClick={() => removeTempSku(idx)} className="hover:text-rose-400 text-white/40"><X size={10} /></button>
-                                            </div>
-                                        </div>
-                                    ))}
+                                <div className="grid grid-cols-2 gap-2">
+                                    <input className="bg-white/5 border border-white/10 rounded px-2 py-1.5 text-xs text-white placeholder:text-white/20" placeholder="Art-Nr. beim Lieferant" value={tempSupplierSkuInput} onChange={e => setTempSupplierSkuInput(e.target.value)} />
+                                    <input className="bg-white/5 border border-white/10 rounded px-2 py-1.5 text-xs text-white placeholder:text-white/20" placeholder="Produkt-Link (URL)" value={tempSupplierUrlInput} onChange={e => setTempSupplierUrlInput(e.target.value)} />
                                 </div>
                             </div>
 
-                            <div className="space-y-2">
-                                <label className="text-xs text-white/50 font-bold uppercase">Lieferanten</label>
-                                <div className="bg-black/20 p-3 rounded-xl border border-white/5 space-y-3">
-                                    <div className="flex gap-2">
-                                        <select className="flex-1 bg-white/5 border border-white/10 rounded-lg text-white text-sm p-2 appearance-none" value={tempSupplierSelect} onChange={e => setTempSupplierSelect(e.target.value)}>
-                                            <option value="" className="bg-gray-900">Lieferant...</option>
-                                            {suppliers.map(s => <option key={s.id} value={s.id} className="bg-gray-900">{s.name}</option>)}
-                                        </select>
-                                        <div className="flex gap-1">
-                                            {editingSupplierIdx !== null && (
-                                                <Button onClick={cancelEditSupplier} variant="secondary" className="px-3 py-2 h-auto text-xs">Cancel</Button>
-                                            )}
-                                            <Button onClick={addTempSupplier} disabled={!tempSupplierSelect} className="px-3 py-2 h-auto text-xs">{editingSupplierIdx !== null ? 'Update' : 'Add'}</Button>
-                                        </div>
-                                    </div>
-                                    <input className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-xs text-white" placeholder="Art-Nr." value={tempSupplierSkuInput} onChange={e => setTempSupplierSkuInput(e.target.value)} />
-                                    <input className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-xs text-white" placeholder="Produkt-Link (URL)" value={tempSupplierUrlInput} onChange={e => setTempSupplierUrlInput(e.target.value)} />
-                                </div>
-                                <div className="space-y-2">
-                                    {tempSuppliers.map((s, idx) => (
-                                        <div key={idx} className={`relative group p-3 rounded-xl border transition-all duration-300 ${s.isPreferred ? 'bg-gradient-to-br from-emerald-500/10 to-emerald-500/5 border-emerald-500/20' : 'bg-gradient-to-br from-white/10 to-white/5 border-white/10 hover:border-white/20'}`}>
-                                            <div className="flex justify-between items-start">
-                                                <div className="overflow-hidden mr-3 flex-1">
-                                                    <div className="flex items-center gap-2 mb-1.5">
-                                                        <span className={`font-bold text-sm leading-none ${s.isPreferred ? 'text-emerald-300' : 'text-white'}`}>{s.supplierName}</span>
-                                                        {s.isPreferred && (
-                                                            <span className="px-1.5 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider bg-emerald-500/20 text-emerald-400 border border-emerald-500/20">Main</span>
-                                                        )}
-                                                    </div>
-
-                                                    <div className="flex flex-col gap-1">
-                                                        {s.supplierSku && (
-                                                            <div className="flex items-center gap-1.5 text-xs text-white/50">
-                                                                <Hash size={10} className="stroke-[2.5]" />
-                                                                <span className="font-mono tracking-wide">{s.supplierSku}</span>
-                                                            </div>
-                                                        )}
-                                                        {s.url && (
-                                                            <a href={s.url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1.5 text-xs text-blue-400/80 hover:text-blue-300 transition-colors w-full group/link">
-                                                                <Globe size={10} className="shrink-0 stroke-[2.5]" />
-                                                                <span className="truncate underline decoration-blue-500/30 underline-offset-2 group-hover/link:decoration-blue-400/50">{s.url}</span>
-                                                            </a>
-                                                        )}
-                                                    </div>
+                            <div className="space-y-2 max-h-[160px] overflow-y-auto pr-1 custom-scrollbar">
+                                {tempSuppliers.map((s, idx) => (
+                                    <div key={idx} className={`relative group p-2.5 rounded-lg border transition-all ${s.isPreferred ? 'bg-emerald-500/5 border-emerald-500/20' : 'bg-white/5 border-white/5 hover:border-white/10'}`}>
+                                        <div className="flex justify-between items-start">
+                                            <div className="flex-1 min-w-0">
+                                                <div className="flex items-center gap-2">
+                                                    <span className={`font-bold text-xs ${s.isPreferred ? 'text-emerald-300' : 'text-white'}`}>{s.supplierName}</span>
+                                                    {s.isPreferred && <span className="text-[9px] bg-emerald-500/20 text-emerald-400 px-1 rounded uppercase tracking-wider">Main</span>}
                                                 </div>
-
-                                                <div className="flex gap-1 shrink-0">
-                                                    <button onClick={() => togglePreferredSupplier(idx)} className={`p-2 rounded-lg transition-colors ${s.isPreferred ? 'text-emerald-400 bg-emerald-500/10 hover:bg-emerald-500/20' : 'text-white/20 hover:text-yellow-400 hover:bg-white/10'}`} title={s.isPreferred ? "Hauptlieferant" : "Als Hauptlieferant setzen"}>
-                                                        <Star size={14} fill={s.isPreferred ? "currentColor" : "none"} />
-                                                    </button>
-                                                    <button onClick={() => startEditSupplier(idx)} className="p-2 rounded-lg text-white/30 hover:text-blue-400 hover:bg-blue-500/10 transition-colors">
-                                                        <Pencil size={14} />
-                                                    </button>
-                                                    <button onClick={() => removeTempSupplier(idx)} className="p-2 rounded-lg text-white/30 hover:text-rose-400 hover:bg-rose-500/10 transition-colors">
-                                                        <Trash2 size={14} />
-                                                    </button>
-                                                </div>
+                                                {s.supplierSku && <div className="text-[10px] text-white/50 font-mono mt-0.5">#{s.supplierSku}</div>}
+                                            </div>
+                                            <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                                <button onClick={() => togglePreferredSupplier(idx)} className={`p-1.5 rounded transition-colors ${s.isPreferred ? 'text-emerald-400' : 'text-white/20 hover:text-yellow-400'}`}><Star size={12} fill={s.isPreferred ? "currentColor" : "none"} /></button>
+                                                <button onClick={() => startEditSupplier(idx)} className="p-1.5 rounded text-white/30 hover:text-blue-400"><Pencil size={12} /></button>
+                                                <button onClick={() => removeTempSupplier(idx)} className="p-1.5 rounded text-white/30 hover:text-rose-400"><Trash2 size={12} /></button>
                                             </div>
                                         </div>
-                                    ))}
-                                </div>
+                                    </div>
+                                ))}
                             </div>
                         </div>
                     </div>
