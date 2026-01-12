@@ -44,6 +44,7 @@ export const CommissionCleanupModal: React.FC<CommissionCleanupModalProps> = ({ 
     // Scanner
     const [useNative, setUseNative] = useState(true);
     const [error, setError] = useState<string | null>(null);
+    const [lastScannedDebug, setLastScannedDebug] = useState<string | null>(null); // Debug info
     const videoRef = useRef<HTMLVideoElement>(null);
     const streamRef = useRef<MediaStream | null>(null);
     const scannerLoopRef = useRef<number | null>(null);
@@ -161,26 +162,37 @@ export const CommissionCleanupModal: React.FC<CommissionCleanupModalProps> = ({ 
     };
 
     const handleScan = (raw: string) => {
-        if (!raw.startsWith('COMM:')) return;
-        const id = raw.substring(5).trim();
+        // Normalize: valid formats: "COMM:UUID", "COMM: UUID", "UUID"
+        setLastScannedDebug(raw); // Show raw input for debug
+        let id = raw.trim();
+
+        // Check prefix case-insensitively
+        if (id.toUpperCase().startsWith('COMM:')) {
+            id = id.substring(5).trim();
+        }
+
+        // Remove any potentially weird chars if necessary, but UUIDs are hex + dash
+
+        // Check for match case-insensitive
+        const match = expectedCommissions.find(c => c.id.toLowerCase() === id.toLowerCase());
+        const matchedId = match ? match.id : id; // Use the canonical DB ID if matched
 
         setScannedIds(prev => {
-            if (prev.has(id)) return prev; // Already scanned
+            if (prev.has(matchedId)) return prev; // Already scanned
 
             // New scan!
             const newSet = new Set(prev);
-            newSet.add(id);
+            newSet.add(matchedId);
 
-            // Check if it's one we expected
-            const match = expectedCommissions.find(c => c.id === id);
             if (match) {
-                // Yes, remove from expected visual (kept in state for diffing later)? 
-                // Using sets for O(1) checks.
                 toast.success(`Gefunden: ${match.name}`);
             } else {
-                // Scanned something relevant?
-                // Note: We might want to show "Wrong Status" warning later
-                toast(`Gescannt (ID: ...${id.slice(-4)})`, { icon: <ScanLine size={14} /> });
+                // If no direct ID match, try searching by order number?
+                // Often QR is just ID.
+                toast(`Gescannt: ...${matchedId.slice(-4)} (Nicht in Liste)`, {
+                    icon: <ScanLine size={14} />,
+                    description: "Status prüfen?"
+                });
             }
 
             if (navigator.vibrate) navigator.vibrate(50);
@@ -311,6 +323,15 @@ export const CommissionCleanupModal: React.FC<CommissionCleanupModalProps> = ({ 
                                     <div className="font-bold text-lg text-emerald-400">{foundCommissions.length}</div>
                                 </div>
                             </div>
+
+                            {/* Debug Info */}
+                            {lastScannedDebug && (
+                                <div className="absolute bottom-20 left-0 right-0 text-center pointer-events-none">
+                                    <span className="bg-black/50 text-white/50 text-xs px-2 py-1 rounded backdrop-blur">
+                                        Letzter Scan: {lastScannedDebug}
+                                    </span>
+                                </div>
+                            )}
                         </div>
 
                         {/* Scan Footer */}
@@ -323,7 +344,7 @@ export const CommissionCleanupModal: React.FC<CommissionCleanupModalProps> = ({ 
                                     onKeyDown={(e) => {
                                         if (e.key === 'Enter') {
                                             const val = (e.target as HTMLInputElement).value;
-                                            if (val) { handleScan(val.startsWith('COMM:') ? val : `COMM:${val}`); (e.target as HTMLInputElement).value = ''; }
+                                            if (val) { handleScan(val); (e.target as HTMLInputElement).value = ''; }
                                         }
                                     }}
                                 />

@@ -171,11 +171,7 @@ const Commissions: React.FC = () => {
             setShowLabelUpdateModal(true);
         }
         setSidePanelMode('none');
-        // Check if we need to clear activeCommission immediately? 
-        // Better to keep it until mode changes back or something else is selected, 
-        // but 'none' implies closed. UseState updates are batched.
-        if (sidePanelMode !== 'detail') setActiveCommission(null); // Clear only if not detail
-        else setActiveCommission(null);
+        setActiveCommission(null); // Explicitly clear active commission
     };
 
     const handleOpenCreate = () => {
@@ -293,6 +289,7 @@ const Commissions: React.FC = () => {
             case 'detail':
                 return activeCommission ? (
                     <CommissionDetailContent
+                        key={activeCommission.id} // FORCE REMOUNT on ID change
                         commission={activeCommission}
                         items={commItems}
                         localHistoryLogs={localHistoryLogs}
