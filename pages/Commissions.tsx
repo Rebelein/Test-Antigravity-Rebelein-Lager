@@ -802,7 +802,11 @@ const Commissions: React.FC = () => {
                 </div>
             </GlassModal>
 
-            <CommissionCleanupModal isOpen={showCleanupModal} onClose={() => setShowCleanupModal(false)} />
+            <CommissionCleanupModal
+                isOpen={showCleanupModal}
+                onClose={() => setShowCleanupModal(false)}
+                onCleanupComplete={refreshCommissions}
+            />
 
         </MasterDetailLayout>
     );
