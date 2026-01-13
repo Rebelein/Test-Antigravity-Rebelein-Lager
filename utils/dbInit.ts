@@ -346,4 +346,36 @@ BEGIN
     END;
 END
 $$;
+
+    -- 3. CHANGELOG SYSTEM
+    CREATE TABLE IF NOT EXISTS public.changelogs (
+        id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+        version TEXT NOT NULL UNIQUE,
+        changes JSONB NOT NULL,
+        release_date TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now())
+    );
+
+    -- Enable Realtime
+    DO $do$
+    BEGIN
+        IF NOT EXISTS (SELECT 1 FROM pg_publication_tables WHERE pubname = 'supabase_realtime' AND tablename = 'changelogs') THEN
+            ALTER PUBLICATION supabase_realtime ADD TABLE changelogs;
+        END IF;
+    EXCEPTION WHEN OTHERS THEN NULL;
+    END
+    $do$;
+
+ -- 4. AKTUELLE CHANGELOGS EINFÜGEN (Vibe Coding Magic)
+INSERT INTO public.changelogs (version, changes, release_date)
+VALUES 
+(
+  '0.0.45', 
+  '[
+    {"type": "feature", "text": "Smart State System: Dashboard-Layouts, fixierte Seitenleisten und Split-View-Einstellungen bleiben nun auch nach Updates erhalten."},
+    {"type": "feature", "text": "Anpassbare Seitenleiste: Die Breite der Detailansicht kann jetzt individuell eingestellt werden."},
+    {"type": "fix", "text": "Kritische Fehlerbehebungen beim Datenbank-Start und Login."}
+  ]'::jsonb,
+  NOW()
+)
+ON CONFLICT (version) DO NOTHING;
 `;

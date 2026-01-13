@@ -47,7 +47,11 @@ export const InventoryList: React.FC<InventoryListProps> = ({
     useWindowScroll = true
 }) => {
 
-    const categories = useMemo(() => Object.keys(groupedArticles), [groupedArticles]);
+    const categories = useMemo(() => {
+        return Object.keys(groupedArticles).sort((a, b) =>
+            a.localeCompare(b, undefined, { numeric: true, sensitivity: 'base' })
+        );
+    }, [groupedArticles]);
 
     // Calculate group counts (0 if collapsed)
     const groupCounts = useMemo(() => {

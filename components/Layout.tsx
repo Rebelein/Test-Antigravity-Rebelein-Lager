@@ -11,8 +11,8 @@ import { InstallPrompt } from './InstallPrompt';
 import { useRegisterSW } from 'virtual:pwa-register/react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { clsx } from 'clsx';
+import { usePersistentState } from '../hooks/usePersistentState';
 import NotificationToast from './NotificationToast';
-
 import { useIsIOS } from '../hooks/useIsIOS';
 
 interface LayoutProps {
@@ -25,16 +25,8 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
     const { signOut, profile, isConnected, checkConnection, markTourSeen } = useAuth();
 
     // Sidebar State for Desktop
-    const [isSidebarPinned, setIsSidebarPinned] = useState(() => {
-        // Vibe Coding: Persist sidebar state
-        const saved = localStorage.getItem('sidebar-pinned');
-        return saved === 'true';
-    });
+    const [isSidebarPinned, setIsSidebarPinned] = usePersistentState('sidebar-pinned', false);
 
-    // Save sidebar state to local storage whenever it changes
-    useEffect(() => {
-        localStorage.setItem('sidebar-pinned', isSidebarPinned.toString());
-    }, [isSidebarPinned]);
 
     // --- NEW FEATURES STATE ---
     const [updateAvailable, setUpdateAvailable] = useState(false);

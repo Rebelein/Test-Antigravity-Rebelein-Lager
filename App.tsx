@@ -28,6 +28,7 @@ import { NotificationProvider } from './contexts/NotificationContext';
 import { Loader2 } from 'lucide-react';
 import { initializeDatabase } from './utils/dbInit';
 import { ReloadPrompt } from './components/ReloadPrompt';
+import { ChangelogModal } from './components/ChangelogModal';
 
 // Protected Route Wrapper
 const ProtectedRoute = () => {
@@ -143,6 +144,7 @@ const App: React.FC = () => {
                   </Routes>
                 </React.Suspense>
               </HashRouter>
+              <ChangelogModal />
             </ThemeProvider>
           </NotificationProvider>
           <ReloadPrompt />

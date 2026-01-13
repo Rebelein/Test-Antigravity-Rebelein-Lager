@@ -103,9 +103,38 @@ const Dashboard: React.FC = () => {
 
     const [layouts, setLayouts] = useState(() => {
         const saved = localStorage.getItem('dashboard_layouts');
-        // If saved layout doesn't have 'keys', reset to default (basic migration)
-        if (saved && !saved.includes('keys')) return defaultLayouts;
-        return saved ? JSON.parse(saved) : defaultLayouts;
+        if (!saved) return defaultLayouts;
+
+        try {
+            const parsed = JSON.parse(saved);
+            // Migration: Ensure all keys from defaultLayouts exist in saved layout
+            let hasChanges = false;
+            const migrated = { ...parsed };
+
+            // Iterate over breakpoints (lg, md, sm) to ensure all defined tiles exist
+            (Object.keys(defaultLayouts) as Array<keyof typeof defaultLayouts>).forEach(bp => {
+                if (!migrated[bp]) {
+                    // Entire breakpoint missing? Copy default
+                    migrated[bp] = defaultLayouts[bp];
+                    hasChanges = true;
+                } else {
+                    // Check for missing items in this breakpoint
+                    defaultLayouts[bp].forEach((defTile: any) => {
+                        const exists = migrated[bp].find((t: any) => t.i === defTile.i);
+                        if (!exists) {
+                            // New Tile (e.g. 'keys') missing! Add it from default
+                            migrated[bp] = [...migrated[bp], defTile];
+                            hasChanges = true;
+                        }
+                    });
+                }
+            });
+
+            return migrated;
+        } catch (e) {
+            console.error("Layout parse error, resetting:", e);
+            return defaultLayouts;
+        }
     });
 
     const handleLayoutChange = (layout: any, allLayouts: any) => {

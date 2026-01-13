@@ -15,7 +15,7 @@ const Login: React.FC = () => {
   const [password, setPassword] = useState('');
   const [fullName, setFullName] = useState('');
   const [loading, setLoading] = useState(false);
-  
+
   // DB Setup States
   const [showSql, setShowSql] = useState(false);
   const [sqlCopied, setSqlCopied] = useState(false);
@@ -74,7 +74,7 @@ const Login: React.FC = () => {
       {/* Background Blobs */}
       <div className="fixed top-[-20%] left-[-10%] w-[600px] h-[600px] bg-emerald-600/20 rounded-full blur-[120px] animate-pulse-slow pointer-events-none" />
       <div className="fixed bottom-[-10%] right-[-20%] w-[500px] h-[500px] bg-teal-600/20 rounded-full blur-[100px] pointer-events-none" />
-      
+
       <GlassCard className="w-full max-w-md relative z-10">
         <div className="text-center mb-8">
           <h1 className="text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-emerald-300 to-teal-200 mb-2">
@@ -96,7 +96,7 @@ const Login: React.FC = () => {
                 required
               />
             )}
-            
+
             <GlassInput
               icon={<Mail size={20} />}
               type="email"
@@ -104,8 +104,9 @@ const Login: React.FC = () => {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
+              autoComplete="username"
             />
-            
+
             <GlassInput
               icon={<Lock size={20} />}
               type="password"
@@ -114,6 +115,7 @@ const Login: React.FC = () => {
               onChange={(e) => setPassword(e.target.value)}
               required
               minLength={6}
+              autoComplete="current-password"
             />
 
             {error && (
@@ -123,9 +125,9 @@ const Login: React.FC = () => {
               </div>
             )}
 
-            <Button 
-              type="submit" 
-              className="w-full mt-6" 
+            <Button
+              type="submit"
+              className="w-full mt-6"
               disabled={loading}
             >
               {loading ? <Loader2 size={20} className="animate-spin" /> : (isLogin ? 'Einloggen' : 'Registrieren')}
@@ -133,33 +135,33 @@ const Login: React.FC = () => {
           </form>
         ) : (
           <div className="animate-in fade-in zoom-in duration-200">
-             <div className="bg-black/40 rounded-xl border border-white/10 p-4 mb-4">
-                <h3 className="text-emerald-400 font-bold mb-2 flex items-center gap-2">
-                   <Database size={16} /> Initial SQL Setup
-                </h3>
-                <p className="text-xs text-white/60 mb-3">
-                   Kopiere diesen Code in den Supabase SQL Editor, um die Datenbank zu reparieren/erstellen.
-                </p>
-                <div className="relative">
-                  <textarea 
-                     readOnly 
-                     className="w-full h-48 bg-black/50 rounded-lg border border-white/10 p-3 text-[10px] font-mono text-emerald-300/80 focus:outline-none resize-none"
-                     value={MANUAL_SETUP_SQL}
-                  />
-                   <button 
-                      onClick={copySqlToClipboard}
-                      className="absolute top-2 right-2 p-1.5 bg-white/10 hover:bg-white/20 rounded-md text-white transition-colors"
-                   >
-                      {sqlCopied ? <Check size={14} /> : <Copy size={14} />}
-                   </button>
-                </div>
-             </div>
+            <div className="bg-black/40 rounded-xl border border-white/10 p-4 mb-4">
+              <h3 className="text-emerald-400 font-bold mb-2 flex items-center gap-2">
+                <Database size={16} /> Initial SQL Setup
+              </h3>
+              <p className="text-xs text-white/60 mb-3">
+                Kopiere diesen Code in den Supabase SQL Editor, um die Datenbank zu reparieren/erstellen.
+              </p>
+              <div className="relative">
+                <textarea
+                  readOnly
+                  className="w-full h-48 bg-black/50 rounded-lg border border-white/10 p-3 text-[10px] font-mono text-emerald-300/80 focus:outline-none resize-none"
+                  value={MANUAL_SETUP_SQL}
+                />
+                <button
+                  onClick={copySqlToClipboard}
+                  className="absolute top-2 right-2 p-1.5 bg-white/10 hover:bg-white/20 rounded-md text-white transition-colors"
+                >
+                  {sqlCopied ? <Check size={14} /> : <Copy size={14} />}
+                </button>
+              </div>
+            </div>
           </div>
         )}
 
         <div className="mt-6 text-center space-y-4">
           {!showSql && (
-            <button 
+            <button
               onClick={() => setIsLogin(!isLogin)}
               className="text-sm text-white/60 hover:text-emerald-300 transition-colors block w-full"
             >
@@ -168,12 +170,12 @@ const Login: React.FC = () => {
           )}
 
           {/* Emergency DB Init Toggle */}
-          <button 
-             onClick={() => setShowSql(!showSql)}
-             className="text-xs text-white/20 hover:text-emerald-400/80 flex items-center justify-center gap-1 w-full transition-colors pt-4 border-t border-white/5"
+          <button
+            onClick={() => setShowSql(!showSql)}
+            className="text-xs text-white/20 hover:text-emerald-400/80 flex items-center justify-center gap-1 w-full transition-colors pt-4 border-t border-white/5"
           >
-             <Database size={12} />
-             <span>{showSql ? 'Zurück zum Login' : 'Datenbank Setup Code anzeigen'}</span>
+            <Database size={12} />
+            <span>{showSql ? 'Zurück zum Login' : 'Datenbank Setup Code anzeigen'}</span>
           </button>
         </div>
       </GlassCard>

@@ -145,7 +145,8 @@ const Inventory = () => {
     }, [sortedArticles]);
 
     const distinctCategories = useMemo(() => {
-        return Array.from(new Set(articles.map(a => a.category || 'Unkategorisiert'))).sort();
+        return Array.from(new Set(articles.map(a => a.category || 'Unkategorisiert')))
+            .sort((a, b) => a.localeCompare(b, undefined, { numeric: true, sensitivity: 'base' }));
     }, [articles]);
 
     // --- EVENT HANDLERS ---

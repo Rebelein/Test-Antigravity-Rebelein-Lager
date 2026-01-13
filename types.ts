@@ -299,3 +299,13 @@ export interface WorkwearOrderItem {
   use_logo: boolean;
   price_at_order: number;
 }
+
+export interface ChangelogEntry {
+  id: string;
+  version: string;
+  changes: {
+    type: 'feature' | 'fix' | 'info';
+    text: string;
+  }[];
+  release_date: string;
+}
