@@ -72,7 +72,7 @@ export const CommissionEditContent: React.FC<CommissionEditContentProps> = ({
                 notes: initialCommission.notes || ''
             });
 
-            if (initialItems) {
+            if (initialItems && initialItems.length > 0) {
                 const mapped: TempCommissionItem[] = initialItems.map((item: any) => ({
                     uniqueId: Math.random().toString(36).substr(2, 9),
                     type: item.type,
@@ -86,6 +86,8 @@ export const CommissionEditContent: React.FC<CommissionEditContentProps> = ({
                     isPicked: item.is_picked
                 }));
                 setTempItems(mapped);
+            } else {
+                setTempItems([]);
             }
         } else {
             // New Mode
@@ -98,7 +100,7 @@ export const CommissionEditContent: React.FC<CommissionEditContentProps> = ({
         setExpandSupplierList(false);
         setStockSearchTerm('');
         setSupplierSearchTerm('');
-    }, [isEditMode, initialCommission, initialItems]); // Re-run when these props change
+    }, [isEditMode, initialCommission?.id]); // FIX: Depend ONLY on ID, not the full object/array references
 
     // --- LOGIC ---
 
@@ -214,7 +216,10 @@ export const CommissionEditContent: React.FC<CommissionEditContentProps> = ({
                 warehouse_id: primaryWarehouseId,
             };
 
-            if (!isEditMode) payload.status = 'Draft';
+            if (!isEditMode) {
+                payload.status = 'Draft';
+                payload.needs_label = true;
+            }
 
             // Clean undefined
             Object.keys(payload).forEach(key => (payload as any)[key] === undefined && delete (payload as any)[key]);

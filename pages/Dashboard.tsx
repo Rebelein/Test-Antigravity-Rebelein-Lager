@@ -1133,7 +1133,12 @@ const Dashboard: React.FC = () => {
             {/* CREATE COMMISSION MODAL (Directly on Dashboard) */}
             {showCreateCommissionModal && (
                 <div className="fixed inset-0 z-[150] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
-                    <div className="w-full max-w-5xl h-[85vh] overflow-hidden rounded-2xl bg-[#0a0a0a] border border-white/10 shadow-2xl flex flex-col relative">
+                    <div
+                        onMouseDown={(e) => e.stopPropagation()}
+                        onClick={(e) => e.stopPropagation()}
+                        onTouchStart={(e) => e.stopPropagation()}
+                        className="w-full max-w-5xl h-[85vh] overflow-hidden rounded-2xl bg-[#0a0a0a] border border-white/10 shadow-2xl flex flex-col relative"
+                    >
                         <CommissionEditContent
                             isEditMode={false}
                             initialCommission={null}

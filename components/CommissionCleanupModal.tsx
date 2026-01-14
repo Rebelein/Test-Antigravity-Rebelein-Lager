@@ -195,9 +195,41 @@ export const CommissionCleanupModal: React.FC<CommissionCleanupModalProps> = ({ 
                 });
             }
 
-            if (navigator.vibrate) navigator.vibrate(50);
+            triggerScanFeedback();
             return newSet;
         });
+    };
+
+    const triggerScanFeedback = () => {
+        // 1. Vibration (Android)
+        if (navigator.vibrate) {
+            try { navigator.vibrate(200); } catch(e) {}
+        }
+
+        // 2. Audio Beep (iOS & Android)
+        try {
+            const AudioContext = window.AudioContext || (window as any).webkitAudioContext;
+            if (AudioContext) {
+                const ctx = new AudioContext();
+                const osc = ctx.createOscillator();
+                const gain = ctx.createGain();
+                
+                osc.connect(gain);
+                gain.connect(ctx.destination);
+                
+                osc.type = "sine";
+                osc.frequency.setValueAtTime(1200, ctx.currentTime);
+                osc.frequency.exponentialRampToValueAtTime(600, ctx.currentTime + 0.15);
+                
+                gain.gain.setValueAtTime(0.2, ctx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.15);
+                
+                osc.start(ctx.currentTime);
+                osc.stop(ctx.currentTime + 0.2);
+            }
+        } catch (e) {
+            console.error("Audio feedback failed", e);
+        }
     };
 
     // --- FINISH & REVIEW ---
