@@ -2,8 +2,9 @@
 import React, { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { X, PartyPopper, Zap, Wrench, Info } from 'lucide-react';
-import { supabase } from '../supabaseClient';
 import { ChangelogEntry } from '../types';
+
+import { changelogData } from '../src/data/changelogData';
 
 export const ChangelogModal: React.FC = () => {
     const [isOpen, setIsOpen] = useState(false);
@@ -11,7 +12,7 @@ export const ChangelogModal: React.FC = () => {
     const currentVersion = process.env.APP_VERSION || '0.0.0';
 
     useEffect(() => {
-        const checkVersion = async () => {
+        const checkVersion = () => {
             // 1. Hole die lokal gespeicherte "zuletzt gesehene Version"
             const lastSeenVersion = localStorage.getItem('last_seen_version');
 
@@ -20,24 +21,21 @@ export const ChangelogModal: React.FC = () => {
                 return;
             }
 
-            // 2. Hole den Changelog für die AKTUELLE Version aus der DB
-            const { data, error } = await supabase
-                .from('changelogs')
-                .select('*')
-                .eq('version', currentVersion)
-                .single();
+            // 2. Hole den Changelog für die AKTUELLE Version aus der LOKALEN Datei
+            const currentChangelog = changelogData.find(entry => entry.version === currentVersion);
 
-            if (error || !data) {
-                // Kein Changelog für diese Version in der DB gefunden? Dann nicht anzeigen.
+            if (!currentChangelog) {
+                // Kein Changelog für diese Version gefunden? Dann nicht anzeigen.
                 return;
             }
 
-            setChangelog(data);
+            setChangelog(currentChangelog);
             setIsOpen(true);
         };
 
         checkVersion();
     }, [currentVersion]);
+
 
     const handleClose = () => {
         // Speichere, dass der User diese Version gesehen hat

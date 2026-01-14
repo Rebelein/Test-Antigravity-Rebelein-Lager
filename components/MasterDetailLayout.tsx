@@ -53,9 +53,14 @@ export const MasterDetailLayout: React.FC<MasterDetailLayoutProps> = ({
 
     const [isResizing, setIsResizing] = React.useState(false);
 
-    const startResizing = React.useCallback((e: React.MouseEvent) => {
+    const startResizing = React.useCallback((e: React.MouseEvent | React.TouchEvent) => {
         setIsResizing(true);
-        e.preventDefault();
+        // Prevent scrolling while dragging
+        if (e.type === 'touchstart') {
+            // e.preventDefault() is often passive in React 18+, but usually not needed for simple start
+        } else {
+            e.preventDefault();
+        }
     }, []);
 
     const stopResizing = React.useCallback(() => {
@@ -63,10 +68,19 @@ export const MasterDetailLayout: React.FC<MasterDetailLayoutProps> = ({
         localStorage.setItem('sidebar_width', sidebarWidth.toString());
     }, [sidebarWidth]);
 
-    const resize = React.useCallback((e: MouseEvent) => {
+    const resize = React.useCallback((e: MouseEvent | TouchEvent) => {
         if (isResizing) {
-            // Calculate new width: Total Window Width - Mouse X Position
-            const newWidth = window.innerWidth - e.clientX;
+            let clientX;
+            if (window.TouchEvent && e instanceof TouchEvent) {
+                clientX = e.touches[0].clientX;
+            } else if (e instanceof MouseEvent) {
+                clientX = e.clientX;
+            } else {
+                return;
+            }
+
+            // Calculate new width: Total Window Width - X Position
+            const newWidth = window.innerWidth - clientX;
             // Limits: Min 300px, Max 80% screen
             if (newWidth > 300 && newWidth < window.innerWidth * 0.8) {
                 setSidebarWidth(newWidth);
@@ -78,13 +92,19 @@ export const MasterDetailLayout: React.FC<MasterDetailLayoutProps> = ({
         if (isResizing) {
             window.addEventListener('mousemove', resize);
             window.addEventListener('mouseup', stopResizing);
+            window.addEventListener('touchmove', resize);
+            window.addEventListener('touchend', stopResizing);
         } else {
             window.removeEventListener('mousemove', resize);
             window.removeEventListener('mouseup', stopResizing);
+            window.removeEventListener('touchmove', resize);
+            window.removeEventListener('touchend', stopResizing);
         }
         return () => {
             window.removeEventListener('mousemove', resize);
             window.removeEventListener('mouseup', stopResizing);
+            window.removeEventListener('touchmove', resize);
+            window.removeEventListener('touchend', stopResizing);
         };
     }, [isResizing, resize, stopResizing]);
 
@@ -152,6 +172,7 @@ export const MasterDetailLayout: React.FC<MasterDetailLayoutProps> = ({
                         <div
                             className="absolute left-0 top-0 bottom-0 w-1.5 cursor-col-resize hover:bg-emerald-500/50 transition-colors z-[60] -ml-[3px]"
                             onMouseDown={startResizing}
+                            onTouchStart={startResizing}
                         />
 
                         {/* Drawer Header */}
