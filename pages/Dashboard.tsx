@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { GlassCard, StatusBadge, Button, GlassModal } from '../components/UIComponents';
-import { AlertTriangle, Wrench, User, CheckCircle2, FileText, ArrowRight, Grid, Database, X, Play, RefreshCw, Check, Copy, Settings, Factory, Warehouse, Tag, Maximize2, Minimize2, PhoneCall, StickyNote, Save, Undo2, Library, Plus, MessageSquare, Monitor, Smartphone, ShoppingCart, LayoutTemplate, Lock, Unlock } from 'lucide-react';
+import { AlertTriangle, Wrench, User, CheckCircle2, FileText, ArrowRight, Grid, Database, X, Play, RefreshCw, Check, Copy, Settings, Factory, Warehouse, Tag, Maximize2, Minimize2, PhoneCall, StickyNote, Save, Undo2, Library, Plus, MessageSquare, Monitor, Smartphone, ShoppingCart, LayoutTemplate, Lock, Unlock, History } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useIsMobile } from '../hooks/useIsMobile';
 import { initializeDatabase, MANUAL_SETUP_SQL } from '../utils/dbInit';
@@ -9,6 +9,7 @@ import { useTheme } from '../contexts/ThemeContext';
 import { CommissionDetailContent } from '../components/CommissionDetailContent';
 import { MachineDetailContent } from '../components/machines/MachineDetailContent';
 import { KeyHandoverContent } from '../components/KeyComponents';
+import { ChangelogHistoryContent } from '../components/ChangelogHistoryContent'; // Updated Import
 import { supabase } from '../supabaseClient';
 import { Machine, MachineStatus, Commission, UserProfile, Key, Article, Supplier } from '../types';
 import { CommissionEditContent } from '../components/commissions/CommissionEditContent';
@@ -62,6 +63,7 @@ const Dashboard: React.FC = () => {
 
     // ... (utility states unchanged)
     const [showAppDrawer, setShowAppDrawer] = useState(false);
+    const [showChangelogHistory, setShowChangelogHistory] = useState(false);
     const [showSqlModal, setShowSqlModal] = useState(false);
     const [isInitializing, setIsInitializing] = useState(false);
     const [isUpdatingSchema, setIsUpdatingSchema] = useState(false);
@@ -76,7 +78,7 @@ const Dashboard: React.FC = () => {
 
     const isMobile = useIsMobile();
     // Split View Status: Only active if NOT mobile
-    const isSplitView = !isMobile && (!!selectedMachine || !!selectedKey || !!viewingCommission);
+    const isSplitView = !isMobile && (!!selectedMachine || !!selectedKey || !!viewingCommission || showChangelogHistory);
 
     // --- LAYOUT STATE ---
     // Added 'keys' tile to layout. Adjusted heights/widths to fit.
@@ -239,8 +241,9 @@ const Dashboard: React.FC = () => {
                 setRentedMachines(mappedMachines.filter((m: Machine) => m.status === MachineStatus.RENTED));
                 setRepairMachines(mappedMachines.filter((m: Machine) => m.status === MachineStatus.REPAIR));
             }
-        } catch (error) {
+        } catch (error: any) {
             console.error("Error fetching machines:", error);
+            toast.error("Fehler beim Laden der Maschinen: " + (error.message || error));
         }
     }, []);
 
@@ -276,8 +279,9 @@ const Dashboard: React.FC = () => {
 
                 setReadyCommissions(ready);
             }
-        } catch (error) {
+        } catch (error: any) {
             console.error("Error fetching commissions:", error);
+            toast.error("Fehler beim Laden der Kommissionen: " + (error.message || error));
         }
     }, []);
 
@@ -700,6 +704,16 @@ const Dashboard: React.FC = () => {
                 </div>
                 <div className="flex gap-2">
                     <button
+                        onClick={() => setShowChangelogHistory(true)}
+                        className="relative p-3 rounded-xl bg-white/5 border border-white/10 text-white/80 hover:text-white hover:bg-white/10 transition-all duration-300 shadow-lg group"
+                        title="Versionsverlauf anzeigen"
+                    >
+                        <History size={20} />
+                        <span className="absolute -top-2 -right-2 bg-emerald-500 text-white text-[9px] font-bold px-1.5 py-0.5 rounded-full shadow-lg border border-black/50">
+                            v{process.env.APP_VERSION}
+                        </span>
+                    </button>
+                    <button
                         onClick={() => { fetchMachinesData(); fetchCommissionsData(); fetchRecentEvents(); }}
                         className="p-3 rounded-xl bg-white/5 border border-white/10 text-white/80 hover:text-white hover:bg-white/10 transition-all duration-300 shadow-lg"
                         title="Aktualisieren"
@@ -736,6 +750,7 @@ const Dashboard: React.FC = () => {
                                     setViewingCommission(null);
                                     setSelectedMachine(null);
                                     setSelectedKey(null);
+                                    setShowChangelogHistory(false);
                                 }
                             }}
                             className={`transition-all duration-300 ease-in-out h-full overflow-y-auto custom-scrollbar ${isSplitView ? 'w-[60%] pr-2' : 'w-full'}`}
@@ -997,6 +1012,7 @@ const Dashboard: React.FC = () => {
                             {/* COMMISSION CONTENT */}
                             {viewingCommission && (
                                 <div className="h-full bg-[#0a0a0a] rounded-2xl border border-white/10 shadow-xl overflow-hidden flex flex-col relative">
+                                    {/* ... existing commission logic ... */}
                                     {/* Conditional Render based on Status */}
                                     {['Draft', 'Preparing'].includes(viewingCommission.status) ? (
                                         <CommissionDetailContent
@@ -1024,6 +1040,38 @@ const Dashboard: React.FC = () => {
                                             onSaveNote={() => { }}
                                             onClose={() => setViewingCommission(null)}
                                             onSaveOfficeData={handleSaveOfficeData}
+                                            onRequestCancellation={async (id, type, note) => {
+                                                if (!window.confirm("Kommission wirklich stornieren?")) return;
+
+                                                const instruction = type === 'restock' ? 'ACTION: ZURÜCK INS LAGER.' : 'ACTION: RETOURE AN LIEFERANT.';
+                                                const fullNote = `${instruction} ${note ? `(${note})` : ''} [Storno: ${new Date().toLocaleDateString()}]`;
+                                                const currentNotes = viewingCommission?.notes || '';
+                                                const newNotes = currentNotes ? `${fullNote}\n${currentNotes}` : fullNote;
+
+                                                try {
+                                                    const { error } = await supabase.from('commissions').update({
+                                                        status: 'ReturnPending',
+                                                        is_processed: false,
+                                                        notes: newNotes
+                                                    }).eq('id', id);
+
+                                                    if (error) throw error;
+
+                                                    await supabase.from('commission_events').insert({
+                                                        commission_id: id,
+                                                        commission_name: viewingCommission?.name || 'Unbekannt',
+                                                        event_type: 'status_change',
+                                                        details: `Storno beauftragt: ${type === 'restock' ? 'Einlagern' : 'Lieferant'}`,
+                                                        created_by: user?.id
+                                                    });
+
+                                                    setViewingCommission(null);
+                                                    fetchRecentEvents();
+                                                } catch (e) {
+                                                    console.error(e);
+                                                    alert("Fehler beim Stornieren");
+                                                }
+                                            }}
                                         />
                                     ) : (
                                         <CommissionOfficeContent
@@ -1033,6 +1081,20 @@ const Dashboard: React.FC = () => {
                                             isSaving={isSavingProcess}
                                         />
                                     )}
+                                </div>
+                            )}
+
+                            {/* CHANGELOG CONTENT (New) */}
+                            {showChangelogHistory && (
+                                <div className="h-full bg-[#0a0a0a] rounded-2xl border border-white/10 shadow-xl overflow-hidden flex flex-col relative">
+                                    <div className="absolute top-4 right-4 z-50">
+                                        <button onClick={() => setShowChangelogHistory(false)} className="p-2 bg-black/50 hover:bg-white/10 rounded-full text-white/50 hover:text-white transition-colors">
+                                            <X size={20} />
+                                        </button>
+                                    </div>
+                                    <div className="flex-1 overflow-y-auto custom-scrollbar">
+                                        <ChangelogHistoryContent />
+                                    </div>
                                 </div>
                             )}
                         </div>
@@ -1113,6 +1175,39 @@ const Dashboard: React.FC = () => {
                                     onSaveNote={() => { }}
                                     onClose={() => setViewingCommission(null)}
                                     onSaveOfficeData={handleSaveOfficeData}
+                                    onRequestCancellation={async (id, type, note) => {
+                                        if (!window.confirm("Kommission wirklich stornieren?")) return;
+
+                                        const instruction = type === 'restock' ? 'ACTION: ZURÜCK INS LAGER.' : 'ACTION: RETOURE AN LIEFERANT.';
+                                        const fullNote = `${instruction} ${note ? `(${note})` : ''} [Storno: ${new Date().toLocaleDateString()}]`;
+                                        const currentNotes = viewingCommission?.notes || '';
+                                        const newNotes = currentNotes ? `${fullNote}\n${currentNotes}` : fullNote;
+
+                                        try {
+                                            const { error } = await supabase.from('commissions').update({
+                                                status: 'ReturnPending',
+                                                is_processed: false,
+                                                notes: newNotes
+                                            }).eq('id', id);
+
+                                            if (error) throw error;
+
+                                            await supabase.from('commission_events').insert({
+                                                commission_id: id,
+                                                commission_name: viewingCommission?.name || 'Unbekannt',
+                                                event_type: 'status_change',
+                                                details: `Storno beauftragt: ${type === 'restock' ? 'Einlagern' : 'Lieferant'}`,
+                                                created_by: user?.id
+                                            });
+
+                                            setViewingCommission(null);
+                                            fetchRecentEvents();
+                                            // Ideally refresh stats too if they exist
+                                        } catch (e) {
+                                            console.error(e);
+                                            alert("Fehler beim Stornieren");
+                                        }
+                                    }}
                                 />
                             ) : (
                                 <CommissionOfficeContent
@@ -1123,6 +1218,16 @@ const Dashboard: React.FC = () => {
                                 />
                             )
                         )}
+                    </GlassModal>
+
+                    <GlassModal
+                        isOpen={showChangelogHistory}
+                        onClose={() => setShowChangelogHistory(false)}
+                        title="Update Verlauf"
+                    >
+                        <div className="max-h-[70vh] overflow-y-auto">
+                            <ChangelogHistoryContent />
+                        </div>
                     </GlassModal>
                 </>
             )}

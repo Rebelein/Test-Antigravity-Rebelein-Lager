@@ -4,6 +4,7 @@ import { supabase } from '../supabaseClient';
 import { GlassCard, Button, GlassInput } from '../components/UIComponents';
 import { useNavigate } from 'react-router-dom';
 import { Lock, Mail, User, Loader2, AlertCircle, Database, Copy, Check } from 'lucide-react';
+import { toast } from 'sonner';
 import { initializeDatabase, MANUAL_SETUP_SQL } from '../utils/dbInit';
 import { useAuth } from '../contexts/AuthContext';
 
@@ -57,7 +58,9 @@ const Login: React.FC = () => {
         navigate('/dashboard');
       }
     } catch (err: any) {
+      console.error("Login Error:", err);
       setError(err.message);
+      toast.error("Login fehlgeschlagen: " + (err.message || "Unbekannter Fehler"));
     } finally {
       setLoading(false);
     }

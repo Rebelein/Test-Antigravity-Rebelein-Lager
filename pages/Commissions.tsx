@@ -67,6 +67,8 @@ const Commissions: React.FC = () => {
     const [showConfirmReadyModal, setShowConfirmReadyModal] = useState(false);
     const [showConfirmWithdrawModal, setShowConfirmWithdrawModal] = useState(false);
     const [showLabelOptionsModal, setShowLabelOptionsModal] = useState<string | null>(null);
+    const [showDeleteModal, setShowDeleteModal] = useState(false);
+    const [deleteTarget, setDeleteTarget] = useState<{ id: string, name: string, mode: 'trash' | 'permanent' } | null>(null);
     const [showLabelUpdateModal, setShowLabelUpdateModal] = useState(false);
     const [showCleanupModal, setShowCleanupModal] = useState(false);
 
@@ -298,6 +300,32 @@ const Commissions: React.FC = () => {
                         isSubmitting={isSubmitting}
                         onSetReady={handleSetReadyTrigger}
                         onWithdraw={handleWithdrawTrigger}
+                        onRequestCancellation={async (id, type, note) => {
+                            // Confirmation handled by Modal UI now
+                            setIsSubmitting(true);
+                            try {
+                                const instruction = type === 'restock' ? 'ACTION: ZURÜCK INS LAGER.' : 'ACTION: RETOURE AN LIEFERANT.';
+                                const fullNote = `${instruction} ${note ? `(${note})` : ''} [Storno: ${new Date().toLocaleDateString()}]`;
+                                const currentNotes = activeCommission?.notes || '';
+                                const newNotes = currentNotes ? `${fullNote}\n${currentNotes}` : fullNote;
+
+                                await supabase.from('commissions').update({
+                                    status: 'ReturnPending',
+                                    is_processed: false,
+                                    notes: newNotes
+                                }).eq('id', id);
+
+                                await logCommissionEvent(id, activeCommission?.name || 'Unbekannt', 'status_change', `Storno beauftragt: ${type === 'restock' ? 'Einlagern' : 'Lieferant'}`);
+
+                                setActiveCommission(null);
+                                refreshCommissions();
+                            } catch (e) {
+                                console.error(e);
+                                alert("Fehler beim Stornieren");
+                            } finally {
+                                setIsSubmitting(false);
+                            }
+                        }}
                         onResetStatus={executeResetStatus}
                         onRevertWithdraw={executeRevertWithdrawal}
                         onInitReturn={handleInitReturn}
@@ -442,23 +470,69 @@ const Commissions: React.FC = () => {
     };
 
     const printReturnLabel = (comm: Commission) => {
-        const printWindow = window.open('', 'PRINT_RET', 'height=400,width=600');
+        const printWindow = window.open('', 'PRINT_RET', 'height=600,width=800');
         if (!printWindow) return;
-        const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(`COMM:${comm.id}`)}`;
+        const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(`COMM:${comm.id}`)}`;
         const dateStr = new Date().toLocaleDateString('de-DE');
+
+        const supplierName = (comm as any).suppliers?.name || '-';
+        const supplierRef = (comm as any).supplier_order_number || '-';
 
         printWindow.document.write(`
         <html>
-          <body style="font-family: sans-serif; text-align: center; padding: 20px; border: 5px solid black; box-sizing: border-box; height: 100vh; display: flex; flex-direction: column; justify-content: center;">
-             <h1 style="font-size: 3em; margin: 0 0 20px 0; font-weight: 900;">RÜCKSENDUNG</h1>
-             <h2 style="margin:0; font-size: 1.5em;">${comm.name}</h2>
-             <p style="margin: 10px 0; font-size: 1.2em;">Auftrag: ${comm.order_number || '-'}</p>
-             <div style="margin: 20px 0;">
-                <img src="${qrUrl}" style="width: 150px; height: 150px;" />
-             </div>
-             <p style="font-weight:bold; font-size: 1.2em;">Datum: ${dateStr}</p>
+          <head>
+            <title>Rücksende-Etikett</title>
+            <style>
+                body { font-family: sans-serif; margin: 0; padding: 5mm; display: flex; flex-direction: column; height: 98vh; box-sizing: border-box; }
+                .container { border: 4px solid black; padding: 20px; flex: 1; display: flex; flex-direction: column; justify-content: flex-start; text-align: center; }
+                h1 { font-size: 2.5em; margin: 0 0 20px 0; font-weight: 900; text-transform: uppercase; border-bottom: 2px solid black; padding-bottom: 10px; }
+                .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; text-align: left; margin-bottom: 20px; border-bottom: 2px solid #ccc; padding-bottom: 20px; }
+                .info-item { display: flex; flex-direction: column; }
+                .label { font-size: 0.8em; color: #666; font-weight: bold; text-transform: uppercase; }
+                .value { font-size: 1.1em; font-weight: bold; word-break: break-word; }
+                .value.large { font-size: 1.4em; }
+                .notes-container { text-align: left; margin-bottom: 20px; flex: 1; }
+                .notes { font-style: italic; background: #eee; padding: 10px; border-radius: 5px; font-size: 0.9em; white-space: pre-wrap; }
+                .qr-section { margin-top: auto; display: flex; flex-direction: column; align-items: center; border-top: 2px solid #ccc; padding-top: 10px; }
+                .date { font-size: 1em; font-weight: bold; margin-top: 5px; }
+            </style>
+          </head>
+          <body>
+            <div class="container">
+                 <h1>RÜCKSENDUNG</h1>
+                 
+                 <div class="info-grid">
+                    <div class="info-item">
+                        <span class="label">Name / Kunde</span>
+                        <span class="value large">${comm.name}</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="label">Auftragsnummer</span>
+                        <span class="value large">${comm.order_number || '-'}</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="label">Lieferant</span>
+                        <span class="value">${supplierName}</span>
+                    </div>
+                     <div class="info-item">
+                        <span class="label">Vorgangsnr. Lieferant</span>
+                        <span class="value">${supplierRef}</span>
+                    </div>
+                 </div>
+
+                 ${comm.notes ? `
+                 <div class="notes-container">
+                    <span class="label">Notiz:</span>
+                    <div class="notes">${comm.notes}</div>
+                 </div>` : ''}
+
+                 <div class="qr-section">
+                    <img src="${qrUrl}" style="width: 150px; height: 150px;" />
+                    <div class="date">Datum: ${dateStr}</div>
+                 </div>
+            </div>
           </body>
-          <script>window.onload = () => { window.print(); window.close(); }</script>
+          <script>window.onload = () => { setTimeout(() => { window.print(); window.close(); }, 500); }</script>
         </html>
       `);
         printWindow.document.close();
@@ -635,14 +709,27 @@ const Commissions: React.FC = () => {
     };
 
     // Deletion Logic
-    const handleDelete = async (id: string, name: string, mode: 'trash' | 'permanent', e?: React.MouseEvent) => {
+    // Deletion Logic
+    const handleDelete = (id: string, name: string, mode: 'trash' | 'permanent', e?: React.MouseEvent) => {
         if (e) e.stopPropagation();
-        if (!confirm(`${mode === 'trash' ? 'In Papierkorb?' : 'Endgültig löschen?'} (${name})`)) return;
+        setDeleteTarget({ id, name, mode });
+        setShowDeleteModal(true);
+    };
+
+    const executeDelete = async () => {
+        if (!deleteTarget) return;
+        setIsSubmitting(true);
         try {
-            if (mode === 'trash') await supabase.from('commissions').update({ deleted_at: new Date().toISOString() }).eq('id', id);
-            else await supabase.from('commissions').delete().eq('id', id);
+            if (deleteTarget.mode === 'trash') {
+                await supabase.from('commissions').update({ deleted_at: new Date().toISOString() }).eq('id', deleteTarget.id);
+                await logCommissionEvent(deleteTarget.id, deleteTarget.name, 'delete', 'In Papierkorb verschoben');
+            } else {
+                await supabase.from('commissions').delete().eq('id', deleteTarget.id);
+            }
             refreshCommissions();
-        } catch (err) { console.error(err); }
+            setShowDeleteModal(false);
+            setDeleteTarget(null);
+        } catch (err) { console.error(err); } finally { setIsSubmitting(false); }
     };
 
     const handleRestore = async (id: string, name: string, e?: React.MouseEvent) => {
@@ -663,7 +750,7 @@ const Commissions: React.FC = () => {
                     <div className={`flex gap-2 ${isMobile ? 'w-full overflow-x-auto pb-1 no-scrollbar' : ''}`}>
                         <Button icon={<Search size={18} />} variant="secondary" onClick={() => setSidePanelMode('search')} />
                         <Button icon={<History size={18} />} variant="secondary" onClick={() => { setSidePanelMode('history'); fetchHistory(); }} />
-                        <Button icon={<BoxSelect size={18} />} variant="secondary" onClick={() => setShowCleanupModal(true)} className="bg-orange-500/10 text-orange-400 hover:bg-orange-500 hover:text-white" />
+                        <Button icon={<BoxSelect size={18} />} variant="secondary" onClick={() => { setActiveTab('missing'); setShowCleanupModal(true); }} className="bg-orange-500/10 text-orange-400 hover:bg-orange-500 hover:text-white" />
                         <Button icon={<Plus size={18} />} onClick={handleOpenCreate}>Neu</Button>
                     </div>
                 </div>
@@ -676,7 +763,24 @@ const Commissions: React.FC = () => {
                 </div>
             </header>
 
-            {activeTab === 'active' && <PrintingSection showPrintArea={showPrintArea} setShowPrintArea={setShowPrintArea} printTab={printTab} setPrintTab={setPrintTab} queueItems={queueItems} selectedPrintIds={selectedPrintIds} setSelectedPrintIds={setSelectedPrintIds} onMarkAsPrinted={markLabelsAsPrinted} isSubmitting={isSubmitting} loadingHistory={loadingPrintHistory} printLogs={recentPrintLogs} onReprint={handleSinglePrint} />}
+            {activeTab === 'active' && (
+                <PrintingSection
+                    showPrintArea={showPrintArea}
+                    setShowPrintArea={setShowPrintArea}
+                    printTab={printTab}
+                    setPrintTab={setPrintTab}
+                    queueItems={queueItems}
+                    selectedPrintIds={selectedPrintIds}
+                    setSelectedPrintIds={setSelectedPrintIds}
+                    onMarkAsPrinted={markLabelsAsPrinted}
+                    isSubmitting={isSubmitting}
+                    loadingHistory={loadingPrintHistory}
+                    printLogs={recentPrintLogs}
+                    onReprint={handleSinglePrint}
+                    // New Props
+                    activeCommissions={commissions.filter(c => ['Preparing', 'Ready', 'ReturnPending'].includes(c.status))}
+                />
+            )}
 
             {loading ? <div className="flex justify-center py-10"><Loader2 className="animate-spin text-emerald-400" /></div> : (
                 <div className="grid grid-cols-1 gap-4">
@@ -757,6 +861,18 @@ const Commissions: React.FC = () => {
                 </div>
             </GlassModal>
 
+            <GlassModal isOpen={showDeleteModal} onClose={() => setShowDeleteModal(false)} className="max-w-sm">
+                <div className="p-6 text-center">
+                    <Trash2 size={48} className="mx-auto text-rose-500 mb-4" />
+                    <h3 className="text-xl font-bold text-white mb-2">{deleteTarget?.mode === 'trash' ? 'In Papierkorb?' : 'Endgültig löschen?'}</h3>
+                    <p className="text-white/60 mb-6">{deleteTarget?.name}</p>
+                    <div className="flex gap-3">
+                        <Button variant="secondary" onClick={() => setShowDeleteModal(false)} className="flex-1">Abbrechen</Button>
+                        <Button onClick={executeDelete} className="flex-1 bg-rose-600 hover:bg-rose-500">Löschen</Button>
+                    </div>
+                </div>
+            </GlassModal>
+
             {showLabelUpdateModal && activeCommission && (
                 <GlassModal isOpen={true} onClose={() => setShowLabelUpdateModal(false)} className="max-w-sm text-center">
                     <div className="p-6">
@@ -805,7 +921,10 @@ const Commissions: React.FC = () => {
             <CommissionCleanupModal
                 isOpen={showCleanupModal}
                 onClose={() => setShowCleanupModal(false)}
-                onCleanupComplete={refreshCommissions}
+                onCleanupComplete={() => {
+                    setActiveTab('missing');
+                    refreshCommissions();
+                }}
             />
 
         </MasterDetailLayout>

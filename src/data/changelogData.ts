@@ -9,6 +9,32 @@ export interface ChangelogEntry {
 
 export const changelogData: ChangelogEntry[] = [
     {
+        version: '0.0.48',
+        changes: [
+            {
+                type: 'feature',
+                text: 'Storno-UI verbessert: Storno-Artikel nun als klickbare Badges (kopiert Lieferanten-Nr.) dargestellt.',
+            },
+            {
+                type: 'feature',
+                text: 'Druck-Bereich & Storno-Rückbau nun einklappbar für bessere Übersicht.',
+            },
+            {
+                type: 'feature',
+                text: 'Rücksende-Etikett erweitert: Enthält nun Lieferant, Vorgangsnummer und Notizen übersichtlich dargestellt.',
+            },
+            {
+                type: 'feature',
+                text: 'Bestätigungs-Fenster beim Löschen von Kommissionen (Papierkorb / Endgültig) überarbeitet (App-Design statt Browser-Alert).',
+            },
+            {
+                type: 'fix',
+                text: 'Workflow "Regal aufräumen" optimiert: Wechselt nun automatisch in den Tab "Vermisst", um Ergebnisse sofort anzuzeigen.',
+            },
+        ],
+        release_date: '2026-01-14',
+    },
+    {
         version: '0.0.47',
         changes: [
             {

@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Button, StatusBadge, GlassModal } from './UIComponents';
-import { X, CheckCircle2, Truck, RotateCcw, Edit2, Printer, Check, Undo2, Package, ExternalLink, MessageSquare, Eye, AlertTriangle, FileText, History } from 'lucide-react';
+import { X, CheckCircle2, Truck, RotateCcw, Edit2, Printer, Check, Undo2, Package, ExternalLink, MessageSquare, Eye, AlertTriangle, FileText, History, PackageX } from 'lucide-react';
 import { Loader2 } from 'lucide-react';
 
 interface ExtendedCommission {
@@ -37,6 +37,7 @@ interface CommissionDetailContentProps {
     onSaveNote: (itemId: string, note: string) => void;
     onClose?: () => void; // Optional if needed for header close button
     onSaveOfficeData?: (isProcessed: boolean, notes: string) => void;
+    onRequestCancellation?: (id: string, type: 'restock' | 'return_supplier', note: string) => void;
 }
 
 export const CommissionDetailContent: React.FC<CommissionDetailContentProps> = ({
@@ -59,10 +60,16 @@ export const CommissionDetailContent: React.FC<CommissionDetailContentProps> = (
     onToggleBackorder,
     onSaveNote,
     onClose,
-    onSaveOfficeData
+    onSaveOfficeData,
+    onRequestCancellation
 }) => {
     const [editingItemNote, setEditingItemNote] = useState<{ itemId: string; note: string } | null>(null);
     const [viewingAttachment, setViewingAttachment] = useState<string | null>(null);
+
+    // Storno State
+    const [showStornoModal, setShowStornoModal] = useState(false);
+    const [stornoType, setStornoType] = useState<'restock' | 'return_supplier'>('restock');
+    const [stornoNote, setStornoNote] = useState('');
 
     // Office Data State
     const [officeNotes, setOfficeNotes] = useState(commission?.office_notes || '');
@@ -154,6 +161,9 @@ export const CommissionDetailContent: React.FC<CommissionDetailContentProps> = (
                                 <Button onClick={onResetStatus} className="bg-amber-600 hover:bg-amber-500 whitespace-nowrap" icon={<RotateCcw size={18} />} disabled={isSubmitting}>Zurückstellen</Button>
                             </>
                         )}
+                        {onRequestCancellation && (
+                            <Button onClick={() => setShowStornoModal(true)} className="bg-rose-600 hover:bg-rose-500 whitespace-nowrap" icon={<Undo2 size={18} />} disabled={isSubmitting}>Storno</Button>
+                        )}
                         <Button variant="secondary" onClick={(e) => onEdit(e)} icon={<Edit2 size={18} />}></Button>
                         <Button variant="secondary" onClick={onPrint} icon={<Printer size={18} />}></Button>
                     </div>
@@ -163,9 +173,17 @@ export const CommissionDetailContent: React.FC<CommissionDetailContentProps> = (
                 {commission.status.startsWith('Return') && commission.status !== 'ReturnComplete' && !commission.deleted_at && (
                     <div className="flex flex-wrap gap-2 pb-2 border-b border-gray-200 dark:border-white/5 mb-4">
                         {commission.status === 'ReturnPending' && (
-                            <Button onClick={onReturnToReady} className="bg-purple-600 hover:bg-purple-500 whitespace-nowrap" icon={<Printer size={18} />} disabled={isSubmitting}>
-                                Ins Abholregal (Label)
-                            </Button>
+                            <>
+                                {(commission.notes?.includes('Einlagern') || commission.notes?.includes('ZURÜCK INS LAGER')) ? (
+                                    <Button onClick={onCompleteReturn} className="bg-emerald-600 hover:bg-emerald-500 whitespace-nowrap" icon={<CheckCircle2 size={18} />} disabled={isSubmitting}>
+                                        Eingelagert (Abschließen)
+                                    </Button>
+                                ) : (
+                                    <Button onClick={onReturnToReady} className="bg-purple-600 hover:bg-purple-500 whitespace-nowrap" icon={<Printer size={18} />} disabled={isSubmitting}>
+                                        Ins Abholregal (Label)
+                                    </Button>
+                                )}
+                            </>
                         )}
                         {commission.status === 'ReturnReady' && (
                             <Button onClick={onCompleteReturn} className="bg-emerald-600 hover:bg-emerald-500 whitespace-nowrap" icon={<Check size={18} />} disabled={isSubmitting}>
@@ -347,7 +365,7 @@ export const CommissionDetailContent: React.FC<CommissionDetailContentProps> = (
                 </div>
             </div>
 
-            {/* ITEM NOTE EDIT MODAL (Still needs to be a modal as it's an overlay on the detail view) */}
+            {/* ITEM NOTE EDIT MODAL */}
             <GlassModal isOpen={!!editingItemNote} onClose={() => setEditingItemNote(null)} className="max-w-sm">
                 <div className="p-6">
                     <div className="flex justify-between items-center mb-4">
@@ -374,22 +392,63 @@ export const CommissionDetailContent: React.FC<CommissionDetailContentProps> = (
                 </div>
             </GlassModal>
 
-            {/* ATTACHMENT VIEWER MODAL */}
-            <GlassModal isOpen={!!viewingAttachment} onClose={() => setViewingAttachment(null)} className="max-w-[95vw] h-[95vh] max-h-[95vh]">
-                <div className="flex flex-col h-full bg-gray-900 rounded-2xl overflow-hidden">
-                    <div className="p-3 border-b border-white/10 flex justify-between items-center bg-white/5">
-                        <h3 className="text-white font-bold flex items-center gap-2"><FileText size={18} /> Anhang Vorschau</h3>
-                        <button onClick={() => setViewingAttachment(null)} className="p-2 hover:bg-white/10 rounded-full text-white/60 hover:text-white"><X size={20} /></button>
+            {/* STORNO MODAL */}
+            <GlassModal isOpen={showStornoModal} onClose={() => setShowStornoModal(false)} className="max-w-sm">
+                <div className="p-6">
+                    <div className="flex items-center gap-3 mb-4 text-rose-500">
+                        <div className="p-3 bg-rose-500/10 rounded-full"><Undo2 size={24} /></div>
+                        <h3 className="text-lg font-bold text-white">Kommission stornieren</h3>
                     </div>
-                    <div className="flex-1 bg-black p-4 overflow-auto flex items-center justify-center">
-                        {viewingAttachment?.startsWith('data:application/pdf') ? (
-                            <iframe src={viewingAttachment} className="w-full h-full border-none rounded-lg" title="PDF Vorschau" />
-                        ) : (
-                            <img src={viewingAttachment || ''} className="max-w-full max-h-full object-contain rounded-lg" alt="Anhang" />
-                        )}
+
+                    <p className="text-white/60 text-sm mb-6">
+                        Wie sollen die Artikel dieser Kommission behandelt werden?
+                    </p>
+
+                    <div className="grid grid-cols-2 gap-3 mb-4">
+                        <button
+                            onClick={() => setStornoType('restock')}
+                            className={`p-3 rounded-xl border flex flex-col items-center gap-2 transition-all ${stornoType === 'restock' ? 'bg-rose-500 border-rose-500 text-white' : 'bg-white/5 border-white/10 text-white/60 hover:bg-white/10'}`}
+                        >
+                            <PackageX size={24} />
+                            <span className="text-xs font-bold uppercase">Einlagern</span>
+                        </button>
+                        <button
+                            onClick={() => setStornoType('return_supplier')}
+                            className={`p-3 rounded-xl border flex flex-col items-center gap-2 transition-all ${stornoType === 'return_supplier' ? 'bg-purple-500 border-purple-500 text-white' : 'bg-white/5 border-white/10 text-white/60 hover:bg-white/10'}`}
+                        >
+                            <Truck size={24} />
+                            <span className="text-xs font-bold uppercase">Lieferant</span>
+                        </button>
+                    </div>
+
+                    <div className="mb-6">
+                        <label className="text-xs text-white/50 block mb-2">Notiz (Optional)</label>
+                        <textarea
+                            value={stornoNote}
+                            onChange={(e) => setStornoNote(e.target.value)}
+                            className="w-full bg-black/20 border border-white/10 rounded-lg p-3 text-sm text-white focus:border-rose-500 outline-none"
+                            placeholder="Grund für Storno..."
+                        />
+                    </div>
+
+                    <div className="flex gap-3">
+                        <Button variant="secondary" onClick={() => setShowStornoModal(false)} className="flex-1">Abbrechen</Button>
+                        <Button
+                            onClick={() => {
+                                if (onRequestCancellation && commission) {
+                                    onRequestCancellation(commission.id, stornoType, stornoNote);
+                                    setShowStornoModal(false);
+                                }
+                            }}
+                            className="flex-1 bg-rose-600 hover:bg-rose-500"
+                        >
+                            Storno ausführen
+                        </Button>
                     </div>
                 </div>
             </GlassModal>
         </div>
     );
 };
+
+

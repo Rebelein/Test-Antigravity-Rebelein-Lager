@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Button, StatusBadge, GlassModal } from '../UIComponents';
-import { X, CheckCircle2, Truck, RotateCcw, Edit2, Printer, Check, Undo2, Package, ExternalLink, MessageSquare, Eye, History, FileText } from 'lucide-react';
+import { X, CheckCircle2, Truck, RotateCcw, Edit2, Printer, Check, Undo2, Package, ExternalLink, MessageSquare, Eye, History, FileText, PackageX } from 'lucide-react';
 
 interface ExtendedCommission {
     id: string;
@@ -33,6 +33,7 @@ interface CommissionDetailContentProps {
     onTogglePicked: (itemId: string, current: boolean) => void;
     onToggleBackorder: (itemId: string, current: boolean) => void;
     onSaveNote: (itemId: string, note: string) => void;
+    onRequestCancellation?: (id: string, type: 'restock' | 'return_supplier', note: string) => void;
 }
 
 export const CommissionDetailContent: React.FC<CommissionDetailContentProps> = ({
@@ -54,10 +55,16 @@ export const CommissionDetailContent: React.FC<CommissionDetailContentProps> = (
     onPrint,
     onTogglePicked,
     onToggleBackorder,
-    onSaveNote
+    onSaveNote,
+    onRequestCancellation
 }) => {
     const [editingItemNote, setEditingItemNote] = useState<{ itemId: string; note: string } | null>(null);
     const [viewingAttachment, setViewingAttachment] = useState<string | null>(null);
+
+    // Storno State
+    const [showStornoModal, setShowStornoModal] = useState(false);
+    const [stornoType, setStornoType] = useState<'restock' | 'return_supplier'>('restock');
+    const [stornoNote, setStornoNote] = useState('');
 
     // Helper for Status Translation
     const translateStatus = (s: string) => {
@@ -81,13 +88,21 @@ export const CommissionDetailContent: React.FC<CommissionDetailContentProps> = (
             <div className="p-4 border-b border-gray-200 dark:border-white/10 bg-gray-50/50 dark:bg-black/20 shrink-0">
                 <div className="flex justify-between items-start">
                     <div className="flex-1">
-                        <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-1">{commission.name}</h2>
-                        <div className="flex items-center gap-2 text-sm text-gray-500 dark:text-white/50">
-                            <span className="px-2.5 py-0.5 rounded-full text-xs font-medium border bg-blue-100 dark:bg-blue-500/20 text-blue-600 dark:text-blue-300 border-blue-200 dark:border-blue-500/30">
-                                {commission.order_number}
-                            </span>
-                            <span className="w-1 h-1 rounded-full bg-gray-300 dark:bg-white/30" />
-                            <StatusBadge status={translateStatus(commission.status)} type="neutral" />
+                        <div className="flex justify-between items-start">
+                            <div>
+                                <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-1">{commission.name}</h2>
+                                <div className="flex items-center gap-2 text-sm text-gray-500 dark:text-white/50">
+                                    <span className="px-2.5 py-0.5 rounded-full text-xs font-medium border bg-blue-100 dark:bg-blue-500/20 text-blue-600 dark:text-blue-300 border-blue-200 dark:border-blue-500/30">
+                                        {commission.order_number}
+                                    </span>
+                                    <span className="w-1 h-1 rounded-full bg-gray-300 dark:bg-white/30" />
+                                    <StatusBadge status={translateStatus(commission.status)} />
+                                </div>
+                            </div>
+                            <div className="flex gap-2">
+                                <Button variant="secondary" onClick={(e) => onEdit(e)} icon={<Edit2 size={18} />}></Button>
+                                <Button variant="secondary" onClick={onPrint} icon={<Printer size={18} />}></Button>
+                            </div>
                         </div>
                         {/* FULL NOTES DISPLAY */}
                         {commission.notes && (
@@ -102,12 +117,12 @@ export const CommissionDetailContent: React.FC<CommissionDetailContentProps> = (
             <div className="flex-1 overflow-y-auto p-4 space-y-6">
                 {/* ACTIVE WORKFLOW ACTIONS */}
                 {!commission.status.startsWith('Return') && commission.status !== 'Withdrawn' && !commission.deleted_at && (
-                    <div className="flex flex-wrap gap-2 pb-2 border-b border-gray-200 dark:border-white/5 mb-4">
+                    <div className="grid grid-cols-2 gap-3 pb-4 border-b border-gray-200 dark:border-white/5 mb-4">
                         {commission.status !== 'Ready' && (
-                            <div className="relative group">
+                            <div className="col-span-2 relative group">
                                 <Button
                                     onClick={onSetReady}
-                                    className={`whitespace-nowrap ${(!allItemsPicked || hasBackorders) ? 'bg-gray-400 dark:bg-gray-600 opacity-50 cursor-not-allowed' : 'bg-emerald-600 hover:bg-emerald-500'}`}
+                                    className={`w-full justify-center whitespace-nowrap ${(!allItemsPicked || hasBackorders) ? 'bg-gray-400 dark:bg-gray-600 opacity-50 cursor-not-allowed' : 'bg-emerald-600 hover:bg-emerald-500'}`}
                                     icon={<CheckCircle2 size={18} />}
                                     disabled={isSubmitting || !allItemsPicked || hasBackorders}
                                 >
@@ -121,13 +136,17 @@ export const CommissionDetailContent: React.FC<CommissionDetailContentProps> = (
                             </div>
                         )}
                         {commission.status === 'Ready' && (
-                            <>
-                                <Button onClick={onWithdraw} className="bg-purple-600 hover:bg-purple-500 whitespace-nowrap" icon={<Truck size={18} />} disabled={isSubmitting}>Entnehmen (Abschluss)</Button>
-                                <Button onClick={onResetStatus} className="bg-amber-600 hover:bg-amber-500 whitespace-nowrap" icon={<RotateCcw size={18} />} disabled={isSubmitting}>Zurückstellen</Button>
-                            </>
+                            <Button onClick={onWithdraw} className="col-span-2 justify-center bg-purple-600 hover:bg-purple-500 whitespace-nowrap py-6 text-lg shadow-lg shadow-purple-900/20" icon={<Truck size={24} />} disabled={isSubmitting}>Entnehmen (Abschluss)</Button>
                         )}
-                        <Button variant="secondary" onClick={(e) => onEdit(e)} icon={<Edit2 size={18} />}></Button>
-                        <Button variant="secondary" onClick={onPrint} icon={<Printer size={18} />}></Button>
+
+                        {/* Secondary Actions Row */}
+                        {commission.status === 'Ready' && (
+                            <Button onClick={onResetStatus} className="justify-center bg-amber-600 hover:bg-amber-500 whitespace-nowrap" icon={<RotateCcw size={18} />} disabled={isSubmitting}>Zurückstellen</Button>
+                        )}
+
+                        {onRequestCancellation && (
+                            <Button onClick={() => setShowStornoModal(true)} className={`justify-center bg-rose-600 hover:bg-rose-500 whitespace-nowrap ${commission.status !== 'Ready' ? 'col-span-2' : ''}`} icon={<Undo2 size={18} />} disabled={isSubmitting}>Storno</Button>
+                        )}
                     </div>
                 )}
 
@@ -135,9 +154,17 @@ export const CommissionDetailContent: React.FC<CommissionDetailContentProps> = (
                 {commission.status.startsWith('Return') && commission.status !== 'ReturnComplete' && !commission.deleted_at && (
                     <div className="flex flex-wrap gap-2 pb-2 border-b border-gray-200 dark:border-white/5 mb-4">
                         {commission.status === 'ReturnPending' && (
-                            <Button onClick={onReturnToReady} className="bg-purple-600 hover:bg-purple-500 whitespace-nowrap" icon={<Printer size={18} />} disabled={isSubmitting}>
-                                Ins Abholregal (Label)
-                            </Button>
+                            <>
+                                {(commission.notes?.includes('Einlagern') || commission.notes?.includes('ZURÜCK INS LAGER')) ? (
+                                    <Button onClick={onCompleteReturn} className="bg-emerald-600 hover:bg-emerald-500 whitespace-nowrap" icon={<CheckCircle2 size={18} />} disabled={isSubmitting}>
+                                        Eingelagert (Abschließen)
+                                    </Button>
+                                ) : (
+                                    <Button onClick={onReturnToReady} className="bg-purple-600 hover:bg-purple-500 whitespace-nowrap" icon={<Printer size={18} />} disabled={isSubmitting}>
+                                        Ins Abholregal (Label)
+                                    </Button>
+                                )}
+                            </>
                         )}
                         {commission.status === 'ReturnReady' && (
                             <Button onClick={onCompleteReturn} className="bg-emerald-600 hover:bg-emerald-500 whitespace-nowrap" icon={<Check size={18} />} disabled={isSubmitting}>
@@ -304,6 +331,62 @@ export const CommissionDetailContent: React.FC<CommissionDetailContentProps> = (
                         ) : (
                             <img src={viewingAttachment || ''} className="max-w-full max-h-full object-contain rounded-lg" alt="Anhang" />
                         )}
+                    </div>
+                </div>
+            </GlassModal>
+
+            {/* STORNO MODAL */}
+            <GlassModal isOpen={showStornoModal} onClose={() => setShowStornoModal(false)} className="max-w-sm">
+                <div className="p-6">
+                    <div className="flex items-center gap-3 mb-4 text-rose-500">
+                        <div className="p-3 bg-rose-500/10 rounded-full"><Undo2 size={24} /></div>
+                        <h3 className="text-lg font-bold text-white">Kommission stornieren</h3>
+                    </div>
+
+                    <p className="text-white/60 text-sm mb-6">
+                        Wie sollen die Artikel dieser Kommission behandelt werden?
+                    </p>
+
+                    <div className="grid grid-cols-2 gap-3 mb-4">
+                        <button
+                            onClick={() => setStornoType('restock')}
+                            className={`p-3 rounded-xl border flex flex-col items-center gap-2 transition-all ${stornoType === 'restock' ? 'bg-rose-500 border-rose-500 text-white' : 'bg-white/5 border-white/10 text-white/60 hover:bg-white/10'}`}
+                        >
+                            <PackageX size={24} />
+                            <span className="text-xs font-bold uppercase">Einlagern</span>
+                        </button>
+                        <button
+                            onClick={() => setStornoType('return_supplier')}
+                            className={`p-3 rounded-xl border flex flex-col items-center gap-2 transition-all ${stornoType === 'return_supplier' ? 'bg-purple-500 border-purple-500 text-white' : 'bg-white/5 border-white/10 text-white/60 hover:bg-white/10'}`}
+                        >
+                            <Truck size={24} />
+                            <span className="text-xs font-bold uppercase">Lieferant</span>
+                        </button>
+                    </div>
+
+                    <div className="mb-6">
+                        <label className="text-xs text-white/50 block mb-2">Notiz (Optional)</label>
+                        <textarea
+                            value={stornoNote}
+                            onChange={(e) => setStornoNote(e.target.value)}
+                            className="w-full bg-black/20 border border-white/10 rounded-lg p-3 text-sm text-white focus:border-rose-500 outline-none"
+                            placeholder="Grund für Storno..."
+                        />
+                    </div>
+
+                    <div className="flex gap-3">
+                        <Button variant="secondary" onClick={() => setShowStornoModal(false)} className="flex-1">Abbrechen</Button>
+                        <Button
+                            onClick={() => {
+                                if (onRequestCancellation) {
+                                    onRequestCancellation(commission.id, stornoType, stornoNote);
+                                    setShowStornoModal(false);
+                                }
+                            }}
+                            className="flex-1 bg-rose-600 hover:bg-rose-500"
+                        >
+                            Storno ausführen
+                        </Button>
                     </div>
                 </div>
             </GlassModal>
