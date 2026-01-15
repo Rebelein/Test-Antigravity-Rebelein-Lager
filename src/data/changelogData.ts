@@ -9,6 +9,16 @@ export interface ChangelogEntry {
 
 export const changelogData: ChangelogEntry[] = [
     {
+        version: '0.0.49',
+        changes: [
+            {
+                type: 'fix',
+                text: 'Kritischen Fehler beim "Regal aufräumen" behoben: Aktualisierung von großen Mengen an Kommissionen schlug fehl (Batch-Update implementiert).',
+            },
+        ],
+        release_date: '2026-01-15',
+    },
+    {
         version: '0.0.48',
         changes: [
             {

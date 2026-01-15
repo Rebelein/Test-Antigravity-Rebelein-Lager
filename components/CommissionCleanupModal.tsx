@@ -246,16 +246,20 @@ export const CommissionCleanupModal: React.FC<CommissionCleanupModalProps> = ({ 
         try {
             const now = new Date().toISOString();
 
-            // Update DB
-            const { error } = await supabase
-                .from('commissions')
-                .update({
-                    status: 'Missing',
-                    // withdrawn_at: now // Do not set withdrawn_at for missing items
-                })
-                .in('id', idsToCleanup);
+            // Batch update to avoid URL too long error
+            const BATCH_SIZE = 20;
+            for (let i = 0; i < idsToCleanup.length; i += BATCH_SIZE) {
+                const batch = idsToCleanup.slice(i, i + BATCH_SIZE);
+                const { error } = await supabase
+                    .from('commissions')
+                    .update({
+                        status: 'Missing',
+                        // withdrawn_at: now // Do not set withdrawn_at for missing items
+                    })
+                    .in('id', batch);
 
-            if (error) throw error;
+                if (error) throw error;
+            }
 
             // Log Events
             const logEntries = expectedCommissions
