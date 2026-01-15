@@ -9,17 +9,25 @@ export interface ChangelogEntry {
 
 export const changelogData: ChangelogEntry[] = [
     {
-        version: '0.0.49',
+        version: '0.0.50',
         changes: [
             {
                 type: 'fix',
-                text: 'Kritischen Fehler beim "Regal aufräumen" behoben: Aktualisierung von großen Mengen an Kommissionen schlug fehl (Batch-Update implementiert).',
+                text: 'Update-Erkennung verbessert: Die App prüft nun beim Start und alle 2 Minuten auf neue Versionen.',
             },
         ],
         release_date: '2026-01-15',
     },
-    {
-        version: '0.0.48',
+    changes: [
+        {
+            type: 'fix',
+            text: 'Kritischen Fehler beim "Regal aufräumen" behoben: Aktualisierung von großen Mengen an Kommissionen schlug fehl (Batch-Update implementiert).',
+        },
+    ],
+    release_date: '2026-01-15',
+    },
+{
+    version: '0.0.48',
         changes: [
             {
                 type: 'feature',
@@ -42,20 +50,20 @@ export const changelogData: ChangelogEntry[] = [
                 text: 'Workflow "Regal aufräumen" optimiert: Wechselt nun automatisch in den Tab "Vermisst", um Ergebnisse sofort anzuzeigen.',
             },
         ],
-        release_date: '2026-01-14',
+            release_date: '2026-01-14',
     },
-    {
-        version: '0.0.47',
+{
+    version: '0.0.47',
         changes: [
             {
                 type: 'feature',
                 text: 'Split-View kann nun auch auf Mobilgeräten per Touch vergrößert/verkleinert werden.',
             },
         ],
-        release_date: '2026-01-14',
+            release_date: '2026-01-14',
     },
-    {
-        version: '0.0.46',
+{
+    version: '0.0.46',
         changes: [
             {
                 type: 'fix',
@@ -70,7 +78,7 @@ export const changelogData: ChangelogEntry[] = [
                 text: 'Neue Kommissionen aus dem Dashboard werden nun automatisch zum Etikettendruck vorgemerkt.',
             },
         ],
-        release_date: '2026-01-14',
+            release_date: '2026-01-14',
     },
     // Hier können zukünftige Changelogs einfach oben angefügt werden
 ];

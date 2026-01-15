@@ -31,6 +31,7 @@ export default defineConfig(({ mode }) => {
         },
         workbox: {
           maximumFileSizeToCacheInBytes: 4000000,
+          cleanupOutdatedCaches: true,
           // Ensure we cache everything needed for offline usage
           globPatterns: ['**/*.{js,css,html,ico,png,svg}']
         }
@@ -39,7 +40,7 @@ export default defineConfig(({ mode }) => {
     define: {
       'process.env.API_KEY': JSON.stringify(env.GEMINI_API_KEY),
       'process.env.GEMINI_API_KEY': JSON.stringify(env.GEMINI_API_KEY),
-      'process.env.APP_VERSION': JSON.stringify("0.0.49"), // Sync with package.json
+      'process.env.APP_VERSION': JSON.stringify("0.0.50"), // Sync with package.json
     },
     resolve: {
       alias: {

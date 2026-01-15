@@ -73,11 +73,13 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
         onRegistered(r) {
             console.log('SW Registered:', r);
             if (r) {
-                // Check for updates every 15 minutes
+                // Check immediately
+                r.update();
+                // Check for updates every 2 minutes (responsive!)
                 setInterval(() => {
                     r.update();
                     console.log("Checking for App Updates...");
-                }, 15 * 60 * 1000);
+                }, 2 * 60 * 1000);
             }
         },
         onRegisterError(error) {
