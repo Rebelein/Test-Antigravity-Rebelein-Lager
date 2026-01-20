@@ -101,12 +101,25 @@ const StockAudit: React.FC = () => {
 
     // Scanner Lifecycle
     useEffect(() => {
-        // Start scanner ONLY if main modal is open AND no sub-modals (Result, Selector) are active
-        if (isScannerOpen && !scannedLocation && !selectedArticle && !showCategorySelector) {
+        const shouldRun = isScannerOpen && !scannedLocation && !selectedArticle && !showCategorySelector && !document.hidden;
+
+        if (shouldRun) {
             startScanner();
         } else {
             stopScanner();
         }
+
+        const handleVisibilityChange = () => {
+            if (document.hidden) {
+                stopScanner();
+            } else if (isScannerOpen && !scannedLocation && !selectedArticle && !showCategorySelector) {
+                startScanner();
+            }
+        };
+
+        document.addEventListener('visibilitychange', handleVisibilityChange);
+        return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
+
     }, [isScannerOpen, scannedLocation, selectedArticle, showCategorySelector]);
 
     const fetchWarehouses = async () => {

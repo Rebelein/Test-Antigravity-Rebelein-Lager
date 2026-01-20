@@ -810,94 +810,117 @@ const Commissions: React.FC = () => {
 
                     {activeTab === 'missing' && (
                         <div className="space-y-8">
+                            {/* --- INVENTUR HEADER --- */}
                             <div className="p-4 bg-blue-500/10 border border-blue-500/20 rounded-xl mb-6 flex justify-between items-center">
                                 <div>
-                                    <h3 className="text-blue-200 font-bold mb-1">Inventur-Modus</h3>
-                                    <p className="text-sm text-blue-300/70">Scanne alle vorhandenen Kommissionen. Nicht gescannte können hier bereinigt werden.</p>
+                                    <h3 className="text-blue-200 font-bold mb-1">Inventur & Prüfung</h3>
+                                    <p className="text-sm text-blue-300/70">Scanne vorhandene Kommissionen. Nicht gefundene hier als "Vermisst" markieren.</p>
                                 </div>
                                 <Button onClick={() => setShowCleanupModal(true)} icon={<ScanLine size={18} />} className="bg-blue-600 hover:bg-blue-500">
                                     Scanner starten
                                 </Button>
                             </div>
 
-                            {/* Group 1: Verified (Scanned Today) */}
+                            {/* --- LISTE DER TATSÄCHLICH VERMISSTEN (PERSISTENT) --- */}
                             {(() => {
-                                // Filter relevant commissions for audit (Ready, ReturnReady, ReturnPending)
-                                // We also include 'Missing' status commissions just in case, but user wants to clear them.
-                                const auditCandidates = commissions.filter(c => ['Ready', 'ReturnReady', 'ReturnPending'].includes(c.status));
+                                const missingItems = commissions.filter(c => c.status === 'Missing' && !c.deleted_at);
 
+                                return missingItems.length > 0 ? (
+                                    <div className="mb-12 border-b border-white/5 pb-8">
+                                        <div className="flex items-center gap-2 mb-4">
+                                            <AlertTriangle size={20} className="text-orange-500" />
+                                            <h3 className="text-orange-400 font-bold uppercase tracking-wider">Aktuell Vermisst ({missingItems.length})</h3>
+                                            <div className="h-px bg-orange-500/20 flex-1 ml-4"></div>
+                                        </div>
+                                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                                            {missingItems.map(c => (
+                                                <GlassCard key={c.id} className="border-orange-500/30 bg-orange-500/5">
+                                                    <div className="p-3 flex flex-col h-full">
+                                                        <div className="flex-1">
+                                                            <div className="flex justify-between items-start">
+                                                                <h3 className="font-bold text-white">{c.name}</h3>
+                                                                <StatusBadge status="Missing" />
+                                                            </div>
+                                                            <div className="text-sm text-white/50 mt-1">{c.order_number || 'Keine Auftragsnr.'}</div>
+                                                            {c.notes && <div className="text-xs text-white/40 mt-2 italic line-clamp-2">{c.notes}</div>}
+                                                        </div>
+                                                        <div className="mt-4 pt-3 border-t border-white/5 flex gap-2">
+                                                            <button
+                                                                onClick={async () => {
+                                                                    if (!confirm("Kommission gefunden? Status wird zurückgesetzt.")) return;
+                                                                    await supabase.from('commissions').update({ status: 'Preparing' }).eq('id', c.id); // Or Ready? Safer to Preparing
+                                                                    await logCommissionEvent(c.id, c.name, 'status_change', 'Wiedergefunden (Status Reset)');
+                                                                    refreshCommissions();
+                                                                }}
+                                                                className="flex-1 py-2 bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500 hover:text-white rounded transition-colors flex items-center justify-center gap-2 text-sm border border-emerald-500/20"
+                                                            >
+                                                                <RotateCcw size={14} /> Gefunden
+                                                            </button>
+                                                            <button
+                                                                onClick={() => handleDelete(c.id, c.name, 'trash')}
+                                                                className="py-2 px-3 bg-rose-500/10 text-rose-400 hover:bg-rose-500 hover:text-white rounded transition-colors flex items-center justify-center border border-rose-500/20"
+                                                                title="Löschen (Papierkorb)"
+                                                            >
+                                                                <Trash2 size={14} />
+                                                            </button>
+                                                        </div>
+                                                    </div>
+                                                </GlassCard>
+                                            ))}
+                                        </div>
+                                    </div>
+                                ) : (
+                                    <div className="mb-8 p-6 text-center border border-dashed border-white/10 rounded-xl text-white/30">
+                                        Keine Kommissionen als "Vermisst" gemeldet.
+                                    </div>
+                                );
+                            })()}
+
+                            {/* --- HEUTIGE SCAN AUSWERTUNG (TEMPORÄR) --- */}
+                            {(() => {
+                                const auditCandidates = commissions.filter(c => ['Ready', 'ReturnReady', 'ReturnPending'].includes(c.status));
                                 const todayStr = new Date().toDateString();
                                 const verified = auditCandidates.filter(c => c.last_scanned_at && new Date(c.last_scanned_at).toDateString() === todayStr);
                                 const toCheck = auditCandidates.filter(c => !c.last_scanned_at || new Date(c.last_scanned_at).toDateString() !== todayStr);
 
                                 return (
                                     <>
-                                        {/* VERIFIED SECTION */}
-                                        <div className="mb-8">
-                                            <div className="flex items-center gap-2 mb-4">
-                                                <CheckCircle2 size={20} className="text-emerald-500" />
-                                                <h3 className="text-emerald-400 font-bold uppercase tracking-wider">Geprüft / Gefunden ({verified.length})</h3>
-                                                <div className="h-px bg-emerald-500/20 flex-1 ml-4"></div>
-                                            </div>
-                                            {verified.length === 0 ? (
-                                                <div className="text-white/30 italic px-4">Noch nichts gescannt heute.</div>
-                                            ) : (
-                                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                                                    {verified.map(c => (
-                                                        <GlassCard key={c.id} className="border-emerald-500/30 bg-emerald-500/5">
-                                                            <div className="p-3">
-                                                                <div className="flex justify-between items-start">
-                                                                    <h3 className="font-bold text-white">{c.name}</h3>
-                                                                    <span className="bg-emerald-500/20 text-emerald-300 text-[10px] px-2 py-0.5 rounded-full border border-emerald-500/30">
-                                                                        {new Date(c.last_scanned_at!).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                                                                    </span>
-                                                                </div>
-                                                                <div className="text-sm text-white/50 mt-1">{c.order_number || 'Keine Auftragsnr.'}</div>
-                                                                <div className="mt-2 flex gap-2">
-                                                                    <StatusBadge status={c.status} size="sm" />
-                                                                </div>
-                                                            </div>
-                                                        </GlassCard>
-                                                    ))}
-                                                </div>
-                                            )}
+                                        <div className="flex items-center gap-2 mb-4 mt-8">
+                                            <ScanLine size={20} className="text-blue-400" />
+                                            <h3 className="text-blue-300 font-bold uppercase tracking-wider">Heutige Scans (Live-Status)</h3>
+                                            <div className="h-px bg-white/10 flex-1 ml-4"></div>
                                         </div>
 
-                                        {/* TO CHECK SECTION */}
-                                        <div>
-                                            <div className="flex items-center gap-2 mb-4">
-                                                <AlertTriangle size={20} className="text-rose-500" />
-                                                <h3 className="text-rose-400 font-bold uppercase tracking-wider">Zur Prüfung / Nicht gefunden ({toCheck.length})</h3>
-                                                <div className="h-px bg-rose-500/20 flex-1 ml-4"></div>
-                                            </div>
-                                            {toCheck.length === 0 ? (
-                                                <div className="text-emerald-400/50 italic px-4">Alles vollständig!</div>
-                                            ) : (
-                                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                                                    {toCheck.map(c => (
-                                                        <GlassCard key={c.id} className="border-rose-500/20 bg-rose-500/5">
-                                                            <div className="p-3 flex flex-col h-full">
-                                                                <div className="flex-1">
-                                                                    <h3 className="font-bold text-white/90">{c.name}</h3>
-                                                                    <div className="text-sm text-white/50 mt-1">{c.order_number}</div>
-                                                                    <div className="mt-2 text-xs text-rose-300/70">
-                                                                        Status: {c.status}
-                                                                        {c.last_scanned_at ? ` • Letzter Scan: ${new Date(c.last_scanned_at).toLocaleDateString()}` : ' • Nie gescannt'}
-                                                                    </div>
-                                                                </div>
-                                                                <div className="mt-4 pt-3 border-t border-white/5 flex gap-2">
-                                                                    <button
-                                                                        onClick={() => handleDelete(c.id, c.name, 'trash')}
-                                                                        className="flex-1 py-2 bg-rose-500/10 text-rose-400 hover:bg-rose-500 hover:text-white rounded transition-colors flex items-center justify-center gap-2 text-sm border border-rose-500/20"
-                                                                    >
-                                                                        <Trash2 size={14} /> Löschen / Vermisst
-                                                                    </button>
-                                                                </div>
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                                            {/* VERIFIED COL */}
+                                            <div>
+                                                <h4 className="text-emerald-400 text-sm font-bold mb-3 flex items-center gap-2"><CheckCircle2 size={14} /> Geprüft / Gefunden ({verified.length})</h4>
+                                                {verified.length === 0 ? <div className="text-white/20 text-xs italic">Noch nichts gescannt.</div> : (
+                                                    <div className="space-y-2 max-h-60 overflow-y-auto custom-scrollbar pr-2">
+                                                        {verified.map(c => (
+                                                            <div key={c.id} className="p-2 bg-emerald-500/5 border border-emerald-500/20 rounded flex justify-between items-center">
+                                                                <span className="text-white text-sm truncate">{c.name}</span>
+                                                                <span className="text-[10px] text-emerald-400">{new Date(c.last_scanned_at!).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
                                                             </div>
-                                                        </GlassCard>
-                                                    ))}
-                                                </div>
-                                            )}
+                                                        ))}
+                                                    </div>
+                                                )}
+                                            </div>
+
+                                            {/* TO CHECK COL */}
+                                            <div>
+                                                <h4 className="text-gray-400 text-sm font-bold mb-3 flex items-center gap-2"><div className="w-3 h-3 rounded-full border border-gray-500"></div> Offen / Nicht gescannt ({toCheck.length})</h4>
+                                                {toCheck.length === 0 ? <div className="text-emerald-500 text-xs italic">Alles geprüft!</div> : (
+                                                    <div className="space-y-2 max-h-60 overflow-y-auto custom-scrollbar pr-2">
+                                                        {toCheck.map(c => (
+                                                            <div key={c.id} className="p-2 bg-white/5 border border-white/5 rounded flex justify-between items-center opacity-70">
+                                                                <span className="text-white text-sm truncate">{c.name}</span>
+                                                                <StatusBadge status={c.status} size="sm" />
+                                                            </div>
+                                                        ))}
+                                                    </div>
+                                                )}
+                                            </div>
                                         </div>
                                     </>
                                 );

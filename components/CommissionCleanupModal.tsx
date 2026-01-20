@@ -64,8 +64,26 @@ export const CommissionCleanupModal: React.FC<CommissionCleanupModalProps> = ({ 
         } else {
             stopScanner();
         }
-        return () => { isMounted.current = false; stopScanner(); };
-    }, [isOpen]);
+
+        // Battery Saver: Stop camera when app goes to background
+        const handleVisibilityChange = () => {
+            if (document.hidden) {
+                console.log("App backgrounded -> Stopping Scanner");
+                stopScanner();
+            } else if (isOpen && step === 'scan') {
+                console.log("App foregrounded -> Resuming Scanner");
+                initScanner();
+            }
+        };
+
+        document.addEventListener('visibilitychange', handleVisibilityChange);
+
+        return () => {
+            isMounted.current = false;
+            stopScanner();
+            document.removeEventListener('visibilitychange', handleVisibilityChange);
+        };
+    }, [isOpen, step]); // Add step dependency to ensure resume works correctly
 
     const fetchExpectedCommissions = async () => {
         setLoading(true);
@@ -259,8 +277,9 @@ export const CommissionCleanupModal: React.FC<CommissionCleanupModalProps> = ({ 
                 const { error } = await supabase
                     .from('commissions')
                     .update({
-                        deleted_at: new Date().toISOString(),
-                        status: 'Missing'
+                        status: 'Missing',
+                        // We DO NOT set deleted_at anymore, so they stay in the 'Missing' tab list
+                        last_scanned_at: null // Clear scan stats so they don't look "verified"
                     })
                     .in('id', batch);
 
@@ -275,7 +294,7 @@ export const CommissionCleanupModal: React.FC<CommissionCleanupModalProps> = ({ 
                     commission_name: c.name,
                     user_id: (supabase.auth.getUser() as any)?.id,
                     action: 'status_change',
-                    details: 'Durch Inventur-Scan als Vermisst in Papierkorb verschoben'
+                    details: 'Als VERMISST markiert (Inventur)'
                 }));
 
             // We need user ID for logs.

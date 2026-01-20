@@ -56,11 +56,28 @@ const Stocktaking: React.FC = () => {
 
     useEffect(() => {
         isMounted.current = true;
-        initScanner();
+
+        // Initial start if visible
+        if (!document.hidden) {
+            initScanner();
+        }
+
+        const handleVisibilityChange = () => {
+            if (document.hidden) {
+                console.log("App backgrounded -> Stopping Scanner");
+                stopScanner();
+            } else {
+                console.log("App foregrounded -> Resuming Scanner");
+                initScanner();
+            }
+        };
+
+        document.addEventListener('visibilitychange', handleVisibilityChange);
 
         return () => {
             isMounted.current = false;
             stopScanner();
+            document.removeEventListener('visibilitychange', handleVisibilityChange);
         };
     }, []);
 
