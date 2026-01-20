@@ -152,6 +152,7 @@ export interface Commission {
   supplier_order_number?: string;
   is_processed?: boolean; // Office status
   office_notes?: string; // Office notes
+  last_scanned_at?: string; // New: For "Missing" tab verification
 }
 
 export type CommissionItemType = 'Stock' | 'External';

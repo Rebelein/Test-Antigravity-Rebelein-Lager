@@ -54,7 +54,8 @@ export const useCommissionData = (activeTab: CommissionTab) => {
             } else if (activeTab === 'withdrawn') {
                 query = query.is('deleted_at', null);
             } else if (activeTab === 'missing') {
-                query = query.is('deleted_at', null).eq('status', 'Missing');
+                // Load all candidates for the audit: Ready, ReturnReady, ReturnPending
+                query = query.is('deleted_at', null).in('status', ['Ready', 'ReturnReady', 'ReturnPending', 'ReturnComplete', 'Missing']);
             } else if (activeTab === 'trash') {
                 query = query.not('deleted_at', 'is', null);
             }

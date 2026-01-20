@@ -161,7 +161,9 @@ export const CommissionCleanupModal: React.FC<CommissionCleanupModalProps> = ({ 
         }
     };
 
-    const handleScan = (raw: string) => {
+
+    // --- SCANNER LOGIC ---
+    const handleScan = async (raw: string) => {
         // Normalize: valid formats: "COMM:UUID", "COMM: UUID", "UUID"
         setLastScannedDebug(raw); // Show raw input for debug
         let id = raw.trim();
@@ -171,39 +173,39 @@ export const CommissionCleanupModal: React.FC<CommissionCleanupModalProps> = ({ 
             id = id.substring(5).trim();
         }
 
-        // Remove any potentially weird chars if necessary, but UUIDs are hex + dash
-
         // Check for match case-insensitive
         const match = expectedCommissions.find(c => c.id.toLowerCase() === id.toLowerCase());
-        const matchedId = match ? match.id : id; // Use the canonical DB ID if matched
 
-        setScannedIds(prev => {
-            if (prev.has(matchedId)) return prev; // Already scanned
+        if (match) {
+            // MATCH FOUND -> Update DB immediately
+            try {
+                // Optimistic UI update
+                setScannedIds(prev => new Set(prev).add(match.id));
 
-            // New scan!
-            const newSet = new Set(prev);
-            newSet.add(matchedId);
+                const { error } = await supabase.from('commissions').update({ last_scanned_at: new Date().toISOString() }).eq('id', match.id);
+                if (error) throw error;
 
-            if (match) {
                 toast.success(`Gefunden: ${match.name}`);
-            } else {
-                // If no direct ID match, try searching by order number?
-                // Often QR is just ID.
-                toast(`Gescannt: ...${matchedId.slice(-4)} (Nicht in Liste)`, {
-                    icon: <ScanLine size={14} />,
-                    description: "Status prüfen?"
-                });
+                triggerScanFeedback();
+            } catch (err) {
+                console.error("Error updating scan time", err);
+                toast.error("Fehler beim Speichern");
             }
-
+        } else {
+            // NO MATCH in expected list
+            toast(`Gescannt: ...${id.slice(-4)} (Nicht in "Vermisst"-Liste)`, {
+                icon: <ScanLine size={14} />,
+            });
             triggerScanFeedback();
-            return newSet;
-        });
+        }
     };
+
+    // ... (rest of scanner logic)
 
     const triggerScanFeedback = () => {
         // 1. Vibration (Android)
         if (navigator.vibrate) {
-            try { navigator.vibrate(200); } catch(e) {}
+            try { navigator.vibrate(200); } catch (e) { }
         }
 
         // 2. Audio Beep (iOS & Android)
@@ -213,17 +215,17 @@ export const CommissionCleanupModal: React.FC<CommissionCleanupModalProps> = ({ 
                 const ctx = new AudioContext();
                 const osc = ctx.createOscillator();
                 const gain = ctx.createGain();
-                
+
                 osc.connect(gain);
                 gain.connect(ctx.destination);
-                
+
                 osc.type = "sine";
                 osc.frequency.setValueAtTime(1200, ctx.currentTime);
                 osc.frequency.exponentialRampToValueAtTime(600, ctx.currentTime + 0.15);
-                
+
                 gain.gain.setValueAtTime(0.2, ctx.currentTime);
                 gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.15);
-                
+
                 osc.start(ctx.currentTime);
                 osc.stop(ctx.currentTime + 0.2);
             }
@@ -240,21 +242,25 @@ export const CommissionCleanupModal: React.FC<CommissionCleanupModalProps> = ({ 
 
     const handleCleanup = async (idsToCleanup: string[], keepOpen = false) => {
         if (idsToCleanup.length === 0) return;
-        if (!keepOpen && !confirm(`${idsToCleanup.length} Kommissionen als 'Vermisst' markieren?`)) return;
+        if (!keepOpen && !confirm(`${idsToCleanup.length} Kommissionen als 'Vermisst' markieren (Löschen)?`)) return;
 
         setLoading(true);
         try {
-            const now = new Date().toISOString();
+            // "Vermisst" cleanup now means we treat them as gone/deleted or move to trash?
+            // User requirement: "dass diese dann komplett gelöscht werden können"
+            // We'll soft-delete them (move to trash)
 
-            // Batch update to avoid URL too long error
             const BATCH_SIZE = 20;
             for (let i = 0; i < idsToCleanup.length; i += BATCH_SIZE) {
                 const batch = idsToCleanup.slice(i, i + BATCH_SIZE);
+                // Move to trash (deleted_at) AND set status to Missing for clarity?
+                // Or just delete? User said "komplett gelöscht".
+                // Let's use soft delete for safety first.
                 const { error } = await supabase
                     .from('commissions')
                     .update({
-                        status: 'Missing',
-                        // withdrawn_at: now // Do not set withdrawn_at for missing items
+                        deleted_at: new Date().toISOString(),
+                        status: 'Missing'
                     })
                     .in('id', batch);
 
@@ -269,7 +275,7 @@ export const CommissionCleanupModal: React.FC<CommissionCleanupModalProps> = ({ 
                     commission_name: c.name,
                     user_id: (supabase.auth.getUser() as any)?.id,
                     action: 'status_change',
-                    details: 'Automatisch auf "Vermisst" gesetzt durch Aufräum-Scan'
+                    details: 'Durch Inventur-Scan als Vermisst in Papierkorb verschoben'
                 }));
 
             // We need user ID for logs.
@@ -281,14 +287,11 @@ export const CommissionCleanupModal: React.FC<CommissionCleanupModalProps> = ({ 
 
             toast.success("Aufräumen erfolgreich!");
             if (onCleanupComplete) onCleanupComplete();
-
-            // Remove from expected list locally if keeping open
-            if (keepOpen) {
+            if (!keepOpen) onClose();
+            else {
+                // Update local state
                 setExpectedCommissions(prev => prev.filter(c => !idsToCleanup.includes(c.id)));
-            } else {
-                onClose();
             }
-
         } catch (err: any) {
             toast.error("Fehler: " + err.message);
         } finally {
@@ -296,18 +299,22 @@ export const CommissionCleanupModal: React.FC<CommissionCleanupModalProps> = ({ 
         }
     };
 
+    // ...
+
     // --- RENDER HELPERS ---
 
-    // MISSING: Expected but NOT scanned
+    // Logic: Scanned today = Found. Not scanned today = Missing.
+    // We base "Scanned" on the `last_scanned_at` timestamp in DB if it exists, PLUS local session scans.
+    // Wait, fetchExpectedCommissions loads data once. 
+    // We should rely on local `scannedIds` for the session, but also respect `last_scanned_at` if we want to support "Resume scan".
+    // For now, let's keep `scannedIds` as the session truth for "Found in this session".
+    // BUT the requirement is: "alle kommisionen die nach dem scannen ... keine neuen datums eintrag ... erzeugen sollen in dem vermissten tab ... angezeigt werden"
+    // This implies that the modal is just the tool to add the timestamp. The TAB does the display.
+    // The Modal review step should just show what was captured NOW.
+
     const missingCommissions = expectedCommissions.filter(c => !scannedIds.has(c.id));
-
-    // FOUND: Expected AND scanned
     const foundCommissions = expectedCommissions.filter(c => scannedIds.has(c.id));
-
-    // UNEXPECTED: Scanned but NOT in expected list (maybe already Withdrawn or Draft?)
-    // This requires fetching details for IDs that are not in expectedCommissions. 
-    // For MVP, we ignore them or just show count.
-    const unexpectedCount = scannedIds.size - foundCommissions.length;
+    const unexpectedCount = 0; // Simplified for now
 
     return (
         <GlassModal isOpen={isOpen} onClose={onClose} className="w-[95vw] max-w-4xl h-[90vh] flex flex-col p-0 overflow-hidden">

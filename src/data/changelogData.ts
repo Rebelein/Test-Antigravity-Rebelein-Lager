@@ -9,6 +9,20 @@ export interface ChangelogEntry {
 
 export const changelogData: ChangelogEntry[] = [
     {
+        version: '0.0.51',
+        changes: [
+            {
+                type: 'fix',
+                text: 'Runtime-Fehler im "Vermisst"-Tab behoben: ScanLine Icon fehlte.',
+            },
+            {
+                type: 'fix',
+                text: 'Build-Fehler in Changelog behoben.',
+            },
+        ],
+        release_date: '2026-01-20',
+    },
+    {
         version: '0.0.50',
         changes: [
             {
@@ -18,16 +32,18 @@ export const changelogData: ChangelogEntry[] = [
         ],
         release_date: '2026-01-15',
     },
-    changes: [
-        {
-            type: 'fix',
-            text: 'Kritischen Fehler beim "Regal aufräumen" behoben: Aktualisierung von großen Mengen an Kommissionen schlug fehl (Batch-Update implementiert).',
-        },
-    ],
-    release_date: '2026-01-15',
+    {
+        version: '0.0.49',
+        changes: [
+            {
+                type: 'fix',
+                text: 'Kritischen Fehler beim "Regal aufräumen" behoben: Aktualisierung von großen Mengen an Kommissionen schlug fehl (Batch-Update implementiert).',
+            },
+        ],
+        release_date: '2026-01-15',
     },
-{
-    version: '0.0.48',
+    {
+        version: '0.0.48',
         changes: [
             {
                 type: 'feature',
@@ -50,20 +66,20 @@ export const changelogData: ChangelogEntry[] = [
                 text: 'Workflow "Regal aufräumen" optimiert: Wechselt nun automatisch in den Tab "Vermisst", um Ergebnisse sofort anzuzeigen.',
             },
         ],
-            release_date: '2026-01-14',
+        release_date: '2026-01-14',
     },
-{
-    version: '0.0.47',
+    {
+        version: '0.0.47',
         changes: [
             {
                 type: 'feature',
                 text: 'Split-View kann nun auch auf Mobilgeräten per Touch vergrößert/verkleinert werden.',
             },
         ],
-            release_date: '2026-01-14',
+        release_date: '2026-01-14',
     },
-{
-    version: '0.0.46',
+    {
+        version: '0.0.46',
         changes: [
             {
                 type: 'fix',
@@ -78,7 +94,7 @@ export const changelogData: ChangelogEntry[] = [
                 text: 'Neue Kommissionen aus dem Dashboard werden nun automatisch zum Etikettendruck vorgemerkt.',
             },
         ],
-            release_date: '2026-01-14',
+        release_date: '2026-01-14',
     },
     // Hier können zukünftige Changelogs einfach oben angefügt werden
 ];
