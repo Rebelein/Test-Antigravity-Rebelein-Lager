@@ -50,6 +50,7 @@ export const CommissionCleanupModal: React.FC<CommissionCleanupModalProps> = ({ 
     const scannerLoopRef = useRef<number | null>(null);
     const html5QrCodeRef = useRef<Html5Qrcode | null>(null);
     const isMounted = useRef(true);
+    const lastProcessedRef = useRef<{ id: string, time: number } | null>(null);
 
     // Initial Load
     useEffect(() => {
@@ -191,6 +192,12 @@ export const CommissionCleanupModal: React.FC<CommissionCleanupModalProps> = ({ 
             id = id.substring(5).trim();
         }
 
+        const now = Date.now();
+        if (lastProcessedRef.current && lastProcessedRef.current.id === id && (now - lastProcessedRef.current.time < 2000)) {
+            return; // Ignore same code for 2 seconds to prevent loops
+        }
+        lastProcessedRef.current = { id, time: now };
+
         // Check for match case-insensitive
         const match = expectedCommissions.find(c => c.id.toLowerCase() === id.toLowerCase());
 
@@ -221,6 +228,7 @@ export const CommissionCleanupModal: React.FC<CommissionCleanupModalProps> = ({ 
     // ... (rest of scanner logic)
 
     const triggerScanFeedback = () => {
+        // Prevent continuous feedback (Debouncing at caller level usually, but here just robust checks)
         // 1. Vibration (Android)
         if (navigator.vibrate) {
             try { navigator.vibrate(200); } catch (e) { }

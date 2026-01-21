@@ -9,6 +9,24 @@ export interface ChangelogEntry {
 
 export const changelogData: ChangelogEntry[] = [
     {
+        version: '0.0.52',
+        changes: [
+            {
+                type: 'fix',
+                text: 'Kritische Fehlerbehebungen: Kommissionen-Seite stabilisiert, iOS-Navigations-Loop und Scanner-Dauervibration behoben.',
+            },
+            {
+                type: 'feature',
+                text: 'Inventur-Funktion überarbeitet: Manuelle "Prüfung neu starten"-Funktion hinzugefügt.',
+            },
+            {
+                type: 'info',
+                text: 'UI-Verbesserungen: Anzeige des Prüfungsdatums und optimierte Listenansicht im "Vermisst"-Tab.',
+            },
+        ],
+        release_date: '2026-01-21',
+    },
+    {
         version: '0.0.51',
         changes: [
             {

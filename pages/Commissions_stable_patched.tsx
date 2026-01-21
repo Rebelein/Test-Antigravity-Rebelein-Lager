@@ -14,7 +14,6 @@ import { MasterDetailLayout } from '../components/MasterDetailLayout';
 import { CommissionDetailContent } from '../components/commissions/CommissionDetailContent';
 import { CommissionEditContent, ExtendedCommission } from '../components/commissions/CommissionEditContent';
 import { useIsMobile } from '../hooks/useIsMobile';
-import { toast } from 'sonner';
 
 // --- TYPES ---
 type CommissionTab = 'active' | 'returns' | 'withdrawn' | 'trash' | 'missing';
@@ -105,7 +104,7 @@ const Commissions: React.FC = () => {
 
         if (state) {
             if (state.editCommissionId) {
-                navigate(location.pathname, { replace: true, state: {} });
+                window.history.replaceState({}, document.title);
                 const loadAndEdit = async () => {
                     let comm = commissions.find(c => c.id === state.editCommissionId) as ExtendedCommission;
                     if (!comm) {
@@ -117,7 +116,7 @@ const Commissions: React.FC = () => {
                 loadAndEdit();
             } else if (state.openCreateModal) {
                 if (state.returnTo) setReturnPath(state.returnTo);
-                navigate(location.pathname, { replace: true, state: {} });
+                window.history.replaceState({}, document.title);
                 handleOpenCreate();
             } else if (state.openCommissionId) {
                 const loadScannerTarget = async (id: string) => {
@@ -128,7 +127,7 @@ const Commissions: React.FC = () => {
                     }
                     if (comm) {
                         handleOpenDetail(comm);
-                        navigate(location.pathname, { replace: true, state: {} });
+                        window.history.replaceState({}, document.title);
                     }
                 };
                 loadScannerTarget(state.openCommissionId);
@@ -837,7 +836,7 @@ const Commissions: React.FC = () => {
                                             {missingItems.map(c => (
                                                 <GlassCard key={c.id} className="border-orange-500/30 bg-orange-500/5">
                                                     <div className="p-3 flex flex-col h-full">
-                                                        <div className="flex-1 cursor-pointer" onClick={() => handleOpenDetail(c)}>
+                                                        <div className="flex-1">
                                                             <div className="flex justify-between items-start">
                                                                 <h3 className="font-bold text-white">{c.name}</h3>
                                                                 <StatusBadge status="Missing" />
@@ -880,49 +879,16 @@ const Commissions: React.FC = () => {
                             {/* --- HEUTIGE SCAN AUSWERTUNG (TEMPORÄR) --- */}
                             {(() => {
                                 const auditCandidates = commissions.filter(c => ['Ready', 'ReturnReady', 'ReturnPending'].includes(c.status));
-                                // NO MORE DAILY RESET LOGIC. Just check for presence of timestamp.
-                                const verified = auditCandidates.filter(c => !!c.last_scanned_at);
-                                const toCheck = auditCandidates.filter(c => !c.last_scanned_at);
-
-                                // Get most recent scan date
-                                const lastScanDate = verified.length > 0
-                                    ? new Date(Math.max(...verified.map(c => new Date(c.last_scanned_at!).getTime())))
-                                    : null;
-
-                                const handleRestartCheck = async () => {
-                                    if (!confirm("Prüfung wirklich neu starten? Alle 'Geprüft'-Markierungen werden entfernt.")) return;
-                                    const candidateIds = auditCandidates.map(c => c.id);
-                                    if (candidateIds.length === 0) return;
-
-                                    // Reset timestamps to NULL
-                                    const { error } = await supabase.from('commissions').update({ last_scanned_at: null }).in('id', candidateIds);
-                                    if (error) {
-                                        console.error(error);
-                                        toast.error("Fehler beim Zurücksetzen");
-                                    } else {
-                                        toast.success("Prüfung neu gestartet!");
-                                        refreshCommissions();
-                                    }
-                                };
+                                const todayStr = new Date().toDateString();
+                                const verified = auditCandidates.filter(c => c.last_scanned_at && new Date(c.last_scanned_at).toDateString() === todayStr);
+                                const toCheck = auditCandidates.filter(c => !c.last_scanned_at || new Date(c.last_scanned_at).toDateString() !== todayStr);
 
                                 return (
                                     <>
-                                        <div className="flex items-center justify-between mb-4 mt-8">
-                                            <div className="flex items-center gap-2">
-                                                <ScanLine size={20} className="text-blue-400" />
-                                                <h3 className="text-blue-300 font-bold uppercase tracking-wider">Laufende Prüfung (Manuell)</h3>
-                                            </div>
-
-                                            <div className="flex items-center gap-4">
-                                                {lastScanDate && (
-                                                    <div className="text-xs text-blue-300/60 bg-blue-500/10 px-3 py-1.5 rounded-lg border border-blue-500/10">
-                                                        Letzte Prüfung: <span className="text-blue-200 font-medium">{lastScanDate.toLocaleDateString('de-DE')}</span>
-                                                    </div>
-                                                )}
-                                                <Button onClick={handleRestartCheck} variant="secondary" className="text-xs bg-white/5 hover:bg-white/10 text-white/70" icon={<RotateCcw size={14} />}>
-                                                    Prüfung neu starten
-                                                </Button>
-                                            </div>
+                                        <div className="flex items-center gap-2 mb-4 mt-8">
+                                            <ScanLine size={20} className="text-blue-400" />
+                                            <h3 className="text-blue-300 font-bold uppercase tracking-wider">Heutige Scans (Live-Status)</h3>
+                                            <div className="h-px bg-white/10 flex-1 ml-4"></div>
                                         </div>
 
                                         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
@@ -932,11 +898,9 @@ const Commissions: React.FC = () => {
                                                 {verified.length === 0 ? <div className="text-white/20 text-xs italic">Noch nichts gescannt.</div> : (
                                                     <div className="space-y-2 max-h-60 overflow-y-auto custom-scrollbar pr-2">
                                                         {verified.map(c => (
-                                                            <div key={c.id} onClick={() => handleOpenDetail(c)} className="p-2 bg-emerald-500/5 border border-emerald-500/20 rounded flex justify-between items-center cursor-pointer hover:bg-emerald-500/10 transition-colors">
-                                                                <div className="flex items-center gap-2 overflow-hidden">
-                                                                    <span className="text-white text-sm truncate">{c.name}</span>
-                                                                </div>
-                                                                <span className="text-[10px] text-emerald-400 whitespace-nowrap">{new Date(c.last_scanned_at!).toLocaleDateString('de-DE')}</span>
+                                                            <div key={c.id} className="p-2 bg-emerald-500/5 border border-emerald-500/20 rounded flex justify-between items-center">
+                                                                <span className="text-white text-sm truncate">{c.name}</span>
+                                                                <span className="text-[10px] text-emerald-400">{new Date(c.last_scanned_at!).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
                                                             </div>
                                                         ))}
                                                     </div>
@@ -949,7 +913,7 @@ const Commissions: React.FC = () => {
                                                 {toCheck.length === 0 ? <div className="text-emerald-500 text-xs italic">Alles geprüft!</div> : (
                                                     <div className="space-y-2 max-h-60 overflow-y-auto custom-scrollbar pr-2">
                                                         {toCheck.map(c => (
-                                                            <div key={c.id} onClick={() => handleOpenDetail(c)} className="p-2 bg-white/5 border border-white/5 rounded flex justify-between items-center opacity-70 cursor-pointer hover:bg-white/10 hover:opacity-100 transition-all">
+                                                            <div key={c.id} className="p-2 bg-white/5 border border-white/5 rounded flex justify-between items-center opacity-70">
                                                                 <span className="text-white text-sm truncate">{c.name}</span>
                                                                 <StatusBadge status={c.status} size="sm" />
                                                             </div>
