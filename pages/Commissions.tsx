@@ -810,157 +810,144 @@ const Commissions: React.FC = () => {
                     )}
 
                     {activeTab === 'missing' && (
-                        <div className="space-y-8">
-                            {/* --- INVENTUR HEADER --- */}
-                            <div className="p-4 bg-blue-500/10 border border-blue-500/20 rounded-xl mb-6 flex justify-between items-center">
+                        <div className="space-y-6 h-full flex flex-col">
+                            {/* HEADER & ACTIONS */}
+                            <div className="flex justify-between items-center bg-blue-500/10 border border-blue-500/20 p-4 rounded-xl shrink-0">
                                 <div>
                                     <h3 className="text-blue-200 font-bold mb-1">Inventur & Prüfung</h3>
-                                    <p className="text-sm text-blue-300/70">Scanne vorhandene Kommissionen. Nicht gefundene hier als "Vermisst" markieren.</p>
+                                    <p className="text-sm text-blue-300/70">Übersicht aller Kommissionen im Lager.</p>
                                 </div>
-                                <Button onClick={() => setShowCleanupModal(true)} icon={<ScanLine size={18} />} className="bg-blue-600 hover:bg-blue-500">
-                                    Scanner starten
-                                </Button>
+                                <div className="flex gap-2">
+                                    <Button
+                                        onClick={async () => {
+                                            if (!confirm("Prüfung wirklich neu starten? Alle 'Geprüft'-Markierungen werden entfernt.")) return;
+                                            const candidateIds = commissions.filter(c => ['Ready', 'ReturnReady'].includes(c.status) && c.last_scanned_at).map(c => c.id);
+                                            if (candidateIds.length === 0) return;
+                                            const { error } = await supabase.from('commissions').update({ last_scanned_at: null }).in('id', candidateIds);
+                                            if (error) toast.error("Fehler");
+                                            else { toast.success("Prüfung neu gestartet!"); refreshCommissions(); }
+                                        }}
+                                        variant="secondary"
+                                        className="bg-white/5 hover:bg-white/10 text-white/70"
+                                        icon={<RotateCcw size={16} />}
+                                    >
+                                        Neustart
+                                    </Button>
+                                    <Button onClick={() => setShowCleanupModal(true)} icon={<ScanLine size={18} />} className="bg-blue-600 hover:bg-blue-500">
+                                        Scanner
+                                    </Button>
+                                </div>
                             </div>
 
-                            {/* --- LISTE DER TATSÄCHLICH VERMISSTEN (PERSISTENT) --- */}
-                            {(() => {
-                                const missingItems = commissions.filter(c => c.status === 'Missing' && !c.deleted_at);
+                            {/* 3-COLUMN GRID */}
+                            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 flex-1 min-h-0 overflow-hidden">
+                                {(() => {
+                                    // 1. FEHLT (Missing)
+                                    const missing = commissions.filter(c => c.status === 'Missing');
+                                    // 2. VERFÜGBAR (Verified)
+                                    const verified = commissions.filter(c => (c.status === 'Ready' || c.status === 'ReturnReady') && !!c.last_scanned_at);
+                                    // 3. OFFEN (Open/Unverified)
+                                    const open = commissions.filter(c => (c.status === 'Ready' || c.status === 'ReturnReady') && !c.last_scanned_at);
 
-                                return missingItems.length > 0 ? (
-                                    <div className="mb-12 border-b border-white/5 pb-8">
-                                        <div className="flex items-center gap-2 mb-4">
-                                            <AlertTriangle size={20} className="text-orange-500" />
-                                            <h3 className="text-orange-400 font-bold uppercase tracking-wider">Aktuell Vermisst ({missingItems.length})</h3>
-                                            <div className="h-px bg-orange-500/20 flex-1 ml-4"></div>
-                                        </div>
-                                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                                            {missingItems.map(c => (
-                                                <GlassCard key={c.id} className="border-orange-500/30 bg-orange-500/5">
-                                                    <div className="p-3 flex flex-col h-full">
-                                                        <div className="flex-1 cursor-pointer" onClick={() => handleOpenDetail(c)}>
-                                                            <div className="flex justify-between items-start">
-                                                                <h3 className="font-bold text-white">{c.name}</h3>
-                                                                <StatusBadge status="Missing" />
+                                    return (
+                                        <>
+                                            {/* COL 1: FEHLT */}
+                                            <div className="bg-rose-500/5 border border-rose-500/10 rounded-xl flex flex-col h-full overflow-hidden">
+                                                <div className="p-3 bg-rose-500/10 border-b border-rose-500/10 flex justify-between items-center">
+                                                    <h4 className="font-bold text-rose-400 flex items-center gap-2 uppercase tracking-wider text-sm">
+                                                        <AlertTriangle size={16} /> Fehlt ({missing.length})
+                                                    </h4>
+                                                </div>
+                                                <div className="p-2 overflow-y-auto flex-1 custom-scrollbar space-y-2">
+                                                    {missing.map(c => (
+                                                        <div key={c.id} className="p-3 bg-rose-500/10 border border-rose-500/20 rounded-lg group">
+                                                            <div className="flex justify-between items-start mb-2" onClick={() => handleOpenDetail(c)}>
+                                                                <div className="font-bold text-white cursor-pointer hover:underline">{c.name}</div>
+                                                                <StatusBadge status="Missing" size="sm" />
                                                             </div>
-                                                            <div className="text-sm text-white/50 mt-1">{c.order_number || 'Keine Auftragsnr.'}</div>
-                                                            {c.notes && <div className="text-xs text-white/40 mt-2 italic line-clamp-2">{c.notes}</div>}
-                                                        </div>
-                                                        <div className="mt-4 pt-3 border-t border-white/5 flex gap-2">
-                                                            <button
-                                                                onClick={async () => {
-                                                                    if (!confirm("Kommission gefunden? Status wird zurückgesetzt.")) return;
-                                                                    await supabase.from('commissions').update({ status: 'Preparing' }).eq('id', c.id); // Or Ready? Safer to Preparing
-                                                                    await logCommissionEvent(c.id, c.name, 'status_change', 'Wiedergefunden (Status Reset)');
-                                                                    refreshCommissions();
-                                                                }}
-                                                                className="flex-1 py-2 bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500 hover:text-white rounded transition-colors flex items-center justify-center gap-2 text-sm border border-emerald-500/20"
-                                                            >
-                                                                <RotateCcw size={14} /> Gefunden
-                                                            </button>
-                                                            <button
-                                                                onClick={() => handleDelete(c.id, c.name, 'trash')}
-                                                                className="py-2 px-3 bg-rose-500/10 text-rose-400 hover:bg-rose-500 hover:text-white rounded transition-colors flex items-center justify-center border border-rose-500/20"
-                                                                title="Löschen (Papierkorb)"
-                                                            >
-                                                                <Trash2 size={14} />
-                                                            </button>
-                                                        </div>
-                                                    </div>
-                                                </GlassCard>
-                                            ))}
-                                        </div>
-                                    </div>
-                                ) : (
-                                    <div className="mb-8 p-6 text-center border border-dashed border-white/10 rounded-xl text-white/30">
-                                        Keine Kommissionen als "Vermisst" gemeldet.
-                                    </div>
-                                );
-                            })()}
-
-                            {/* --- HEUTIGE SCAN AUSWERTUNG (TEMPORÄR) --- */}
-                            {(() => {
-                                const auditCandidates = commissions.filter(c => ['Ready', 'ReturnReady', 'ReturnPending'].includes(c.status));
-                                // NO MORE DAILY RESET LOGIC. Just check for presence of timestamp.
-                                const verified = auditCandidates.filter(c => !!c.last_scanned_at);
-                                const toCheck = auditCandidates.filter(c => !c.last_scanned_at);
-
-                                // Get most recent scan date
-                                const lastScanDate = verified.length > 0
-                                    ? new Date(Math.max(...verified.map(c => new Date(c.last_scanned_at!).getTime())))
-                                    : null;
-
-                                const handleRestartCheck = async () => {
-                                    if (!confirm("Prüfung wirklich neu starten? Alle 'Geprüft'-Markierungen werden entfernt.")) return;
-                                    const candidateIds = auditCandidates.map(c => c.id);
-                                    if (candidateIds.length === 0) return;
-
-                                    // Reset timestamps to NULL
-                                    const { error } = await supabase.from('commissions').update({ last_scanned_at: null }).in('id', candidateIds);
-                                    if (error) {
-                                        console.error(error);
-                                        toast.error("Fehler beim Zurücksetzen");
-                                    } else {
-                                        toast.success("Prüfung neu gestartet!");
-                                        refreshCommissions();
-                                    }
-                                };
-
-                                return (
-                                    <>
-                                        <div className="flex items-center justify-between mb-4 mt-8">
-                                            <div className="flex items-center gap-2">
-                                                <ScanLine size={20} className="text-blue-400" />
-                                                <h3 className="text-blue-300 font-bold uppercase tracking-wider">Laufende Prüfung (Manuell)</h3>
-                                            </div>
-
-                                            <div className="flex items-center gap-4">
-                                                {lastScanDate && (
-                                                    <div className="text-xs text-blue-300/60 bg-blue-500/10 px-3 py-1.5 rounded-lg border border-blue-500/10">
-                                                        Letzte Prüfung: <span className="text-blue-200 font-medium">{lastScanDate.toLocaleDateString('de-DE')}</span>
-                                                    </div>
-                                                )}
-                                                <Button onClick={handleRestartCheck} variant="secondary" className="text-xs bg-white/5 hover:bg-white/10 text-white/70" icon={<RotateCcw size={14} />}>
-                                                    Prüfung neu starten
-                                                </Button>
-                                            </div>
-                                        </div>
-
-                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                                            {/* VERIFIED COL */}
-                                            <div>
-                                                <h4 className="text-emerald-400 text-sm font-bold mb-3 flex items-center gap-2"><CheckCircle2 size={14} /> Geprüft / Gefunden ({verified.length})</h4>
-                                                {verified.length === 0 ? <div className="text-white/20 text-xs italic">Noch nichts gescannt.</div> : (
-                                                    <div className="space-y-2 max-h-60 overflow-y-auto custom-scrollbar pr-2">
-                                                        {verified.map(c => (
-                                                            <div key={c.id} onClick={() => handleOpenDetail(c)} className="p-2 bg-emerald-500/5 border border-emerald-500/20 rounded flex justify-between items-center cursor-pointer hover:bg-emerald-500/10 transition-colors">
-                                                                <div className="flex items-center gap-2 overflow-hidden">
-                                                                    <span className="text-white text-sm truncate">{c.name}</span>
-                                                                </div>
-                                                                <span className="text-[10px] text-emerald-400 whitespace-nowrap">{new Date(c.last_scanned_at!).toLocaleDateString('de-DE')}</span>
+                                                            <div className="text-xs text-rose-300 mb-2">{c.order_number || '-'}</div>
+                                                            <div className="flex gap-2">
+                                                                <button
+                                                                    onClick={async (e) => {
+                                                                        e.stopPropagation();
+                                                                        if (!confirm("Status zurücksetzen?")) return;
+                                                                        await supabase.from('commissions').update({ status: 'Preparing' }).eq('id', c.id);
+                                                                        refreshCommissions();
+                                                                    }}
+                                                                    className="flex-1 py-1.5 bg-white/5 hover:bg-white/10 text-white/50 hover:text-white rounded text-xs flex items-center justify-center gap-1 transition-colors"
+                                                                >
+                                                                    <RotateCcw size={12} /> Reset
+                                                                </button>
+                                                                <button
+                                                                    onClick={(e) => handleDelete(c.id, c.name, 'trash', e)}
+                                                                    className="px-3 py-1.5 bg-rose-500/20 hover:bg-rose-500/40 text-rose-300 rounded text-xs flex items-center justify-center transition-colors"
+                                                                    title="In Papierkorb"
+                                                                >
+                                                                    <Trash2 size={12} />
+                                                                </button>
                                                             </div>
-                                                        ))}
-                                                    </div>
-                                                )}
+                                                        </div>
+                                                    ))}
+                                                    {missing.length === 0 && <div className="text-white/20 text-center py-10 italic text-sm">Keine vermissten Einträge</div>}
+                                                </div>
                                             </div>
 
-                                            {/* TO CHECK COL */}
-                                            <div>
-                                                <h4 className="text-gray-400 text-sm font-bold mb-3 flex items-center gap-2"><div className="w-3 h-3 rounded-full border border-gray-500"></div> Offen / Nicht gescannt ({toCheck.length})</h4>
-                                                {toCheck.length === 0 ? <div className="text-emerald-500 text-xs italic">Alles geprüft!</div> : (
-                                                    <div className="space-y-2 max-h-60 overflow-y-auto custom-scrollbar pr-2">
-                                                        {toCheck.map(c => (
-                                                            <div key={c.id} onClick={() => handleOpenDetail(c)} className="p-2 bg-white/5 border border-white/5 rounded flex justify-between items-center opacity-70 cursor-pointer hover:bg-white/10 hover:opacity-100 transition-all">
-                                                                <span className="text-white text-sm truncate">{c.name}</span>
+                                            {/* COL 2: VERFÜGBAR */}
+                                            <div className="bg-emerald-500/5 border border-emerald-500/10 rounded-xl flex flex-col h-full overflow-hidden">
+                                                <div className="p-3 bg-emerald-500/10 border-b border-emerald-500/10 flex justify-between items-center">
+                                                    <h4 className="font-bold text-emerald-400 flex items-center gap-2 uppercase tracking-wider text-sm">
+                                                        <CheckCircle2 size={16} /> Verfügbar ({verified.length})
+                                                    </h4>
+                                                </div>
+                                                <div className="p-2 overflow-y-auto flex-1 custom-scrollbar space-y-2">
+                                                    {verified.map(c => (
+                                                        <div key={c.id} onClick={() => handleOpenDetail(c)} className="p-3 bg-emerald-500/10 border border-emerald-500/20 rounded-lg cursor-pointer hover:bg-emerald-500/20 transition-colors">
+                                                            <div className="flex justify-between items-center mb-1">
+                                                                <div className="font-bold text-white">{c.name}</div>
+                                                                <span className="text-[10px] bg-emerald-500/20 text-emerald-300 px-1.5 py-0.5 rounded">
+                                                                    {new Date(c.last_scanned_at!).toLocaleDateString('de-DE')}
+                                                                </span>
+                                                            </div>
+                                                            <div className="text-xs text-white/50">{c.order_number || '-'}</div>
+                                                        </div>
+                                                    ))}
+                                                    {verified.length === 0 && <div className="text-white/20 text-center py-10 italic text-sm">Noch nichts gescannt</div>}
+                                                </div>
+                                            </div>
+
+                                            {/* COL 3: OFFEN */}
+                                            <div className="bg-white/5 border border-white/10 rounded-xl flex flex-col h-full overflow-hidden">
+                                                <div className="p-3 bg-white/5 border-b border-white/5 flex justify-between items-center">
+                                                    <h4 className="font-bold text-white/70 flex items-center gap-2 uppercase tracking-wider text-sm">
+                                                        <div className="w-4 h-4 rounded-full border border-white/30 text-xs flex items-center justify-center">?</div> Offen ({open.length})
+                                                    </h4>
+                                                </div>
+                                                <div className="p-2 overflow-y-auto flex-1 custom-scrollbar space-y-2">
+                                                    {open.map(c => (
+                                                        <div key={c.id} className="p-3 bg-white/5 border border-white/5 rounded-lg group hover:border-white/20 transition-colors">
+                                                            <div className="flex justify-between items-start mb-2 cursor-pointer" onClick={() => handleOpenDetail(c)}>
+                                                                <div className="font-bold text-white opacity-80 group-hover:opacity-100">{c.name}</div>
                                                                 <StatusBadge status={c.status} size="sm" />
                                                             </div>
-                                                        ))}
-                                                    </div>
-                                                )}
+                                                            <div className="text-xs text-white/40 mb-2">{c.order_number || '-'}</div>
+                                                            <div className="flex justify-end pt-2 border-t border-white/5">
+                                                                <button
+                                                                    onClick={(e) => handleDelete(c.id, c.name, 'trash', e)}
+                                                                    className="px-3 py-1.5 bg-white/5 hover:bg-rose-500/20 text-white/30 hover:text-rose-400 rounded text-xs flex items-center justify-center transition-colors gap-2"
+                                                                    title="Löschen"
+                                                                >
+                                                                    <Trash2 size={12} /> Löschen
+                                                                </button>
+                                                            </div>
+                                                        </div>
+                                                    ))}
+                                                    {open.length === 0 && <div className="text-white/20 text-center py-10 italic text-sm">Alles geprüft!</div>}
+                                                </div>
                                             </div>
-                                        </div>
-                                    </>
-                                );
-                            })()}
+                                        </>
+                                    );
+                                })()}
+                            </div>
                         </div>
                     )}
 

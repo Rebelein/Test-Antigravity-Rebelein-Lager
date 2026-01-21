@@ -9,6 +9,24 @@ export interface ChangelogEntry {
 
 export const changelogData: ChangelogEntry[] = [
     {
+        version: '0.0.53',
+        changes: [
+            {
+                type: 'feature',
+                text: 'Kommissionen: Neuer "Vermisst"-Tab mit 3-Spalten-Layout (Fehlt, Verfügbar, Offen) für bessere Bestandsübersicht.',
+            },
+            {
+                type: 'feature',
+                text: 'Aufräum-Funktion: Nicht gefundene Kommissionen werden nun automatisch in die "Fehlt"-Spalte verschoben.',
+            },
+            {
+                type: 'feature',
+                text: 'Löschen: Schnell-Lösch-Buttons für vermisste und nicht gescannte Kommissionen hinzugefügt.',
+            },
+        ],
+        release_date: '2026-01-22',
+    },
+    {
         version: '0.0.52',
         changes: [
             {
