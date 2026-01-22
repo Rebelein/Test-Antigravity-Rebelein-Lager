@@ -101,9 +101,27 @@ const Commissions: React.FC = () => {
 
     // Handle deep links / navigation state
     useEffect(() => {
+        const params = new URLSearchParams(location.search);
+        const openIdParam = params.get('openId');
         const state = location.state as { editCommissionId?: string; openCreateModal?: boolean; returnTo?: string; openCommissionId?: string } | null;
 
-        if (state) {
+        if (openIdParam) {
+            const loadScannerTarget = async (id: string) => {
+                let comm = commissions.find(c => c.id === id) as ExtendedCommission;
+                if (!comm) {
+                    const { data } = await supabase.from('commissions').select('*, suppliers(name)').eq('id', id).single();
+                    if (data) comm = data as ExtendedCommission;
+                }
+                if (comm) {
+                    handleOpenDetail(comm);
+                    // Clear the param so it doesn't reopen on every refresh if unwanted, 
+                    // BUT for "Hard Reload" stability, keeping it might be better?
+                    // User complained about hard reload. If we clear it instantly, and reload happens 100ms later, it's lost.
+                    // Let's NOT clear it immediately. Let the user close it naturally.
+                }
+            };
+            loadScannerTarget(openIdParam);
+        } else if (state) {
             if (state.editCommissionId) {
                 navigate(location.pathname, { replace: true, state: {} });
                 const loadAndEdit = async () => {
@@ -120,6 +138,7 @@ const Commissions: React.FC = () => {
                 navigate(location.pathname, { replace: true, state: {} });
                 handleOpenCreate();
             } else if (state.openCommissionId) {
+                // Fallback for legacy state calls (though we updated Stocktaking, other links might use state)
                 const loadScannerTarget = async (id: string) => {
                     let comm = commissions.find(c => c.id === id) as ExtendedCommission;
                     if (!comm) {

@@ -32,6 +32,25 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
     const [updateAvailable, setUpdateAvailable] = useState(false);
     const [showTour, setShowTour] = useState(false);
 
+    // --- GLOBAL ENTER KEY SAFEGUARD ---
+    useEffect(() => {
+        const handleGlobalKeyDown = (e: KeyboardEvent) => {
+            // Check if key is Enter
+            if (e.key === 'Enter') {
+                // Check if target is BODY or generic container (not an input/textarea)
+                const target = e.target as HTMLElement;
+                if (target === document.body || target.tagName === 'DIV' || target.tagName === 'MAIN') {
+                    // Prevent default behavior (submission/reload)
+                    e.preventDefault();
+                    console.log("Blocked accidental global Enter key");
+                }
+            }
+        };
+
+        window.addEventListener('keydown', handleGlobalKeyDown);
+        return () => window.removeEventListener('keydown', handleGlobalKeyDown);
+    }, []);
+
     // Determine active tab based on current path
     const currentPath = location.pathname.substring(1) || 'dashboard';
 

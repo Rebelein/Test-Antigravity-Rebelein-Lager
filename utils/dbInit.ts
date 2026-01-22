@@ -369,11 +369,11 @@ $$;
 INSERT INTO public.changelogs (version, changes, release_date)
 VALUES 
 (
-  '0.0.45', 
+  '0.0.54', 
   '[
-    {"type": "feature", "text": "Smart State System: Dashboard-Layouts, fixierte Seitenleisten und Split-View-Einstellungen bleiben nun auch nach Updates erhalten."},
-    {"type": "feature", "text": "Anpassbare Seitenleiste: Die Breite der Detailansicht kann jetzt individuell eingestellt werden."},
-    {"type": "fix", "text": "Kritische Fehlerbehebungen beim Datenbank-Start und Login."}
+    {"type": "fix", "text": "Scanner-Fix: Hartes Neuladen nach Scan behoben. Modal öffnet sich nun zuverlässig."},
+    {"type": "fix", "text": "Enter-Taste: Verhindert versehentliches Neuladen der Seite durch Tastatur/Scanner-Input."},
+    {"type": "feature", "text": "Navigation: URL-Parameter für Kommissionen implementiert (Deep-Links)."}
   ]'::jsonb,
   NOW()
 )

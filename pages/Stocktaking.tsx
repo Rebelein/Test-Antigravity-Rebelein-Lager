@@ -217,8 +217,9 @@ const Stocktaking: React.FC = () => {
         // --- LOGIC (Shared) ---
         if (decodedText.startsWith('COMM:')) {
             const commId = decodedText.substring(5).trim();
-            await stopScanner();
-            navigate('/commissions', { state: { openCommissionId: commId } });
+            try { await stopScanner(); } catch (e) { console.error("Error stopping scanner:", e); }
+            // Use URL param instead of State for robustness
+            navigate(`/commissions?openId=${commId}`);
             return;
         }
         if (decodedText.startsWith('MACH:')) {
@@ -261,8 +262,9 @@ const Stocktaking: React.FC = () => {
                 if (matchedCommission) {
                     console.log("Smart Match Commission:", matchedCommission);
                     toast.success("Kommission erkannt!");
+                    toast.success("Kommission erkannt!");
                     await stopScanner();
-                    navigate('/commissions', { state: { openCommissionId: matchedCommission.id } });
+                    navigate(`/commissions?openId=${matchedCommission.id}`);
                     return;
                 }
             }
