@@ -192,6 +192,14 @@ const Commissions: React.FC = () => {
         if (sidePanelMode === 'detail' && labelDataChanged && activeCommission) {
             setShowLabelUpdateModal(true);
         }
+
+        // Remove URL param if exists (Fix for Mobile Modal Reopening)
+        const params = new URLSearchParams(location.search);
+        if (params.get('openId')) {
+            params.delete('openId');
+            navigate({ search: params.toString() }, { replace: true });
+        }
+
         setSidePanelMode('none');
         setActiveCommission(null); // Explicitly clear active commission
     };
@@ -464,12 +472,12 @@ const Commissions: React.FC = () => {
                 @page { size: 105mm 148mm; margin: 0; }
                 .page { width: 105mm; height: 147mm; margin: 0 auto; position: relative; box-sizing: border-box; overflow: hidden; page-break-after: always; }
                 .page:last-child { page-break-after: auto; }
-                .label-area { position: absolute; top: 8mm; left: 50%; transform: translateX(-50%); width: 90mm; height: 50mm; border: 1px solid #ddd; padding: 4mm; box-sizing: border-box; display: grid; grid-template-columns: 1fr 30mm; grid-template-rows: auto 1fr auto; }
-                .header-text { grid-column: 1 / 2; display: flex; flex-direction: column; justify-content: center; }
-                .commission-title { font-size: 16pt; font-weight: 800; color: black; line-height: 1.1; max-height: 3em; overflow: hidden; }
+                .label-area { position: absolute; top: 8mm; left: 50%; transform: translateX(-50%); width: 90mm; height: 50mm; border: 1px solid #ddd; padding: 4mm; box-sizing: border-box; display: grid; grid-template-columns: minmax(0, 1fr) 30mm; grid-template-rows: auto 1fr auto; }
+                .header-text { grid-column: 1 / 2; display: flex; flex-direction: column; justify-content: center; padding-right: 2mm; }
+                .commission-title { font-size: 16pt; font-weight: 800; color: black; line-height: 1.1; max-height: 3.3em; overflow: hidden; word-wrap: break-word; overflow-wrap: break-word; hyphens: auto; }
                 .order-id { font-size: 11pt; font-weight: 500; color: #444; margin-top: 2mm; }
-                .qr-container { grid-column: 2 / 3; grid-row: 1 / 4; display: flex; justify-content: flex-end; align-items: flex-start; }
-                .qr-code { width: 28mm; height: 28mm; }
+                .qr-container { grid-column: 2 / 3; grid-row: 1 / 4; display: flex; justify-content: flex-end; align-items: flex-start; overflow: hidden; }
+                .qr-code { width: 28mm; height: 28mm; object-fit: contain; }
                 .fold-line { position: absolute; top: 62mm; left: 5mm; right: 5mm; border-top: 1px dashed #999; text-align: center; font-size: 8pt; color: #999; }
                 .fold-text { background: white; padding: 0 2mm; position: relative; top: -0.7em; }
                 .list-area { position: absolute; top: 68mm; left: 7.5mm; right: 7.5mm; bottom: 5mm; font-size: 9pt; }
