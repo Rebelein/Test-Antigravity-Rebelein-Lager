@@ -26,7 +26,6 @@ import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { ThemeProvider } from './contexts/ThemeContext';
 import { NotificationProvider } from './contexts/NotificationContext';
 import { Loader2 } from 'lucide-react';
-import { initializeDatabase } from './utils/dbInit';
 import { ReloadPrompt } from './components/ReloadPrompt';
 import { ChangelogModal } from './components/ChangelogModal';
 
@@ -54,59 +53,12 @@ const ProtectedRoute = () => {
   );
 };
 
-// Declare OneSignal on window to avoid TS errors
-declare global {
-  interface Window {
-    OneSignalDeferred: any[];
-  }
-}
 
 const queryClient = new QueryClient();
 
 const App: React.FC = () => {
 
-  // Vibe Coding: Auto-Init Database on App Start
-  useEffect(() => {
-    initializeDatabase(true);
-  }, []);
-
   const isMobile = useIsMobile();
-
-  // --- ONESIGNAL INITIALIZATION ---
-  useEffect(() => {
-    // Skip on localhost if triggering domain errors
-    if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
-      console.log("OneSignal disabled on localhost to prevent domain errors.");
-      return;
-    }
-
-    if (typeof window !== 'undefined') {
-      window.OneSignalDeferred = window.OneSignalDeferred || [];
-      window.OneSignalDeferred.push(async function (OneSignal: any) {
-        try {
-          await OneSignal.init({
-            // -------------------------------------------------------
-            // TODO: HIER DEINE ONESIGNAL APP ID EINFÜGEN
-            // -------------------------------------------------------
-            appId: "f5da4139-8119-4349-828a-70002617f157",
-
-            // Erlaubt lokale Tests (localhost), auf Produktion auf false setzen oder entfernen
-            allowLocalhostAsSecureOrigin: true,
-
-            // Zeigt eine kleine Glocke an, damit Nutzer Notifications später aktivieren können
-            notifyButton: {
-              enable: true,
-              size: 'medium',
-              theme: 'inverse',
-              position: 'bottom-left',
-            },
-          });
-        } catch (error) {
-          console.warn("OneSignal init failed:", error);
-        }
-      });
-    }
-  }, []);
 
   return (
     <QueryClientProvider client={queryClient}>

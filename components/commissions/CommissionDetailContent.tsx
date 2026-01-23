@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Button, StatusBadge, GlassModal } from '../UIComponents';
-import { X, CheckCircle2, Truck, RotateCcw, Edit2, Printer, Check, Undo2, Package, ExternalLink, MessageSquare, Eye, History, FileText, PackageX } from 'lucide-react';
+import { X, CheckCircle2, Truck, RotateCcw, Edit2, Printer, Check, Undo2, Package, ExternalLink, MessageSquare, Eye, History, FileText, PackageX, Trash2 } from 'lucide-react';
 
 interface ExtendedCommission {
     id: string;
@@ -34,6 +34,7 @@ interface CommissionDetailContentProps {
     onToggleBackorder: (itemId: string, current: boolean) => void;
     onSaveNote: (itemId: string, note: string) => void;
     onRequestCancellation?: (id: string, type: 'restock' | 'return_supplier', note: string) => void;
+    onDelete?: (e: React.MouseEvent) => void;
 }
 
 export const CommissionDetailContent: React.FC<CommissionDetailContentProps> = ({
@@ -56,7 +57,8 @@ export const CommissionDetailContent: React.FC<CommissionDetailContentProps> = (
     onTogglePicked,
     onToggleBackorder,
     onSaveNote,
-    onRequestCancellation
+    onRequestCancellation,
+    onDelete
 }) => {
     const [editingItemNote, setEditingItemNote] = useState<{ itemId: string; note: string } | null>(null);
     const [viewingAttachment, setViewingAttachment] = useState<string | null>(null);
@@ -102,6 +104,9 @@ export const CommissionDetailContent: React.FC<CommissionDetailContentProps> = (
                             <div className="flex gap-2">
                                 <Button variant="secondary" onClick={(e) => onEdit(e)} icon={<Edit2 size={18} />}></Button>
                                 <Button variant="secondary" onClick={onPrint} icon={<Printer size={18} />}></Button>
+                                <Button variant="secondary" onClick={(e) => {
+                                    if (onDelete) onDelete(e);
+                                }} className="text-rose-400 hover:text-white hover:bg-rose-500/20" icon={<Trash2 size={18} />}></Button>
                             </div>
                         </div>
                         {/* FULL NOTES DISPLAY */}

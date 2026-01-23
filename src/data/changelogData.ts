@@ -45,6 +45,15 @@ export const changelogData: ChangelogEntry[] = [
         release_date: '2026-01-21',
     },
     {
+        version: '0.0.52',
+        release_date: '23.01.2026',
+        changes: [
+            { type: 'feature', text: 'Seiten-Verwaltung: Sidebar Apps können jetzt ein/ausgeblendet und sortiert werden.' },
+            { type: 'fix', text: 'OneSignal Integration entfernt (beseitigt Browser Fehler).' },
+            { type: 'fix', text: 'Datenbank Initialisierungs-Fehler beim Start behoben.' },
+        ]
+    },
+    {
         version: '0.0.51',
         changes: [
             {

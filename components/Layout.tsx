@@ -14,6 +14,7 @@ import { clsx } from 'clsx';
 import { usePersistentState } from '../hooks/usePersistentState';
 import NotificationToast from './NotificationToast';
 import { useIsIOS } from '../hooks/useIsIOS';
+import { ALL_NAV_ITEMS, DEFAULT_SIDEBAR_ORDER } from './NavConfig';
 
 interface LayoutProps {
     children: React.ReactNode;
@@ -55,25 +56,9 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
     const currentPath = location.pathname.substring(1) || 'dashboard';
 
     // Navigation Items Configuration
-    const navItemsLeft = [
-        { id: 'dashboard', icon: <LayoutDashboard size={24} />, label: 'Home' },
-        { id: 'inventory', icon: <Package size={24} />, label: 'Lager' },
-        { id: 'commissions', icon: <ClipboardCheck size={24} />, label: 'Kom.' },
-    ];
-
-    const navItemsRight = [
-        { id: 'audit', icon: <ClipboardList size={24} />, label: 'Inventur' },
-        { id: 'machines', icon: <Drill size={24} />, label: 'Tools' },
-        { id: 'orders', icon: <ShoppingCart size={24} />, label: 'Bestellen' },
-        { id: 'workwear', icon: <Shirt size={24} />, label: 'Kleidung' },
-        { id: 'keys', icon: <KeyIcon size={24} />, label: 'Schlüssel' },
-    ];
-
-    const sidebarItems = [
-        ...navItemsLeft,
-        { id: 'SCANNER_ACTION', icon: <ScanLine size={24} />, label: 'Scanner', isSpecial: true },
-        ...navItemsRight
-    ];
+    const [sidebarOrder] = usePersistentState<string[]>('sidebar-order', []);
+    // Note: We default to empty array here, but inside the component logic we'll merge/fallback to DEFAULT if empty
+    // Actually, better to import DEFAULT_SIDEBAR_ORDER.
 
     // --- EFFECT: CHECK TOUR STATUS (DATABASE BASED) ---
     useEffect(() => {
@@ -122,7 +107,8 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
         if (currentPath === 'audit') {
             window.dispatchEvent(new CustomEvent('open-audit-scanner'));
         } else {
-            navigate('/stocktaking');
+            // Replace history to preventing returning to the previous modal state
+            navigate('/stocktaking', { replace: true });
         }
     };
 
@@ -233,37 +219,46 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
                 )}
             >
                 <nav className="flex-1 py-6 flex flex-col gap-2 px-3 overflow-y-auto overflow-x-hidden custom-scrollbar">
-                    {sidebarItems.map((item) => {
-                        const isActive = currentPath === item.id;
-                        const isScanner = item.id === 'SCANNER_ACTION';
-                        return (
-                            <button
-                                key={item.id}
-                                onClick={() => handleNavClick(item.id)}
-                                className={clsx(
-                                    "relative group flex items-center rounded-xl transition-all duration-200",
-                                    isSidebarPinned ? 'px-4 py-3 gap-3' : 'justify-center p-3',
-                                    isScanner
-                                        ? 'bg-gradient-to-r from-emerald-500 to-teal-600 text-white shadow-lg shadow-emerald-500/20 hover:shadow-emerald-500/40 mt-4 mb-4'
-                                        : isActive
-                                            ? 'bg-white/10 text-emerald-400 shadow-inner'
-                                            : 'text-white/50 hover:text-white hover:bg-white/5'
-                                )}
-                            >
-                                <div className={clsx("transition-transform duration-200", isScanner && !isSidebarPinned && 'scale-110')}>{item.icon}</div>
-                                {isSidebarPinned && <span className={clsx("font-medium whitespace-nowrap overflow-hidden text-sm", isScanner && 'font-bold')}>{item.label}</span>}
+                    {(() => {
+                        // Merge saved order with default if empty (first run)
+                        const activeOrder = (sidebarOrder && sidebarOrder.length > 0) ? sidebarOrder : DEFAULT_SIDEBAR_ORDER;
 
-                                {/* Tooltip for collapsed state */}
-                                {!isSidebarPinned && (
-                                    <div className="absolute left-full ml-4 px-3 py-1.5 bg-gray-900/90 backdrop-blur-md border border-white/10 text-white text-xs font-medium rounded-lg opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity whitespace-nowrap z-50 shadow-xl flex items-center">
-                                        {item.label}
-                                        <div className="absolute left-0 top-1/2 -translate-x-1/2 -translate-y-1/2 w-2 h-2 bg-gray-900/90 border-l border-b border-white/10 rotate-45"></div>
-                                    </div>
-                                )}
-                                {isSidebarPinned && isActive && !isScanner && <motion.div layoutId="active-pill" className="absolute right-3 w-1.5 h-1.5 rounded-full bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.8)]" />}
-                            </button>
-                        );
-                    })}
+                        return activeOrder.map(itemId => {
+                            const item = ALL_NAV_ITEMS.find(i => i.id === itemId);
+                            if (!item) return null; // Should not happen unless config changes
+
+                            const isActive = currentPath === item.id;
+                            const isScanner = item.id === 'SCANNER_ACTION';
+
+                            return (
+                                <button
+                                    key={item.id}
+                                    onClick={() => handleNavClick(item.id)}
+                                    className={clsx(
+                                        "relative group flex items-center rounded-xl transition-all duration-200",
+                                        isSidebarPinned ? 'px-4 py-3 gap-3' : 'justify-center p-3',
+                                        isScanner
+                                            ? 'bg-gradient-to-r from-emerald-500 to-teal-600 text-white shadow-lg shadow-emerald-500/20 hover:shadow-emerald-500/40 mt-4 mb-4'
+                                            : isActive
+                                                ? 'bg-white/10 text-emerald-400 shadow-inner'
+                                                : 'text-white/50 hover:text-white hover:bg-white/5'
+                                    )}
+                                >
+                                    <div className={clsx("transition-transform duration-200", isScanner && !isSidebarPinned && 'scale-110')}>{item.icon}</div>
+                                    {isSidebarPinned && <span className={clsx("font-medium whitespace-nowrap overflow-hidden text-sm", isScanner && 'font-bold')}>{item.label}</span>}
+
+                                    {/* Tooltip for collapsed state */}
+                                    {!isSidebarPinned && (
+                                        <div className="absolute left-full ml-4 px-3 py-1.5 bg-gray-900/90 backdrop-blur-md border border-white/10 text-white text-xs font-medium rounded-lg opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity whitespace-nowrap z-50 shadow-xl flex items-center">
+                                            {item.label}
+                                            <div className="absolute left-0 top-1/2 -translate-x-1/2 -translate-y-1/2 w-2 h-2 bg-gray-900/90 border-l border-b border-white/10 rotate-45"></div>
+                                        </div>
+                                    )}
+                                    {isSidebarPinned && isActive && !isScanner && <motion.div layoutId="active-pill" className="absolute right-3 w-1.5 h-1.5 rounded-full bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.8)]" />}
+                                </button>
+                            );
+                        });
+                    })()}
                 </nav>
 
                 <div className="p-3 border-t border-white/5 flex flex-col gap-2">
@@ -345,34 +340,51 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
                 initial={{ y: 100, opacity: 0 }}
                 animate={{ y: 0, opacity: 1 }}
                 transition={{ duration: 0.5, delay: 0.3 }}
-                className="lg:hidden fixed bottom-6 left-0 right-0 z-50 flex justify-center pointer-events-none"
+                className="lg:hidden fixed bottom-6 left-0 right-0 z-[160] flex justify-center pointer-events-none"
             >
                 <div className="pointer-events-auto relative max-w-lg w-full mx-4">
                     <nav className="glass-panel rounded-full h-16 flex items-center relative overflow-hidden shadow-[0_8px_32px_0_rgba(0,0,0,0.5)] border-white/15">
                         <div className="flex items-center justify-between overflow-x-auto w-full h-full px-2 sm:px-6 gap-2 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:'none'] [scrollbar-width:'none']">
-                            <div className="flex gap-2 sm:gap-4 shrink-0">
-                                {navItemsLeft.map((item) => {
-                                    const isActive = currentPath === item.id;
-                                    return (
-                                        <button key={item.id} onClick={() => navigate(`/${item.id}`)} className={clsx("relative flex flex-col items-center justify-center w-12 h-12 sm:w-14 sm:h-14 rounded-full transition-all duration-300", isActive ? 'text-emerald-400' : 'text-white/50 hover:text-white/80')}>
-                                            {item.icon}
-                                            {isActive && <motion.span layoutId="nav-dot" className="absolute bottom-1 w-1 h-1 bg-emerald-400 rounded-full shadow-[0_0_8px_rgba(52,211,153,0.8)]" />}
-                                        </button>
-                                    );
-                                })}
-                            </div>
-                            <div className="w-16 shrink-0"></div>
-                            <div className="flex gap-2 sm:gap-4 shrink-0">
-                                {navItemsRight.map((item) => {
-                                    const isActive = currentPath === item.id;
-                                    return (
-                                        <button key={item.id} onClick={() => navigate(`/${item.id}`)} className={clsx("relative flex flex-col items-center justify-center w-12 h-12 sm:w-14 sm:h-14 rounded-full transition-all duration-300", isActive ? 'text-emerald-400' : 'text-white/50 hover:text-white/80')}>
-                                            {item.icon}
-                                            {isActive && <motion.span layoutId="nav-dot" className="absolute bottom-1 w-1 h-1 bg-emerald-400 rounded-full shadow-[0_0_8px_rgba(52,211,153,0.8)]" />}
-                                        </button>
-                                    );
-                                })}
-                            </div>
+                            {(() => {
+                                const activeOrder = (sidebarOrder && sidebarOrder.length > 0) ? sidebarOrder : DEFAULT_SIDEBAR_ORDER;
+                                // Filter out Scanner for the dock list, as it's the center button
+                                const dockItems = activeOrder.filter(id => id !== 'SCANNER_ACTION').map(id => ALL_NAV_ITEMS.find(i => i.id === id)).filter(Boolean);
+
+                                // Split into Left and Right chunks around the center button
+                                const midPoint = Math.ceil(dockItems.length / 2);
+                                const leftItems = dockItems.slice(0, midPoint);
+                                const rightItems = dockItems.slice(midPoint);
+
+                                return (
+                                    <>
+                                        <div className="flex gap-2 sm:gap-4 shrink-0">
+                                            {leftItems.map((item) => {
+                                                if (!item) return null;
+                                                const isActive = currentPath === item.id;
+                                                return (
+                                                    <button key={item.id} onClick={() => navigate(`/${item.id}`)} className={clsx("relative flex flex-col items-center justify-center w-12 h-12 sm:w-14 sm:h-14 rounded-full transition-all duration-300", isActive ? 'text-emerald-400' : 'text-white/50 hover:text-white/80')}>
+                                                        {item.icon}
+                                                        {isActive && <motion.span layoutId="nav-dot" className="absolute bottom-1 w-1 h-1 bg-emerald-400 rounded-full shadow-[0_0_8px_rgba(52,211,153,0.8)]" />}
+                                                    </button>
+                                                );
+                                            })}
+                                        </div>
+                                        <div className="w-16 shrink-0"></div>
+                                        <div className="flex gap-2 sm:gap-4 shrink-0">
+                                            {rightItems.map((item) => {
+                                                if (!item) return null;
+                                                const isActive = currentPath === item.id;
+                                                return (
+                                                    <button key={item.id} onClick={() => navigate(`/${item.id}`)} className={clsx("relative flex flex-col items-center justify-center w-12 h-12 sm:w-14 sm:h-14 rounded-full transition-all duration-300", isActive ? 'text-emerald-400' : 'text-white/50 hover:text-white/80')}>
+                                                        {item.icon}
+                                                        {isActive && <motion.span layoutId="nav-dot" className="absolute bottom-1 w-1 h-1 bg-emerald-400 rounded-full shadow-[0_0_8px_rgba(52,211,153,0.8)]" />}
+                                                    </button>
+                                                );
+                                            })}
+                                        </div>
+                                    </>
+                                );
+                            })()}
                         </div>
                     </nav>
                     <motion.button

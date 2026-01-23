@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { GlassModal, Button, StatusBadge } from '../components/UIComponents';
 import { supabase } from '../supabaseClient';
 import { Commission } from '../types';
-import { ScanLine, X, Loader2, CheckCircle2, AlertTriangle, ArrowRight, Trash2, RotateCcw, Search, BoxSelect } from 'lucide-react';
+import { ScanLine, X, Loader2, CheckCircle2, AlertTriangle, ArrowRight, Trash2, RotateCcw, Search, BoxSelect, Truck } from 'lucide-react';
 import { Html5Qrcode, Html5QrcodeSupportedFormats } from 'html5-qrcode';
 import { toast } from 'sonner';
 
@@ -266,32 +266,43 @@ export const CommissionCleanupModal: React.FC<CommissionCleanupModalProps> = ({ 
         setStep('review');
     };
 
-    const handleCleanup = async (idsToCleanup: string[], keepOpen = false) => {
+    const handleCleanup = async (idsToCleanup: string[], mode: 'withdrawn' | 'missing', keepOpen = false) => {
         if (idsToCleanup.length === 0) return;
-        if (!keepOpen && !confirm(`${idsToCleanup.length} Kommissionen als 'Vermisst' markieren (Löschen)?`)) return;
+
+        const actionText = mode === 'withdrawn' ? 'als ENTDOMMEN buchen' : 'als VERMISST melden';
+        if (!keepOpen && !confirm(`${idsToCleanup.length} Kommissionen ${actionText}?`)) return;
 
         setLoading(true);
         try {
-            // "Vermisst" cleanup now means we treat them as gone/deleted or move to trash?
-            // User requirement: "dass diese dann komplett gelöscht werden können"
-            // We'll soft-delete them (move to trash)
-
             const BATCH_SIZE = 20;
+            const now = new Date().toISOString();
+
             for (let i = 0; i < idsToCleanup.length; i += BATCH_SIZE) {
                 const batch = idsToCleanup.slice(i, i + BATCH_SIZE);
-                // Move to trash (deleted_at) AND set status to Missing for clarity?
-                // Or just delete? User said "komplett gelöscht".
-                // Let's use soft delete for safety first.
-                const { error } = await supabase
-                    .from('commissions')
-                    .update({
-                        status: 'Missing',
-                        // We DO NOT set deleted_at anymore, so they stay in the 'Missing' tab list
-                        last_scanned_at: null // Clear scan stats so they don't look "verified"
-                    })
-                    .in('id', batch);
 
-                if (error) throw error;
+                if (mode === 'withdrawn') {
+                    // "Smart Fix": Mark as Withdrawn (Picked up)
+                    const { error } = await supabase
+                        .from('commissions')
+                        .update({
+                            status: 'Withdrawn',
+                            withdrawn_at: now,
+                            // Ensure it's not deleted
+                            deleted_at: null
+                        })
+                        .in('id', batch);
+                    if (error) throw error;
+                } else {
+                    // "Legacy Fix": Mark as Missing
+                    const { error } = await supabase
+                        .from('commissions')
+                        .update({
+                            status: 'Missing',
+                            last_scanned_at: null
+                        })
+                        .in('id', batch);
+                    if (error) throw error;
+                }
             }
 
             // Log Events
@@ -302,7 +313,7 @@ export const CommissionCleanupModal: React.FC<CommissionCleanupModalProps> = ({ 
                     commission_name: c.name,
                     user_id: (supabase.auth.getUser() as any)?.id,
                     action: 'status_change',
-                    details: 'Als VERMISST markiert (Inventur)'
+                    details: mode === 'withdrawn' ? 'Audit: Automatisch auf ENTDOMMEN gesetzt (Nicht im Regal)' : 'Audit: Als VERMISST markiert'
                 }));
 
             // We need user ID for logs.
@@ -312,7 +323,8 @@ export const CommissionCleanupModal: React.FC<CommissionCleanupModalProps> = ({ 
                 await supabase.from('commission_events').insert(logs);
             }
 
-            toast.success("Aufräumen erfolgreich!");
+            toast.success(mode === 'withdrawn' ? "Erfolgreich ausgebucht!" : "Als vermisst markiert.");
+
             if (onCleanupComplete) onCleanupComplete();
             if (!keepOpen) onClose();
             else {
@@ -350,7 +362,7 @@ export const CommissionCleanupModal: React.FC<CommissionCleanupModalProps> = ({ 
             <div className="p-4 border-b border-white/10 flex justify-between items-center bg-black/20">
                 <div className="flex items-center gap-2">
                     <BoxSelect size={20} className="text-emerald-400" />
-                    <h2 className="text-lg font-bold text-white">Regal aufräumen</h2>
+                    <h2 className="text-lg font-bold text-white">Bestand prüfen (Audit)</h2>
                 </div>
                 <button onClick={onClose} className="p-2 hover:bg-white/10 rounded-full text-white/60 hover:text-white"><X size={20} /></button>
             </div>
@@ -474,7 +486,7 @@ export const CommissionCleanupModal: React.FC<CommissionCleanupModalProps> = ({ 
                                                 <div className="flex items-center gap-2">
                                                     <StatusBadge status={c.status} size="sm" />
                                                     <button
-                                                        onClick={() => handleCleanup([c.id], true)}
+                                                        onClick={() => handleCleanup([c.id], 'missing', true)}
                                                         className="p-2 bg-rose-500/20 text-rose-400 hover:bg-rose-500 hover:text-white rounded-lg transition-colors border border-rose-500/30"
                                                         title="Als Vermisst markieren"
                                                     >
@@ -496,17 +508,28 @@ export const CommissionCleanupModal: React.FC<CommissionCleanupModalProps> = ({ 
                         </div>
 
                         <div className="p-4 border-t border-white/10 bg-gray-800 flex flex-col gap-3">
-                            <Button
-                                onClick={() => handleCleanup(missingCommissions.map(c => c.id), false)}
-                                disabled={missingCommissions.length === 0 || loading}
-                                className="w-full bg-rose-600 hover:bg-rose-500 py-3"
-                                icon={loading ? <Loader2 className="animate-spin" /> : <AlertTriangle size={18} />}
-                            >
-                                {missingCommissions.length} als Vermisst markieren
-                            </Button>
-                            <Button variant="secondary" onClick={() => setStep('scan')} className="w-full">
-                                <RotateCcw size={16} className="mr-2" /> Scan fortsetzen
-                            </Button>
+                            <div className="grid grid-cols-2 gap-3">
+                                <Button
+                                    onClick={() => handleCleanup(missingCommissions.map(c => c.id), 'missing', false)}
+                                    disabled={missingCommissions.length === 0 || loading}
+                                    className="col-span-2 bg-rose-600 hover:bg-rose-500 py-4 text-lg shadow-lg shadow-rose-900/20"
+                                    icon={loading ? <Loader2 className="animate-spin" /> : <AlertTriangle size={20} />}
+                                >
+                                    {missingCommissions.length} zur Prüfung vorlegen
+                                </Button>
+                                <Button
+                                    variant="secondary"
+                                    onClick={() => handleCleanup(missingCommissions.map(c => c.id), 'withdrawn', false)}
+                                    disabled={missingCommissions.length === 0 || loading}
+                                    className="bg-purple-500/10 hover:bg-purple-500/20 text-purple-300 border-purple-500/20"
+                                    icon={<Truck size={16} />}
+                                >
+                                    Direkt entnehmen
+                                </Button>
+                                <Button variant="secondary" onClick={() => setStep('scan')} className="">
+                                    <RotateCcw size={16} className="mr-2" /> Weiter scannen
+                                </Button>
+                            </div>
                         </div>
                     </div>
                 )}
