@@ -216,7 +216,7 @@ export const MachineDetailContent: React.FC<MachineDetailContentProps> = ({ mach
     // --- RENDER CONTENT ---
 
     return (
-        <div className="flex flex-col h-full bg-[#1a1d24]">
+        <div className="flex flex-col h-full bg-transparent text-slate-100">
             {/* HEADER */}
             <div className="relative h-48 w-full bg-black/50 shrink-0">
                 <img src={machine.image || `https://picsum.photos/seed/${machine.id}/800/400`} className="w-full h-full object-cover opacity-60" />
@@ -226,7 +226,7 @@ export const MachineDetailContent: React.FC<MachineDetailContentProps> = ({ mach
                     <h2 className="text-2xl font-bold text-white mb-1">{machine.name}</h2>
                     <div className="flex gap-2">
                         <div className={`px-2 py-0.5 rounded text-xs font-bold uppercase ${machine.status === MachineStatus.AVAILABLE ? 'bg-emerald-500/20 text-emerald-400' :
-                                machine.status === MachineStatus.RENTED ? 'bg-amber-500/20 text-amber-400' : 'bg-rose-500/20 text-rose-400'
+                            machine.status === MachineStatus.RENTED ? 'bg-amber-500/20 text-amber-400' : 'bg-rose-500/20 text-rose-400'
                             }`}>
                             {machine.status === MachineStatus.AVAILABLE ? 'Verfügbar' :
                                 machine.status === MachineStatus.RENTED ? 'Verliehen' : 'In Reparatur'}

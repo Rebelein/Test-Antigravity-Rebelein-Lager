@@ -66,7 +66,7 @@ export const ArticleDetailContent: React.FC<ArticleDetailContentProps> = ({
     };
 
     return (
-        <div className="flex flex-col h-full bg-[#1a1d24] text-white">
+        <div className="flex flex-col h-full bg-transparent text-slate-100">
             {/* Navigation Arrows for Side Panel */}
             {hasNavigation && onNavigate && (
                 <>

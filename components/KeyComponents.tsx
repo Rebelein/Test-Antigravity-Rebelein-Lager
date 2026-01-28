@@ -345,7 +345,7 @@ export const KeyHandoverContent: React.FC<KeyHandoverContentProps> = ({ onClose,
     );
 
     return (
-        <div className="flex flex-col h-full bg-white/50 dark:bg-black/20 backdrop-blur-md dark:border-white/10 shadow-xl rounded-2xl overflow-hidden">
+        <div className="flex flex-col h-full bg-transparent overflow-hidden">
             {/* Header if embedded? Or just Content? The modal wrapper has title. 
                  For split view, we might want a header. Let's add a robust header here, 
                  that fits both modal (if transparent) or panel.

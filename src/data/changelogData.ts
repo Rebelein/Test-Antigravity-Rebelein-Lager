@@ -9,6 +9,15 @@ export interface ChangelogEntry {
 
 export const changelogData: ChangelogEntry[] = [
     {
+        version: '0.0.55',
+        release_date: '29.01.2026',
+        changes: [
+            { type: 'feature', text: 'Manuelle Bestellung optimiert: Lieferantenauswahl, manuelle Positionen & neues Erfolgs-Fenster (kein nerviger Alert mehr).' },
+            { type: 'feature', text: 'Übersicht verbessert: Lieferanten-Bestellnummer & Kommissionsnummer jetzt überall sichtbar (Kachel & Detail-Ansicht).' },
+            { type: 'feature', text: 'Schnelleres Buchen: Neuer "Alle empfangen" Button setzt Bestellung sofort auf vollständig.' },
+        ]
+    },
+    {
         version: '0.0.53',
         changes: [
             {

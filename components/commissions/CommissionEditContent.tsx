@@ -218,7 +218,7 @@ export const CommissionEditContent: React.FC<CommissionEditContentProps> = ({
 
             if (!isEditMode) {
                 payload.status = 'Draft';
-                payload.needs_label = true;
+                payload.needs_label = false;
             }
 
             // Clean undefined
@@ -267,9 +267,9 @@ export const CommissionEditContent: React.FC<CommissionEditContentProps> = ({
     const isMobile = useIsMobile();
 
     return (
-        <div className={`flex w-full h-full bg-[#09090b] ${isMobile ? 'flex-col overflow-y-auto' : 'flex-row'}`}>
+        <div className={`flex w-full h-full bg-transparent ${isMobile ? 'flex-col overflow-y-auto' : 'flex-row'}`}>
             {/* LEFT COLUMN - FORM & SEARCH */}
-            <div className={`${isMobile ? 'w-full shrink-0 h-auto' : 'w-1/2 shrink-0 border-r border-white/5 overflow-y-auto custom-scrollbar'} flex flex-col p-6 space-y-6 bg-[#111111]/50`}>
+            <div className={`${isMobile ? 'w-full shrink-0 h-auto' : 'w-1/2 shrink-0 border-r border-white/5 overflow-y-auto custom-scrollbar'} flex flex-col p-6 space-y-6 bg-white/[0.02]`}>
                 <div className="space-y-1 pb-2">
                     {/* Header with Close button for Mobile (since Right Col is below) */}
                     <div className="flex justify-between items-start">
@@ -408,7 +408,7 @@ export const CommissionEditContent: React.FC<CommissionEditContentProps> = ({
             </div>
 
             {/* RIGHT COLUMN - MATERIALS LIST */}
-            <div className={`${isMobile ? 'w-full flex-1 shrink-0' : 'w-1/2 flex flex-col'} bg-[#16181D]`}>
+            <div className={`${isMobile ? 'w-full flex-1 shrink-0' : 'w-1/2 flex flex-col'} bg-transparent`}>
                 <div className={`p-6 border-b border-white/5 flex justify-between items-center shrink-0 ${isMobile ? 'border-t' : ''}`}>
                     <h3 className="text-base font-bold text-white">Material ({tempItems.length})</h3>
                     {!isMobile && <button onClick={onClose} className="p-2 hover:bg-white/10 rounded-full text-white/50 hover:text-white transition-colors "><X size={20} /></button>}

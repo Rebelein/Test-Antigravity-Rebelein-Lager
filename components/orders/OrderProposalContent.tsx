@@ -162,9 +162,9 @@ export const OrderProposalContent: React.FC<OrderProposalContentProps> = ({ prop
     };
 
     return (
-        <div className="flex flex-col h-full bg-[#1a1d24]">
+        <div className="flex flex-col h-full bg-transparent text-slate-100">
             {/* Header */}
-            <div className="p-4 sm:p-6 border-b border-white/10 flex justify-between items-center bg-white/5 shrink-0">
+            <div className="p-4 sm:p-6 border-b border-white/10 flex justify-between items-center bg-white/[0.02] shrink-0">
                 <div>
                     <h2 className="text-xl font-bold text-white">Bestellvorschlag</h2>
                     <p className="text-sm text-white/50">{proposal.supplier}</p>

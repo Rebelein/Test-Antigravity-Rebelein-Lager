@@ -176,15 +176,35 @@ export const OrderDetailContent: React.FC<OrderDetailContentProps> = ({ order, o
     };
 
     return (
-        <div className="flex flex-col h-full bg-[#1a1d24]">
+        <div className="flex flex-col h-full bg-transparent text-slate-100">
             {/* Header */}
-            <div className="p-4 sm:p-6 border-b border-white/10 flex justify-between items-center bg-white/5 shrink-0">
+            <div className="p-4 sm:p-6 border-b border-white/10 flex justify-between items-center bg-white/[0.02] shrink-0">
                 <div>
                     <h2 className="text-xl font-bold text-white flex items-center gap-2">
                         {order.supplier}
                         {order.status === 'Received' && <span className="bg-emerald-500/20 text-emerald-400 text-xs px-2 py-0.5 rounded border border-emerald-500/30">Abgeschlossen</span>}
                     </h2>
-                    <p className="text-sm text-white/50">{new Date(order.date).toLocaleDateString()} • {order.warehouseName}</p>
+                    <div className="flex flex-wrap items-center gap-3 mt-1 text-sm text-white/50">
+                        <span>{new Date(order.date).toLocaleDateString()}</span>
+                        <span>•</span>
+                        <span>{order.warehouseName}</span>
+                        {order.commissionNumber && (
+                            <>
+                                <span>•</span>
+                                <span className="flex items-center gap-1 text-xs font-mono bg-indigo-500/10 text-indigo-300 px-1.5 py-0.5 rounded border border-indigo-500/20">
+                                    Kommission: {order.commissionNumber}
+                                </span>
+                            </>
+                        )}
+                        {order.supplierOrderNumber && (
+                            <>
+                                <span>•</span>
+                                <span className="flex items-center gap-1 text-xs font-mono bg-blue-500/10 text-blue-300 px-1.5 py-0.5 rounded border border-blue-500/20">
+                                    Auftrag: {order.supplierOrderNumber}
+                                </span>
+                            </>
+                        )}
+                    </div>
                 </div>
                 <div className="flex gap-2">
                     <button onClick={handleDownloadCsv} className="p-2 rounded-full hover:bg-white/10 text-emerald-400" title="CSV Download"><FileDown size={20} /></button>
@@ -297,6 +317,18 @@ export const OrderDetailContent: React.FC<OrderDetailContentProps> = ({ order, o
                                 Änderungen Speichern / Buchen
                             </Button>
                         )}
+                        {/* RECEIVE ALL BUTTON */}
+                        <Button
+                            onClick={() => {
+                                const newItems = items.map(i => ({ ...i, newTotalReceived: i.quantityOrdered }));
+                                setItems(newItems);
+                            }}
+                            variant="secondary"
+                            title="Alle Positionen als vollständig empfangen markieren"
+                            disabled={isSubmitting}
+                        >
+                            Alle empfangen
+                        </Button>
                     </div>
                 )}
 

@@ -54,16 +54,22 @@ export const CommissionCard: React.FC<CommissionCardProps> = ({
             exit={{ opacity: 0, scale: 0.95 }}
             whileHover={{ scale: 1.02, y: -2 }}
             className={`
-                group relative p-4 rounded-3xl border border-current cursor-pointer transition-all duration-300 overflow-hidden
-                bg-[#1A1C23] hover:bg-[#22252E]
+                group relative p-4 rounded-2xl border border-current cursor-pointer transition-all duration-300 overflow-hidden
+                commission-card
                 ${colorClass}
-                border-opacity-20 hover:border-opacity-40 shadow-xl shadow-black/80
+                border-opacity-10 hover:border-opacity-20 hover:bg-white/5
                 ${className || ''}
             `}
             onClick={() => onClick(commission)}
         >
+            {/* Reference: Top Highlight Line */}
+            <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/20 to-transparent opacity-50 pointer-events-none" />
+
             {/* Left Border Indicator */}
             <div className={`absolute left-0 top-0 bottom-0 w-1.5 rounded-l-3xl transition-all duration-300 ${isTrash || isWithdrawn ? 'bg-gray-500' : 'bg-current opacity-50 group-hover:opacity-100'}`} />
+
+            {/* Reference: Bottom Shadow Line */}
+            <div className="absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-transparent via-black/20 to-transparent opacity-50 pointer-events-none" />
 
             <div className="flex justify-between items-start mb-3 pl-3">
                 <div>

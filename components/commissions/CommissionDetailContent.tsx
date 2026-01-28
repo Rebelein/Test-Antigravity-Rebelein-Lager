@@ -83,11 +83,11 @@ export const CommissionDetailContent: React.FC<CommissionDetailContentProps> = (
     };
 
     return (
-        <div className="flex flex-col h-full overflow-hidden bg-[#1a1d24] text-white">
+        <div className="flex flex-col h-full overflow-hidden bg-transparent text-slate-100">
             {/* HEADER */}
             {/* Only show header actions if onClose is present (mobile modal style) or handled by MasterLayout? */}
             {/* MasterLayout provides title, but we might want custom header info here. */}
-            <div className="p-4 border-b border-gray-200 dark:border-white/10 bg-gray-50/50 dark:bg-black/20 shrink-0">
+            <div className="p-4 border-b border-white/5 bg-white/[0.02] shrink-0">
                 <div className="flex justify-between items-start">
                     <div className="flex-1">
                         <div className="flex justify-between items-start">
@@ -122,35 +122,63 @@ export const CommissionDetailContent: React.FC<CommissionDetailContentProps> = (
             <div className="flex-1 overflow-y-auto p-4 space-y-6">
                 {/* ACTIVE WORKFLOW ACTIONS */}
                 {!commission.status.startsWith('Return') && commission.status !== 'Withdrawn' && !commission.deleted_at && (
-                    <div className="grid grid-cols-2 gap-3 pb-4 border-b border-gray-200 dark:border-white/5 mb-4">
+                    <div className="grid grid-cols-2 gap-3 pb-6 border-b border-white/5 mb-6">
                         {commission.status !== 'Ready' && (
                             <div className="col-span-2 relative group">
-                                <Button
+                                <button
                                     onClick={onSetReady}
-                                    className={`w-full justify-center whitespace-nowrap ${(!allItemsPicked || hasBackorders) ? 'bg-gray-400 dark:bg-gray-600 opacity-50 cursor-not-allowed' : 'bg-emerald-600 hover:bg-emerald-500'}`}
-                                    icon={<CheckCircle2 size={18} />}
                                     disabled={isSubmitting || !allItemsPicked || hasBackorders}
+                                    className={`w-full py-4 rounded-xl font-bold text-lg shadow-lg transition-all duration-300 flex items-center justify-center gap-3
+                                        ${(!allItemsPicked || hasBackorders)
+                                            ? 'bg-white/5 text-white/20 cursor-not-allowed border border-white/5'
+                                            : 'bg-emerald-500 hover:bg-emerald-400 text-white shadow-emerald-500/20 hover:shadow-emerald-500/40 border border-emerald-400/50'
+                                        }`}
                                 >
+                                    <CheckCircle2 size={20} />
                                     Jetzt bereitstellen
-                                </Button>
+                                </button>
                                 {hasBackorders && (
-                                    <div className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 w-48 p-2 bg-red-900 text-red-100 text-xs rounded shadow-lg pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity z-10 text-center border border-red-500/50">
+                                    <div className="absolute bottom-full mb-3 left-1/2 -translate-x-1/2 w-48 p-2 bg-rose-950/90 text-rose-200 text-xs rounded-lg shadow-xl pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity z-10 text-center border border-rose-500/30 backdrop-blur-md">
                                         Rückstände vorhanden! <br />Nicht bereitstellbar.
                                     </div>
                                 )}
                             </div>
                         )}
                         {commission.status === 'Ready' && (
-                            <Button onClick={onWithdraw} className="col-span-2 justify-center bg-purple-600 hover:bg-purple-500 whitespace-nowrap py-6 text-lg shadow-lg shadow-purple-900/20" icon={<Truck size={24} />} disabled={isSubmitting}>Entnehmen (Abschluss)</Button>
+                            <button
+                                onClick={onWithdraw}
+                                disabled={isSubmitting}
+                                className="col-span-2 py-6 rounded-xl font-bold text-xl shadow-xl transition-all duration-300 flex items-center justify-center gap-3
+                                         bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-500 hover:to-indigo-500
+                                         text-white border border-violet-400/30 shadow-violet-500/25 hover:shadow-violet-500/40"
+                            >
+                                <Truck size={28} />
+                                Entnehmen (Abschluss)
+                            </button>
                         )}
 
                         {/* Secondary Actions Row */}
                         {commission.status === 'Ready' && (
-                            <Button onClick={onResetStatus} className="justify-center bg-amber-600 hover:bg-amber-500 whitespace-nowrap" icon={<RotateCcw size={18} />} disabled={isSubmitting}>Zurückstellen</Button>
+                            <button
+                                onClick={onResetStatus}
+                                disabled={isSubmitting}
+                                className="py-3 rounded-lg font-medium text-amber-100 transition-all duration-200 flex items-center justify-center gap-2
+                                         bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/20 hover:border-amber-500/40"
+                            >
+                                <RotateCcw size={18} /> Zurückstellen
+                            </button>
                         )}
 
                         {onRequestCancellation && (
-                            <Button onClick={() => setShowStornoModal(true)} className={`justify-center bg-rose-600 hover:bg-rose-500 whitespace-nowrap ${commission.status !== 'Ready' ? 'col-span-2' : ''}`} icon={<Undo2 size={18} />} disabled={isSubmitting}>Storno</Button>
+                            <button
+                                onClick={() => setShowStornoModal(true)}
+                                disabled={isSubmitting}
+                                className={`py-3 rounded-lg font-medium text-rose-100 transition-all duration-200 flex items-center justify-center gap-2
+                                         bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/20 hover:border-rose-500/40
+                                         ${commission.status !== 'Ready' ? 'col-span-2' : ''}`}
+                            >
+                                <Undo2 size={18} /> Storno
+                            </button>
                         )}
                     </div>
                 )}

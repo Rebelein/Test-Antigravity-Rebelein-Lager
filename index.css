@@ -3,32 +3,277 @@
 
 @layer base {
   :root {
+    /* Default Theme Variables */
     --glass-border: rgba(255, 255, 255, 0.08);
     --glass-surface: rgba(255, 255, 255, 0.03);
     --glass-highlight: rgba(255, 255, 255, 0.05);
+    --glass-bg: rgba(255, 255, 255, 0.05);
+    --glass-hover: rgba(255, 255, 255, 0.08);
+
+    --bg-dark: #030712;
+    --bg-gradient-1: #030712;
+    --bg-gradient-2: #030712;
+    --bg-gradient-3: #030712;
+
+    --text-primary: #f1f5f9;
+    /* slate-100 */
+    --text-secondary: rgba(245, 245, 244, 0.7);
+    --text-muted: rgba(245, 245, 244, 0.4);
+
+    --accent-primary: #10b981;
+    --accent-secondary: #14b8a6;
+
+    --orb-1-color: rgba(16, 185, 129, 0.15);
+    --orb-2-color: rgba(14, 165, 233, 0.1);
+    --orb-3-color: rgba(139, 92, 246, 0.1);
+
+    --font-primary: 'Inter', sans-serif;
+  }
+
+  /* Glass Theme Variables */
+  [data-theme="glass"] {
+    --glass-border: rgba(255, 255, 255, 0.1);
+    --glass-surface: rgba(255, 255, 255, 0.05);
+    --glass-highlight: rgba(255, 255, 255, 0.08);
+    --glass-bg: rgba(255, 255, 255, 0.05);
+    --glass-hover: rgba(255, 255, 255, 0.08);
+
+    /* Deep Slate/Dark Background (Reference Style) */
+    --bg-dark: #020617;
+    /* slate-950 */
+    --bg-gradient-1: #0f172a;
+    /* slate-900 */
+    --bg-gradient-2: #020617;
+    /* slate-950 */
+    --bg-gradient-3: #000000;
+    /* black */
+
+    --text-primary: #f1f5f9;
+    /* slate-100 */
+    --text-secondary: rgba(245, 245, 244, 0.7);
+    --text-muted: rgba(245, 245, 244, 0.4);
+
+    /* Emerald & Teal Accents (Reference Style) */
+    --accent-primary: #14b8a6;
+    /* teal-500 */
+    --accent-secondary: #10b981;
+    /* emerald-500 */
+    --emerald: #10b981;
+    --emerald-light: #34d399;
+    --gold: #d4a574;
+    --gold-light: #e8c9a0;
+
+    /* Orb Colors (Teal, Emerald, Blue/Purple) */
+    --orb-1-color: rgba(20, 184, 166, 0.2);
+    /* teal */
+    --orb-2-color: rgba(16, 185, 129, 0.2);
+    /* emerald */
+    --orb-3-color: rgba(37, 99, 235, 0.1);
+    /* blue */
+
+    --font-primary: 'Inter', sans-serif;
+  }
+
+  /* Glass Light Theme Variables */
+  [data-theme="glass-light"] {
+    --glass-border: rgba(0, 0, 0, 0.1);
+    --glass-surface: rgba(255, 255, 255, 0.6);
+    --glass-highlight: rgba(255, 255, 255, 0.8);
+    --glass-bg: rgba(255, 255, 255, 0.6);
+    --glass-hover: rgba(255, 255, 255, 0.8);
+
+    /* Light Background */
+    --bg-dark: #f5f5f0;
+    --bg-gradient-1: #e8f5e9;
+    --bg-gradient-2: #f1f8e9;
+    --bg-gradient-3: #fefefe;
+
+    --text-primary: #1a1a1a;
+    --text-secondary: rgba(26, 26, 26, 0.7);
+    --text-muted: rgba(26, 26, 26, 0.5);
+
+    /* Emerald & Gold Luxury */
+    --accent-primary: #059669;
+    --accent-secondary: #d4a574;
+    --emerald: #059669;
+    --emerald-light: #10b981;
+    --gold: #d4a574;
+    --gold-light: #e8c9a0;
+    --coral: #e07a5f;
+    --amber: #b45309;
+
+    /* Orb Colors for Light Theme */
+    --orb-1-color: rgba(5, 150, 105, 0.15);
+    --orb-2-color: rgba(212, 165, 116, 0.12);
+    --orb-3-color: rgba(224, 122, 95, 0.1);
+
+    --font-primary: 'Outfit', sans-serif;
   }
 
   body {
     @apply bg-gray-950 text-white antialiased overflow-x-hidden;
-    background-image: 
+    font-family: var(--font-primary);
+    background: var(--bg-dark);
+  }
+
+  /* Default theme background */
+  [data-theme="default"] body,
+  :root:not([data-theme]) body {
+    background-image:
       radial-gradient(circle at 50% 0%, rgba(16, 185, 129, 0.15), transparent 40%),
       radial-gradient(circle at 0% 50%, rgba(14, 165, 233, 0.1), transparent 40%),
       radial-gradient(circle at 100% 50%, rgba(139, 92, 246, 0.1), transparent 40%);
     background-attachment: fixed;
   }
+
+  /* Glass dark theme background */
+  [data-theme="glass"] body {
+    background: linear-gradient(135deg, var(--bg-gradient-1) 0%, var(--bg-gradient-2) 50%, var(--bg-gradient-3) 100%);
+    background-attachment: fixed;
+  }
+
+  /* Glass light theme background */
+  [data-theme="glass-light"] body {
+    background: linear-gradient(135deg, var(--bg-gradient-1) 0%, var(--bg-gradient-2) 50%, var(--bg-gradient-3) 100%);
+    background-attachment: fixed;
+    color: var(--text-primary);
+  }
 }
 
 @layer utilities {
   .glass-panel {
-    @apply bg-white/5 backdrop-blur-xl border border-white/10 shadow-2xl;
+    @apply bg-white/[0.06] backdrop-blur-2xl border border-white/[0.1] shadow-2xl;
+    background: rgba(255, 255, 255, 0.06);
+    border-color: rgba(255, 255, 255, 0.1);
+    box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.36);
   }
-  
+
   .glass-button {
     @apply bg-white/5 hover:bg-white/10 active:bg-white/5 transition-all duration-300 border border-white/10 backdrop-blur-md;
   }
 
   .text-glow {
     text-shadow: 0 0 20px rgba(16, 185, 129, 0.5);
+  }
+
+  /* Glass theme specific utilities */
+  [data-theme="glass"] .glass-panel {
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.3);
+  }
+
+  [data-theme="glass"] .glass-panel:hover {
+    background: var(--glass-hover);
+    border-color: rgba(255, 255, 255, 0.15);
+    box-shadow:
+      0 25px 50px -12px rgba(0, 0, 0, 0.3),
+      0 0 40px rgba(52, 211, 153, 0.1);
+  }
+
+  /* Glass card shine effect */
+  [data-theme="glass"] .glass-panel::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+    pointer-events: none;
+  }
+}
+
+/* Floating Orbs for Glass Theme */
+[data-theme="glass"] .orb {
+  position: fixed;
+  border-radius: 50%;
+  filter: blur(80px);
+  z-index: -1;
+  animation: orb-float 20s ease-in-out infinite;
+}
+
+[data-theme="glass"] .orb-1 {
+  width: 400px;
+  height: 400px;
+  background: var(--orb-1-color);
+  top: 10%;
+  left: 10%;
+  animation-delay: 0s;
+}
+
+[data-theme="glass"] .orb-2 {
+  width: 350px;
+  height: 350px;
+  background: var(--orb-2-color);
+  top: 60%;
+  right: 10%;
+  animation-delay: -5s;
+}
+
+[data-theme="glass"] .orb-3 {
+  width: 300px;
+  height: 300px;
+  background: var(--orb-3-color);
+  bottom: 10%;
+  left: 30%;
+  animation-delay: -10s;
+}
+
+/* Floating Orbs for Glass Light Theme */
+[data-theme="glass-light"] .orb {
+  position: fixed;
+  border-radius: 50%;
+  filter: blur(80px);
+  z-index: -1;
+  animation: orb-float 20s ease-in-out infinite;
+  opacity: 0.6;
+}
+
+[data-theme="glass-light"] .orb-1 {
+  width: 400px;
+  height: 400px;
+  background: var(--orb-1-color);
+  top: 10%;
+  left: 10%;
+  animation-delay: 0s;
+}
+
+[data-theme="glass-light"] .orb-2 {
+  width: 350px;
+  height: 350px;
+  background: var(--orb-2-color);
+  top: 60%;
+  right: 10%;
+  animation-delay: -5s;
+}
+
+[data-theme="glass-light"] .orb-3 {
+  width: 300px;
+  height: 300px;
+  background: var(--orb-3-color);
+  bottom: 10%;
+  left: 30%;
+  animation-delay: -10s;
+}
+
+@keyframes orb-float {
+
+  0%,
+  100% {
+    transform: translate(0, 0) scale(1);
+  }
+
+  25% {
+    transform: translate(30px, -30px) scale(1.05);
+  }
+
+  50% {
+    transform: translate(-20px, 20px) scale(0.95);
+  }
+
+  75% {
+    transform: translate(20px, 10px) scale(1.02);
   }
 }
 
@@ -52,7 +297,529 @@
   background: rgba(255, 255, 255, 0.3);
 }
 
+/* Glass Scrollbar specific utility */
+.glass-scrollbar::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+.glass-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+  margin-block: 4px;
+}
+
+.glass-scrollbar::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 100vh;
+}
+
+.glass-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+/* Glass theme scrollbar */
+[data-theme="glass"] ::-webkit-scrollbar-thumb {
+  background: var(--glass-border);
+}
+
+[data-theme="glass"] ::-webkit-scrollbar-thumb:hover {
+  background: var(--emerald-light);
+}
+
 /* Selection */
 ::selection {
   @apply bg-emerald-500/30 text-emerald-200;
+}
+
+[data-theme="glass"] ::selection {
+  background: rgba(52, 211, 153, 0.3);
+  color: var(--emerald-light);
+}
+
+/* ============================================
+   GLASS THEME - COMPREHENSIVE OVERRIDES
+   Override Tailwind utility classes for Glass theme
+============================================ */
+
+/* Main Background Override */
+[data-theme="glass"] .bg-gray-950,
+[data-theme="glass"] .bg-gray-900 {
+  background-color: transparent !important;
+}
+
+/* Sidebar Glass Styling */
+[data-theme="glass"] aside.glass-panel {
+  background: rgba(255, 255, 255, 0.03) !important;
+  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+  backdrop-filter: blur(20px) !important;
+  -webkit-backdrop-filter: blur(20px) !important;
+}
+
+/* Cards and Panels */
+[data-theme="glass"] .rounded-2xl,
+[data-theme="glass"] .rounded-xl,
+[data-theme="glass"] .rounded-3xl {
+  position: relative;
+}
+
+[data-theme="glass"] .bg-white\/5,
+[data-theme="glass"] .bg-black\/20,
+[data-theme="glass"] .bg-gray-800,
+[data-theme="glass"] .bg-gray-800\/50,
+[data-theme="glass"] .bg-gray-900\/50 {
+  background: rgba(255, 255, 255, 0.04) !important;
+  border-color: rgba(255, 255, 255, 0.08) !important;
+}
+
+/* Primary Buttons - Emerald to Gold Gradient */
+[data-theme="glass"] .bg-emerald-500,
+[data-theme="glass"] .bg-emerald-600 {
+  background: linear-gradient(135deg, #059669, #0d9488) !important;
+  box-shadow: 0 8px 32px rgba(5, 150, 105, 0.3) !important;
+}
+
+[data-theme="glass"] .bg-emerald-500:hover,
+[data-theme="glass"] .bg-emerald-600:hover {
+  background: linear-gradient(135deg, #34d399, #2dd4bf) !important;
+  box-shadow: 0 8px 32px rgba(52, 211, 153, 0.4) !important;
+}
+
+/* Gradient Buttons (Scanner, CTA) */
+[data-theme="glass"] .bg-gradient-to-r.from-emerald-500 {
+  background: linear-gradient(135deg, #059669, #d4a574) !important;
+  box-shadow: 0 8px 32px rgba(5, 150, 105, 0.3) !important;
+}
+
+/* Secondary/Muted Backgrounds */
+[data-theme="glass"] .bg-emerald-500\/10,
+[data-theme="glass"] .bg-emerald-500\/20,
+[data-theme="glass"] .bg-emerald-400\/10 {
+  background: rgba(5, 150, 105, 0.15) !important;
+}
+
+/* Gold Accent for Special Elements */
+[data-theme="glass"] .bg-amber-500,
+[data-theme="glass"] .bg-yellow-500 {
+  background: linear-gradient(135deg, #d4a574, #b45309) !important;
+}
+
+/* Text Colors */
+[data-theme="glass"] .text-emerald-400,
+[data-theme="glass"] .text-emerald-500 {
+  color: #34d399 !important;
+}
+
+[data-theme="glass"] .text-white\/50,
+[data-theme="glass"] .text-white\/40 {
+  color: rgba(245, 245, 244, 0.5) !important;
+}
+
+/* Border Colors */
+[data-theme="glass"] .border-white\/10,
+[data-theme="glass"] .border-white\/5 {
+  border-color: rgba(255, 255, 255, 0.1) !important;
+}
+
+/* Hover States */
+[data-theme="glass"] .hover\:bg-white\/10:hover,
+[data-theme="glass"] .hover\:bg-white\/5:hover {
+  background: rgba(255, 255, 255, 0.1) !important;
+}
+
+/* Active Nav Items */
+[data-theme="glass"] .bg-white\/10 {
+  background: rgba(255, 255, 255, 0.08) !important;
+  border: 1px solid rgba(255, 255, 255, 0.12) !important;
+}
+
+/* Input Fields */
+[data-theme="glass"] input,
+[data-theme="glass"] textarea,
+[data-theme="glass"] select {
+  background: rgba(255, 255, 255, 0.05) !important;
+  border-color: rgba(255, 255, 255, 0.1) !important;
+}
+
+[data-theme="glass"] input:focus,
+[data-theme="glass"] textarea:focus,
+[data-theme="glass"] select:focus {
+  border-color: #34d399 !important;
+  box-shadow: 0 0 20px rgba(52, 211, 153, 0.2) !important;
+}
+
+/* Modal Backgrounds */
+[data-theme="glass"] .fixed.inset-0.bg-black\/60 {
+  background: rgba(10, 15, 13, 0.8) !important;
+}
+
+/* Status Badges */
+[data-theme="glass"] .bg-emerald-500\/20 {
+  background: rgba(5, 150, 105, 0.2) !important;
+}
+
+[data-theme="glass"] .bg-red-500\/20,
+[data-theme="glass"] .bg-rose-500\/20 {
+  background: rgba(224, 122, 95, 0.2) !important;
+}
+
+[data-theme="glass"] .bg-amber-500\/20,
+[data-theme="glass"] .bg-yellow-500\/20 {
+  background: rgba(212, 165, 116, 0.2) !important;
+}
+
+/* Shadows */
+[data-theme="glass"] .shadow-emerald-500\/20,
+[data-theme="glass"] .shadow-emerald-500\/40 {
+  --tw-shadow-color: rgba(5, 150, 105, 0.3) !important;
+}
+
+/* Ring Focus States */
+[data-theme="glass"] .ring-emerald-500,
+[data-theme="glass"] .focus\:ring-emerald-500:focus {
+  --tw-ring-color: rgba(52, 211, 153, 0.5) !important;
+}
+
+/* Dashboard Cards */
+[data-theme="glass"] [class*="glass-panel"] {
+  background: rgba(255, 255, 255, 0.03) !important;
+  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25) !important;
+}
+
+/* Mobile Bottom Navigation */
+[data-theme="glass"] nav.glass-panel {
+  background: rgba(10, 15, 13, 0.9) !important;
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+}
+
+/* Tabs and Toggles */
+[data-theme="glass"] [role="tablist"],
+[data-theme="glass"] .flex.rounded-full.bg-white\/5 {
+  background: rgba(255, 255, 255, 0.05) !important;
+}
+
+/* Progress Bars */
+[data-theme="glass"] .bg-emerald-500.h-full,
+[data-theme="glass"] [class*="progress"] .bg-emerald-500 {
+  background: linear-gradient(90deg, #34d399, #059669) !important;
+}
+
+/* ============================================
+   GLASS LIGHT THEME - COMPREHENSIVE OVERRIDES
+============================================ */
+
+/* Main text color override */
+[data-theme="glass-light"] {
+  color: var(--text-primary) !important;
+}
+
+[data-theme="glass-light"] .text-white {
+  color: var(--text-primary) !important;
+}
+
+[data-theme="glass-light"] .text-white\/50,
+[data-theme="glass-light"] .text-white\/40,
+[data-theme="glass-light"] .text-white\/30 {
+  color: var(--text-muted) !important;
+}
+
+[data-theme="glass-light"] .text-white\/70,
+[data-theme="glass-light"] .text-white\/80 {
+  color: var(--text-secondary) !important;
+}
+
+/* Main Background Override */
+[data-theme="glass-light"] .bg-gray-950,
+[data-theme="glass-light"] .bg-gray-900 {
+  background-color: transparent !important;
+}
+
+/* Sidebar Glass Styling - Light */
+[data-theme="glass-light"] aside.glass-panel {
+  background: rgba(255, 255, 255, 0.7) !important;
+  border: 1px solid rgba(0, 0, 0, 0.08) !important;
+  backdrop-filter: blur(20px) !important;
+  -webkit-backdrop-filter: blur(20px) !important;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.1) !important;
+}
+
+/* Cards and Panels - Light */
+[data-theme="glass-light"] .bg-white\/5,
+[data-theme="glass-light"] .bg-black\/20,
+[data-theme="glass-light"] .bg-gray-800,
+[data-theme="glass-light"] .bg-gray-800\/50,
+[data-theme="glass-light"] .bg-gray-900\/50 {
+  background: rgba(255, 255, 255, 0.6) !important;
+  border-color: rgba(0, 0, 0, 0.08) !important;
+}
+
+/* Glass Panel Light */
+[data-theme="glass-light"] .glass-panel {
+  background: rgba(255, 255, 255, 0.6) !important;
+  border: 1px solid rgba(0, 0, 0, 0.08) !important;
+  backdrop-filter: blur(20px) !important;
+  -webkit-backdrop-filter: blur(20px) !important;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.1) !important;
+}
+
+[data-theme="glass-light"] .glass-panel:hover {
+  background: rgba(255, 255, 255, 0.8) !important;
+  border-color: rgba(0, 0, 0, 0.12) !important;
+}
+
+/* Glass card shine effect - Light */
+[data-theme="glass-light"] .glass-panel::before {
+  background: linear-gradient(90deg, transparent, rgba(0, 0, 0, 0.05), transparent) !important;
+}
+
+/* Primary Buttons - stays emerald */
+[data-theme="glass-light"] .bg-emerald-500,
+[data-theme="glass-light"] .bg-emerald-600 {
+  background: linear-gradient(135deg, #059669, #0d9488) !important;
+  box-shadow: 0 8px 32px rgba(5, 150, 105, 0.25) !important;
+  color: white !important;
+}
+
+[data-theme="glass-light"] .bg-emerald-500:hover,
+[data-theme="glass-light"] .bg-emerald-600:hover {
+  background: linear-gradient(135deg, #10b981, #14b8a6) !important;
+}
+
+/* Gradient Buttons */
+[data-theme="glass-light"] .bg-gradient-to-r.from-emerald-500 {
+  background: linear-gradient(135deg, #059669, #d4a574) !important;
+  color: white !important;
+}
+
+/* Active Nav Items */
+[data-theme="glass-light"] .bg-white\/10 {
+  background: rgba(5, 150, 105, 0.1) !important;
+  border: 1px solid rgba(5, 150, 105, 0.2) !important;
+}
+
+/* Text Colors - Light Theme */
+[data-theme="glass-light"] .text-emerald-400,
+[data-theme="glass-light"] .text-emerald-500 {
+  color: #059669 !important;
+}
+
+/* Border Colors - Light */
+[data-theme="glass-light"] .border-white\/10,
+[data-theme="glass-light"] .border-white\/5 {
+  border-color: rgba(0, 0, 0, 0.08) !important;
+}
+
+/* Hover States - Light */
+[data-theme="glass-light"] .hover\:bg-white\/10:hover,
+[data-theme="glass-light"] .hover\:bg-white\/5:hover {
+  background: rgba(0, 0, 0, 0.05) !important;
+}
+
+/* Input Fields - Light */
+[data-theme="glass-light"] input,
+[data-theme="glass-light"] textarea,
+[data-theme="glass-light"] select {
+  background: rgba(255, 255, 255, 0.8) !important;
+  border-color: rgba(0, 0, 0, 0.1) !important;
+  color: var(--text-primary) !important;
+}
+
+[data-theme="glass-light"] input::placeholder,
+[data-theme="glass-light"] textarea::placeholder {
+  color: var(--text-muted) !important;
+}
+
+[data-theme="glass-light"] input:focus,
+[data-theme="glass-light"] textarea:focus,
+[data-theme="glass-light"] select:focus {
+  border-color: #059669 !important;
+  box-shadow: 0 0 20px rgba(5, 150, 105, 0.15) !important;
+}
+
+/* Modal Backgrounds - Light */
+[data-theme="glass-light"] .fixed.inset-0.bg-black\/60 {
+  background: rgba(0, 0, 0, 0.4) !important;
+}
+
+/* Status Badges - Light */
+[data-theme="glass-light"] .bg-emerald-500\/10,
+[data-theme="glass-light"] .bg-emerald-500\/20 {
+  background: rgba(5, 150, 105, 0.15) !important;
+}
+
+/* Mobile Bottom Navigation - Light */
+[data-theme="glass-light"] nav.glass-panel {
+  background: rgba(255, 255, 255, 0.9) !important;
+  border: 1px solid rgba(0, 0, 0, 0.08) !important;
+}
+
+/* Scrollbar - Light */
+[data-theme="glass-light"] ::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.15) !important;
+}
+
+[data-theme="glass-light"] ::-webkit-scrollbar-thumb:hover {
+  background: rgba(5, 150, 105, 0.5) !important;
+}
+
+/* Selection - Light */
+[data-theme="glass-light"] ::selection {
+  background: rgba(5, 150, 105, 0.2) !important;
+  color: #059669 !important;
+}
+
+/* Orbs for Light Theme */
+[data-theme="glass-light"] .orb {
+  opacity: 0.5 !important;
+}
+
+/* ============================================
+   GLASS LIGHT THEME - FINAL COMPONENT FIXES
+============================================ */
+
+/* Fix Dark Modal Background (triggered by bg-[#121212]) */
+[data-theme="glass-light"] [class*="bg-[#121212]"] {
+  background-color: rgba(255, 255, 255, 0.95) !important;
+  border: 1px solid rgba(0, 0, 0, 0.08) !important;
+  color: var(--text-primary) !important;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.15) !important;
+}
+
+/* ============================================
+   GLASS LIGHT THEME - PAGE SPECIFIC FIXES
+============================================ */
+
+/* Commission Card Background (New Class) */
+.commission-card {
+  background-color: rgba(0, 0, 0, 0.2);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+}
+
+.commission-card:hover {
+  background-color: rgba(0, 0, 0, 0.3);
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+}
+
+[data-theme="glass-light"] .commission-card {
+  background-color: rgba(255, 255, 255, 0.7) !important;
+  color: var(--text-primary) !important;
+  border: 1px solid rgba(0, 0, 0, 0.08) !important;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05) !important;
+}
+
+[data-theme="glass-light"] .commission-card:hover {
+  background-color: rgba(255, 255, 255, 0.9) !important;
+  border-color: rgba(0, 0, 0, 0.15) !important;
+}
+
+/* Commission Sidebar (Search/History) */
+[data-theme="glass-light"] [class*="bg-[#1a1d24]"] {
+  background-color: rgba(255, 255, 255, 0.8) !important;
+  border-left: 1px solid rgba(0, 0, 0, 0.08) !important;
+  color: var(--text-primary) !important;
+}
+
+/* Commission Card Badges */
+[data-theme="glass-light"] .text-purple-300 {
+  color: #7e22ce !important;
+}
+
+[data-theme="glass-light"] .bg-purple-500\/10 {
+  background-color: rgba(126, 34, 206, 0.1) !important;
+  border-color: rgba(126, 34, 206, 0.2) !important;
+}
+
+/* Commission Notes */
+[data-theme="glass-light"] .text-yellow-200\/70 {
+  color: #b45309 !important;
+}
+
+[data-theme="glass-light"] .bg-yellow-500\/5 {
+  background-color: rgba(245, 158, 11, 0.1) !important;
+  border-color: rgba(245, 158, 11, 0.2) !important;
+}
+
+/* Progress Bar Background */
+[data-theme="glass-light"] .bg-gray-700\/50 {
+  background-color: rgba(0, 0, 0, 0.1) !important;
+}
+
+/* Text Muted Fixes */
+[data-theme="glass-light"] .text-gray-400 {
+  color: var(--text-muted) !important;
+}
+
+[data-theme="glass-light"] .text-gray-500 {
+  color: var(--text-secondary) !important;
+}
+
+/* Fix White Gradient Text (PageHeader) */
+[data-theme="glass-light"] .bg-clip-text.from-white {
+  --tw-gradient-from: #1a1a1a !important;
+  --tw-gradient-to: #4a4a4a !important;
+  background-image: linear-gradient(to right, var(--tw-gradient-from), var(--tw-gradient-to)) !important;
+  -webkit-text-fill-color: transparent !important;
+}
+
+/* Fix Light Green Gradient Text (GlassCard Title) */
+[data-theme="glass-light"] .bg-clip-text.from-emerald-300 {
+  --tw-gradient-from: #059669 !important;
+  --tw-gradient-to: #0f766e !important;
+  background-image: linear-gradient(to right, var(--tw-gradient-from), var(--tw-gradient-to)) !important;
+  -webkit-text-fill-color: transparent !important;
+}
+
+/* Fix Status Badge Text Colors */
+[data-theme="glass-light"] .text-emerald-300 {
+  color: #059669 !important;
+}
+
+[data-theme="glass-light"] .text-amber-300 {
+  color: #d97706 !important;
+}
+
+[data-theme="glass-light"] .text-rose-300 {
+  color: #e11d48 !important;
+}
+
+[data-theme="glass-light"] .text-sky-300 {
+  color: #0284c7 !important;
+}
+
+[data-theme="glass-light"] .text-blue-300 {
+  color: #2563eb !important;
+}
+
+/* Fix Status Badge Backgrounds (make them subtler/darker border) */
+[data-theme="glass-light"] .bg-emerald-500\/20 {
+  background-color: rgba(5, 150, 105, 0.1) !important;
+  border-color: rgba(5, 150, 105, 0.3) !important;
+}
+
+[data-theme="glass-light"] .bg-amber-500\/20 {
+  background-color: rgba(217, 119, 6, 0.1) !important;
+  border-color: rgba(217, 119, 6, 0.3) !important;
+}
+
+[data-theme="glass-light"] .bg-rose-500\/20 {
+  background-color: rgba(225, 29, 72, 0.1) !important;
+  border-color: rgba(225, 29, 72, 0.3) !important;
+}
+
+/* Fix Secondary/Ghost Buttons Text */
+[data-theme="glass-light"] .text-white\/70,
+[data-theme="glass-light"] .text-white\/50 {
+  color: var(--text-secondary) !important;
+}
+
+[data-theme="glass-light"] button:hover .text-white\/70,
+[data-theme="glass-light"] button:hover .text-white\/50 {
+  color: var(--text-primary) !important;
+}
+
+/* Fix Sidebar Icons */
+[data-theme="glass-light"] .text-white\/30 {
+  color: var(--text-muted) !important;
 }

@@ -25,16 +25,16 @@ export const CommissionOfficeContent: React.FC<CommissionOfficeContentProps> = (
     }, [commission]);
 
     return (
-        <div className="flex flex-col h-full bg-[#0a0a0a] rounded-2xl border border-white/10 shadow-xl overflow-hidden relative">
+        <div className="flex flex-col h-full bg-transparent overflow-hidden relative">
             {/* Header */}
-            <div className="p-6 border-b border-white/10 flex justify-between items-start bg-white/5">
+            <div className="p-6 border-b border-white/5 bg-white/[0.02] flex justify-between items-start shrink-0">
                 <div>
                     <h2 className="text-xl font-bold text-white">Kommission bearbeiten</h2>
                     <p className="text-sm text-white/50">{commission.name}</p>
                     {commission.status === 'ReturnReady' && <span className="text-xs text-purple-400 font-bold block mt-1">(Retoure Abholbereit)</span>}
                     {commission.status === 'ReturnPending' && <span className="text-xs text-orange-400 font-bold block mt-1">(Retoure Angemeldet)</span>}
                 </div>
-                <button onClick={onClose} className="p-2 bg-black/50 hover:bg-white/10 rounded-full text-white/50 hover:text-white transition-colors">
+                <button onClick={onClose} className="p-2 bg-black/20 hover:bg-white/10 rounded-full text-white/50 hover:text-white transition-colors">
                     <X size={20} />
                 </button>
             </div>

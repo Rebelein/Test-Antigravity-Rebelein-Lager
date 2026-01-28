@@ -1,15 +1,20 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 
 type ViewMode = 'default' | 'desktop';
+type AppTheme = 'default' | 'glass' | 'glass-light';
 
 interface ThemeContextType {
   viewMode: ViewMode;
   toggleViewMode: () => void;
+  theme: AppTheme;
+  setTheme: (theme: AppTheme) => void;
 }
 
 const ThemeContext = createContext<ThemeContextType>({
   viewMode: 'default',
   toggleViewMode: () => { },
+  theme: 'default',
+  setTheme: () => { },
 });
 
 export const useTheme = () => useContext(ThemeContext);
@@ -23,27 +28,47 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     return 'default';
   });
 
-  // Apply Theme to HTML element (Always Dark)
+  const [theme, setThemeState] = useState<AppTheme>(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('app_theme_style');
+      return (saved as AppTheme) || 'default';
+    }
+    return 'default';
+  });
+
+  // Apply Theme to HTML element
   useEffect(() => {
     const root = window.document.documentElement;
-    root.classList.add('dark');
-    // Ensure light mode is never active
-    root.classList.remove('light');
-    localStorage.setItem('app_theme', 'dark');
-  }, []);
 
-  // Apply View Mode (Optional: could add a class to body if needed for global CSS overrides)
+    // Handle light/dark mode classes
+    if (theme === 'glass-light') {
+      root.classList.remove('dark');
+      root.classList.add('light');
+    } else {
+      root.classList.add('dark');
+      root.classList.remove('light');
+    }
+
+    // Apply theme data attribute for CSS styling
+    root.setAttribute('data-theme', theme);
+    localStorage.setItem('app_theme_style', theme);
+  }, [theme]);
+
+  // Apply View Mode
   useEffect(() => {
     localStorage.setItem('app_view_mode', viewMode);
-    // Example: document.body.classList.toggle('desktop-mode', viewMode === 'desktop');
   }, [viewMode]);
 
   const toggleViewMode = () => {
     setViewMode(prev => prev === 'default' ? 'desktop' : 'default');
   };
 
+  const setTheme = (newTheme: AppTheme) => {
+    setThemeState(newTheme);
+  };
+
   return (
-    <ThemeContext.Provider value={{ viewMode, toggleViewMode }}>
+    <ThemeContext.Provider value={{ viewMode, toggleViewMode, theme, setTheme }}>
       {children}
     </ThemeContext.Provider>
   );

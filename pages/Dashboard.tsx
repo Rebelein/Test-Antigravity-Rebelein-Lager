@@ -38,7 +38,7 @@ interface AppEvent {
 
 const Dashboard: React.FC = () => {
     const navigate = useNavigate();
-    const { profile } = useAuth();
+    const { profile, user } = useAuth();
     const { viewMode, toggleViewMode } = useTheme();
 
     const [isLoading, setIsLoading] = useState(true);
@@ -1006,7 +1006,7 @@ const Dashboard: React.FC = () => {
                         <div className="w-[40%] bg-transparent h-full animate-in slide-in-from-right-10 duration-300">
                             {/* MACHINE CONTENT */}
                             {selectedMachine && (
-                                <div className="h-full bg-[#0a0a0a] rounded-2xl border border-white/10 shadow-xl overflow-hidden flex flex-col relative">
+                                <div className="h-full bg-slate-950/50 backdrop-blur-2xl rounded-2xl border border-white/10 shadow-xl overflow-hidden flex flex-col relative">
                                     <div className="absolute top-4 right-4 z-50">
                                         <button onClick={() => setSelectedMachine(null)} className="p-2 bg-black/50 hover:bg-white/10 rounded-full text-white/50 hover:text-white transition-colors">
                                             <X size={20} />
@@ -1028,7 +1028,7 @@ const Dashboard: React.FC = () => {
 
                             {/* KEY CONTENT */}
                             {selectedKey && (
-                                <div className="h-full bg-[#0a0a0a] rounded-2xl border border-white/10 shadow-xl overflow-hidden flex flex-col relative">
+                                <div className="h-full bg-slate-950/50 backdrop-blur-2xl rounded-2xl border border-white/10 shadow-xl overflow-hidden flex flex-col relative">
                                     {/* onClose is passed to content, but we can also add a close button here if header allows */}
                                     <KeyHandoverContent
                                         selectedKeys={[selectedKey]}
@@ -1045,7 +1045,7 @@ const Dashboard: React.FC = () => {
 
                             {/* COMMISSION CONTENT */}
                             {viewingCommission && (
-                                <div className="h-full bg-[#0a0a0a] rounded-2xl border border-white/10 shadow-xl overflow-hidden flex flex-col relative">
+                                <div className="h-full bg-slate-950/50 backdrop-blur-2xl rounded-2xl border border-white/10 shadow-xl overflow-hidden flex flex-col relative">
                                     {/* ... existing commission logic ... */}
                                     {/* Conditional Render based on Status */}
                                     {['Draft', 'Preparing'].includes(viewingCommission.status) ? (
@@ -1120,7 +1120,7 @@ const Dashboard: React.FC = () => {
 
                             {/* CHANGELOG CONTENT (New) */}
                             {showChangelogHistory && (
-                                <div className="h-full bg-[#0a0a0a] rounded-2xl border border-white/10 shadow-xl overflow-hidden flex flex-col relative">
+                                <div className="h-full bg-slate-950/50 backdrop-blur-2xl rounded-2xl border border-white/10 shadow-xl overflow-hidden flex flex-col relative">
                                     <div className="absolute top-4 right-4 z-50">
                                         <button onClick={() => setShowChangelogHistory(false)} className="p-2 bg-black/50 hover:bg-white/10 rounded-full text-white/50 hover:text-white transition-colors">
                                             <X size={20} />

@@ -60,6 +60,19 @@ const Orders: React.FC = () => {
     const manualFileInputRef = useRef<HTMLInputElement>(null);
     const [isDragging, setIsDragging] = useState(false);
 
+    // --- MANUAL ADD ITEM STATE ---
+    const [showAddItemForm, setShowAddItemForm] = useState(false);
+    const [manualItemName, setManualItemName] = useState('');
+    const [manualItemSku, setManualItemSku] = useState('');
+    const [manualItemQuantity, setManualItemQuantity] = useState(1);
+
+    // --- SUCCESS MODAL STATE ---
+    const [showSuccessModal, setShowSuccessModal] = useState(false);
+    const [createdOrderId, setCreatedOrderId] = useState<string | null>(null);
+    const [createdOrderCommission, setCreatedOrderCommission] = useState<string | null>(null);
+    const [createdOrderSupplierNumber, setCreatedOrderSupplierNumber] = useState('');
+    const [supplierNumberSaved, setSupplierNumberSaved] = useState(false);
+
     // --- IMPORT TAB STATE ---
     const [importCandidates, setImportCandidates] = useState<any[]>([]);
     const [loadingImport, setLoadingImport] = useState(false);
@@ -260,6 +273,8 @@ const Orders: React.FC = () => {
         if (data) {
             const mapped = data.map((o: any) => ({
                 ...o,
+                commissionNumber: o.commission_number,
+                supplierOrderNumber: o.supplier_order_number,
                 warehouseName: o.warehouses?.name,
                 warehouseType: o.warehouses?.type,
                 items: o.order_items?.map((i: any) => ({
@@ -298,6 +313,8 @@ const Orders: React.FC = () => {
         if (data) {
             const mapped = data.map((o: any) => ({
                 ...o,
+                commissionNumber: o.commission_number,
+                supplierOrderNumber: o.supplier_order_number,
                 warehouseName: o.warehouses?.name,
                 warehouseType: o.warehouses?.type,
                 items: o.order_items?.map((i: any) => ({
@@ -358,6 +375,28 @@ const Orders: React.FC = () => {
         if (profile?.primary_warehouse_id) {
             handleManualWarehouseSelect(profile.primary_warehouse_id, 'primary');
         }
+    };
+
+    const handleManualAddItem = () => {
+        if (!manualItemName) return;
+        setManualScannedItems(prev => [
+            {
+                name: manualItemName,
+                sku: manualItemSku,
+                quantity: manualItemQuantity,
+                isFound: false,
+                foundArticle: undefined
+            },
+            ...prev
+        ]);
+        setManualItemName('');
+        setManualItemSku('');
+        setManualItemQuantity(1);
+        setShowAddItemForm(false);
+    };
+
+    const handleRemoveManualItem = (index: number) => {
+        setManualScannedItems(prev => prev.filter((_, i) => i !== index));
     };
 
     const handleManualWarehouseSelect = async (whId: string, type: 'primary' | 'secondary' | 'other') => {
@@ -533,8 +572,13 @@ const Orders: React.FC = () => {
 
             await logOrderEvent(orderData.id, 'Neue Bestellung', `Manuelle Bestellung bei ${manualSupplierName || 'Manuell'}`);
 
-            alert("Bestellung erfolgreich angelegt!");
+            // Replace Alert with Success Modal
+            setCreatedOrderId(orderData.id);
+            setCreatedOrderCommission(manualCommissionNumber);
+            setCreatedOrderSupplierNumber('');
             setShowManualModal(false);
+            setShowSuccessModal(true);
+
             fetchPendingOrders();
             fetchProposals();
             setActiveTab('pending');
@@ -543,6 +587,22 @@ const Orders: React.FC = () => {
             alert("Fehler: " + e.message);
         } finally {
             setIsSubmitting(false);
+        }
+    };
+
+    const updateOrderSupplierNumber = async () => {
+        if (!createdOrderId) return;
+        try {
+            const { error } = await supabase.from('orders').update({ supplier_order_number: createdOrderSupplierNumber }).eq('id', createdOrderId);
+            if (error) throw error;
+
+            setSupplierNumberSaved(true);
+            setTimeout(() => setSupplierNumberSaved(false), 2000);
+
+            // Refresh logic if needed, but the user might just close the modal
+            fetchPendingOrders();
+        } catch (e: any) {
+            alert("Fehler beim Speichern: " + e.message);
         }
     };
 
@@ -733,9 +793,16 @@ const Orders: React.FC = () => {
 
                             <div className="flex items-center justify-between pt-2 border-t border-white/10">
                                 <span className="text-sm text-white/70">{order.itemCount} Positionen</span>
-                                <button onClick={(e) => { e.stopPropagation(); handleDownloadCsv(order); }} className="p-2 text-emerald-400 hover:bg-emerald-500/10 rounded-lg flex items-center gap-2 text-xs font-bold transition-colors">
-                                    <FileDown size={14} /> CSV
-                                </button>
+                                <div className="flex gap-2">
+                                    {order.commissionNumber && (
+                                        <span className="flex items-center gap-1 text-[10px] font-mono bg-indigo-500/20 text-indigo-300 px-1.5 py-0.5 rounded border border-indigo-500/30">
+                                            <Box size={10} /> {order.commissionNumber}
+                                        </span>
+                                    )}
+                                    <button onClick={(e) => { e.stopPropagation(); handleDownloadCsv(order); }} className="p-2 text-emerald-400 hover:bg-emerald-500/10 rounded-lg flex items-center gap-2 text-xs font-bold transition-colors">
+                                        <FileDown size={14} /> CSV
+                                    </button>
+                                </div>
                             </div>
                         </GlassCard>
                     ))}
@@ -921,7 +988,7 @@ const Orders: React.FC = () => {
                             <div className="h-px bg-white/10 w-full"></div>
 
                             {/* SECTION 3: CONTENT AREA (Upload OR List) */}
-                            {manualScannedItems.length === 0 ? (
+                            {manualScannedItems.length === 0 && !showAddItemForm ? (
                                 // STATE A: UPLOAD
                                 <div className="space-y-4 animate-in fade-in">
                                     <div className="text-sm text-white/60 text-center">Dokument scannen (Lieferschein / Bestellung)</div>
@@ -959,23 +1026,125 @@ const Orders: React.FC = () => {
                                     >
                                         {isManualAnalyzing ? <Loader2 className="animate-spin" /> : <span className="flex items-center gap-2"><Wand2 size={18} /> Analysieren</span>}
                                     </Button>
+
+                                    <div className="flex items-center gap-3 pt-2">
+                                        <div className="h-px bg-white/10 flex-1"></div>
+                                        <span className="text-xs text-white/30 uppercase">Oder</span>
+                                        <div className="h-px bg-white/10 flex-1"></div>
+                                    </div>
+
+                                    <Button
+                                        onClick={() => setShowAddItemForm(true)}
+                                        variant="secondary"
+                                        className="w-full h-12"
+                                        icon={<Plus size={18} />}
+                                    >
+                                        Manuell Position erfassen
+                                    </Button>
+                                </div>
+                            ) : showAddItemForm ? (
+                                // STATE C: ADD ITEM FORM
+                                <div className="space-y-4 animate-in fade-in slide-in-from-bottom-4">
+                                    <div className="text-center mb-4">
+                                        <h3 className="text-lg font-bold text-white">Position hinzufügen</h3>
+                                        <p className="text-xs text-white/50">Artikel wird als Freiposition (ohne Lagerbestand) erfasst.</p>
+                                    </div>
+
+                                    <div className="space-y-3">
+                                        {/* OPTIONAL SUPPLIER SELECTION (Global for this order) */}
+                                        <div className="bg-white/5 p-3 rounded-xl border border-white/10 mb-4">
+                                            <h4 className="text-xs font-bold text-white/70 mb-2 uppercase tracking-wider">Lieferant der Bestellung</h4>
+                                            <div className="space-y-2">
+                                                <GlassSelect
+                                                    value=""
+                                                    onChange={(e) => {
+                                                        if (e.target.value) setManualSupplierName(e.target.value);
+                                                    }}
+                                                    className="text-xs py-2"
+                                                >
+                                                    <option value="">Aus Großhändler-Liste wählen...</option>
+                                                    {suppliers.map(s => (
+                                                        <option key={s.id} value={s.name}>{s.name}</option>
+                                                    ))}
+                                                </GlassSelect>
+
+                                                <input
+                                                    className="w-full bg-black/20 border-b border-white/20 p-2 text-white text-sm focus:outline-none focus:border-emerald-500 placeholder-white/30"
+                                                    value={manualSupplierName}
+                                                    onChange={e => setManualSupplierName(e.target.value)}
+                                                    placeholder="Oder externer Lieferant Name"
+                                                />
+                                            </div>
+                                        </div>
+
+                                        <div>
+                                            <label className="text-xs text-white/50 block mb-1">Artikelbezeichnung <span className="text-red-400">*</span></label>
+                                            <GlassInput
+                                                autoFocus
+                                                value={manualItemName}
+                                                onChange={e => setManualItemName(e.target.value)}
+                                                placeholder="z.B. Schrauben M8x40"
+                                                className="w-full"
+                                            />
+                                        </div>
+                                        <div>
+                                            <label className="text-xs text-white/50 block mb-1">Artikelnummer / SKU (Optional)</label>
+                                            <GlassInput
+                                                value={manualItemSku}
+                                                onChange={e => setManualItemSku(e.target.value)}
+                                                placeholder="Optional"
+                                                className="w-full"
+                                            />
+                                        </div>
+                                        <div>
+                                            <label className="text-xs text-white/50 block mb-1">Menge</label>
+                                            <div className="flex items-center gap-2">
+                                                <button onClick={() => setManualItemQuantity(Math.max(1, manualItemQuantity - 1))} className="w-10 h-10 rounded-lg bg-white/5 flex items-center justify-center hover:bg-white/10"><Minus size={18} /></button>
+                                                <GlassInput
+                                                    type="number"
+                                                    min={1}
+                                                    value={manualItemQuantity}
+                                                    onChange={e => setManualItemQuantity(parseInt(e.target.value) || 1)}
+                                                    className="w-20 text-center"
+                                                />
+                                                <button onClick={() => setManualItemQuantity(manualItemQuantity + 1)} className="w-10 h-10 rounded-lg bg-white/5 flex items-center justify-center hover:bg-white/10"><Plus size={18} /></button>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div className="pt-4 flex gap-3">
+                                        <Button onClick={() => setShowAddItemForm(false)} variant="secondary" className="flex-1">Abbrechen</Button>
+                                        <Button
+                                            onClick={handleManualAddItem}
+                                            disabled={!manualItemName}
+                                            className="flex-1 bg-emerald-600 hover:bg-emerald-500"
+                                            icon={<Plus size={18} />}
+                                        >
+                                            Hinzufügen
+                                        </Button>
+                                    </div>
                                 </div>
                             ) : (
                                 // STATE B: ITEM LIST
                                 <div className="space-y-4 animate-in slide-in-from-right-4">
                                     <div className="flex justify-between items-center">
                                         <div className="text-sm text-white/60">Gefunden: {manualScannedItems.length} Pos.</div>
-                                        <button onClick={handleResetManualScan} className="text-xs text-blue-400 hover:text-white flex items-center gap-1 transition-colors">
-                                            <RefreshCw size={12} /> Neu scannen
-                                        </button>
+                                        <div className="flex gap-3">
+                                            <button onClick={() => setShowAddItemForm(true)} className="text-xs text-emerald-400 hover:text-white flex items-center gap-1 transition-colors">
+                                                <Plus size={12} /> Position hinzufügen
+                                            </button>
+                                            <button onClick={handleResetManualScan} className="text-xs text-blue-400 hover:text-white flex items-center gap-1 transition-colors">
+                                                <RefreshCw size={12} /> Neu scannen
+                                            </button>
+                                        </div>
                                     </div>
 
-                                    <input
-                                        className="w-full bg-black/20 border-b border-white/20 p-2 text-white font-bold focus:outline-none focus:border-emerald-500 placeholder-white/30"
-                                        value={manualSupplierName}
-                                        onChange={e => setManualSupplierName(e.target.value)}
-                                        placeholder="Lieferant Name (Optional)"
-                                    />
+                                    {manualSupplierName && (
+                                        <div className="bg-white/5 px-3 py-2 rounded-lg border border-white/10 flex justify-between items-center">
+                                            <span className="text-xs text-white/50">Lieferant:</span>
+                                            <span className="font-bold text-white text-sm">{manualSupplierName}</span>
+                                        </div>
+                                    )}
 
                                     <div className="space-y-2 max-h-[250px] overflow-y-auto pr-1">
                                         {manualScannedItems.map((item, idx) => (
@@ -987,7 +1156,16 @@ const Orders: React.FC = () => {
                                                         {!item.isFound && <span className="text-amber-400 font-bold text-[9px] uppercase border border-amber-500/30 px-1 rounded">Manuell</span>}
                                                     </div>
                                                 </div>
-                                                <div className="font-bold text-white text-lg">x{item.quantity}</div>
+                                                <div className="flex items-center gap-3">
+                                                    <div className="font-bold text-white text-lg">x{item.quantity}</div>
+                                                    <button
+                                                        onClick={() => handleRemoveManualItem(idx)}
+                                                        className="p-2 text-white/30 hover:text-red-400 hover:bg-white/10 rounded-lg transition-colors"
+                                                        title="Entfernen"
+                                                    >
+                                                        <Trash2 size={16} />
+                                                    </button>
+                                                </div>
                                             </div>
                                         ))}
                                     </div>
@@ -998,6 +1176,56 @@ const Orders: React.FC = () => {
                                 </div>
                             )}
                         </div>
+                    </div>
+                </GlassModal>
+            )}
+
+            {/* SUCCESS MODAL */}
+            {showSuccessModal && (
+                <GlassModal
+                    isOpen={showSuccessModal}
+                    onClose={() => setShowSuccessModal(false)}
+                    title="Bestellung erfolgreich angelegt"
+                    className="max-w-md"
+                >
+                    <div className="p-6 space-y-6 flex flex-col items-center">
+                        <div className="w-16 h-16 rounded-full bg-emerald-500/20 flex items-center justify-center mb-2">
+                            <Check size={32} className="text-emerald-400" />
+                        </div>
+
+                        <div className="text-center w-full">
+                            <div className="text-sm text-white/50 mb-1">Kommissionsnummer</div>
+                            <div
+                                className="bg-white/5 border border-white/10 rounded-xl p-4 flex items-center justify-center gap-3 cursor-pointer hover:bg-white/10 transition-colors group"
+                                onClick={() => { if (createdOrderCommission) { navigator.clipboard.writeText(createdOrderCommission); alert("Kopiert!"); } }}
+                            >
+                                <span className="text-2xl font-mono font-bold text-white tracking-wider">{createdOrderCommission}</span>
+                                <Copy size={18} className="text-emerald-400 opacity-50 group-hover:opacity-100" />
+                            </div>
+                        </div>
+
+                        <div className="w-full bg-white/5 rounded-xl p-4 border border-white/10">
+                            <label className="text-xs text-white/50 block mb-2">Bestellnummer vom Lieferanten (falls zur Hand)</label>
+                            <div className="flex gap-2">
+                                <input
+                                    className={`flex-1 bg-black/20 border-b border-white/20 p-2 text-white font-mono focus:outline-none focus:border-emerald-500 ${supplierNumberSaved ? 'border-emerald-500 text-emerald-400' : ''}`}
+                                    onChange={e => setCreatedOrderSupplierNumber(e.target.value)}
+                                    value={createdOrderSupplierNumber}
+                                    placeholder="Nr. eintragen..."
+                                />
+                                <Button
+                                    onClick={updateOrderSupplierNumber}
+                                    size="sm"
+                                    className={`shrink-0 ${supplierNumberSaved ? 'bg-emerald-500 hover:bg-emerald-600' : ''}`}
+                                >
+                                    {supplierNumberSaved ? <Check size={16} /> : 'Speichern'}
+                                </Button>
+                            </div>
+                        </div>
+
+                        <Button onClick={() => setShowSuccessModal(false)} className="w-full" variant="secondary">
+                            Schließen
+                        </Button>
                     </div>
                 </GlassModal>
             )}

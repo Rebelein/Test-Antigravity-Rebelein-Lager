@@ -2,12 +2,15 @@
 
 import React, { useState, useEffect } from 'react';
 import { NavRoute } from '../types';
-import { LayoutDashboard, Package, Drill, ShoppingCart, ScanLine, LogOut, UserCircle, WifiOff, RefreshCw, ClipboardList, ClipboardCheck, PanelLeftClose, PanelLeftOpen, Pin, PinOff, ChevronRight, Download, Share, Check, X, Key as KeyIcon, Shirt } from 'lucide-react';
+import { LayoutDashboard, Package, Drill, ShoppingCart, ScanLine, LogOut, UserCircle, WifiOff, RefreshCw, ClipboardList, ClipboardCheck, PanelLeftClose, PanelLeftOpen, Pin, PinOff, ChevronRight, Download, Share, Check, X, Key as KeyIcon, Shirt, Palette } from 'lucide-react';
 import { useNavigate, useLocation, Outlet } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import { Button, GlassCard } from './UIComponents';
+import { useTheme } from '../contexts/ThemeContext';
+import { Button } from './UIComponents';
+import { GlassLayout } from './GlassLayout';
 import { OnboardingTour } from './OnboardingTour';
 import { InstallPrompt } from './InstallPrompt';
+import { ThemeSelector } from './ThemeSelector';
 import { useRegisterSW } from 'virtual:pwa-register/react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { clsx } from 'clsx';
@@ -28,6 +31,9 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
     // Sidebar State for Desktop
     const [isSidebarPinned, setIsSidebarPinned] = usePersistentState('sidebar-pinned', false);
 
+    // Theme
+    const { theme } = useTheme();
+    const [showThemeSelector, setShowThemeSelector] = useState(false);
 
     // --- NEW FEATURES STATE ---
     const [updateAvailable, setUpdateAvailable] = useState(false);
@@ -57,8 +63,6 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
 
     // Navigation Items Configuration
     const [sidebarOrder] = usePersistentState<string[]>('sidebar-order', []);
-    // Note: We default to empty array here, but inside the component logic we'll merge/fallback to DEFAULT if empty
-    // Actually, better to import DEFAULT_SIDEBAR_ORDER.
 
     // --- EFFECT: CHECK TOUR STATUS (DATABASE BASED) ---
     useEffect(() => {
@@ -151,29 +155,12 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
     const isIOS = useIsIOS();
 
     return (
-        <div className="min-h-screen w-full relative overflow-hidden bg-gray-950 text-white selection:bg-emerald-500/30 flex">
-
-            {/* --- Living Background --- */}
-            {/* Disabled on iOS for massive performance boost */}
-            {!isIOS && (
-                <div className="fixed inset-0 overflow-hidden pointer-events-none z-0">
-                    <div className="absolute top-[-20%] left-[-10%] w-[800px] h-[800px] bg-emerald-600/10 rounded-full blur-[120px] animate-blob mix-blend-screen" />
-                    <div className="absolute bottom-[-20%] right-[-10%] w-[600px] h-[600px] bg-teal-600/10 rounded-full blur-[100px] animate-blob animation-delay-2000 mix-blend-screen" />
-                    <div className="absolute top-[40%] left-[40%] w-[400px] h-[400px] bg-cyan-600/10 rounded-full blur-[80px] animate-blob animation-delay-4000 mix-blend-screen" />
-                </div>
-            )}
-            {isIOS && (
-                <div className="fixed inset-0 overflow-hidden pointer-events-none z-0">
-                    {/* Fallback Static Gradient for iOS */}
-                    <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-br from-emerald-900/10 via-gray-950 to-teal-900/10" />
-                </div>
-            )}
+        <GlassLayout>
+            {/* --- THEME SELECTOR MODAL --- */}
+            <ThemeSelector isOpen={showThemeSelector} onClose={() => setShowThemeSelector(false)} />
 
             {/* --- GLOBAL NOTIFICATIONS --- */}
             <NotificationToast />
-
-            {/* --- GIMMICK: LAST WORKING DAY SIGN --- */}
-
 
             {/* --- UPDATE BANNER --- */}
             <AnimatePresence>
@@ -213,7 +200,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
                 transition={{ duration: 0.5, delay: 0.2 }}
                 className={clsx(
                     "hidden lg:flex flex-col justify-between fixed left-4 top-4 bottom-4 z-50",
-                    "glass-panel rounded-3xl border-white/10",
+                    "glass-panel rounded-3xl border-white/10 shadow-2xl backdrop-blur-xl", // Enhanced blur
                     "transition-all duration-300 ease-spring",
                     isSidebarPinned ? 'w-64' : 'w-20'
                 )}
@@ -275,6 +262,19 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
                         {isSidebarPinned && <button onClick={handleLogout} className="text-white/40 hover:text-rose-400 transition-colors p-1"><LogOut size={16} /></button>}
                     </div>
                     {!isSidebarPinned && <button onClick={handleLogout} className="flex justify-center p-3 rounded-xl text-white/40 hover:text-rose-400 hover:bg-white/5 transition-colors"><LogOut size={20} /></button>}
+                    {/* Theme Selector Button */}
+                    <button
+                        onClick={() => setShowThemeSelector(true)}
+                        className={clsx(
+                            "flex items-center rounded-xl transition-colors hover:bg-white/5",
+                            theme === 'glass' ? 'text-amber-400/70 hover:text-amber-400' : 'text-white/30 hover:text-white',
+                            isSidebarPinned ? 'px-4 py-3 gap-3' : 'justify-center p-3'
+                        )}
+                        title="Design ändern"
+                    >
+                        <Palette size={20} />
+                        {isSidebarPinned && <span className="text-xs font-medium">Design</span>}
+                    </button>
                     <button onClick={() => setIsSidebarPinned(!isSidebarPinned)} className={clsx("flex items-center rounded-xl transition-colors text-white/30 hover:text-white hover:bg-white/5", isSidebarPinned ? 'px-4 py-3 gap-3' : 'justify-center p-3')} title={isSidebarPinned ? "Einklappen" : "Menü fixieren"}>
                         {isSidebarPinned ? <PanelLeftClose size={20} /> : <PanelLeftOpen size={20} />}
                         {isSidebarPinned && <span className="text-xs font-medium">Menü einklappen</span>}
@@ -400,7 +400,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
                     </motion.button>
                 </div>
             </motion.div>
-        </div>
+        </GlassLayout>
     );
 };
 

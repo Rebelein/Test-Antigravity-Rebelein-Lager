@@ -721,18 +721,22 @@ const Commissions: React.FC = () => {
         const isCollapsed = collapsedCategories[statusKey];
         if (items.length === 0) return null;
         return (
-            <div className="mb-4">
-                <div onClick={() => setCollapsedCategories(prev => ({ ...prev, [statusKey]: !prev[statusKey] }))} className="flex items-center justify-between mb-2 px-2 cursor-pointer select-none">
-                    <div className="flex items-center gap-2"><div className={`transition-transform duration-200 ${isCollapsed ? '-rotate-90' : ''}`}>▼</div><h3 className={`font-bold uppercase tracking-wider text-xs ${colorClass}`}>{title} ({items.length})</h3></div>
-                    <div className="h-px bg-white/10 flex-1 ml-4"></div>
-                </div>
-                {!isCollapsed && (
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-                        {items.map(comm => (
-                            <CommissionCard key={comm.id} commission={comm} colorClass={colorClass} statusKey={statusKey} onClick={handleOpenDetail} onEdit={handleEditCommission} onDelete={(id, name, mode, e) => { handleDelete(id, name, mode, e); }} onPrintLabel={undefined} />
-                        ))}
+            <div className="mb-6">
+                <GlassCard className="p-0 border-white/5 bg-white/[0.02]" contentClassName="p-4">
+                    <div onClick={() => setCollapsedCategories(prev => ({ ...prev, [statusKey]: !prev[statusKey] }))} className="flex items-center justify-between px-2 pb-4 cursor-pointer select-none border-b border-white/5">
+                        <div className="flex items-center gap-3">
+                            <div className={`transition-transform duration-200 text-white/50 ${isCollapsed ? '-rotate-90' : ''}`}>▼</div>
+                            <h3 className={`font-bold uppercase tracking-wider text-xs ${colorClass}`}>{title} ({items.length})</h3>
+                        </div>
                     </div>
-                )}
+                    {!isCollapsed && (
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 pt-4">
+                            {items.map(comm => (
+                                <CommissionCard key={comm.id} commission={comm} colorClass={colorClass} statusKey={statusKey} onClick={handleOpenDetail} onEdit={handleEditCommission} onDelete={(id, name, mode, e) => { handleDelete(id, name, mode, e); }} onPrintLabel={undefined} />
+                            ))}
+                        </div>
+                    )}
+                </GlassCard>
             </div>
         );
     };
@@ -894,7 +898,7 @@ const Commissions: React.FC = () => {
                                             ) : (
                                                 <div className="overflow-y-auto custom-scrollbar p-1 grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
                                                     {missing.map(c => (
-                                                        <div key={c.id} className="bg-rose-500/10 border border-rose-500/30 rounded-2xl p-4 flex flex-col gap-3 shadow-lg shadow-black/20 group hover:shadow-rose-900/20 transition-all">
+                                                        <div key={c.id} className="bg-rose-500/10 backdrop-blur-md border border-rose-500/30 rounded-2xl p-4 flex flex-col gap-3 shadow-lg shadow-black/20 group hover:shadow-rose-900/20 transition-all">
                                                             <div className="flex justify-between items-start">
                                                                 <div>
                                                                     <div className="font-bold text-white text-lg cursor-pointer hover:underline" onClick={() => handleOpenDetail(c)}>{c.name}</div>
@@ -965,7 +969,7 @@ const Commissions: React.FC = () => {
                                                     {overdue.map(c => {
                                                         const daysOld = Math.floor((new Date().getTime() - new Date(c.created_at).getTime()) / (1000 * 60 * 60 * 24));
                                                         return (
-                                                            <div key={c.id} className="bg-orange-500/10 border border-orange-500/30 rounded-xl p-3 flex flex-col gap-2 shadow-lg hover:shadow-orange-900/10 transition-all">
+                                                            <div key={c.id} className="bg-orange-500/10 backdrop-blur-md border border-orange-500/30 rounded-xl p-3 flex flex-col gap-2 shadow-lg hover:shadow-orange-900/10 transition-all">
                                                                 <div className="flex justify-between items-start">
                                                                     <div>
                                                                         <div className="font-bold text-white text-base cursor-pointer hover:underline" onClick={() => handleOpenDetail(c)}>{c.name}</div>

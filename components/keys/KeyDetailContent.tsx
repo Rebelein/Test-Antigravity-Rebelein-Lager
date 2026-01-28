@@ -116,9 +116,9 @@ export const KeyDetailContent: React.FC<KeyDetailContentProps> = ({ keyData, onC
     // --- RENDER ---
 
     return (
-        <div className="flex flex-col h-full bg-[#1a1d24] text-white">
+        <div className="flex flex-col h-full bg-transparent text-slate-100">
             {/* HEADER */}
-            <div className="p-6 border-b border-white/5 bg-gradient-to-br from-white/5 to-transparent">
+            <div className="p-6 border-b border-white/5 bg-white/[0.02]">
                 <div className="flex justify-between items-start mb-2">
                     <div className="text-emerald-400 font-mono text-sm">Platz #{keyData.slot_number}</div>
                     <div className={`px-2 py-0.5 rounded text-xs font-bold uppercase ${keyData.status === 'InUse' ? 'bg-amber-500/20 text-amber-400' : 'bg-emerald-500/20 text-emerald-400'}`}>
@@ -234,14 +234,14 @@ export const KeyDetailContent: React.FC<KeyDetailContentProps> = ({ keyData, onC
                         {history.map((event) => (
                             <div key={event.id} className="relative pl-6 pb-4 border-l border-white/10 last:pb-0">
                                 <div className={`absolute left-[-5px] top-0 w-2.5 h-2.5 rounded-full ${event.action === 'checkout' ? 'bg-amber-500' :
-                                        event.action === 'checkin' ? 'bg-emerald-500' :
-                                            event.action === 'create' ? 'bg-blue-500' : 'bg-gray-500'
+                                    event.action === 'checkin' ? 'bg-emerald-500' :
+                                        event.action === 'create' ? 'bg-blue-500' : 'bg-gray-500'
                                     }`}></div>
 
                                 <div className="bg-white/5 rounded-lg p-3 border border-white/5">
                                     <div className="flex justify-between items-start mb-1">
                                         <span className={`text-xs font-bold uppercase tracking-wider ${event.action === 'checkout' ? 'text-amber-400' :
-                                                event.action === 'checkin' ? 'text-emerald-400' : 'text-white/50'
+                                            event.action === 'checkin' ? 'text-emerald-400' : 'text-white/50'
                                             }`}>
                                             {event.action}
                                         </span>

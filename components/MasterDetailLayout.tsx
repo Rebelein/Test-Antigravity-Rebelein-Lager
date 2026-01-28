@@ -166,24 +166,29 @@ export const MasterDetailLayout: React.FC<MasterDetailLayoutProps> = ({
                         exit={{ x: "100%" }}
                         transition={{ type: "spring", damping: 30, stiffness: 300 }}
                         style={{ width: sidebarWidth }}
-                        className="absolute top-0 right-0 h-full bg-[#1a1d24] border-l border-white/10 shadow-2xl z-50 flex flex-col"
+                        className="absolute top-0 right-0 h-full bg-slate-950/40 backdrop-blur-2xl shadow-[0_0_50px_-12px_rgba(0,0,0,0.5)] z-50 flex flex-col"
                     >
+                        {/* Glass Highlight Overlay (Left side) - Thicker, softer glow */}
+                        <div className="absolute inset-y-0 left-0 w-px bg-gradient-to-b from-transparent via-white/10 to-transparent pointer-events-none" />
+
                         {/* RESIZE HANDLE */}
                         <div
-                            className="absolute left-0 top-0 bottom-0 w-1.5 cursor-col-resize hover:bg-emerald-500/50 transition-colors z-[60] -ml-[3px]"
+                            className="absolute left-0 top-0 bottom-0 w-1.5 cursor-col-resize hover:bg-emerald-500/50 transition-colors z-[60] -ml-[3px] group"
                             onMouseDown={startResizing}
                             onTouchStart={startResizing}
-                        />
+                        >
+                            <div className="absolute left-0.5 top-1/2 -translate-y-1/2 h-8 w-0.5 bg-white/20 rounded-full opacity-0 group-hover:opacity-100 transition-opacity" />
+                        </div>
 
                         {/* Drawer Header */}
                         {!hideHeader && (
-                            <div className="flex items-center justify-between p-4 border-b border-white/5 bg-white/5 shrink-0">
-                                <h2 className="text-lg font-semibold text-white/90 truncate pr-4">
+                            <div className="flex items-center justify-between p-4 border-b border-white/5 bg-white/[0.02] shrink-0 backdrop-blur-sm">
+                                <h2 className="text-lg font-bold text-slate-100 truncate pr-4 text-shadow-sm">
                                     {title || 'Details'}
                                 </h2>
                                 <button
                                     onClick={onClose}
-                                    className="p-2 hover:bg-white/10 rounded-full text-white/50 hover:text-white transition-colors"
+                                    className="p-2 hover:bg-white/10 rounded-xl text-white/50 hover:text-white transition-all duration-200"
                                 >
                                     <X size={20} />
                                 </button>
