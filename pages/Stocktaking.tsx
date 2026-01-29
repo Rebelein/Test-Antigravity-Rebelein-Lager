@@ -7,6 +7,7 @@ import { ScanLine, X, Loader2, AlertTriangle, Search, ArrowRight, CheckCircle2, 
 import { useNavigate } from 'react-router-dom';
 import { Html5Qrcode, Html5QrcodeSupportedFormats } from 'html5-qrcode';
 import { Toaster, toast } from 'sonner';
+import { useTheme } from '../contexts/ThemeContext';
 
 // Native BarcodeDetector Interface
 interface BarcodeDetector {
@@ -26,6 +27,7 @@ declare global {
 
 const Stocktaking: React.FC = () => {
     const navigate = useNavigate();
+    const { isLowPerfMode } = useTheme();
     const [error, setError] = useState<string | null>(null);
 
     // Scanner State
@@ -167,7 +169,7 @@ const Stocktaking: React.FC = () => {
             await scanner.start(
                 { facingMode: "environment" },
                 {
-                    fps: 10,
+                    fps: isLowPerfMode ? 5 : 10, // Reduce FPS on iOS mode
                     qrbox: { width: 280, height: 280 },
                     aspectRatio: 1.0,
                     formatsToSupport: [
@@ -358,7 +360,7 @@ const Stocktaking: React.FC = () => {
     };
 
     return (
-        <div className="fixed inset-0 z-[60] bg-black flex flex-col">
+        <div className="fixed inset-0 z-[170] bg-black flex flex-col">
             <Toaster position="top-center" />
 
             {/* HEADER */}
@@ -401,7 +403,6 @@ const Stocktaking: React.FC = () => {
                             <div className="absolute bottom-0 left-0 w-6 h-6 border-b-4 border-l-4 border-emerald-500 -mb-1 -ml-1 rounded-bl-xl" />
                             <div className="absolute bottom-0 right-0 w-6 h-6 border-b-4 border-r-4 border-emerald-500 -mb-1 -mr-1 rounded-br-xl" />
                             <div className="absolute top-0 left-0 w-full h-1 bg-emerald-500 shadow-[0_0_10px_#10b981] animate-[scan_2s_infinite_linear]" />
-                            ```
                         </div>
                         <p className="mt-8 text-white/80 text-sm font-medium bg-black/40 px-4 py-2 rounded-full backdrop-blur-md">
                             Code im Rahmen platzieren

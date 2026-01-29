@@ -5,6 +5,7 @@ import { Article, Warehouse, WarehouseType } from '../types';
 import { ClipboardList, Activity, Clock, ArrowRight, CheckCircle2, X, Loader2, Layers, AlertTriangle, ScanLine, MapPin, ChevronDown, Warehouse as WarehouseIcon, Truck, HardHat, Split, Focus } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { Html5Qrcode, Html5QrcodeSupportedFormats } from 'html5-qrcode';
+import { useTheme } from '../contexts/ThemeContext';
 
 // Native BarcodeDetector Interface
 interface BarcodeDetector {
@@ -26,6 +27,7 @@ type AuditTab = 'movement' | 'stale';
 
 const StockAudit: React.FC = () => {
     const { user, profile, updateWarehousePreference } = useAuth();
+    const { isLowPerfMode } = useTheme();
     const [activeTab, setActiveTab] = useState<AuditTab>('movement');
     const [loading, setLoading] = useState(true);
 
@@ -382,7 +384,7 @@ const StockAudit: React.FC = () => {
             await scanner.start(
                 { facingMode: "environment" },
                 {
-                    fps: 15,
+                    fps: isLowPerfMode ? 5 : 15, // Reduce FPS on iOS mode
                     qrbox: { width: 280, height: 100 },
                     aspectRatio: 1.0
                 },
@@ -684,7 +686,7 @@ const StockAudit: React.FC = () => {
 
             {/* --- SCANNER MODAL --- */}
             {isScannerOpen && (
-                <div className="fixed inset-0 z-[100] bg-black flex flex-col">
+                <div className="fixed inset-0 z-[170] bg-black flex flex-col">
                     {/* Scanner Header */}
                     <div className="p-4 flex justify-between items-center bg-black/80 backdrop-blur-md z-10 absolute top-0 left-0 right-0">
                         <div className="flex items-center gap-2 text-purple-400 font-bold">
@@ -866,7 +868,7 @@ const StockAudit: React.FC = () => {
 
             {/* --- WAREHOUSE SELECTION MODAL --- */}
             {isWarehouseModalOpen && (
-                <div className="fixed inset-0 z-[150] flex items-center justify-center p-4 bg-black/90 backdrop-blur-sm animate-in fade-in">
+                <div className="fixed inset-0 z-[180] flex items-center justify-center p-4 bg-black/90 backdrop-blur-sm animate-in fade-in">
                     <GlassCard className="w-full max-w-2xl">
                         <div className="flex justify-between items-start mb-6">
                             <div>

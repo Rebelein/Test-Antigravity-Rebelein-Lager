@@ -11,20 +11,10 @@ export const GlassLayout: React.FC<GlassLayoutProps> = ({ children, className })
     <div className={clsx("fixed inset-0 w-full h-full bg-slate-950 text-slate-100 overflow-hidden font-sans selection:bg-teal-500/30", className)}>
       <style>{`
         /* Dynamic Mesh Gradient Animation */
-        @keyframes float {
-          0% { transform: translate(0px, 0px) scale(1); }
-          33% { transform: translate(30px, -50px) scale(1.1); }
-          66% { transform: translate(-20px, 20px) scale(0.9); }
-          100% { transform: translate(0px, 0px) scale(1); }
-        }
-        
+
         .mesh-blob {
-          animation: float 20s ease-in-out infinite;
           opacity: 0.6;
         }
-
-        .mesh-blob-delay-1 { animation-delay: -5s; }
-        .mesh-blob-delay-2 { animation-delay: -12s; }
       `}</style>
 
       {/* Main Background Layers */}

@@ -819,7 +819,68 @@
   color: var(--text-primary) !important;
 }
 
-/* Fix Sidebar Icons */
 [data-theme="glass-light"] .text-white\/30 {
   color: var(--text-muted) !important;
+}
+
+/* ============================================
+   LOW PERFORMANCE MODE (iOS)
+   Disables backdrop-blur and uses solid backgrounds
+============================================ */
+
+.low-perf-mode .backdrop-blur,
+.low-perf-mode .backdrop-blur-sm,
+.low-perf-mode .backdrop-blur-md,
+.low-perf-mode .backdrop-blur-lg,
+.low-perf-mode .backdrop-blur-xl,
+.low-perf-mode .backdrop-blur-2xl,
+.low-perf-mode .backdrop-blur-3xl {
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+
+.low-perf-mode .glass-panel {
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  background: rgba(15, 23, 42, 0.95) !important;
+}
+
+.low-perf-mode [data-theme="glass"] .glass-panel {
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  background: rgba(15, 23, 42, 0.95) !important;
+}
+
+.low-perf-mode [data-theme="glass-light"] .glass-panel {
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  background: rgba(255, 255, 255, 0.95) !important;
+}
+
+/* Modal overlays - increase opacity when blur is disabled */
+.low-perf-mode .fixed.inset-0.bg-black\/60,
+.low-perf-mode .fixed.inset-0.bg-black\/80,
+.low-perf-mode .fixed.inset-0.bg-black\/90 {
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  background-color: rgba(0, 0, 0, 0.95) !important;
+}
+
+/* Generic modal backdrop fix */
+.low-perf-mode [class*="backdrop-blur"] {
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+
+.low-perf-mode .fixed.inset-0[class*="bg-black"] {
+  background-color: rgba(0, 0, 0, 0.95) !important;
+}
+
+/* Reduce animations and transitions for better iOS performance */
+.low-perf-mode *,
+.low-perf-mode *::before,
+.low-perf-mode *::after {
+  animation-duration: 0.01ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 0.01ms !important;
 }

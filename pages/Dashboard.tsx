@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { GlassCard, StatusBadge, Button, GlassModal } from '../components/UIComponents';
-import { AlertTriangle, Wrench, User, CheckCircle2, FileText, ArrowRight, Grid, Database, X, Play, RefreshCw, Check, Copy, Settings, Factory, Warehouse, Tag, Maximize2, Minimize2, PhoneCall, StickyNote, Save, Undo2, Library, Plus, MessageSquare, Monitor, Smartphone, ShoppingCart, LayoutTemplate, Lock, Unlock, History, LayoutDashboard, ChevronUp, ChevronDown, Eye, EyeOff } from 'lucide-react';
+import { AlertTriangle, Wrench, User, CheckCircle2, FileText, ArrowRight, Grid, Database, X, Play, RefreshCw, Check, Copy, Settings, Factory, Warehouse, Tag, Maximize2, Minimize2, PhoneCall, StickyNote, Save, Undo2, Library, Plus, MessageSquare, Monitor, Smartphone, ShoppingCart, LayoutTemplate, Lock, Unlock, History, LayoutDashboard, ChevronUp, ChevronDown, Eye, EyeOff, Zap } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useIsMobile } from '../hooks/useIsMobile';
 import { usePersistentState } from '../hooks/usePersistentState';
@@ -39,7 +39,7 @@ interface AppEvent {
 const Dashboard: React.FC = () => {
     const navigate = useNavigate();
     const { profile, user } = useAuth();
-    const { viewMode, toggleViewMode } = useTheme();
+    const { viewMode, toggleViewMode, isLowPerfMode, toggleLowPerfMode } = useTheme();
 
     const [isLoading, setIsLoading] = useState(true);
 
@@ -1271,7 +1271,7 @@ const Dashboard: React.FC = () => {
 
             {/* CREATE COMMISSION MODAL (Directly on Dashboard) */}
             {showCreateCommissionModal && (
-                <div className="fixed inset-0 z-[150] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
+                <div className="fixed inset-0 z-[170] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
                     <div
                         onMouseDown={(e) => e.stopPropagation()}
                         onClick={(e) => e.stopPropagation()}
@@ -1341,6 +1341,25 @@ const Dashboard: React.FC = () => {
                                     Reset
                                 </Button>
                             </div>
+
+                            {/* iOS Performance Mode Toggle */}
+                            <div className="flex items-center justify-between pt-2 border-t border-white/5">
+                                <div className="flex items-center gap-3">
+                                    <div className={`p-2 rounded-lg ${isLowPerfMode ? 'bg-amber-500/20 text-amber-400' : 'bg-white/10 text-white/50'}`}>
+                                        <Zap size={18} />
+                                    </div>
+                                    <div>
+                                        <div className="text-sm font-medium text-white">iOS Performance</div>
+                                        <div className="text-xs text-white/40">{isLowPerfMode ? 'Aktiviert (schneller)' : 'Deaktiviert (Blur aktiv)'}</div>
+                                    </div>
+                                </div>
+                                <button
+                                    onClick={toggleLowPerfMode}
+                                    className={`relative w-12 h-7 rounded-full transition-colors duration-300 ${isLowPerfMode ? 'bg-amber-500' : 'bg-gray-300'}`}
+                                >
+                                    <div className={`absolute top-1 left-1 w-5 h-5 rounded-full bg-white shadow-sm transition-transform duration-300 ${isLowPerfMode ? 'translate-x-5' : 'translate-x-0'}`} />
+                                </button>
+                            </div>
                         </div>
                     </div>
 
@@ -1399,7 +1418,7 @@ const Dashboard: React.FC = () => {
             {/* SQL Manual Fix Modal */}
             {
                 showSqlModal && (
-                    <div className="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-200">
+                    <div className="fixed inset-0 z-[170] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-200">
                         <div className="w-full max-w-3xl bg-gray-900 border border-white/10 rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[85vh]">
                             <div className="p-6 border-b border-white/10 flex justify-between items-center bg-white/5">
                                 <div className="flex items-center gap-3">

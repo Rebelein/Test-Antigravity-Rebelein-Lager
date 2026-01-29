@@ -9,6 +9,15 @@ export interface ChangelogEntry {
 
 export const changelogData: ChangelogEntry[] = [
     {
+        version: '0.0.56',
+        release_date: '30.01.2026',
+        changes: [
+            { type: 'feature', text: 'Kommissions-Kacheln komplett überarbeitet: Farbiger Status-Balken, gefärbte StatusBadges, Lieferant+Bestellnummer in Badges.' },
+            { type: 'feature', text: 'Neuer Artikel Modal an Kommissions-Design angepasst: Türkiser Akzent, dunklere Sektionen, IST/SOLL prominenter.' },
+            { type: 'fix', text: 'iOS Performance Modus behoben: App wurde leer angezeigt (translate3d Bug), Modal-Overlays nun vollständig deckend.' },
+        ]
+    },
+    {
         version: '0.0.55',
         release_date: '29.01.2026',
         changes: [

@@ -7,7 +7,7 @@ const NotificationToast: React.FC = () => {
     const { notifications, removeNotification } = useNotifications();
 
     return (
-        <div className="fixed top-4 left-1/2 -translate-x-1/2 z-[200] flex flex-col gap-2 w-full max-w-md px-4 pointer-events-none">
+        <div className="fixed top-4 left-1/2 -translate-x-1/2 z-[9999] flex flex-col gap-2 w-full max-w-md px-4 pointer-events-none">
             <AnimatePresence mode="popLayout">
                 {notifications.map((notification) => (
                     <motion.div

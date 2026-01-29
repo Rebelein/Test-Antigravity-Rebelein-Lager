@@ -494,7 +494,7 @@ const Inventory = () => {
             />
 
             {showDeleteModal && deleteTargetId && (
-                <div className="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in zoom-in-95">
+                <div className="fixed inset-0 z-[170] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in zoom-in-95">
                     <GlassCard className="w-full max-w-sm p-6 flex flex-col items-center text-center">
                         <div className="w-16 h-16 rounded-full bg-red-500/10 flex items-center justify-center mb-4 text-red-400 border border-red-500/20"><Trash2 size={32} /></div>
                         <h3 className="text-xl font-bold text-white mb-2">Artikel löschen?</h3>
@@ -504,7 +504,7 @@ const Inventory = () => {
             )}
 
             {isCopyModalOpen && (
-                <div className="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-in fade-in zoom-in-95">
+                <div className="fixed inset-0 z-[170] flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-in fade-in zoom-in-95">
                     <GlassCard className="w-full max-w-lg">
                         <h2 className="text-xl font-bold text-white mb-4">Artikel Kopieren (Beta)</h2>
                         <div className="text-white/60 mb-6">Funktion wird implementiert...</div>

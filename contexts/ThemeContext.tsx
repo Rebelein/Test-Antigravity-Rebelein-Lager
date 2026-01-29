@@ -8,6 +8,8 @@ interface ThemeContextType {
   toggleViewMode: () => void;
   theme: AppTheme;
   setTheme: (theme: AppTheme) => void;
+  isLowPerfMode: boolean;
+  toggleLowPerfMode: () => void;
 }
 
 const ThemeContext = createContext<ThemeContextType>({
@@ -15,6 +17,8 @@ const ThemeContext = createContext<ThemeContextType>({
   toggleViewMode: () => { },
   theme: 'default',
   setTheme: () => { },
+  isLowPerfMode: false,
+  toggleLowPerfMode: () => { },
 });
 
 export const useTheme = () => useContext(ThemeContext);
@@ -67,8 +71,34 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     setThemeState(newTheme);
   };
 
+  // Low Performance Mode for iOS
+  const [isLowPerfMode, setIsLowPerfMode] = useState<boolean>(() => {
+    if (typeof window !== 'undefined') {
+      return localStorage.getItem('rebelein-low-perf-mode') === 'true';
+    }
+    return false;
+  });
+
+  const toggleLowPerfMode = () => {
+    setIsLowPerfMode(prev => {
+      const newValue = !prev;
+      localStorage.setItem('rebelein-low-perf-mode', String(newValue));
+      return newValue;
+    });
+  };
+
+  // Apply Low Perf Mode class
+  useEffect(() => {
+    const root = window.document.documentElement;
+    if (isLowPerfMode) {
+      root.classList.add('low-perf-mode');
+    } else {
+      root.classList.remove('low-perf-mode');
+    }
+  }, [isLowPerfMode]);
+
   return (
-    <ThemeContext.Provider value={{ viewMode, toggleViewMode, theme, setTheme }}>
+    <ThemeContext.Provider value={{ viewMode, toggleViewMode, theme, setTheme, isLowPerfMode, toggleLowPerfMode }}>
       {children}
     </ThemeContext.Provider>
   );

@@ -269,11 +269,11 @@ export const AnimatedModal: React.FC<AnimatedModalProps> = ({ isOpen, onClose, c
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             onClick={onClose}
-            className="fixed inset-0 z-[150] bg-black/50 backdrop-blur-lg flex items-center justify-center p-4 content-center"
+            className="fixed inset-0 z-[170] bg-black/50 backdrop-blur-lg flex items-center justify-center p-4 content-center"
           />
 
           {/* Modal Content */}
-          <div className={`fixed inset-0 z-[151] flex items-center justify-center ${fullScreen ? 'p-0' : 'p-4'} pointer-events-none`}>
+          <div className={`fixed inset-0 z-[180] flex items-center justify-center ${fullScreen ? 'p-0' : 'p-4'} pointer-events-none`}>
             <motion.div
               initial={{ opacity: 0, scale: 0.95, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
