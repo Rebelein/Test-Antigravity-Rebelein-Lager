@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { memo } from 'react';
 import { motion } from 'framer-motion';
 import { Edit2, Printer, Trash2, CheckCircle2, Clock, Undo2, FileText, Calendar, Package, AlertTriangle } from 'lucide-react';
 import { Commission } from '../types';
@@ -85,7 +85,7 @@ const getStatusColors = (statusKey: string) => {
     }
 };
 
-export const CommissionCard: React.FC<CommissionCardProps> = ({
+export const CommissionCard: React.FC<CommissionCardProps> = memo(({
     commission,
     colorClass,
     onClick,
@@ -301,4 +301,4 @@ export const CommissionCard: React.FC<CommissionCardProps> = ({
             )}
         </motion.div>
     );
-};
+});

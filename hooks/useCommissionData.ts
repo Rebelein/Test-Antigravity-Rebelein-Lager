@@ -17,6 +17,7 @@ export const useCommissionData = (activeTab: CommissionTab) => {
     const [commissions, setCommissions] = useState<ExtendedCommission[]>([]);
     const [suppliers, setSuppliers] = useState<Supplier[]>([]);
     const [availableArticles, setAvailableArticles] = useState<Article[]>([]);
+    const [loadingArticles, setLoadingArticles] = useState(false);
 
     // History states
     const [historyLogs, setHistoryLogs] = useState<CommissionEvent[]>([]);
@@ -42,9 +43,29 @@ export const useCommissionData = (activeTab: CommissionTab) => {
         // Better: let component handle loading state for initial render, don't flicker on refresh
 
         try {
+            // OPTIMIZATION: Removed 'attachment_data' from commission_items fetch to reduce payload size significantly.
+            // Original: commission_items(*, article:articles(name))
+            // New: Explicit column selection
             let query = supabase
                 .from('commissions')
-                .select('*, suppliers(name), commission_items(*, article:articles(name))')
+                .select(`
+                    *,
+                    suppliers(name),
+                    commission_items(
+                        id,
+                        commission_id,
+                        type,
+                        amount,
+                        custom_name,
+                        external_reference,
+                        is_backorder,
+                        is_picked,
+                        notes,
+                        article_id,
+                        created_at,
+                        article:articles(name)
+                    )
+                `)
                 .order('name', { ascending: true });
 
             if (activeTab === 'active') {
@@ -112,22 +133,32 @@ export const useCommissionData = (activeTab: CommissionTab) => {
         }
     }, []);
 
-    // --- FETCH ARTICLES ---
+    // --- FETCH ARTICLES (Lazy Loaded) ---
     const fetchArticles = useCallback(async () => {
+        // Prevent fetching if already loaded or no warehouse
         if (!profile?.primary_warehouse_id) return;
-        const { data } = await supabase
-            .from('articles')
-            .select('*')
-            .eq('warehouse_id', profile.primary_warehouse_id);
+        if (availableArticles.length > 0) return; // Already loaded
 
-        if (data && isMounted.current) {
-            const mapped = data.map((item: any) => ({
-                ...item,
-                image: item.image_url
-            }));
-            setAvailableArticles(mapped);
+        setLoadingArticles(true);
+        try {
+            const { data } = await supabase
+                .from('articles')
+                .select('*')
+                .eq('warehouse_id', profile.primary_warehouse_id);
+
+            if (data && isMounted.current) {
+                const mapped = data.map((item: any) => ({
+                    ...item,
+                    image: item.image_url
+                }));
+                setAvailableArticles(mapped);
+            }
+        } catch (err) {
+            console.error("Error fetching articles:", err);
+        } finally {
+            if (isMounted.current) setLoadingArticles(false);
         }
-    }, [profile?.primary_warehouse_id]);
+    }, [profile?.primary_warehouse_id, availableArticles.length]);
 
     // --- FETCH HISTORY ---
     const fetchHistory = useCallback(async () => {
@@ -183,6 +214,7 @@ export const useCommissionData = (activeTab: CommissionTab) => {
     }, []);
 
     const fetchCommissionItems = async (commissionId: string) => {
+        // Detail fetch still gets everything including attachment_data (via *)
         const { data } = await supabase
             .from('commission_items')
             .select('*, article:articles(*)')
@@ -240,13 +272,13 @@ export const useCommissionData = (activeTab: CommissionTab) => {
     // Initial Load
     useEffect(() => {
         setLoading(true);
+        // Note: fetchArticles() removed from initial load for performance
         Promise.all([
             fetchCommissions(),
             fetchSuppliers(),
-            fetchArticles(),
             fetchTabCounts()
         ]).finally(() => setLoading(false));
-    }, [fetchCommissions, fetchSuppliers, fetchArticles, fetchTabCounts]);
+    }, [fetchCommissions, fetchSuppliers, fetchTabCounts]);
 
     // Realtime Subscription
     useEffect(() => {
@@ -286,6 +318,8 @@ export const useCommissionData = (activeTab: CommissionTab) => {
         setCommissions, // Exposed for optimistic updates
         suppliers,
         availableArticles,
+        fetchArticles, // Exposed for lazy loading
+        loadingArticles, // Exposed loading state
         loading,
         tabCounts, // Exposed for UI
         // History
