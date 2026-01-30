@@ -34,6 +34,8 @@ const Commissions: React.FC = () => {
         setCommissions,
         suppliers,
         availableArticles,
+        fetchArticles, // Lazy load trigger
+        loadingArticles, // Loading state
         loading,
         historyLogs,
         loadingHistory,
@@ -209,6 +211,7 @@ const Commissions: React.FC = () => {
         setEditingInitialCommission(null);
         setEditingInitialItems([]);
         setSidePanelMode('create');
+        fetchArticles(); // Lazy load articles
     };
 
     const handleEditCommission = async (comm: ExtendedCommission, e?: React.MouseEvent) => {
@@ -218,6 +221,7 @@ const Commissions: React.FC = () => {
         const items = await fetchCommissionItems(comm.id);
         setEditingInitialItems(items || []);
         setSidePanelMode('edit');
+        fetchArticles(); // Lazy load articles
     };
 
     const handleSaveCommission = (id?: string, isNew?: boolean) => {
@@ -270,6 +274,14 @@ const Commissions: React.FC = () => {
         switch (sidePanelMode) {
             case 'create':
             case 'edit':
+                if (loadingArticles) {
+                    return (
+                        <div className="flex flex-col items-center justify-center h-full text-white/50 gap-4">
+                            <Loader2 className="animate-spin text-emerald-400" size={32} />
+                            <p>Lade Artikeldatenbank...</p>
+                        </div>
+                    );
+                }
                 return (
                     <CommissionEditContent
                         isEditMode={sidePanelMode === 'edit'}
