@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { GlassCard, StatusBadge, Button, GlassModal } from '../components/UIComponents';
-import { AlertTriangle, Wrench, User, CheckCircle2, FileText, ArrowRight, Grid, Database, X, Play, RefreshCw, Check, Copy, Settings, Factory, Warehouse, Tag, Maximize2, Minimize2, PhoneCall, StickyNote, Save, Undo2, Library, Plus, MessageSquare, Monitor, Smartphone, ShoppingCart, LayoutTemplate, Lock, Unlock, History, LayoutDashboard, ChevronUp, ChevronDown, Eye, EyeOff, Zap } from 'lucide-react';
+import { AlertTriangle, Wrench, User, CheckCircle2, FileText, ArrowRight, Grid, Database, X, Play, RefreshCw, Check, Copy, Settings, Factory, Warehouse, Tag, Maximize2, Minimize2, PhoneCall, StickyNote, Save, Undo2, Library, Plus, MessageSquare, Monitor, Smartphone, ShoppingCart, LayoutTemplate, Lock, Unlock, History, LayoutDashboard, ChevronUp, ChevronDown, Eye, EyeOff, Zap, Move } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useIsMobile } from '../hooks/useIsMobile';
 import { usePersistentState } from '../hooks/usePersistentState';
@@ -523,9 +523,17 @@ const Dashboard: React.FC = () => {
     // Helper to render Commission Tile Content (to avoid duplication)
     const renderCommissionTileContent = (isFullscreen: boolean) => (
         <>
-            <div className={`drag-handle px-6 py-5 border-b border-gray-200 dark:border-white/10 bg-white/50 dark:bg-white/5 backdrop-blur-xl flex items-center gap-2 shrink-0 ${isTileLocked('commissions') ? 'cursor-default' : 'cursor-move'}`}>
-                <Factory size={20} className="text-emerald-500 dark:text-emerald-400" />
-                <h2 className="text-xl font-bold text-gray-900 dark:text-white flex-1">Kommissionen</h2>
+            <div className={`px-6 py-5 border-b border-gray-200 dark:border-white/10 bg-white/50 dark:bg-white/5 backdrop-blur-xl flex items-center gap-3 shrink-0`}>
+                <button
+                    className={`drag-handle p-1.5 rounded-lg hover:bg-black/5 dark:hover:bg-white/10 transition-colors ${isTileLocked('commissions') ? 'cursor-default text-gray-200 dark:text-white/5 opacity-30' : 'cursor-move text-gray-300 dark:text-white/10 hover:text-gray-500 dark:hover:text-white/50'}`}
+                    title="Verschieben"
+                >
+                    <Move size={18} />
+                </button>
+                <div className="flex items-center gap-2 flex-1">
+                    <Factory size={20} className="text-emerald-500 dark:text-emerald-400" />
+                    <h2 className="text-xl font-bold text-gray-900 dark:text-white">Kommissionen</h2>
+                </div>
 
                 {/* Lock Button */}
                 <button
@@ -804,8 +812,16 @@ const Dashboard: React.FC = () => {
                                 {/* --- TILE 1: MASCHINENSTATUS --- */}
                                 <div key="machines">
                                     <GlassCard className="flex flex-col h-full p-0 overflow-hidden border-none bg-white/80 dark:bg-white/5" contentClassName="!p-0 flex flex-col h-full">
-                                        <div className={`drag-handle px-6 py-5 border-b border-gray-200 dark:border-white/10 bg-white/50 dark:bg-white/5 backdrop-blur-xl flex justify-between items-center shrink-0 ${isTileLocked('machines') ? 'cursor-default' : 'cursor-move'}`}>
-                                            <h2 className="text-xl font-bold text-gray-900 dark:text-white">Maschinenstatus</h2>
+                                        <div className={`px-6 py-5 border-b border-gray-200 dark:border-white/10 bg-white/50 dark:bg-white/5 backdrop-blur-xl flex justify-between items-center shrink-0`}>
+                                            <div className="flex items-center gap-3">
+                                                <button
+                                                    className={`drag-handle p-1.5 rounded-lg hover:bg-black/5 dark:hover:bg-white/10 transition-colors ${isTileLocked('machines') ? 'cursor-default text-gray-200 dark:text-white/5 opacity-30' : 'cursor-move text-gray-300 dark:text-white/10 hover:text-gray-500 dark:hover:text-white/50'}`}
+                                                    title="Verschieben"
+                                                >
+                                                    <Move size={18} />
+                                                </button>
+                                                <h2 className="text-xl font-bold text-gray-900 dark:text-white">Maschinenstatus</h2>
+                                            </div>
                                             <div className="flex gap-2">
                                                 <button
                                                     onMouseDown={(e) => e.stopPropagation()}
@@ -873,10 +889,18 @@ const Dashboard: React.FC = () => {
                                 {/* --- TILE 1.5: KEY STATUS (NEW) --- */}
                                 <div key="keys">
                                     <GlassCard className="flex flex-col h-full p-0 overflow-hidden border-none bg-white/80 dark:bg-white/5" contentClassName="!p-0 flex flex-col h-full">
-                                        <div className={`drag-handle px-6 py-5 border-b border-gray-200 dark:border-white/10 bg-white/50 dark:bg-white/5 backdrop-blur-xl flex justify-between items-center shrink-0 ${isTileLocked('keys') ? 'cursor-default' : 'cursor-move'}`}>
-                                            <h2 className="text-xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
-                                                <KeyIcon size={20} className="text-amber-500" /> Ausgeliehen
-                                            </h2>
+                                        <div className={`px-6 py-5 border-b border-gray-200 dark:border-white/10 bg-white/50 dark:bg-white/5 backdrop-blur-xl flex justify-between items-center shrink-0`}>
+                                            <div className="flex items-center gap-3">
+                                                <button
+                                                    className={`drag-handle p-1.5 rounded-lg hover:bg-black/5 dark:hover:bg-white/10 transition-colors ${isTileLocked('keys') ? 'cursor-default text-gray-200 dark:text-white/5 opacity-30' : 'cursor-move text-gray-300 dark:text-white/10 hover:text-gray-500 dark:hover:text-white/50'}`}
+                                                    title="Verschieben"
+                                                >
+                                                    <Move size={18} />
+                                                </button>
+                                                <h2 className="text-xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
+                                                    <KeyIcon size={20} className="text-amber-500" /> Ausgeliehen
+                                                </h2>
+                                            </div>
                                             <div className="flex gap-2">
                                                 <button
                                                     onMouseDown={(e) => e.stopPropagation()}
@@ -931,9 +955,17 @@ const Dashboard: React.FC = () => {
                                 {/* --- TILE 3: EREIGNISLISTE --- */}
                                 <div key="events">
                                     <GlassCard className="flex flex-col h-full p-0 overflow-hidden border-none bg-white/80 dark:bg-white/5" contentClassName="!p-0 flex flex-col h-full">
-                                        <div className={`drag-handle px-6 py-5 border-b border-gray-200 dark:border-white/10 bg-white/50 dark:bg-white/5 backdrop-blur-xl flex items-center gap-2 shrink-0 ${isTileLocked('events') ? 'cursor-default' : 'cursor-move'}`}>
-                                            <StickyNote size={20} className="text-blue-500 dark:text-blue-400" />
-                                            <h2 className="text-xl font-bold text-gray-900 dark:text-white flex-1">Letzte Aktivitäten</h2>
+                                        <div className={`px-6 py-5 border-b border-gray-200 dark:border-white/10 bg-white/50 dark:bg-white/5 backdrop-blur-xl flex items-center gap-3 shrink-0`}>
+                                            <button
+                                                className={`drag-handle p-1.5 rounded-lg hover:bg-black/5 dark:hover:bg-white/10 transition-colors ${isTileLocked('events') ? 'cursor-default text-gray-200 dark:text-white/5 opacity-30' : 'cursor-move text-gray-300 dark:text-white/10 hover:text-gray-500 dark:hover:text-white/50'}`}
+                                                title="Verschieben"
+                                            >
+                                                <Move size={18} />
+                                            </button>
+                                            <div className="flex-1 flex items-center gap-2">
+                                                <StickyNote size={20} className="text-blue-500 dark:text-blue-400" />
+                                                <h2 className="text-xl font-bold text-gray-900 dark:text-white">Letzte Aktivitäten</h2>
+                                            </div>
                                             <button
                                                 onMouseDown={(e) => e.stopPropagation()}
                                                 onTouchStart={(e) => e.stopPropagation()}

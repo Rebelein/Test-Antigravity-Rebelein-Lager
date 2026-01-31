@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { useIsMobile } from '../hooks/useIsMobile';
 import { supabase } from '../supabaseClient';
@@ -18,6 +19,7 @@ interface SortConfig {
     direction: 'asc' | 'desc';
 }
 
+
 const Inventory = () => {
     const navigate = useNavigate();
     const isMobile = useIsMobile();
@@ -25,6 +27,8 @@ const Inventory = () => {
 
     // --- VIEW STATE ---
     const [viewMode, setViewMode] = useState<'primary' | 'secondary'>('primary');
+    // Header Collapse State
+    const [isHeaderExpanded, setIsHeaderExpanded] = useState(!isMobile);
 
     const {
         articles, warehouses, suppliers, loading,
@@ -387,9 +391,9 @@ const Inventory = () => {
 
     if (loading || authLoading) return <div className="flex flex-col items-center justify-center h-[60vh] text-white/50"><Loader2 size={40} className="animate-spin mb-4 text-emerald-400" /><p>Lade Lagerbestand...</p></div>;
 
-    const listContent = (
-        <div className={`space-y-6 relative h-full flex flex-col ${isMobile ? 'pb-24' : 'pb-0'}`}>
-            <header className="flex flex-col md:flex-row md:items-center justify-between gap-4 shrink-0">
+    const headerContent = (
+        <>
+            <header className="flex flex-col md:flex-row md:items-center justify-between gap-4 px-1 pt-4 pb-2">
                 <h1 className="text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-emerald-300 to-teal-200">Lagerbestand</h1>
                 <div className="flex gap-3">
                     <Button variant={isSelectionMode ? 'secondary' : 'primary'} className={`transition-colors ${isSelectionMode ? 'bg-white/20 text-white' : 'bg-white/10 text-white/70 hover:text-white'}`} onClick={toggleSelectionMode} icon={isSelectionMode ? <CheckSquare size={18} /> : <ListChecks size={18} />}>{isSelectionMode ? 'Fertig' : 'Auswahl'}</Button>
@@ -397,7 +401,7 @@ const Inventory = () => {
                 </div>
             </header>
 
-            <div className="shrink-0">
+            <div className="px-1 pb-2">
                 <InventoryToolbar
                     viewMode={viewMode}
                     setViewMode={setViewMode}
@@ -410,35 +414,41 @@ const Inventory = () => {
                     setActiveFilter={setActiveFilter}
                     sortConfig={sortConfig}
                     setSortConfig={setSortConfig}
+                    isExpanded={isHeaderExpanded}
+                    onToggle={() => setIsHeaderExpanded(!isHeaderExpanded)}
                 />
             </div>
+        </>
+    );
 
-            <div className="flex-1 min-h-0">
-                <InventoryList
-                    groupedArticles={groupedArticles}
-                    collapsedCategories={profile?.collapsed_categories}
-                    toggleCategoryCollapse={toggleCategoryCollapse}
-                    isSelectionMode={isSelectionMode}
-                    selectedArticleIds={selectedArticleIds}
-                    toggleCategorySelection={toggleCategorySelection}
-                    toggleArticleSelection={toggleArticleSelection}
-                    handleQuickAddToCategory={handleQuickAddToCategory}
-                    expandedArticleId={expandedArticleId}
-                    quickStockAmount={quickStockAmount}
-                    isBooking={isBooking}
-                    onCardClick={handleCardClick}
-                    onQuickStockChange={setQuickStockAmount}
-                    onIncrementStock={handleIncrementStock}
-                    onDecrementStock={handleDecrementStock}
-                    onCancelQuickBook={(e) => { e.stopPropagation(); setExpandedArticleId(null); }}
-                    onQuickSave={handleQuickSave}
-                    onOpenDetail={openDetail}
-                    orderDetails={orderDetails}
-                    copiedField={copiedField}
-                    onCopy={handleCopy}
-                    useWindowScroll={isMobile}
-                />
-            </div>
+    const listContent = (
+        <div className={`relative h-full flex flex-col overflow-hidden`}>
+            {/* Virtuoso handles scrolling internally, ensuring proper loading */}
+            <InventoryList
+                groupedArticles={groupedArticles}
+                collapsedCategories={profile?.collapsed_categories}
+                toggleCategoryCollapse={toggleCategoryCollapse}
+                isSelectionMode={isSelectionMode}
+                selectedArticleIds={selectedArticleIds}
+                toggleCategorySelection={toggleCategorySelection}
+                toggleArticleSelection={toggleArticleSelection}
+                handleQuickAddToCategory={handleQuickAddToCategory}
+                expandedArticleId={expandedArticleId}
+                quickStockAmount={quickStockAmount}
+                isBooking={isBooking}
+                onCardClick={handleCardClick}
+                onQuickStockChange={setQuickStockAmount}
+                onIncrementStock={handleIncrementStock}
+                onDecrementStock={handleDecrementStock}
+                onCancelQuickBook={(e) => { e.stopPropagation(); setExpandedArticleId(null); }}
+                onQuickSave={handleQuickSave}
+                onOpenDetail={openDetail}
+                orderDetails={orderDetails}
+                copiedField={copiedField}
+                onCopy={handleCopy}
+                useWindowScroll={false}
+                headerContent={headerContent}
+            />
 
             {isSelectionMode && selectedArticleIds.size > 0 && (
                 <div className="absolute bottom-4 left-0 right-0 p-4 z-[90] flex justify-center animate-in slide-in-from-bottom-5 pointer-events-none">
@@ -449,7 +459,7 @@ const Inventory = () => {
                     </div>
                 </div>
             )}
-        </div>
+        </div >
     );
 
     return (

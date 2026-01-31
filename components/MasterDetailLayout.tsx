@@ -121,7 +121,7 @@ export const MasterDetailLayout: React.FC<MasterDetailLayoutProps> = ({
     if (isMobile) {
         return (
             <>
-                <div className={`w-full min-h-screen pb-20 ${className}`}>
+                <div className={`w-full h-full flex flex-col overflow-hidden ${className}`}>
                     {listContent}
                 </div>
 

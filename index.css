@@ -188,9 +188,12 @@
 [data-theme="glass"] .orb {
   position: fixed;
   border-radius: 50%;
-  filter: blur(80px);
+  filter: blur(40px);
+  /* Reduced from 80px for iOS performance */
   z-index: -1;
   animation: orb-float 20s ease-in-out infinite;
+  will-change: transform;
+  /* GPU optimization */
 }
 
 [data-theme="glass"] .orb-1 {
@@ -224,10 +227,13 @@
 [data-theme="glass-light"] .orb {
   position: fixed;
   border-radius: 50%;
-  filter: blur(80px);
+  filter: blur(40px);
+  /* Reduced from 80px for iOS performance */
   z-index: -1;
   animation: orb-float 20s ease-in-out infinite;
   opacity: 0.6;
+  will-change: transform;
+  /* GPU optimization */
 }
 
 [data-theme="glass-light"] .orb-1 {
@@ -874,6 +880,13 @@
 
 .low-perf-mode .fixed.inset-0[class*="bg-black"] {
   background-color: rgba(0, 0, 0, 0.95) !important;
+}
+
+/* Disable orb animations completely for static backgrounds */
+.low-perf-mode .orb {
+  animation: none !important;
+  filter: blur(20px) !important;
+  /* Further reduced blur for static rendering */
 }
 
 /* Reduce animations and transitions for better iOS performance */

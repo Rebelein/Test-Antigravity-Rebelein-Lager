@@ -101,12 +101,12 @@ export const CommissionDetailContent: React.FC<CommissionDetailContentProps> = (
                                     <StatusBadge status={translateStatus(commission.status)} />
                                 </div>
                             </div>
-                            <div className="flex gap-2">
-                                <Button variant="secondary" onClick={(e) => onEdit(e)} icon={<Edit2 size={18} />}></Button>
-                                <Button variant="secondary" onClick={onPrint} icon={<Printer size={18} />}></Button>
+                            <div className="flex gap-1">
+                                <Button variant="secondary" onClick={(e) => onEdit(e)} className="w-9 h-9 p-0 rounded-lg" icon={<Edit2 size={16} />}></Button>
+                                <Button variant="secondary" onClick={onPrint} className="w-9 h-9 p-0 rounded-lg" icon={<Printer size={16} />}></Button>
                                 <Button variant="secondary" onClick={(e) => {
                                     if (onDelete) onDelete(e);
-                                }} className="text-rose-400 hover:text-white hover:bg-rose-500/20" icon={<Trash2 size={18} />}></Button>
+                                }} className="w-9 h-9 p-0 rounded-lg text-rose-400 hover:text-white hover:bg-rose-500/20" icon={<Trash2 size={16} />}></Button>
                             </div>
                         </div>
                         {/* FULL NOTES DISPLAY */}

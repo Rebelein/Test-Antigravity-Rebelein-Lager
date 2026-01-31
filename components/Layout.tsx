@@ -310,22 +310,26 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
             {/* --- Main Content Area --- */}
             <main
                 className={clsx(
-                    "relative pb-32 px-4 pt-16 w-full mx-auto",
+                    "relative w-full mx-auto flex-1 min-h-0", // Use flex-1 to fill space between top/bottom bars
                     "transition-all duration-300 ease-in-out",
-                    "lg:pb-8 lg:pt-8",
-                    isSidebarPinned ? 'lg:pl-[18rem]' : 'lg:pl-[7rem]', // Adjusted for floating sidebar margin
+                    "lg:pb-8 lg:pt-8 lg:px-4",
+                    isSidebarPinned ? 'lg:pl-[18rem]' : 'lg:pl-[7rem]',
                     "lg:max-w-none",
-                    updateAvailable ? 'mt-12' : ''
+                    updateAvailable ? 'mt-12' : '',
+                    // Container scrolling for better control
+                    "flex flex-col h-full overflow-hidden"
                 )}
             >
-                <div className="w-full">
-                    <AnimatePresence mode="wait">
+                <div className="w-full h-full flex flex-col overflow-hidden">
+                    <AnimatePresence mode="popLayout">
+
                         <motion.div
                             key={location.pathname}
                             initial={{ opacity: 0, y: 20, scale: 0.98 }}
                             animate={{ opacity: 1, y: 0, scale: 1 }}
                             exit={{ opacity: 0, y: -20, scale: 0.98 }}
                             transition={{ duration: 0.3, ease: "easeOut" }}
+                            className="w-full h-full flex flex-col overflow-hidden px-4 pt-16 lg:pt-0 lg:px-0"
                         >
                             {children}
                         </motion.div>
@@ -350,39 +354,44 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
                                 // Filter out Scanner for the dock list, as it's the center button
                                 const dockItems = activeOrder.filter(id => id !== 'SCANNER_ACTION').map(id => ALL_NAV_ITEMS.find(i => i.id === id)).filter(Boolean);
 
-                                // Split into Left and Right chunks around the center button
-                                const midPoint = Math.ceil(dockItems.length / 2);
-                                const leftItems = dockItems.slice(0, midPoint);
-                                const rightItems = dockItems.slice(midPoint);
+                                // FIXED SPLIT: First 3 items on left, rest on right
+                                const duplicateItems = [...dockItems]; // safe copy
+                                const leftItems = duplicateItems.slice(0, 3);
+                                const rightItems = duplicateItems.slice(3);
 
                                 return (
-                                    <>
-                                        <div className="flex gap-2 sm:gap-4 shrink-0">
+                                    <div className="flex items-center w-full h-full">
+                                        {/* LEFT CONTAINER - Fixed 3 items, filling space towards center */}
+                                        <div className="flex-1 flex justify-end gap-1 sm:gap-2 pr-1 items-center">
                                             {leftItems.map((item) => {
                                                 if (!item) return null;
                                                 const isActive = currentPath === item.id;
                                                 return (
-                                                    <button key={item.id} onClick={() => navigate(`/${item.id}`)} className={clsx("relative flex flex-col items-center justify-center w-12 h-12 sm:w-14 sm:h-14 rounded-full transition-all duration-300", isActive ? 'text-emerald-400' : 'text-white/50 hover:text-white/80')}>
+                                                    <button key={item.id} onClick={() => navigate(`/${item.id}`)} className={clsx("relative flex flex-col items-center justify-center w-10 h-10 sm:w-12 sm:h-12 rounded-full transition-all duration-300 shrink-0", isActive ? 'text-emerald-400' : 'text-white/50 hover:text-white/80')}>
                                                         {item.icon}
-                                                        {isActive && <motion.span layoutId="nav-dot" className="absolute bottom-1 w-1 h-1 bg-emerald-400 rounded-full shadow-[0_0_8px_rgba(52,211,153,0.8)]" />}
+                                                        {isActive && <motion.span layoutId="nav-dot" className="absolute bottom-0 w-1 h-1 bg-emerald-400 rounded-full shadow-[0_0_8px_rgba(52,211,153,0.8)]" />}
                                                     </button>
                                                 );
                                             })}
                                         </div>
+
+                                        {/* CENTER SPACER - For the absolute positioned scanner button */}
                                         <div className="w-16 shrink-0"></div>
-                                        <div className="flex gap-2 sm:gap-4 shrink-0">
+
+                                        {/* RIGHT CONTAINER - Scrollable for overflow */}
+                                        <div className="flex-1 flex justify-start overflow-x-auto gap-1 sm:gap-2 pl-1 items-center [&::-webkit-scrollbar]:hidden [-ms-overflow-style:'none'] [scrollbar-width:'none']">
                                             {rightItems.map((item) => {
                                                 if (!item) return null;
                                                 const isActive = currentPath === item.id;
                                                 return (
-                                                    <button key={item.id} onClick={() => navigate(`/${item.id}`)} className={clsx("relative flex flex-col items-center justify-center w-12 h-12 sm:w-14 sm:h-14 rounded-full transition-all duration-300", isActive ? 'text-emerald-400' : 'text-white/50 hover:text-white/80')}>
+                                                    <button key={item.id} onClick={() => navigate(`/${item.id}`)} className={clsx("relative flex flex-col items-center justify-center w-10 h-10 sm:w-12 sm:h-12 rounded-full transition-all duration-300 shrink-0", isActive ? 'text-emerald-400' : 'text-white/50 hover:text-white/80')}>
                                                         {item.icon}
-                                                        {isActive && <motion.span layoutId="nav-dot" className="absolute bottom-1 w-1 h-1 bg-emerald-400 rounded-full shadow-[0_0_8px_rgba(52,211,153,0.8)]" />}
+                                                        {isActive && <motion.span layoutId="nav-dot" className="absolute bottom-0 w-1 h-1 bg-emerald-400 rounded-full shadow-[0_0_8px_rgba(52,211,153,0.8)]" />}
                                                     </button>
                                                 );
                                             })}
                                         </div>
-                                    </>
+                                    </div>
                                 );
                             })()}
                         </div>
@@ -400,7 +409,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
                     </motion.button>
                 </div>
             </motion.div>
-        </GlassLayout>
+        </GlassLayout >
     );
 };
 

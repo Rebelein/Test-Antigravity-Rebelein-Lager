@@ -29,12 +29,12 @@ declare global {
     };
 }
 
-export const CommissionCleanupModal: React.FC<CommissionCleanupModalProps> = ({ isOpen, onClose, onCleanupComplete }) => {
+const CommissionCleanupModalComponent: React.FC<CommissionCleanupModalProps> = ({ isOpen, onClose, onCleanupComplete }) => {
     // --- STATE ---
     const [step, setStep] = useState<'scan' | 'review'>('scan');
     const [loading, setLoading] = useState(false);
 
-    console.log("CommissionCleanupModal Rendered. isOpen:", isOpen);
+
 
     // Data
     const [expectedCommissions, setExpectedCommissions] = useState<Commission[]>([]);
@@ -538,3 +538,5 @@ export const CommissionCleanupModal: React.FC<CommissionCleanupModalProps> = ({ 
         </GlassModal>
     );
 };
+
+export const CommissionCleanupModal = React.memo(CommissionCleanupModalComponent);

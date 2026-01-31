@@ -71,12 +71,22 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     setThemeState(newTheme);
   };
 
-  // Low Performance Mode for iOS
+  // Performance Mode (Default: ON for all devices)
+  // Users can opt-in to premium effects by disabling this mode
   const [isLowPerfMode, setIsLowPerfMode] = useState<boolean>(() => {
     if (typeof window !== 'undefined') {
-      return localStorage.getItem('rebelein-low-perf-mode') === 'true';
+      const savedValue = localStorage.getItem('rebelein-low-perf-mode');
+
+      // If user has explicitly set a preference, use it
+      if (savedValue !== null) {
+        return savedValue === 'true';
+      }
+
+      // Default: Performance mode ON for all devices
+      // Users can disable to get premium blur/animation effects
+      return true;
     }
-    return false;
+    return true;
   });
 
   const toggleLowPerfMode = () => {

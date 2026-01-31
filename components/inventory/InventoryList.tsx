@@ -35,6 +35,7 @@ interface InventoryListProps {
     copiedField: string | null;
     onCopy: (text: string, field: string) => void;
     useWindowScroll?: boolean;
+    headerContent?: React.ReactNode;
 }
 
 export const InventoryList: React.FC<InventoryListProps> = ({
@@ -44,7 +45,8 @@ export const InventoryList: React.FC<InventoryListProps> = ({
     expandedArticleId, quickStockAmount, isBooking,
     onCardClick, onQuickStockChange, onIncrementStock, onDecrementStock, onCancelQuickBook, onQuickSave, onOpenDetail,
     orderDetails, copiedField, onCopy,
-    useWindowScroll = true
+    useWindowScroll = true,
+    headerContent
 }) => {
 
     const categories = useMemo(() => {
@@ -73,6 +75,9 @@ export const InventoryList: React.FC<InventoryListProps> = ({
         <GroupedVirtuoso
             useWindowScroll={useWindowScroll}
             style={!useWindowScroll ? { height: '100%' } : undefined}
+            components={{
+                Header: headerContent ? () => <>{headerContent}</> : undefined
+            }}
             groupCounts={groupCounts}
             groupContent={(index) => {
                 const category = categories[index];

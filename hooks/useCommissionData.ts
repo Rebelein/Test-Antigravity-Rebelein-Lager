@@ -1,5 +1,5 @@
 
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { supabase } from '../supabaseClient';
 import { Commission, CommissionItem, Article, Supplier, CommissionEvent } from '../types';
 import { useAuth } from '../contexts/AuthContext';
@@ -313,7 +313,7 @@ export const useCommissionData = (activeTab: CommissionTab) => {
         };
     }, [fetchCommissions, fetchTabCounts, profile?.primary_warehouse_id]);
 
-    return {
+    return useMemo(() => ({
         commissions,
         setCommissions, // Exposed for optimistic updates
         suppliers,
@@ -336,5 +336,11 @@ export const useCommissionData = (activeTab: CommissionTab) => {
         fetchCommissionItems,
         logCommissionEvent,
         refreshCommissions: fetchCommissions
-    };
+    }), [
+        commissions, suppliers, availableArticles, fetchArticles, loadingArticles,
+        loading, tabCounts, historyLogs, loadingHistory, fetchHistory,
+        localHistoryLogs, fetchCommissionSpecificHistory, recentPrintLogs,
+        loadingPrintHistory, fetchPrintHistory, fetchCommissionItems,
+        logCommissionEvent, fetchCommissions
+    ]);
 };

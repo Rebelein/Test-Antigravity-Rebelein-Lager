@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { Printer, ChevronDown, Check, Loader2, Undo2, ArrowRight, PackageX, Truck } from 'lucide-react';
 import { Button, GlassInput } from './UIComponents';
 import { Commission } from '../types';
@@ -20,7 +20,7 @@ interface PrintingSectionProps {
     activeCommissions: Commission[];
 }
 
-export const PrintingSection: React.FC<PrintingSectionProps> = ({
+const PrintingSectionComponent: React.FC<PrintingSectionProps> = ({
     showPrintArea,
     setShowPrintArea,
     printTab,
@@ -37,7 +37,6 @@ export const PrintingSection: React.FC<PrintingSectionProps> = ({
 }) => {
     const [mode, setMode] = useState<'print' | 'storno'>('print');
 
-
     const toggleQueueSelection = (id: string) => {
         const newSet = new Set(selectedPrintIds);
         if (newSet.has(id)) newSet.delete(id);
@@ -45,7 +44,12 @@ export const PrintingSection: React.FC<PrintingSectionProps> = ({
         setSelectedPrintIds(newSet);
     };
 
-    const stornoCount = activeCommissions.filter(c => c.status === 'ReturnPending').length;
+    // Memoize storno calculations
+    const stornoCommissions = useMemo(() => {
+        return activeCommissions.filter(c => c.status === 'ReturnPending');
+    }, [activeCommissions]);
+
+    const stornoCount = stornoCommissions.length;
 
     return (
         <div className="bg-blue-500/10 border border-blue-500/20 rounded-xl p-0 mb-6 animate-in fade-in overflow-hidden">
@@ -183,13 +187,13 @@ export const PrintingSection: React.FC<PrintingSectionProps> = ({
                             {/* 1. LIST OF PENDING STORNOS (Tasks) */}
                             <div className="space-y-2">
                                 <h4 className="text-xs font-bold text-white/50 uppercase">Offene Rückbau-Aufgaben</h4>
-                                {activeCommissions.filter(c => c.status === 'ReturnPending').length === 0 ? (
+                                {stornoCommissions.length === 0 ? (
                                     <div className="text-center py-4 bg-white/5 rounded-lg border border-white/5 text-white/40 text-xs">
                                         Keine offenen Stornos.
                                     </div>
                                 ) : (
                                     <div className="space-y-2 max-h-60 overflow-y-auto">
-                                        {activeCommissions.filter(c => c.status === 'ReturnPending').map(c => {
+                                        {stornoCommissions.map(c => {
                                             const isRestock = c.notes?.includes('Einlagern') || c.notes?.includes('ZURÜCK INS LAGER');
                                             // Cast to any to access commission_items which are fetched but not in base type
                                             const items = (c as any).commission_items || [];
@@ -287,3 +291,5 @@ export const PrintingSection: React.FC<PrintingSectionProps> = ({
         </div>
     );
 };
+
+export const PrintingSection = React.memo(PrintingSectionComponent);
