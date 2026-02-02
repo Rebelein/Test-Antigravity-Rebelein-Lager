@@ -34,6 +34,10 @@ const CommissionCleanupModalComponent: React.FC<CommissionCleanupModalProps> = (
     const [step, setStep] = useState<'scan' | 'review'>('scan');
     const [loading, setLoading] = useState(false);
 
+    // DEBUG STATE
+    const [debugLog, setDebugLog] = useState<string[]>([]);
+    const addLog = (msg: string) => setDebugLog(prev => [msg, ...prev].slice(0, 5));
+
 
 
     // Data
@@ -418,6 +422,13 @@ const CommissionCleanupModalComponent: React.FC<CommissionCleanupModalProps> = (
                                     </span>
                                 </div>
                             )}
+
+                            {/* DEBUG OVERLAY */}
+                            <div className="absolute top-20 left-4 right-4 z-50 pointer-events-none text-center">
+                                <div className="inline-block bg-black/50 text-white/70 text-[10px] font-mono p-2 rounded backdrop-blur-md text-left">
+                                    {debugLog.map((log, i) => <div key={i}>{log}</div>)}
+                                </div>
+                            </div>
                         </div>
 
                         {/* Scan Footer */}

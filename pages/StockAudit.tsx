@@ -62,6 +62,10 @@ const StockAudit: React.FC = () => {
     const [auditCount, setAuditCount] = useState<number>(0);
     const [isSubmitting, setIsSubmitting] = useState(false);
 
+    // DEBUG STATE
+    const [debugLog, setDebugLog] = useState<string[]>([]);
+    const addLog = (msg: string) => setDebugLog(prev => [msg, ...prev].slice(0, 5));
+
     // Ambiguity Handling (Mehrdeutige Fächer)
     const [showCategorySelector, setShowCategorySelector] = useState(false);
     const [ambiguousCategories, setAmbiguousCategories] = useState<string[]>([]);
@@ -350,6 +354,8 @@ const StockAudit: React.FC = () => {
         if (scannerStartPromise.current) return;
         if (scannerRef.current?.isScanning) return;
 
+        addLog("Init Fallback Scanner...");
+
         try {
             if (scannerRef.current) await stopScanner();
 
@@ -357,40 +363,27 @@ const StockAudit: React.FC = () => {
                 experimentalFeatures: {
                     useBarCodeDetectorIfSupported: false // Force legacy for consistent fallback
                 },
-                verbose: false,
-                formatsToSupport: [
-                    Html5QrcodeSupportedFormats.QR_CODE,
-                    Html5QrcodeSupportedFormats.AZTEC,
-                    Html5QrcodeSupportedFormats.CODABAR,
-                    Html5QrcodeSupportedFormats.CODE_39,
-                    Html5QrcodeSupportedFormats.CODE_93,
-                    Html5QrcodeSupportedFormats.CODE_128,
-                    Html5QrcodeSupportedFormats.DATA_MATRIX,
-                    Html5QrcodeSupportedFormats.MAXICODE,
-                    Html5QrcodeSupportedFormats.ITF,
-                    Html5QrcodeSupportedFormats.EAN_13,
-                    Html5QrcodeSupportedFormats.EAN_8,
-                    Html5QrcodeSupportedFormats.PDF_417,
-                    Html5QrcodeSupportedFormats.RSS_14,
-                    Html5QrcodeSupportedFormats.RSS_EXPANDED,
-                    Html5QrcodeSupportedFormats.UPC_A,
-                    Html5QrcodeSupportedFormats.UPC_E,
-                    Html5QrcodeSupportedFormats.UPC_EAN_EXTENSION
-                ]
+                verbose: true,
             });
             scannerRef.current = scanner;
+
+            addLog("Starting stream...");
 
             // Reduced QR box size for better precision on single labels
             await scanner.start(
                 { facingMode: "environment" },
                 {
-                    fps: isLowPerfMode ? 5 : 15, // Reduce FPS on iOS mode
-                    qrbox: { width: 280, height: 100 },
-                    // aspectRatio removed to avoid iOS camera feed issues
+                    // MINIMAL CONSTRAINTS
+                    fps: 10,
+                    // No qrbox
+                    // No aspectRatio
                 },
                 handleScanSuccess,
-                undefined
+                (errorMessage) => {
+                    // console.log(errorMessage);
+                }
             );
+            addLog("Stream started!");
 
             // POST-START: CHECK CAPABILITIES & APPLY FOCUS
             try {
@@ -411,8 +404,9 @@ const StockAudit: React.FC = () => {
             }
         } catch (err: any) {
             console.warn("Scanner start failed", err);
+            addLog("Error: " + (err.message || err));
             if (isMounted.current && err?.name !== 'Html5QrcodeError') {
-                setCameraError("Kamerafehler. Bitte Berechtigungen prüfen.");
+                setCameraError("Kamerafehler: " + (err.message || "Unbekannt"));
             }
         }
     };
@@ -763,6 +757,13 @@ const StockAudit: React.FC = () => {
                         {/* Overlay if scanning */}
                         {!scannedLocation && !showCategorySelector && !selectedArticle && isScanning && (
                             <div className="absolute inset-0 pointer-events-none flex items-center justify-center">
+                                {/* DEBUG OVERLAY */}
+                                <div className="absolute top-20 left-4 right-4 z-50 pointer-events-none text-center">
+                                    <div className="inline-block bg-black/50 text-white/70 text-[10px] font-mono p-2 rounded backdrop-blur-md text-left">
+                                        {debugLog.map((log, i) => <div key={i}>{log}</div>)}
+                                    </div>
+                                </div>
+
                                 <div className="w-[280px] h-[100px] border-2 border-purple-500 rounded-lg relative">
                                     <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-white/80 text-xs bg-black/50 px-2 py-1 rounded whitespace-nowrap">
                                         {useNative ? 'High Performance (Native)' : 'Legacy Mode (JS)'}

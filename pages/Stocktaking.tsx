@@ -47,6 +47,10 @@ const Stocktaking: React.FC = () => {
     // Fallback Ref
     const html5QrCodeRef = useRef<Html5Qrcode | null>(null);
 
+    // DEBUG STATE
+    const [debugLog, setDebugLog] = useState<string[]>([]);
+    const addLog = (msg: string) => setDebugLog(prev => [msg, ...prev].slice(0, 5));
+
     // Result State
     const [scannedResult, setScannedResult] = useState<{
         type: 'article' | 'location' | 'unknown';
@@ -159,35 +163,37 @@ const Stocktaking: React.FC = () => {
         if (!document.getElementById('live-reader')) return;
         if (html5QrCodeRef.current?.isScanning) return;
 
+        addLog("Init Fallback Scanner...");
+
         try {
             const scanner = new Html5Qrcode("live-reader", {
-                experimentalFeatures: { useBarCodeDetectorIfSupported: false }, // Force legacy for consistent fallback behavior
-                verbose: false,
-                formatsToSupport: [
-                    Html5QrcodeSupportedFormats.QR_CODE,
-                    Html5QrcodeSupportedFormats.CODE_128,
-                    Html5QrcodeSupportedFormats.EAN_13,
-                    Html5QrcodeSupportedFormats.EAN_8,
-                    Html5QrcodeSupportedFormats.CODE_39,
-                    Html5QrcodeSupportedFormats.UPC_A
-                ]
+                experimentalFeatures: { useBarCodeDetectorIfSupported: false },
+                verbose: true // Enable verbose for more console logs
             });
             html5QrCodeRef.current = scanner;
+
+            addLog("Starting stream...");
 
             await scanner.start(
                 { facingMode: "environment" },
                 {
-                    fps: isLowPerfMode ? 5 : 10, // Reduce FPS on iOS mode
-                    qrbox: { width: 280, height: 280 },
-                    // aspectRatio removed to fix iOS black screen issues
+                    // MINIMAL CONSTRAINTS FOR IOS STABILITY
+                    fps: 10,
+                    // No qrbox: full screen scan
+                    // No aspectRatio: native camera ratio
                 },
                 (decodedText) => handleScanSuccess(decodedText),
-                undefined
+                (errorMessage) => {
+                    // Ignored primarily, but useful for debug if needed
+                    // console.log(errorMessage);
+                }
             );
+            addLog("Stream started!");
             if (isMounted.current) setIsScanning(true);
         } catch (err: any) {
             console.error("Fallback Scanner Error", err);
-            if (isMounted.current) setError("Kamera konnte nicht gestartet werden (iOS/Legacy).");
+            addLog("Error: " + (err.message || err));
+            if (isMounted.current) setError("Kamera Fehler: " + (err.message || "Unbekannt"));
         }
     };
 
@@ -397,6 +403,13 @@ const Stocktaking: React.FC = () => {
                 {/* Overlay Guide */}
                 {!scannedResult && (
                     <div className="absolute inset-0 pointer-events-none flex flex-col items-center justify-center z-10">
+                        {/* DEBUG OVERLAY */}
+                        <div className="absolute top-20 left-4 right-4 z-50 pointer-events-none">
+                            <div className="bg-black/50 text-white/70 text-[10px] font-mono p-2 rounded backdrop-blur-md">
+                                {debugLog.map((log, i) => <div key={i}>{log}</div>)}
+                            </div>
+                        </div>
+
                         <div className="w-64 h-64 border-2 border-emerald-500/50 rounded-2xl relative">
                             <div className="absolute top-0 left-0 w-6 h-6 border-t-4 border-l-4 border-emerald-500 -mt-1 -ml-1 rounded-tl-xl" />
                             <div className="absolute top-0 right-0 w-6 h-6 border-t-4 border-r-4 border-emerald-500 -mt-1 -mr-1 rounded-tr-xl" />
