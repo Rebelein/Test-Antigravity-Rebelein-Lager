@@ -386,7 +386,7 @@ const StockAudit: React.FC = () => {
                 {
                     fps: isLowPerfMode ? 5 : 15, // Reduce FPS on iOS mode
                     qrbox: { width: 280, height: 100 },
-                    aspectRatio: 1.0
+                    // aspectRatio removed to avoid iOS camera feed issues
                 },
                 handleScanSuccess,
                 undefined

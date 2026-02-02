@@ -798,102 +798,12 @@
   color: #2563eb !important;
 }
 
-/* Fix Status Badge Backgrounds (make them subtler/darker border) */
-[data-theme="glass-light"] .bg-emerald-500\/20 {
-  background-color: rgba(5, 150, 105, 0.1) !important;
-  border-color: rgba(5, 150, 105, 0.3) !important;
-}
-
-[data-theme="glass-light"] .bg-amber-500\/20 {
-  background-color: rgba(217, 119, 6, 0.1) !important;
-  border-color: rgba(217, 119, 6, 0.3) !important;
-}
-
-[data-theme="glass-light"] .bg-rose-500\/20 {
-  background-color: rgba(225, 29, 72, 0.1) !important;
-  border-color: rgba(225, 29, 72, 0.3) !important;
-}
-
-/* Fix Secondary/Ghost Buttons Text */
-[data-theme="glass-light"] .text-white\/70,
-[data-theme="glass-light"] .text-white\/50 {
-  color: var(--text-secondary) !important;
-}
-
-[data-theme="glass-light"] button:hover .text-white\/70,
-[data-theme="glass-light"] button:hover .text-white\/50 {
-  color: var(--text-primary) !important;
-}
-
-[data-theme="glass-light"] .text-white\/30 {
-  color: var(--text-muted) !important;
-}
-
-/* ============================================
-   LOW PERFORMANCE MODE (iOS)
-   Disables backdrop-blur and uses solid backgrounds
-============================================ */
-
-.low-perf-mode .backdrop-blur,
-.low-perf-mode .backdrop-blur-sm,
-.low-perf-mode .backdrop-blur-md,
-.low-perf-mode .backdrop-blur-lg,
-.low-perf-mode .backdrop-blur-xl,
-.low-perf-mode .backdrop-blur-2xl,
-.low-perf-mode .backdrop-blur-3xl {
-  backdrop-filter: none !important;
-  -webkit-backdrop-filter: none !important;
-}
-
-.low-perf-mode .glass-panel {
-  backdrop-filter: none !important;
-  -webkit-backdrop-filter: none !important;
-  background: rgba(15, 23, 42, 0.95) !important;
-}
-
-.low-perf-mode [data-theme="glass"] .glass-panel {
-  backdrop-filter: none !important;
-  -webkit-backdrop-filter: none !important;
-  background: rgba(15, 23, 42, 0.95) !important;
-}
-
-.low-perf-mode [data-theme="glass-light"] .glass-panel {
-  backdrop-filter: none !important;
-  -webkit-backdrop-filter: none !important;
-  background: rgba(255, 255, 255, 0.95) !important;
-}
-
-/* Modal overlays - increase opacity when blur is disabled */
-.low-perf-mode .fixed.inset-0.bg-black\/60,
-.low-perf-mode .fixed.inset-0.bg-black\/80,
-.low-perf-mode .fixed.inset-0.bg-black\/90 {
-  backdrop-filter: none !important;
-  -webkit-backdrop-filter: none !important;
-  background-color: rgba(0, 0, 0, 0.95) !important;
-}
-
-/* Generic modal backdrop fix */
-.low-perf-mode [class*="backdrop-blur"] {
-  backdrop-filter: none !important;
-  -webkit-backdrop-filter: none !important;
-}
-
-.low-perf-mode .fixed.inset-0[class*="bg-black"] {
-  background-color: rgba(0, 0, 0, 0.95) !important;
-}
-
-/* Disable orb animations completely for static backgrounds */
-.low-perf-mode .orb {
-  animation: none !important;
-  filter: blur(20px) !important;
-  /* Further reduced blur for static rendering */
-}
-
-/* Reduce animations and transitions for better iOS performance */
-.low-perf-mode *,
-.low-perf-mode *::before,
-.low-perf-mode *::after {
-  animation-duration: 0.01ms !important;
-  animation-iteration-count: 1 !important;
-  transition-duration: 0.01ms !important;
+/* Fix for html5-qrcode video element size on iOS and generic scanners */
+#live-reader video,
+#audit-reader video,
+#reader video {
+  width: 100% !important;
+  height: 100% !important;
+  object-fit: cover !important;
+  border-radius: 0 !important;
 }

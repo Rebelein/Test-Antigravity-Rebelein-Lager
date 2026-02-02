@@ -155,11 +155,15 @@ const CommissionCleanupModalComponent: React.FC<CommissionCleanupModalProps> = (
         if (!document.getElementById('cleanup-reader')) return;
         if (html5QrCodeRef.current?.isScanning) return;
         try {
-            const scanner = new Html5Qrcode("cleanup-reader", { experimentalFeatures: { useBarCodeDetectorIfSupported: false }, verbose: false });
+            const scanner = new Html5Qrcode("cleanup-reader", {
+                experimentalFeatures: { useBarCodeDetectorIfSupported: false },
+                verbose: false,
+                formatsToSupport: [Html5QrcodeSupportedFormats.QR_CODE]
+            });
             html5QrCodeRef.current = scanner;
             await scanner.start(
                 { facingMode: "environment" },
-                { fps: 10, qrbox: { width: 250, height: 250 }, aspectRatio: 1.0 },
+                { fps: 10, qrbox: { width: 250, height: 250 } },
                 (decodedText) => handleScan(decodedText),
                 undefined
             );

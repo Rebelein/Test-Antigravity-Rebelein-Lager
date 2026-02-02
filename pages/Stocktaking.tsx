@@ -162,7 +162,15 @@ const Stocktaking: React.FC = () => {
         try {
             const scanner = new Html5Qrcode("live-reader", {
                 experimentalFeatures: { useBarCodeDetectorIfSupported: false }, // Force legacy for consistent fallback behavior
-                verbose: false
+                verbose: false,
+                formatsToSupport: [
+                    Html5QrcodeSupportedFormats.QR_CODE,
+                    Html5QrcodeSupportedFormats.CODE_128,
+                    Html5QrcodeSupportedFormats.EAN_13,
+                    Html5QrcodeSupportedFormats.EAN_8,
+                    Html5QrcodeSupportedFormats.CODE_39,
+                    Html5QrcodeSupportedFormats.UPC_A
+                ]
             });
             html5QrCodeRef.current = scanner;
 
@@ -171,15 +179,7 @@ const Stocktaking: React.FC = () => {
                 {
                     fps: isLowPerfMode ? 5 : 10, // Reduce FPS on iOS mode
                     qrbox: { width: 280, height: 280 },
-                    aspectRatio: 1.0,
-                    formatsToSupport: [
-                        Html5QrcodeSupportedFormats.QR_CODE,
-                        Html5QrcodeSupportedFormats.CODE_128,
-                        Html5QrcodeSupportedFormats.EAN_13,
-                        Html5QrcodeSupportedFormats.EAN_8,
-                        Html5QrcodeSupportedFormats.CODE_39,
-                        Html5QrcodeSupportedFormats.UPC_A
-                    ]
+                    // aspectRatio removed to fix iOS black screen issues
                 },
                 (decodedText) => handleScanSuccess(decodedText),
                 undefined
