@@ -4,6 +4,7 @@ import { Article, Warehouse, Supplier, ManufacturerSku, ArticleSupplier } from '
 import { Button } from '../UIComponents';
 import { X, ChevronDown, Trash2, Plus, Sparkles, Loader2, FileImage, Globe, CheckCircle2, ImageIcon, Clipboard, Hash, Star, Layers, Wand2, Pencil } from 'lucide-react';
 import { GoogleGenAI, Type } from "@google/genai";
+import { compressImage } from '../../utils/imageCompression';
 
 interface ArticleEditFormProps {
     isEditMode: boolean;
@@ -338,9 +339,10 @@ export const ArticleEditForm: React.FC<ArticleEditFormProps> = ({
     const uploadFile = async (file: File) => {
         setIsUploading(true);
         try {
-            const fileExt = file.name.split('.').pop();
+            const optimizedFile = await compressImage(file);
+            const fileExt = optimizedFile.name.split('.').pop();
             const fileName = `${Math.random().toString(36).substring(2)}_${Date.now()}.${fileExt}`;
-            const { error } = await supabase.storage.from('article-images').upload(fileName, file);
+            const { error } = await supabase.storage.from('article-images').upload(fileName, optimizedFile);
             if (error) throw error;
             const { data } = supabase.storage.from('article-images').getPublicUrl(fileName);
             setNewArticle(prev => ({ ...prev, image: data.publicUrl }));

@@ -646,7 +646,7 @@ const Orders: React.FC = () => {
 
     // --- LIST CONTENT RENDER ---
     const renderListContent = () => (
-        <div className="space-y-6 pb-24">
+        <div className="h-full overflow-y-auto custom-scrollbar space-y-6 pb-24 px-1">
             <header className="flex justify-between items-start">
                 <div>
                     <h1 className="text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-indigo-300">

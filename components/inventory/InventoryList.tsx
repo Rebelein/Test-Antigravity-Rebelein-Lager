@@ -5,6 +5,7 @@ import {
     Building2, ExternalLink, Hash, Check, Clock
 } from 'lucide-react';
 import { Article } from '../../types';
+import { CachedImage } from '../CachedImage';
 
 interface InventoryListProps {
     groupedArticles: Record<string, Article[]>;
@@ -76,7 +77,8 @@ export const InventoryList: React.FC<InventoryListProps> = ({
             useWindowScroll={useWindowScroll}
             style={!useWindowScroll ? { height: '100%' } : undefined}
             components={{
-                Header: headerContent ? () => <>{headerContent}</> : undefined
+                Header: headerContent ? () => <>{headerContent}</> : undefined,
+                Footer: () => <div className="h-24 md:h-0" />
             }}
             groupCounts={groupCounts}
             groupContent={(index) => {
@@ -152,7 +154,12 @@ export const InventoryList: React.FC<InventoryListProps> = ({
                         >
                             {isSelectionMode && <div className={`shrink-0 mr-1 text-white/50 ${isSelected ? 'text-emerald-400' : ''}`}>{isSelected ? <CheckSquare size={24} /> : <Square size={24} />}</div>}
                             <div onClick={(e) => { e.stopPropagation(); onOpenDetail(article); }} className="w-12 h-12 shrink-0 rounded-lg bg-black/20 overflow-hidden relative border border-white/5 cursor-pointer hover:opacity-80 transition-opacity">
-                                <img src={article.image || `https://picsum.photos/seed/${article.id}/200/200`} className="w-full h-full object-contain opacity-80" alt={article.name} />
+                                <CachedImage
+                                    src={article.image || `https://picsum.photos/seed/${article.id}/200/200`}
+                                    articleId={article.id}
+                                    className="w-full h-full object-contain opacity-80"
+                                    alt={article.name}
+                                />
                             </div>
                             <div className="flex-1 min-w-0 flex flex-col justify-center">
                                 <h3 className="font-medium text-white text-sm truncate">{article.name}</h3>

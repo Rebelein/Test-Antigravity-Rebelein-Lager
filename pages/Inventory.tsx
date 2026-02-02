@@ -2,6 +2,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { useIsMobile } from '../hooks/useIsMobile';
+import { usePersistentState } from '../hooks/usePersistentState';
 import { supabase } from '../supabaseClient';
 import { useInventoryData } from '../hooks/useInventoryData';
 import { Article } from '../types';
@@ -40,7 +41,8 @@ const Inventory = () => {
 
     const [searchTerm, setSearchTerm] = useState('');
     const [activeFilter, setActiveFilter] = useState('all');
-    const [sortConfig, setSortConfig] = useState<SortConfig>({ key: '', direction: 'asc' });
+    // Persistent Sort State (Default: Location Ascending)
+    const [sortConfig, setSortConfig] = usePersistentState<SortConfig>('inventory-sort-v1', { key: 'location', direction: 'asc' });
 
     // --- SELECTION & ACTIONS ---
     const [isSelectionMode, setIsSelectionMode] = useState(false);

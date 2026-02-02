@@ -21,6 +21,7 @@ const Keys = React.lazy(() => import('./pages/Keys'));
 const Login = React.lazy(() => import('./pages/Login'));
 const Workwear = React.lazy(() => import('./pages/Workwear'));
 const PrintProtocol = React.lazy(() => import('./pages/PrintProtocol'));
+const ImageOptimizer = React.lazy(() => import('./pages/ImageOptimizer'));
 
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { ThemeProvider } from './contexts/ThemeContext';
@@ -92,6 +93,7 @@ const App: React.FC = () => {
                       <Route path="/shelf-editor" element={<ShelfEditor />} />
                       <Route path="/keys" element={<Keys />} />
                       <Route path="/workwear" element={<Workwear />} />
+                      <Route path="/image-optimizer" element={<ImageOptimizer />} />
                     </Route>
                   </Routes>
                 </React.Suspense>

@@ -112,7 +112,7 @@ const ShelfEditor: React.FC = () => {
     };
 
     return (
-        <div className="space-y-6 pb-24">
+        <div className="h-full overflow-y-auto custom-scrollbar space-y-6 pb-24 px-1">
             <header className="flex items-center gap-3">
                 <button onClick={() => navigate('/dashboard')} className="p-2 bg-white/5 rounded-full hover:bg-white/10 text-white/50 hover:text-white transition-colors">
                     <ArrowRight className="rotate-180" size={20} />

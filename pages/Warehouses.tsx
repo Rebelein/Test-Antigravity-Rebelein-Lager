@@ -84,7 +84,7 @@ const Warehouses: React.FC = () => {
   ];
 
   return (
-    <div className="space-y-6 pb-20 h-full">
+    <div className="h-full overflow-y-auto custom-scrollbar space-y-6 pb-24 px-1">
       {/* Header */}
       <header className="flex items-center justify-between gap-4">
         <div>

@@ -131,7 +131,7 @@ const PrintingSectionComponent: React.FC<PrintingSectionProps> = ({
                                                 <button onClick={() => setSelectedPrintIds(new Set(queueItems.map(c => c.id)))} className="text-xs text-white/50 hover:text-white px-2">Alle wählen</button>
                                                 <button onClick={() => setSelectedPrintIds(new Set())} className="text-xs text-white/50 hover:text-white px-2">Keine</button>
                                             </div>
-                                            <div className="max-h-40 overflow-y-auto border-t border-white/5 pt-2 grid grid-cols-1 sm:grid-cols-2 gap-2">
+                                            <div className="max-h-[200px] overflow-y-auto touch-pan-y border-t border-white/5 pt-2 grid grid-cols-1 sm:grid-cols-2 gap-2">
                                                 {queueItems.map(c => (
                                                     <div key={c.id} className={`flex items-center gap-2 p-2 rounded-lg cursor-pointer border ${selectedPrintIds.has(c.id) ? 'bg-blue-500/20 border-blue-500/40' : 'bg-white/5 border-transparent hover:bg-white/10'}`} onClick={() => toggleQueueSelection(c.id)}>
                                                         <div className={`w-4 h-4 rounded border flex items-center justify-center ${selectedPrintIds.has(c.id) ? 'bg-blue-500 border-blue-500 text-white' : 'border-white/30'}`}>
@@ -147,7 +147,7 @@ const PrintingSectionComponent: React.FC<PrintingSectionProps> = ({
                                     )}
                                 </div>
                             ) : (
-                                <div className="space-y-2 animate-in fade-in max-h-60 overflow-y-auto">
+                                <div className="space-y-2 animate-in fade-in max-h-[200px] overflow-y-auto touch-pan-y">
                                     {loadingHistory ? (
                                         <div className="text-center py-4"><Loader2 className="animate-spin text-blue-400 mx-auto" /></div>
                                     ) : printLogs.length === 0 ? (
@@ -192,7 +192,7 @@ const PrintingSectionComponent: React.FC<PrintingSectionProps> = ({
                                         Keine offenen Stornos.
                                     </div>
                                 ) : (
-                                    <div className="space-y-2 max-h-60 overflow-y-auto">
+                                    <div className="space-y-2 max-h-[200px] overflow-y-auto touch-pan-y">
                                         {stornoCommissions.map(c => {
                                             const isRestock = c.notes?.includes('Einlagern') || c.notes?.includes('ZURÜCK INS LAGER');
                                             // Cast to any to access commission_items which are fetched but not in base type

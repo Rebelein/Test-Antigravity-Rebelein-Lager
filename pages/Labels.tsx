@@ -644,7 +644,7 @@ const Labels: React.FC = () => {
     };
 
     return (
-        <div className="space-y-6 pb-20 h-full">
+        <div className="space-y-6 pb-20 h-full overflow-y-auto lg:overflow-visible">
             <header className="flex items-center justify-between gap-4">
                 <div>
                     <button onClick={() => navigate('/dashboard')} className="text-sm text-white/50 hover:text-white mb-2">← Dashboard</button>
@@ -653,12 +653,12 @@ const Labels: React.FC = () => {
             </header>
 
             {loading ? <div className="flex justify-center py-12"><Loader2 className="animate-spin text-blue-400" /></div> : (
-                <div className="flex flex-col lg:flex-row gap-6 h-[calc(100vh-200px)] min-h-[650px]">
+                <div className="flex flex-col lg:flex-row gap-6 h-auto lg:h-[calc(100vh-200px)] min-h-0 lg:min-h-[650px] shrink-0">
 
                     {/* LEFT: SELECTION */}
                     <GlassCard
-                        className="flex-1 overflow-hidden border border-white/10"
-                        contentClassName="flex flex-col p-0 min-h-0"
+                        className="flex-none lg:flex-1 h-[500px] lg:h-auto overflow-hidden border border-white/10"
+                        contentClassName="flex flex-col p-0 min-h-0 h-full"
                     >
                         <div className="p-4 border-b border-white/10 bg-white/5 space-y-3">
 
@@ -789,7 +789,7 @@ const Labels: React.FC = () => {
                     </GlassCard>
 
                     {/* RIGHT: CONFIG & PREVIEW */}
-                    <div className="flex-1 flex flex-col gap-4 min-w-[320px]">
+                    <div className="flex-none lg:flex-1 flex flex-col gap-4 min-w-[min(100%,320px)]">
 
                         {/* Config Panel */}
                         <GlassCard className="p-4 space-y-4 flex-1 flex flex-col">

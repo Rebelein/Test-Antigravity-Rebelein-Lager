@@ -9,6 +9,15 @@ export interface ChangelogEntry {
 
 export const changelogData: ChangelogEntry[] = [
     {
+        version: '0.0.62',
+        release_date: '02.02.2026',
+        changes: [
+            { type: 'feature', text: 'Neuer Bild-Optimierer: Tool zur nachträglichen Komprimierung aller Artikel- & Kleidungsbilder inkl. Bucket-Support.' },
+            { type: 'fix', text: 'Lagerbestand: Sortierung automatisch auf "Fach (auf)" gesetzt & dauerhaft gespeichert.' },
+            { type: 'feature', text: 'Dashboard: Neuer Schnellzugriff "Optimierer" in Apps & Funktionen.' },
+        ]
+    },
+    {
         version: '0.0.56',
         release_date: '30.01.2026',
         changes: [

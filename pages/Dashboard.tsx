@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { GlassCard, StatusBadge, Button, GlassModal } from '../components/UIComponents';
-import { AlertTriangle, Wrench, User, CheckCircle2, FileText, ArrowRight, Grid, Database, X, Play, RefreshCw, Check, Copy, Settings, Factory, Warehouse, Tag, Maximize2, Minimize2, PhoneCall, StickyNote, Save, Undo2, Library, Plus, MessageSquare, Monitor, Smartphone, ShoppingCart, LayoutTemplate, Lock, Unlock, History, LayoutDashboard, ChevronUp, ChevronDown, Eye, EyeOff, Zap, Move } from 'lucide-react';
+import { AlertTriangle, Wrench, User, CheckCircle2, FileText, ArrowRight, Grid, Database, X, Play, RefreshCw, Check, Copy, Settings, Factory, Warehouse, Tag, Maximize2, Minimize2, PhoneCall, StickyNote, Save, Undo2, Library, Plus, MessageSquare, Monitor, Smartphone, ShoppingCart, LayoutTemplate, Lock, Unlock, History, LayoutDashboard, ChevronUp, ChevronDown, Eye, EyeOff, Zap, Move, Wand2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useIsMobile } from '../hooks/useIsMobile';
 import { usePersistentState } from '../hooks/usePersistentState';
@@ -1434,6 +1434,14 @@ const Dashboard: React.FC = () => {
                                 <Database size={28} className="text-gray-300" />
                             </div>
                             <span className="text-xs text-white/70 group-hover:text-white text-center">System</span>
+                        </button>
+
+                        {/* App: Image Optimizer */}
+                        <button onClick={() => navigate('/image-optimizer')} className="flex flex-col items-center gap-2 group">
+                            <div className="w-16 h-16 rounded-2xl bg-fuchsia-500/10 border border-fuchsia-500/20 flex items-center justify-center group-hover:bg-fuchsia-500/20 transition-colors">
+                                <Wand2 size={28} className="text-fuchsia-400" />
+                            </div>
+                            <span className="text-xs text-white/70 group-hover:text-white text-center">Optimierer</span>
                         </button>
 
                         {/* App: Page Manager (NEW) */}

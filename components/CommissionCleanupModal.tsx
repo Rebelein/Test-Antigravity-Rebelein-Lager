@@ -3,8 +3,8 @@ import { GlassModal, Button, StatusBadge } from '../components/UIComponents';
 import { supabase } from '../supabaseClient';
 import { Commission } from '../types';
 import { ScanLine, X, Loader2, CheckCircle2, AlertTriangle, ArrowRight, Trash2, RotateCcw, Search, BoxSelect, Truck } from 'lucide-react';
-import { Html5Qrcode, Html5QrcodeSupportedFormats } from 'html5-qrcode';
 import { toast } from 'sonner';
+import UnifiedScanner from './UnifiedScanner';
 
 // --- INTERFACES ---
 interface CommissionCleanupModalProps {
@@ -13,30 +13,12 @@ interface CommissionCleanupModalProps {
     onCleanupComplete?: () => void;
 }
 
-// Native BarcodeDetector Interface
-interface BarcodeDetector {
-    detect(image: ImageBitmapSource): Promise<DetectedBarcode[]>;
-}
-interface DetectedBarcode {
-    rawValue: string;
-    format: string;
-    boundingBox: DOMRectReadOnly;
-}
-declare global {
-    var BarcodeDetector: {
-        new(options?: { formats: string[] }): BarcodeDetector;
-        getSupportedFormats(): Promise<string[]>;
-    };
-}
+
 
 const CommissionCleanupModalComponent: React.FC<CommissionCleanupModalProps> = ({ isOpen, onClose, onCleanupComplete }) => {
     // --- STATE ---
     const [step, setStep] = useState<'scan' | 'review'>('scan');
     const [loading, setLoading] = useState(false);
-
-    // DEBUG STATE
-    const [debugLog, setDebugLog] = useState<string[]>([]);
-    const addLog = (msg: string) => setDebugLog(prev => [msg, ...prev].slice(0, 5));
 
 
 
@@ -46,14 +28,7 @@ const CommissionCleanupModalComponent: React.FC<CommissionCleanupModalProps> = (
     const [scannedCommissions, setScannedCommissions] = useState<Commission[]>([]); // Those we found matched
 
     // Scanner
-    const [useNative, setUseNative] = useState(true);
-    const [error, setError] = useState<string | null>(null);
     const [lastScannedDebug, setLastScannedDebug] = useState<string | null>(null); // Debug info
-    const videoRef = useRef<HTMLVideoElement>(null);
-    const streamRef = useRef<MediaStream | null>(null);
-    const scannerLoopRef = useRef<number | null>(null);
-    const html5QrCodeRef = useRef<Html5Qrcode | null>(null);
-    const isMounted = useRef(true);
     const lastProcessedRef = useRef<{ id: string, time: number } | null>(null);
 
     // Initial Load
@@ -63,32 +38,8 @@ const CommissionCleanupModalComponent: React.FC<CommissionCleanupModalProps> = (
             setScannedIds(new Set());
             setScannedCommissions([]);
             fetchExpectedCommissions();
-            isMounted.current = true;
-            // Delay scanner init slightly for DOM
-            setTimeout(initScanner, 100);
-        } else {
-            stopScanner();
         }
-
-        // Battery Saver: Stop camera when app goes to background
-        const handleVisibilityChange = () => {
-            if (document.hidden) {
-                console.log("App backgrounded -> Stopping Scanner");
-                stopScanner();
-            } else if (isOpen && step === 'scan') {
-                console.log("App foregrounded -> Resuming Scanner");
-                initScanner();
-            }
-        };
-
-        document.addEventListener('visibilitychange', handleVisibilityChange);
-
-        return () => {
-            isMounted.current = false;
-            stopScanner();
-            document.removeEventListener('visibilitychange', handleVisibilityChange);
-        };
-    }, [isOpen, step]); // Add step dependency to ensure resume works correctly
+    }, [isOpen]);
 
     const fetchExpectedCommissions = async () => {
         setLoading(true);
@@ -111,82 +62,7 @@ const CommissionCleanupModalComponent: React.FC<CommissionCleanupModalProps> = (
         }
     };
 
-    // --- SCANNER LOGIC duplicated/adapted from Stocktaking ---
-    const initScanner = async () => {
-        if ('BarcodeDetector' in window) {
-            setUseNative(true);
-            startNativeScanner();
-        } else {
-            setUseNative(false);
-            setTimeout(startFallbackScanner, 100);
-        }
-    };
 
-    const startNativeScanner = async () => {
-        if (!isMounted.current) return;
-        setError(null);
-        try {
-            const stream = await navigator.mediaDevices.getUserMedia({
-                video: { facingMode: { ideal: "environment" }, focusMode: 'continuous' } as any
-            });
-            streamRef.current = stream;
-            if (videoRef.current) {
-                videoRef.current.srcObject = stream;
-                await videoRef.current.play();
-            }
-            const formats = ['qr_code'];
-            const detector = new window.BarcodeDetector({ formats });
-
-            const scanLoop = async () => {
-                if (!videoRef.current || videoRef.current.paused || videoRef.current.ended) return;
-                try {
-                    const barcodes = await detector.detect(videoRef.current);
-                    if (barcodes.length > 0) handleScan(barcodes[0].rawValue);
-                } catch (e) { }
-                if (isMounted.current && step === 'scan') {
-                    scannerLoopRef.current = requestAnimationFrame(scanLoop);
-                }
-            };
-            scanLoop();
-        } catch (err) {
-            console.error(err);
-            setUseNative(false);
-            startFallbackScanner();
-        }
-    };
-
-    const startFallbackScanner = async () => {
-        if (!document.getElementById('cleanup-reader')) return;
-        if (html5QrCodeRef.current?.isScanning) return;
-        try {
-            const scanner = new Html5Qrcode("cleanup-reader", {
-                experimentalFeatures: { useBarCodeDetectorIfSupported: false },
-                verbose: false,
-                formatsToSupport: [Html5QrcodeSupportedFormats.QR_CODE]
-            });
-            html5QrCodeRef.current = scanner;
-            await scanner.start(
-                { facingMode: "environment" },
-                { fps: 10, qrbox: { width: 250, height: 250 } },
-                (decodedText) => handleScan(decodedText),
-                undefined
-            );
-        } catch (err) {
-            console.error(err);
-            setError("Kamera-Fehler");
-        }
-    };
-
-    const stopScanner = async () => {
-        if (scannerLoopRef.current) cancelAnimationFrame(scannerLoopRef.current);
-        if (streamRef.current) {
-            streamRef.current.getTracks().forEach(t => t.stop());
-            streamRef.current = null;
-        }
-        if (html5QrCodeRef.current && html5QrCodeRef.current.isScanning) {
-            try { await html5QrCodeRef.current.stop(); html5QrCodeRef.current.clear(); } catch (e) { }
-        }
-    };
 
 
     // --- SCANNER LOGIC ---
@@ -270,7 +146,6 @@ const CommissionCleanupModalComponent: React.FC<CommissionCleanupModalProps> = (
 
     // --- FINISH & REVIEW ---
     const handleFinishScan = () => {
-        stopScanner();
         setStep('review');
     };
 
@@ -381,26 +256,12 @@ const CommissionCleanupModalComponent: React.FC<CommissionCleanupModalProps> = (
                 {step === 'scan' && (
                     <>
                         <div className="flex-1 relative bg-black">
-                            {useNative && <video ref={videoRef} className="w-full h-full object-cover" autoPlay playsInline muted />}
-                            {!useNative && <div id="cleanup-reader" className="w-full h-full object-cover" />}
+                            <UnifiedScanner
+                                onScan={handleScan}
+                                className="w-full h-full object-cover"
+                            />
 
-                            {/* Overlay */}
-                            <div className="absolute inset-0 pointer-events-none flex flex-col items-center justify-center">
-                                {/* Semi-transparent darkened frame around the scan box */}
-                                <div className="absolute inset-0 bg-black/40 mask-scan-area"></div>
 
-                                <div className="z-10 w-72 h-72 md:w-96 md:h-64 border-2 border-emerald-500/50 rounded-xl relative shadow-[0_0_0_9999px_rgba(0,0,0,0.5)]">
-                                    <div className="absolute top-0 left-0 w-full h-1 bg-emerald-500 shadow-[0_0_15px_#10b981] animate-[scan_2s_infinite_linear]" />
-                                    {/* Corner markers for better visibility */}
-                                    <div className="absolute top-0 left-0 w-8 h-8 border-t-4 border-l-4 border-emerald-500 -mt-1 -ml-1 rounded-tl-lg"></div>
-                                    <div className="absolute top-0 right-0 w-8 h-8 border-t-4 border-r-4 border-emerald-500 -mt-1 -mr-1 rounded-tr-lg"></div>
-                                    <div className="absolute bottom-0 left-0 w-8 h-8 border-b-4 border-l-4 border-emerald-500 -mb-1 -ml-1 rounded-bl-lg"></div>
-                                    <div className="absolute bottom-0 right-0 w-8 h-8 border-b-4 border-r-4 border-emerald-500 -mb-1 -mr-1 rounded-br-lg"></div>
-                                </div>
-                                <div className="z-10 mt-4 text-white/80 font-medium bg-black/50 px-4 py-1 rounded-full backdrop-blur-sm">
-                                    QR-Code im Rahmen platzieren
-                                </div>
-                            </div>
 
                             {/* Stats Overlay */}
                             <div className="absolute top-4 left-4 right-4 flex justify-between pointer-events-none">
@@ -422,13 +283,6 @@ const CommissionCleanupModalComponent: React.FC<CommissionCleanupModalProps> = (
                                     </span>
                                 </div>
                             )}
-
-                            {/* DEBUG OVERLAY */}
-                            <div className="absolute top-20 left-4 right-4 z-50 pointer-events-none text-center">
-                                <div className="inline-block bg-black/50 text-white/70 text-[10px] font-mono p-2 rounded backdrop-blur-md text-left">
-                                    {debugLog.map((log, i) => <div key={i}>{log}</div>)}
-                                </div>
-                            </div>
                         </div>
 
                         {/* Scan Footer */}
