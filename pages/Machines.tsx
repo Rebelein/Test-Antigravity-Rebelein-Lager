@@ -1,13 +1,13 @@
 import React, { useEffect, useState, useRef } from 'react';
-import { GlassCard, StatusBadge, Button, GlassInput } from '../components/UIComponents';
+import { GlassCard, StatusBadge, Button, GlassInput } from '../src/components/UIComponents';
 import { MachineStatus, Machine, UserProfile } from '../types';
 import { Wrench, Plus, MoreVertical, Edit2, Trash2, Printer, Search, Lock, Drill, User } from 'lucide-react';
 import { supabase } from '../supabaseClient';
 import { useAuth } from '../contexts/AuthContext';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { MasterDetailLayout } from '../components/MasterDetailLayout';
-import { MachineDetailContent } from '../components/machines/MachineDetailContent';
-import { MachineEditForm } from '../components/machines/MachineEditForm';
+import { MasterDetailLayout } from '../src/components/MasterDetailLayout';
+import { MachineDetailContent } from '../src/features/machines/components/MachineDetailContent';
+import { MachineEditForm } from '../src/features/machines/components/MachineEditForm';
 import { toast } from 'sonner';
 
 const Machines: React.FC = () => {

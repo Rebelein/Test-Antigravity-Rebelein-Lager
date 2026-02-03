@@ -1,16 +1,18 @@
 
 import React, { useEffect, useState } from 'react';
-import { GlassCard, Button, GlassInput } from '../components/UIComponents';
+import { GlassCard, Button, GlassInput } from '../src/components/UIComponents';
 import { supabase } from '../supabaseClient';
 import { Warehouse, WarehouseType } from '../types';
 import { Warehouse as WarehouseIcon, Truck, HardHat, Plus, Edit2, Trash2, X } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
+import { useUserPreferences } from '../contexts/UserPreferencesContext';
 
 const Warehouses: React.FC = () => {
   const navigate = useNavigate();
   // Change: Use updateWarehousePreference from context instead of local logic
-  const { profile, updateWarehousePreference } = useAuth();
+  const { profile } = useAuth();
+  const { updateWarehousePreference } = useUserPreferences();
 
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);

@@ -1,16 +1,16 @@
 import React, { useEffect, useState, useRef } from 'react';
-import { GlassCard, Button, GlassInput, GlassSelect, StatusBadge, GlassModal } from '../components/UIComponents';
-import { AddArticleModal } from '../components/AddArticleModal';
+import { GlassCard, Button, GlassInput, GlassSelect, StatusBadge, GlassModal } from '../src/components/UIComponents';
+import { AddArticleModal } from '../src/components/AddArticleModal';
 import { Article, Order, OrderItem, Supplier, OrderProposal, WarehouseType, Warehouse } from '../types';
 import { ShoppingCart, CheckCircle2, Loader2, Send, Copy, FileDown, Check, X, ClipboardList, Truck, Search, Box, Barcode, MapPin, Plus, Minus, PackageCheck, ArrowDownToLine, ChevronDown, ChevronUp, Clock, AlertTriangle, Archive, FileText, Sparkles, Upload, Trash2, Link as LinkIcon, Wand2, Eye, Warehouse as WarehouseIcon, RefreshCw, HardHat } from 'lucide-react';
 import { supabase } from '../supabaseClient';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { GoogleGenAI, Type } from "@google/genai";
-import { MasterDetailLayout } from '../components/MasterDetailLayout';
-import { OrderDetailContent } from '../components/orders/OrderDetailContent';
-import { OrderProposalContent } from '../components/orders/OrderProposalContent';
-import { OrderImportDetailContent } from '../components/orders/OrderImportDetailContent';
+import { MasterDetailLayout } from '../src/components/MasterDetailLayout';
+import { OrderDetailContent } from '../src/features/orders/components/OrderDetailContent';
+import { OrderProposalContent } from '../src/features/orders/components/OrderProposalContent';
+import { OrderImportDetailContent } from '../src/features/orders/components/OrderImportDetailContent';
 
 const Orders: React.FC = () => {
     const navigate = useNavigate();
@@ -457,7 +457,10 @@ const Orders: React.FC = () => {
     const getApiKey = () => {
         // @ts-ignore
         if (typeof import.meta !== 'undefined' && import.meta.env && import.meta.env.VITE_API_KEY) return import.meta.env.VITE_API_KEY;
-        try { if (process.env.API_KEY) return process.env.API_KEY; } catch (e) { } return '';
+        try {
+            // @ts-ignore
+            if (process.env.API_KEY) return process.env.API_KEY;
+        } catch (e) { } return '';
     };
 
     const analyzeDocument = async () => {

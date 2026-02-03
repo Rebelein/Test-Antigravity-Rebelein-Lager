@@ -1,3 +1,6 @@
+import React, { useEffect } from 'react';
+import { useRegisterSW } from 'virtual:pwa-register/react';
+import { RefreshCw, X, AlertTriangle, Download } from 'lucide-react';
 import { Button, GlassCard } from './UIComponents';
 
 export const ReloadPrompt: React.FC = () => {
@@ -15,6 +18,7 @@ export const ReloadPrompt: React.FC = () => {
             // Setup periodic update check
             if (r) {
                 setInterval(() => {
+                    if (document.hidden) return; // Battery Saver
                     console.log('Checking for Service Worker update...');
                     r.update();
                 }, intervalMS);

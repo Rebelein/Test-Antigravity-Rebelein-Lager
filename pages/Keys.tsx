@@ -1,16 +1,16 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Button, GlassInput, GlassModal } from '../components/UIComponents';
+import { Button, GlassInput, GlassModal } from '../src/components/UIComponents';
 import { Key } from '../types';
 import { supabase } from '../supabaseClient';
-import { KeyModal, KeyHandoverModal } from '../components/KeyComponents';
-import { CategoryManagerModal } from '../components/CategoryManagerModal';
+import { KeyModal, KeyHandoverModal } from '../src/features/keys/components/KeyComponents';
+import { CategoryManagerModal } from '../src/features/keys/components/CategoryManagerModal';
 import { Search, Plus, Key as KeyIcon, User, MapPin, Printer, RefreshCw, Tag, ChevronDown, Trash2, Edit } from 'lucide-react';
 import { toast } from 'sonner';
 import { useReactToPrint } from 'react-to-print';
-import { KeyExportTemplate } from '../components/KeyExportTemplate';
-import { MasterDetailLayout } from '../components/MasterDetailLayout';
-import { KeyDetailContent } from '../components/keys/KeyDetailContent';
+import { KeyExportTemplate } from '../src/features/keys/components/KeyExportTemplate';
+import { MasterDetailLayout } from '../src/components/MasterDetailLayout';
+import { KeyDetailContent } from '../src/features/keys/components/KeyDetailContent';
 
 const KeyCard: React.FC<{
     keyData: Key;

@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { GlassCard, Button, GlassInput } from '../components/UIComponents';
+import { GlassCard, Button, GlassInput } from '../src/components/UIComponents';
 import { supabase } from '../supabaseClient';
 import { Warehouse } from '../types';
 import { Library, ArrowRight, Edit2, Save, X, Loader2, Warehouse as WarehouseIcon, Truck, HardHat } from 'lucide-react';

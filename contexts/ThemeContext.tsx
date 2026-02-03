@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 
 type ViewMode = 'default' | 'desktop';
-type AppTheme = 'default' | 'glass' | 'glass-light';
+type AppTheme = 'default' | 'glass';
 
 interface ThemeContextType {
   viewMode: ViewMode;
@@ -44,18 +44,16 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   useEffect(() => {
     const root = window.document.documentElement;
 
-    // Handle light/dark mode classes
-    if (theme === 'glass-light') {
-      root.classList.remove('dark');
-      root.classList.add('light');
-    } else {
-      root.classList.add('dark');
-      root.classList.remove('light');
-    }
+    // Enforce dark mode always
+    root.classList.add('dark');
+    root.classList.remove('light');
 
     // Apply theme data attribute for CSS styling
-    root.setAttribute('data-theme', theme);
-    localStorage.setItem('app_theme_style', theme);
+    // If saved theme was glass-light (legacy), force it to glass
+    const effectiveTheme = (theme as string) === 'glass-light' ? 'glass' : theme;
+
+    root.setAttribute('data-theme', effectiveTheme);
+    localStorage.setItem('app_theme_style', effectiveTheme);
   }, [theme]);
 
   // Apply View Mode

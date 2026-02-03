@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { KeyProtocol } from '../components/KeyProtocol';
+import { KeyProtocol } from '../src/features/keys/components/KeyProtocol';
 import { Key } from '../types';
 
 const PrintProtocol: React.FC = () => {

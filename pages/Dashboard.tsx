@@ -1,20 +1,21 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import { GlassCard, StatusBadge, Button, GlassModal } from '../components/UIComponents';
+import { GlassCard, StatusBadge, Button, GlassModal } from '../src/components/UIComponents';
 import { AlertTriangle, Wrench, User, CheckCircle2, FileText, ArrowRight, Grid, Database, X, Play, RefreshCw, Check, Copy, Settings, Factory, Warehouse, Tag, Maximize2, Minimize2, PhoneCall, StickyNote, Save, Undo2, Library, Plus, MessageSquare, Monitor, Smartphone, ShoppingCart, LayoutTemplate, Lock, Unlock, History, LayoutDashboard, ChevronUp, ChevronDown, Eye, EyeOff, Zap, Move, Wand2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useIsMobile } from '../hooks/useIsMobile';
 import { usePersistentState } from '../hooks/usePersistentState';
 import { initializeDatabase, MANUAL_SETUP_SQL } from '../utils/dbInit';
 import { useAuth } from '../contexts/AuthContext';
+import { useUserPreferences } from '../contexts/UserPreferencesContext';
 import { useTheme } from '../contexts/ThemeContext';
-import { CommissionDetailContent } from '../components/CommissionDetailContent';
-import { MachineDetailContent } from '../components/machines/MachineDetailContent';
-import { KeyHandoverContent } from '../components/KeyComponents';
-import { ChangelogHistoryContent } from '../components/ChangelogHistoryContent'; // Updated Import
+import { CommissionDetailContent } from '../src/features/commissions/components/CommissionDetailContent';
+import { MachineDetailContent } from '../src/features/machines/components/MachineDetailContent';
+import { KeyHandoverContent } from '../src/features/keys/components/KeyComponents';
+import { ChangelogHistoryContent } from '../src/components/ChangelogHistoryContent'; // Updated Import
 import { supabase } from '../supabaseClient';
 import { Machine, MachineStatus, Commission, UserProfile, Key, Article, Supplier } from '../types';
-import { CommissionEditContent } from '../components/commissions/CommissionEditContent';
-import { CommissionOfficeContent } from '../components/CommissionOfficeContent';
+import { CommissionEditContent } from '../src/features/commissions/components/CommissionEditContent';
+import { CommissionOfficeContent } from '../src/components/CommissionOfficeContent';
 import { formatDistanceToNow } from 'date-fns';
 import { de } from 'date-fns/locale';
 import { Responsive, WidthProvider } from 'react-grid-layout';
@@ -22,7 +23,7 @@ import 'react-grid-layout/css/styles.css';
 import 'react-resizable/css/styles.css';
 import { toast } from 'sonner'; // Added toast import
 import { Key as KeyIcon } from 'lucide-react'; // Added KeyIcon
-import { ALL_NAV_ITEMS, DEFAULT_SIDEBAR_ORDER } from '../components/NavConfig';
+import { ALL_NAV_ITEMS, DEFAULT_SIDEBAR_ORDER } from '../src/components/NavConfig';
 
 const ResponsiveGridLayout = WidthProvider(Responsive);
 
@@ -38,7 +39,8 @@ interface AppEvent {
 
 const Dashboard: React.FC = () => {
     const navigate = useNavigate();
-    const { profile, user } = useAuth();
+    const { user, profile } = useAuth();
+    const { primaryWarehouseId } = useUserPreferences();
     const { viewMode, toggleViewMode, isLowPerfMode, toggleLowPerfMode } = useTheme();
 
     const [isLoading, setIsLoading] = useState(true);
@@ -235,15 +237,15 @@ const Dashboard: React.FC = () => {
     }, []);
 
     const fetchArticles = useCallback(async () => {
-        if (!profile?.primary_warehouse_id) return;
+        if (!primaryWarehouseId) return;
         try {
-            const { data } = await supabase.from('articles').select('*').eq('warehouse_id', profile.primary_warehouse_id);
+            const { data } = await supabase.from('articles').select('*').eq('warehouse_id', primaryWarehouseId);
             if (data) {
                 const mapped = data.map((item: any) => ({ ...item, image: item.image_url }));
                 setAvailableArticles(mapped);
             }
         } catch (e) { console.error(e); }
-    }, [profile?.primary_warehouse_id]);
+    }, [primaryWarehouseId]);
 
     const fetchUsers = useCallback(async () => {
         try {
@@ -523,16 +525,16 @@ const Dashboard: React.FC = () => {
     // Helper to render Commission Tile Content (to avoid duplication)
     const renderCommissionTileContent = (isFullscreen: boolean) => (
         <>
-            <div className={`px-6 py-5 border-b border-gray-200 dark:border-white/10 bg-white/50 dark:bg-white/5 backdrop-blur-xl flex items-center gap-3 shrink-0`}>
+            <div className={`px-6 py-5 border-b border-white/10 bg-white/5 backdrop-blur-xl flex items-center gap-3 shrink-0`}>
                 <button
-                    className={`drag-handle p-1.5 rounded-lg hover:bg-black/5 dark:hover:bg-white/10 transition-colors ${isTileLocked('commissions') ? 'cursor-default text-gray-200 dark:text-white/5 opacity-30' : 'cursor-move text-gray-300 dark:text-white/10 hover:text-gray-500 dark:hover:text-white/50'}`}
+                    className={`drag-handle p-1.5 rounded-lg hover:bg-white/10 transition-colors ${isTileLocked('commissions') ? 'cursor-default text-white/5 opacity-30' : 'cursor-move text-white/10 hover:text-white/50'}`}
                     title="Verschieben"
                 >
                     <Move size={18} />
                 </button>
                 <div className="flex items-center gap-2 flex-1">
-                    <Factory size={20} className="text-emerald-500 dark:text-emerald-400" />
-                    <h2 className="text-xl font-bold text-gray-900 dark:text-white">Kommissionen</h2>
+                    <Factory size={20} className="text-emerald-400" />
+                    <h2 className="text-xl font-bold text-white">Kommissionen</h2>
                 </div>
 
                 {/* Lock Button */}
@@ -540,7 +542,7 @@ const Dashboard: React.FC = () => {
                     onMouseDown={(e) => e.stopPropagation()}
                     onTouchStart={(e) => e.stopPropagation()}
                     onClick={() => toggleTileLock('commissions')}
-                    className="p-2 bg-white/50 dark:bg-white/5 rounded-lg text-gray-400 dark:text-white/40 hover:text-gray-900 dark:hover:text-white transition-colors mr-2"
+                    className="p-2 bg-white/5 rounded-lg text-white/40 hover:text-white transition-colors mr-2"
                     title={isTileLocked('commissions') ? "Kachel entsperren" : "Kachel sperren"}
                 >
                     {isTileLocked('commissions') ? <Lock size={16} className="text-rose-500" /> : <Unlock size={16} />}
@@ -551,7 +553,7 @@ const Dashboard: React.FC = () => {
                     onMouseDown={(e) => e.stopPropagation()}
                     onTouchStart={(e) => e.stopPropagation()}
                     onClick={() => setShowCreateCommissionModal(true)}
-                    className="p-2 bg-white/50 dark:bg-white/5 rounded-lg text-gray-400 dark:text-white/40 hover:text-gray-900 dark:hover:text-white transition-colors mr-2"
+                    className="p-2 bg-white/5 rounded-lg text-white/40 hover:text-white transition-colors mr-2"
                     title="Neue Kommission erstellen"
                 >
                     <Plus size={18} />
@@ -562,7 +564,7 @@ const Dashboard: React.FC = () => {
                     onMouseDown={(e) => e.stopPropagation()}
                     onTouchStart={(e) => e.stopPropagation()}
                     onClick={() => setIsCommissionTileFullscreen(!isFullscreen)}
-                    className="p-2 bg-white/50 dark:bg-white/5 rounded-lg text-gray-400 dark:text-white/40 hover:text-gray-900 dark:hover:text-white transition-colors mr-2"
+                    className="p-2 bg-white/5 rounded-lg text-white/40 hover:text-white transition-colors mr-2"
                 >
                     {isFullscreen ? <Minimize2 size={18} /> : <Maximize2 size={18} />}
                 </button>
@@ -571,42 +573,42 @@ const Dashboard: React.FC = () => {
                     onMouseDown={(e) => e.stopPropagation()}
                     onTouchStart={(e) => e.stopPropagation()}
                     onClick={() => navigate('/commissions')}
-                    className="text-gray-400 dark:text-white/40 hover:text-gray-900 dark:hover:text-white"
+                    className="text-white/40 hover:text-white"
                 >
                     <ArrowRight size={20} />
                 </button>
             </div>
 
             {/* Mobile Tabs */}
-            <div className="flex md:hidden border-b border-gray-200 dark:border-white/10 shrink-0">
+            <div className="flex md:hidden border-b border-white/10 shrink-0">
                 <button
                     onClick={() => setMobileTab('draft')}
-                    className={`flex-1 py-3 text-xs font-bold uppercase tracking-wide transition-colors relative ${mobileTab === 'draft' ? 'text-gray-900 dark:text-white' : 'text-gray-400 dark:text-white/40'}`}
+                    className={`flex-1 py-3 text-xs font-bold uppercase tracking-wide transition-colors relative ${mobileTab === 'draft' ? 'text-white' : 'text-white/40'}`}
                 >
                     In Arbeit
                     {mobileTab === 'draft' && <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-emerald-500" />}
                 </button>
                 <button
                     onClick={() => setMobileTab('ready')}
-                    className={`flex-1 py-3 text-xs font-bold uppercase tracking-wide transition-colors relative ${mobileTab === 'ready' ? 'text-emerald-600 dark:text-emerald-400' : 'text-gray-400 dark:text-white/40'}`}
+                    className={`flex-1 py-3 text-xs font-bold uppercase tracking-wide transition-colors relative ${mobileTab === 'ready' ? 'text-emerald-400' : 'text-white/40'}`}
                 >
                     Bereit
                     {mobileTab === 'ready' && <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-emerald-500" />}
                 </button>
                 <button
                     onClick={() => setMobileTab('returns')}
-                    className={`flex-1 py-3 text-xs font-bold uppercase tracking-wide transition-colors relative ${mobileTab === 'returns' ? 'text-purple-600 dark:text-purple-400' : 'text-gray-400 dark:text-white/40'}`}
+                    className={`flex-1 py-3 text-xs font-bold uppercase tracking-wide transition-colors relative ${mobileTab === 'returns' ? 'text-purple-400' : 'text-white/40'}`}
                 >
                     Rückgabe
                     {mobileTab === 'returns' && <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-purple-500" />}
                 </button>
             </div>
 
-            <div className="flex-1 block md:grid md:grid-cols-3 md:divide-x divide-gray-200 dark:divide-white/10 overflow-hidden relative">
+            <div className="flex-1 block md:grid md:grid-cols-3 md:divide-x divide-white/10 overflow-hidden relative">
                 {/* Left: Entwurf (Draft) */}
-                <div className={`p-4 flex-col gap-3 bg-gradient-to-b from-gray-100 to-transparent dark:from-white/5 dark:to-transparent overflow-hidden h-full ${mobileTab === 'draft' ? 'flex' : 'hidden md:flex'}`}>
+                <div className={`p-4 flex-col gap-3 bg-gradient-to-b from-white/5 to-transparent overflow-hidden h-full ${mobileTab === 'draft' ? 'flex' : 'hidden md:flex'}`}>
                     <div className="flex justify-between items-center mb-2 shrink-0">
-                        <span className="text-sm font-bold text-gray-900 dark:text-white">In Arbeit ({draftCommissions.length})</span>
+                        <span className="text-sm font-bold text-white">In Arbeit ({draftCommissions.length})</span>
                     </div>
 
                     <div className={`space-y-3 overflow-y-auto flex-1 min-h-0 pr-1 pb-4`}>
@@ -621,21 +623,21 @@ const Dashboard: React.FC = () => {
                                     onClick={(e) => { e.stopPropagation(); setViewingCommission(c); }}
                                     className={`p-3 rounded-xl cursor-pointer transition-all relative group border ${hasBackorder ? 'bg-red-500/10 border-red-500 hover:bg-red-500/20' :
                                         c.status === 'Preparing' ? 'bg-amber-500/10 border-amber-500/50 hover:bg-amber-500/20' : // NEW YELLOW STYLE
-                                            'bg-white/50 dark:bg-white/5 border-gray-200 dark:border-white/10 hover:bg-gray-100 dark:hover:bg-white/10'
+                                            'bg-white/5 border-white/10 hover:bg-white/10'
                                         }`}
                                 >
                                     <div className="flex justify-between items-start">
                                         <div className="min-w-0">
-                                            <div className="font-bold text-gray-900 dark:text-white text-sm truncate">{c.name}</div>
-                                            <div className="text-xs text-gray-500 dark:text-white/40 mt-0.5">{c.order_number}</div>
+                                            <div className="font-bold text-white text-sm truncate">{c.name}</div>
+                                            <div className="text-xs text-white/40 mt-0.5">{c.order_number}</div>
                                         </div>
                                         {hasBackorder ? (
-                                            <AlertTriangle size={14} className="text-red-500 dark:text-red-400 group-hover:text-red-400 dark:group-hover:text-red-300 transition-colors" />
+                                            <AlertTriangle size={14} className="text-red-400 group-hover:text-red-300 transition-colors" />
                                         ) : (
-                                            <ArrowRight size={14} className="text-gray-300 dark:text-white/20 group-hover:text-emerald-500 dark:group-hover:text-emerald-400 transition-colors opacity-0 group-hover:opacity-100" />
+                                            <ArrowRight size={14} className="text-white/20 group-hover:text-emerald-400 transition-colors opacity-0 group-hover:opacity-100" />
                                         )}
                                     </div>
-                                    {c.notes && <div className="mt-2 text-[10px] text-gray-400 dark:text-white/30 italic truncate">{c.notes}</div>}
+                                    {c.notes && <div className="mt-2 text-[10px] text-white/30 italic truncate">{c.notes}</div>}
                                     {hasBackorder && (
                                         <div className="mt-2 text-[9px] font-bold text-red-400 uppercase tracking-wide bg-red-900/30 px-1.5 py-0.5 rounded inline-block">
                                             Rückstand!
@@ -650,7 +652,7 @@ const Dashboard: React.FC = () => {
                 {/* Center: Bereitgestellt (Ready) - INTERACTIVE */}
                 <div className={`p-4 flex-col gap-3 relative overflow-hidden h-full ${mobileTab === 'ready' ? 'flex' : 'hidden md:flex'}`}>
                     <div className="flex justify-between items-center mb-2 shrink-0">
-                        <span className="text-sm font-bold text-emerald-600 dark:text-emerald-400">Bereitgestellt ({readyCommissions.length})</span>
+                        <span className="text-sm font-bold text-emerald-400">Bereitgestellt ({readyCommissions.length})</span>
                     </div>
 
                     <div className={`space-y-3 overflow-y-auto flex-1 min-h-0 pr-1 pb-10`}>
@@ -665,17 +667,17 @@ const Dashboard: React.FC = () => {
                                     onClick={(e) => { e.stopPropagation(); handleCommissionClick(c); }}
                                     className={`
                                         p-3 rounded-xl cursor-pointer transition-all relative group border
-                                        ${needsProcessing ? 'bg-emerald-500/10 dark:bg-emerald-500/20 border-emerald-500 animate-border-pulse-green' : 'bg-white/50 dark:bg-white/5 border-emerald-500/30 hover:bg-gray-100 dark:hover:bg-white/10'}
+                                        ${needsProcessing ? 'bg-emerald-500/20 border-emerald-500 animate-border-pulse-green' : 'bg-white/5 border-emerald-500/30 hover:bg-white/10'}
                                     `}
                                 >
                                     <div className="flex justify-between items-start">
                                         <div className="min-w-0 flex-1 pr-2">
-                                            <div className="font-bold text-gray-900 dark:text-white text-sm truncate">{c.name}</div>
-                                            <div className="text-xs text-emerald-600/80 dark:text-emerald-200/60 mt-0.5">{c.order_number}</div>
+                                            <div className="font-bold text-white text-sm truncate">{c.name}</div>
+                                            <div className="text-xs text-emerald-200/60 mt-0.5">{c.order_number}</div>
                                             {/* Extended info in fullscreen or if processed */}
                                             {(isFullscreen || c.office_notes) && c.office_notes && (
-                                                <div className="mt-2 p-2 bg-gray-100 dark:bg-black/20 rounded-lg text-xs text-gray-600 dark:text-white/80 flex gap-2 items-start border border-gray-200 dark:border-white/5">
-                                                    <StickyNote size={12} className="shrink-0 mt-0.5 text-amber-500 dark:text-amber-400" />
+                                                <div className="mt-2 p-2 bg-black/20 rounded-lg text-xs text-white/80 flex gap-2 items-start border border-white/5">
+                                                    <StickyNote size={12} className="shrink-0 mt-0.5 text-amber-400" />
                                                     <span className="italic">{c.office_notes}</span>
                                                 </div>
                                             )}
@@ -683,7 +685,7 @@ const Dashboard: React.FC = () => {
 
                                         {/* Status Icon */}
                                         {c.is_processed ? (
-                                            <div className="w-6 h-6 rounded-full bg-gray-200 dark:bg-white/10 text-gray-400 dark:text-white/50 flex items-center justify-center border border-gray-300 dark:border-white/10" title="Vom Büro gesehen">
+                                            <div className="w-6 h-6 rounded-full bg-white/10 text-white/50 flex items-center justify-center border border-white/10" title="Vom Büro gesehen">
                                                 <Check size={12} />
                                             </div>
                                         ) : (
@@ -701,28 +703,28 @@ const Dashboard: React.FC = () => {
                 {/* Right: Rückgaben (Returns) */}
                 <div className={`p-4 flex-col gap-3 bg-gradient-to-b from-purple-500/5 to-transparent overflow-hidden h-full ${mobileTab === 'returns' ? 'flex' : 'hidden md:flex'}`}>
                     <div className="flex justify-between items-center mb-2 shrink-0">
-                        <span className="text-sm font-bold text-purple-600 dark:text-purple-400">Rückgaben ({returnCommissions.length})</span>
+                        <span className="text-sm font-bold text-purple-400">Rückgaben ({returnCommissions.length})</span>
                     </div>
 
                     <div className={`space-y-3 overflow-y-auto flex-1 min-h-0 pr-1 pb-4`}>
-                        {returnCommissions.length === 0 && <div className="text-xs text-gray-400 dark:text-white/30 italic">Keine offenen Rückgaben.</div>}
+                        {returnCommissions.length === 0 && <div className="text-xs text-white/30 italic">Keine offenen Rückgaben.</div>}
                         {returnCommissions.map(c => (
                             <div
                                 key={c.id}
                                 onClick={(e) => { e.stopPropagation(); handleCommissionClick(c); }}
-                                className={`p-3 rounded-xl border cursor-pointer transition-all hover:bg-gray-100 dark:hover:bg-white/10 ${c.status === 'ReturnReady' ? 'bg-purple-500/10 dark:bg-purple-500/20 border-purple-500 text-purple-800 dark:text-purple-100' : 'bg-white/50 dark:bg-white/5 border-purple-500/30'}`}
+                                className={`p-3 rounded-xl border cursor-pointer transition-all hover:bg-white/10 ${c.status === 'ReturnReady' ? 'bg-purple-500/20 border-purple-500 text-purple-100' : 'bg-white/5 border-purple-500/30'}`}
                             >
                                 <div className="flex justify-between items-start">
                                     <div className="min-w-0">
-                                        <div className="font-bold text-gray-900 dark:text-white text-sm truncate">{c.name}</div>
-                                        <div className="text-xs text-gray-500 dark:text-white/40 mt-0.5">{c.order_number}</div>
-                                        {c.status === 'ReturnReady' && <div className="mt-2 text-[10px] font-bold text-purple-700 dark:text-purple-300 bg-purple-100 dark:bg-purple-900/40 px-2 py-1 rounded inline-block">ABHOLBEREIT</div>}
-                                        {c.status === 'ReturnPending' && <div className="mt-2 text-[10px] font-bold text-orange-600 dark:text-orange-300 bg-orange-100 dark:bg-orange-900/40 px-2 py-1 rounded inline-block">Wartet auf Lager</div>}
+                                        <div className="font-bold text-white text-sm truncate">{c.name}</div>
+                                        <div className="text-xs text-white/40 mt-0.5">{c.order_number}</div>
+                                        {c.status === 'ReturnReady' && <div className="mt-2 text-[10px] font-bold text-purple-300 bg-purple-900/40 px-2 py-1 rounded inline-block">ABHOLBEREIT</div>}
+                                        {c.status === 'ReturnPending' && <div className="mt-2 text-[10px] font-bold text-orange-300 bg-orange-900/40 px-2 py-1 rounded inline-block">Wartet auf Lager</div>}
                                     </div>
-                                    <Undo2 size={14} className="text-purple-500 dark:text-purple-400" />
+                                    <Undo2 size={14} className="text-purple-400" />
                                 </div>
                                 {c.office_notes && (
-                                    <div className="mt-2 p-1.5 bg-gray-100 dark:bg-black/20 rounded-lg text-[10px] text-gray-600 dark:text-white/70 border border-gray-200 dark:border-white/5">
+                                    <div className="mt-2 p-1.5 bg-black/20 rounded-lg text-[10px] text-white/70 border border-white/5">
                                         {c.office_notes}
                                     </div>
                                 )}
@@ -739,10 +741,10 @@ const Dashboard: React.FC = () => {
             {/* HEADER */}
             <header className="flex items-center justify-between mb-8">
                 <div>
-                    <h1 className="text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-gray-900 to-gray-600 dark:from-white dark:to-white/70">
+                    <h1 className="text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-white to-white/70">
                         {profile?.full_name ? `Moin, ${profile.full_name.split(' ')[0]}` : 'Dashboard'}
                     </h1>
-                    <p className="text-gray-500 dark:text-white/50 text-sm mt-1">Aktueller Statusbericht</p>
+                    <p className="text-white/50 text-sm mt-1">Aktueller Statusbericht</p>
                 </div>
                 <div className="flex gap-2">
                     <button
@@ -752,7 +754,7 @@ const Dashboard: React.FC = () => {
                     >
                         <History size={20} />
                         <span className="absolute -top-2 -right-2 bg-emerald-500 text-white text-[9px] font-bold px-1.5 py-0.5 rounded-full shadow-lg border border-black/50">
-                            v{process.env.APP_VERSION}
+                            v0.0.61
                         </span>
                     </button>
                     <button
@@ -764,7 +766,7 @@ const Dashboard: React.FC = () => {
                     </button>
                     <button
                         onClick={() => setShowAppDrawer(true)}
-                        className="p-3 rounded-xl bg-white/80 dark:bg-white/5 border border-gray-200 dark:border-white/10 text-gray-600 dark:text-white/80 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-white/10 transition-all duration-300 shadow-lg"
+                        className="p-3 rounded-xl bg-white/5 border border-white/10 text-white/80 hover:text-white hover:bg-white/10 transition-all duration-300 shadow-lg"
                     >
                         <Grid size={24} />
                     </button>
@@ -776,7 +778,7 @@ const Dashboard: React.FC = () => {
             {/* Fullscreen Overlay (unchanged) */}
             {isCommissionTileFullscreen && (
                 <div className="fixed inset-4 z-[100]">
-                    <GlassCard className="flex flex-col p-0 overflow-hidden border-none bg-white/95 dark:bg-gray-900/95 backdrop-blur-xl border border-gray-200 dark:border-white/20 shadow-2xl rounded-3xl h-full" contentClassName="!p-0 flex flex-col h-full">
+                    <GlassCard className="flex flex-col p-0 overflow-hidden border-none bg-gray-900/95 backdrop-blur-xl border border-white/20 shadow-2xl rounded-3xl h-full" contentClassName="!p-0 flex flex-col h-full">
                         {renderCommissionTileContent(true)}
                     </GlassCard>
                 </div>
@@ -811,23 +813,23 @@ const Dashboard: React.FC = () => {
                             >
                                 {/* --- TILE 1: MASCHINENSTATUS --- */}
                                 <div key="machines">
-                                    <GlassCard className="flex flex-col h-full p-0 overflow-hidden border-none bg-white/80 dark:bg-white/5" contentClassName="!p-0 flex flex-col h-full">
-                                        <div className={`px-6 py-5 border-b border-gray-200 dark:border-white/10 bg-white/50 dark:bg-white/5 backdrop-blur-xl flex justify-between items-center shrink-0`}>
+                                    <GlassCard className="flex flex-col h-full p-0 overflow-hidden border-none bg-white/5" contentClassName="!p-0 flex flex-col h-full">
+                                        <div className={`px-6 py-5 border-b border-white/10 bg-white/5 backdrop-blur-xl flex justify-between items-center shrink-0`}>
                                             <div className="flex items-center gap-3">
                                                 <button
-                                                    className={`drag-handle p-1.5 rounded-lg hover:bg-black/5 dark:hover:bg-white/10 transition-colors ${isTileLocked('machines') ? 'cursor-default text-gray-200 dark:text-white/5 opacity-30' : 'cursor-move text-gray-300 dark:text-white/10 hover:text-gray-500 dark:hover:text-white/50'}`}
+                                                    className={`drag-handle p-1.5 rounded-lg hover:bg-white/10 transition-colors ${isTileLocked('machines') ? 'cursor-default text-white/5 opacity-30' : 'cursor-move text-white/10 hover:text-white/50'}`}
                                                     title="Verschieben"
                                                 >
                                                     <Move size={18} />
                                                 </button>
-                                                <h2 className="text-xl font-bold text-gray-900 dark:text-white">Maschinenstatus</h2>
+                                                <h2 className="text-xl font-bold text-white">Maschinenstatus</h2>
                                             </div>
                                             <div className="flex gap-2">
                                                 <button
                                                     onMouseDown={(e) => e.stopPropagation()}
                                                     onTouchStart={(e) => e.stopPropagation()}
                                                     onClick={() => toggleTileLock('machines')}
-                                                    className="p-2 text-gray-400 dark:text-white/40 hover:text-gray-900 dark:hover:text-white transition-colors"
+                                                    className="p-2 text-white/40 hover:text-white transition-colors"
                                                 >
                                                     {isTileLocked('machines') ? <Lock size={16} className="text-rose-500" /> : <Unlock size={16} />}
                                                 </button>
@@ -835,14 +837,14 @@ const Dashboard: React.FC = () => {
                                                     onMouseDown={(e) => e.stopPropagation()}
                                                     onTouchStart={(e) => e.stopPropagation()}
                                                     onClick={() => navigate('/machines')}
-                                                    className="text-gray-400 dark:text-white/40 hover:text-gray-900 dark:hover:text-white"
+                                                    className="text-white/40 hover:text-white"
                                                 >
                                                     <ArrowRight size={20} />
                                                 </button>
                                             </div>
                                         </div>
 
-                                        <div className="flex-1 grid grid-cols-2 divide-x divide-gray-200 dark:divide-white/10 overflow-hidden">
+                                        <div className="flex-1 grid grid-cols-2 divide-x divide-white/10 overflow-hidden">
                                             {/* Left: Verliehen (Rented) */}
                                             <div className="p-4 flex flex-col gap-3 overflow-hidden h-full">
                                                 <div className="flex justify-between items-center mb-2 shrink-0">
@@ -850,13 +852,13 @@ const Dashboard: React.FC = () => {
                                                 </div>
 
                                                 <div className="space-y-3 overflow-y-auto flex-1 min-h-0 pr-1 pb-4">
-                                                    {rentedMachines.length === 0 && <div className="text-xs text-gray-400 dark:text-white/30 italic">Keine Maschinen verliehen.</div>}
+                                                    {rentedMachines.length === 0 && <div className="text-xs text-white/30 italic">Keine Maschinen verliehen.</div>}
                                                     {rentedMachines.map(m => (
                                                         <div key={m.id} onClick={(e) => { e.stopPropagation(); setSelectedMachine(m); }} className="group cursor-pointer">
-                                                            <div className="font-medium text-gray-900 dark:text-white text-sm group-hover:text-emerald-600 dark:group-hover:text-emerald-300 transition-colors truncate">{m.name}</div>
+                                                            <div className="font-medium text-white text-sm group-hover:text-emerald-300 transition-colors truncate">{m.name}</div>
                                                             <div className="flex items-center gap-1.5 mt-1">
-                                                                <User size={12} className="text-amber-500 dark:text-amber-400" />
-                                                                <span className="text-xs text-gray-500 dark:text-white/50 truncate">{m.profiles?.full_name || m.externalBorrower || 'Unbekannt'}</span>
+                                                                <User size={12} className="text-amber-400" />
+                                                                <span className="text-xs text-white/50 truncate">{m.profiles?.full_name || m.externalBorrower || 'Unbekannt'}</span>
                                                             </div>
                                                         </div>
                                                     ))}
@@ -870,13 +872,13 @@ const Dashboard: React.FC = () => {
                                                 </div>
 
                                                 <div className="space-y-3 overflow-y-auto flex-1 min-h-0 pr-1 pb-4">
-                                                    {repairMachines.length === 0 && <div className="text-xs text-gray-400 dark:text-white/30 italic">Keine Defekte.</div>}
+                                                    {repairMachines.length === 0 && <div className="text-xs text-white/30 italic">Keine Defekte.</div>}
                                                     {repairMachines.map(m => (
                                                         <div key={m.id} onClick={(e) => { e.stopPropagation(); setSelectedMachine(m); }} className="group cursor-pointer">
-                                                            <div className="font-medium text-gray-900 dark:text-white text-sm group-hover:text-rose-500 dark:group-hover:text-rose-300 transition-colors truncate">{m.name}</div>
+                                                            <div className="font-medium text-white text-sm group-hover:text-rose-300 transition-colors truncate">{m.name}</div>
                                                             <div className="flex items-center gap-1.5 mt-1">
                                                                 <Wrench size={12} className="text-rose-500" />
-                                                                <span className="text-xs text-gray-500 dark:text-white/50 truncate italic">{m.notes || 'Keine Notiz'}</span>
+                                                                <span className="text-xs text-white/50 truncate italic">{m.notes || 'Keine Notiz'}</span>
                                                             </div>
                                                         </div>
                                                     ))}
@@ -888,16 +890,16 @@ const Dashboard: React.FC = () => {
 
                                 {/* --- TILE 1.5: KEY STATUS (NEW) --- */}
                                 <div key="keys">
-                                    <GlassCard className="flex flex-col h-full p-0 overflow-hidden border-none bg-white/80 dark:bg-white/5" contentClassName="!p-0 flex flex-col h-full">
-                                        <div className={`px-6 py-5 border-b border-gray-200 dark:border-white/10 bg-white/50 dark:bg-white/5 backdrop-blur-xl flex justify-between items-center shrink-0`}>
+                                    <GlassCard className="flex flex-col h-full p-0 overflow-hidden border-none bg-white/5" contentClassName="!p-0 flex flex-col h-full">
+                                        <div className={`px-6 py-5 border-b border-white/10 bg-white/5 backdrop-blur-xl flex justify-between items-center shrink-0`}>
                                             <div className="flex items-center gap-3">
                                                 <button
-                                                    className={`drag-handle p-1.5 rounded-lg hover:bg-black/5 dark:hover:bg-white/10 transition-colors ${isTileLocked('keys') ? 'cursor-default text-gray-200 dark:text-white/5 opacity-30' : 'cursor-move text-gray-300 dark:text-white/10 hover:text-gray-500 dark:hover:text-white/50'}`}
+                                                    className={`drag-handle p-1.5 rounded-lg hover:bg-white/10 transition-colors ${isTileLocked('keys') ? 'cursor-default text-white/5 opacity-30' : 'cursor-move text-white/10 hover:text-white/50'}`}
                                                     title="Verschieben"
                                                 >
                                                     <Move size={18} />
                                                 </button>
-                                                <h2 className="text-xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
+                                                <h2 className="text-xl font-bold text-white flex items-center gap-2">
                                                     <KeyIcon size={20} className="text-amber-500" /> Ausgeliehen
                                                 </h2>
                                             </div>
@@ -906,7 +908,7 @@ const Dashboard: React.FC = () => {
                                                     onMouseDown={(e) => e.stopPropagation()}
                                                     onTouchStart={(e) => e.stopPropagation()}
                                                     onClick={() => toggleTileLock('keys')}
-                                                    className="p-2 text-gray-400 dark:text-white/40 hover:text-gray-900 dark:hover:text-white transition-colors"
+                                                    className="p-2 text-white/40 hover:text-white transition-colors"
                                                 >
                                                     {isTileLocked('keys') ? <Lock size={16} className="text-rose-500" /> : <Unlock size={16} />}
                                                 </button>
@@ -914,7 +916,7 @@ const Dashboard: React.FC = () => {
                                                     onMouseDown={(e) => e.stopPropagation()}
                                                     onTouchStart={(e) => e.stopPropagation()}
                                                     onClick={() => navigate('/keys')}
-                                                    className="text-gray-400 dark:text-white/40 hover:text-gray-900 dark:hover:text-white"
+                                                    className="text-white/40 hover:text-white"
                                                 >
                                                     <ArrowRight size={20} />
                                                 </button>
@@ -927,16 +929,16 @@ const Dashboard: React.FC = () => {
                                             </div>
 
                                             <div className="space-y-3 overflow-y-auto flex-1 min-h-0 pr-1 pb-4">
-                                                {rentedKeys.length === 0 && <div className="text-xs text-gray-400 dark:text-white/30 italic">Alle Schlüssel im Kasten.</div>}
+                                                {rentedKeys.length === 0 && <div className="text-xs text-white/30 italic">Alle Schlüssel im Kasten.</div>}
                                                 {rentedKeys.map(k => (
                                                     <div key={k.id} onClick={(e) => { e.stopPropagation(); setSelectedKey(k); }} className="group cursor-pointer p-2 rounded hover:bg-white/5 border border-transparent hover:border-white/5">
                                                         <div className="flex justify-between items-start">
-                                                            <div className="font-medium text-gray-900 dark:text-white text-sm group-hover:text-amber-400 transition-colors truncate">{k.name}</div>
+                                                            <div className="font-medium text-white text-sm group-hover:text-amber-400 transition-colors truncate">{k.name}</div>
                                                             <span className="text-xs font-mono text-emerald-400">#{k.slot_number}</span>
                                                         </div>
                                                         <div className="flex items-center gap-1.5 mt-1">
                                                             <User size={12} className="text-amber-500/70" />
-                                                            <span className="text-xs text-gray-500 dark:text-white/50 truncate">{k.holder_name || 'Unbekannt'}</span>
+                                                            <span className="text-xs text-white/50 truncate">{k.holder_name || 'Unbekannt'}</span>
                                                         </div>
                                                     </div>
                                                 ))}
@@ -947,30 +949,30 @@ const Dashboard: React.FC = () => {
 
                                 {/* --- TILE 2: KOMMISSIONEN --- */}
                                 <div key="commissions">
-                                    <GlassCard className={`flex flex-col h-full p-0 overflow-hidden border-none bg-white/80 dark:bg-white/5`} contentClassName="!p-0 flex flex-col h-full">
+                                    <GlassCard className={`flex flex-col h-full p-0 overflow-hidden border-none bg-white/5`} contentClassName="!p-0 flex flex-col h-full">
                                         {renderCommissionTileContent(false)}
                                     </GlassCard>
                                 </div>
 
                                 {/* --- TILE 3: EREIGNISLISTE --- */}
                                 <div key="events">
-                                    <GlassCard className="flex flex-col h-full p-0 overflow-hidden border-none bg-white/80 dark:bg-white/5" contentClassName="!p-0 flex flex-col h-full">
-                                        <div className={`px-6 py-5 border-b border-gray-200 dark:border-white/10 bg-white/50 dark:bg-white/5 backdrop-blur-xl flex items-center gap-3 shrink-0`}>
+                                    <GlassCard className="flex flex-col h-full p-0 overflow-hidden border-none bg-white/5" contentClassName="!p-0 flex flex-col h-full">
+                                        <div className={`px-6 py-5 border-b border-white/10 bg-white/5 backdrop-blur-xl flex items-center gap-3 shrink-0`}>
                                             <button
-                                                className={`drag-handle p-1.5 rounded-lg hover:bg-black/5 dark:hover:bg-white/10 transition-colors ${isTileLocked('events') ? 'cursor-default text-gray-200 dark:text-white/5 opacity-30' : 'cursor-move text-gray-300 dark:text-white/10 hover:text-gray-500 dark:hover:text-white/50'}`}
+                                                className={`drag-handle p-1.5 rounded-lg hover:bg-white/10 transition-colors ${isTileLocked('events') ? 'cursor-default text-white/5 opacity-30' : 'cursor-move text-white/10 hover:text-white/50'}`}
                                                 title="Verschieben"
                                             >
                                                 <Move size={18} />
                                             </button>
                                             <div className="flex-1 flex items-center gap-2">
-                                                <StickyNote size={20} className="text-blue-500 dark:text-blue-400" />
-                                                <h2 className="text-xl font-bold text-gray-900 dark:text-white">Letzte Aktivitäten</h2>
+                                                <StickyNote size={20} className="text-blue-400" />
+                                                <h2 className="text-xl font-bold text-white">Letzte Aktivitäten</h2>
                                             </div>
                                             <button
                                                 onMouseDown={(e) => e.stopPropagation()}
                                                 onTouchStart={(e) => e.stopPropagation()}
                                                 onClick={() => toggleTileLock('events')}
-                                                className="p-2 text-gray-400 dark:text-white/40 hover:text-gray-900 dark:hover:text-white transition-colors"
+                                                className="p-2 text-white/40 hover:text-white transition-colors"
                                             >
                                                 {isTileLocked('events') ? <Lock size={16} className="text-rose-500" /> : <Unlock size={16} />}
                                             </button>
@@ -978,19 +980,19 @@ const Dashboard: React.FC = () => {
 
                                         <div className="p-0 overflow-y-auto flex-1 min-h-0 pb-12">
                                             {recentEvents.length === 0 ? (
-                                                <div className="p-8 text-center text-gray-400 dark:text-white/30 italic">
+                                                <div className="p-8 text-center text-white/30 italic">
                                                     Noch keine Aktivitäten verzeichnet.
                                                 </div>
                                             ) : (
-                                                <div className="divide-y divide-gray-200 dark:divide-white/5">
+                                                <div className="divide-y divide-white/5">
                                                     {recentEvents.map((event) => (
-                                                        <div key={`${event.type}-${event.id}`} className="p-4 flex items-start gap-4 hover:bg-gray-50 dark:hover:bg-white/5 transition-colors">
+                                                        <div key={`${event.type}-${event.id}`} className="p-4 flex items-start gap-4 hover:bg-white/5 transition-colors">
                                                             {/* Icon based on type */}
                                                             <div className={`mt-1 w-8 h-8 rounded-full flex items-center justify-center shrink-0 
-                                                                ${event.type === 'machine' ? 'bg-amber-500/10 text-amber-600 dark:text-amber-400' : ''}
-                                                                ${event.type === 'commission' ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400' : ''}
-                                                                ${event.type === 'order' ? 'bg-purple-500/10 text-purple-600 dark:text-purple-400' : ''}
-                                                                ${event.type === 'key' ? 'bg-blue-500/10 text-blue-600 dark:text-blue-400' : ''}
+                                                                ${event.type === 'machine' ? 'bg-amber-500/10 text-amber-400' : ''}
+                                                                ${event.type === 'commission' ? 'bg-emerald-500/10 text-emerald-400' : ''}
+                                                                ${event.type === 'order' ? 'bg-purple-500/10 text-purple-400' : ''}
+                                                                ${event.type === 'key' ? 'bg-blue-500/10 text-blue-400' : ''}
                                                             `}>
                                                                 {event.type === 'machine' && <Wrench size={14} />}
                                                                 {event.type === 'commission' && <CheckCircle2 size={14} />}
@@ -1000,18 +1002,18 @@ const Dashboard: React.FC = () => {
 
                                                             <div className="flex-1 min-w-0">
                                                                 <div className="flex justify-between items-start">
-                                                                    <span className="text-sm font-bold text-gray-900 dark:text-white truncate">
+                                                                    <span className="text-sm font-bold text-white truncate">
                                                                         {event.user_name}
                                                                     </span>
-                                                                    <span className="text-xs text-gray-400 dark:text-white/40 whitespace-nowrap ml-2">
+                                                                    <span className="text-xs text-white/40 whitespace-nowrap ml-2">
                                                                         {formatDistanceToNow(new Date(event.created_at), { addSuffix: true, locale: de })}
                                                                     </span>
                                                                 </div>
-                                                                <p className="text-sm text-gray-600 dark:text-white/70 mt-0.5">
-                                                                    <span className="font-medium text-gray-500 dark:text-white/50 uppercase text-[10px] tracking-wider mr-2 border border-gray-200 dark:border-white/10 px-1.5 py-0.5 rounded">
+                                                                <p className="text-sm text-white/70 mt-0.5">
+                                                                    <span className="font-medium text-white/50 uppercase text-[10px] tracking-wider mr-2 border border-white/10 px-1.5 py-0.5 rounded">
                                                                         {event.type === 'machine' ? 'Gerät' : event.type === 'commission' ? 'Kommission' : event.type === 'key' ? 'Schlüssel' : 'Bestellung'}
                                                                     </span>
-                                                                    <span className="font-bold text-gray-900 dark:text-white mr-1">
+                                                                    <span className="font-bold text-white mr-1">
                                                                         {event.entity_name}:
                                                                     </span>
                                                                     {event.details}
@@ -1365,8 +1367,8 @@ const Dashboard: React.FC = () => {
                                         <LayoutTemplate size={18} />
                                     </div>
                                     <div>
-                                        <div className="text-sm font-medium text-gray-900 dark:text-white">Layout zurücksetzen</div>
-                                        <div className="text-xs text-gray-500 dark:text-white/40">Standard wiederherstellen</div>
+                                        <div className="text-sm font-medium text-white">Layout zurücksetzen</div>
+                                        <div className="text-xs text-white/40">Standard wiederherstellen</div>
                                     </div>
                                 </div>
                                 <Button onClick={resetLayout} variant="secondary" className="text-xs py-1 h-8">

@@ -9,7 +9,16 @@ export interface ChangelogEntry {
 
 export const changelogData: ChangelogEntry[] = [
     {
-        version: '0.0.62',
+        version: '0.0.63',
+        release_date: '03.02.2026',
+        changes: [
+            { type: 'feature', text: 'Dark Mode enforced: Die App nutzt nun systemweit den Dark Mode für ein einheitliches Design.' },
+            { type: 'fix', text: 'iOS Login Fix: Gespeicherte Passwörter werden nun zuverlässig vorgeschlagen.' },
+            { type: 'fix', text: 'Design-Korrekturen: Diverse Light-Mode Fehler im Dashboard und Kommissions-Details behoben.' },
+        ]
+    },
+    {
+        version: '0.0.61',
         release_date: '02.02.2026',
         changes: [
             { type: 'feature', text: 'Neuer Bild-Optimierer: Tool zur nachträglichen Komprimierung aller Artikel- & Kleidungsbilder inkl. Bucket-Support.' },

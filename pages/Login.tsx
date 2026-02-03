@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../supabaseClient';
-import { GlassCard, Button, GlassInput } from '../components/UIComponents';
+import { GlassCard, Button, GlassInput } from '../src/components/UIComponents';
 import { useNavigate } from 'react-router-dom';
 import { Lock, Mail, User, Loader2, AlertCircle, Database, Copy, Check } from 'lucide-react';
 import { toast } from 'sonner';
@@ -93,32 +93,39 @@ const Login: React.FC = () => {
             {!isLogin && (
               <GlassInput
                 icon={<User size={20} />}
+                name="fullName"
+                id="fullName"
                 placeholder="Voller Name (z.B. Max Mustermann)"
                 value={fullName}
                 onChange={(e) => setFullName(e.target.value)}
                 required
+                autoComplete="name"
               />
             )}
 
             <GlassInput
               icon={<Mail size={20} />}
               type="email"
+              name="email"
+              id="email"
               placeholder="E-Mail Adresse"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
-              autoComplete="username"
+              autoComplete="username email"
             />
 
             <GlassInput
               icon={<Lock size={20} />}
               type="password"
+              name="password"
+              id="password"
               placeholder="Passwort"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
               minLength={6}
-              autoComplete="current-password"
+              autoComplete={isLogin ? "current-password" : "new-password"}
             />
 
             {error && (

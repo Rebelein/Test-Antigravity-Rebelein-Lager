@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { GlassCard, Button, GlassInput } from '../components/UIComponents';
+import { GlassCard, Button, GlassInput } from '../src/components/UIComponents';
 import { supabase } from '../supabaseClient';
 import { Supplier } from '../types';
 import { Factory, Plus, Edit2, Trash2, FileText, X } from 'lucide-react';

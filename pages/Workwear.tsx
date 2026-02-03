@@ -3,18 +3,18 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Plus, Search, Shirt, Ruler, ShoppingBag, History, Settings, User as UserIcon, Check, X, AlertTriangle, FileText, ChevronRight, ChevronDown, ShoppingCart, Send, Trash2 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../supabaseClient';
-import { GlassCard, Button, GlassModal, GlassInput, GlassSelect } from '../components/UIComponents';
+import { GlassCard, Button, GlassModal, GlassInput, GlassSelect } from '../src/components/UIComponents';
 import { toast } from 'sonner';
 import { WorkwearRole, WorkwearTemplate, UserSize, WorkwearOrder, WorkwearOrderItem, CartItem } from '../types';
 import { clsx } from 'clsx';
 import { format } from 'date-fns';
 import { de } from 'date-fns/locale';
-import { AdminTemplateEditor } from '../components/workwear/AdminTemplateEditor';
-import { UserSizeManager } from '../components/workwear/UserSizeManager';
-import { AdminBudgetManager } from '../components/workwear/AdminBudgetManager';
-import { CatalogItem } from '../components/workwear/CatalogItem';
-import { OrderHistory } from '../components/workwear/OrderHistory';
-import { AdminOrderManagement } from '../components/workwear/AdminOrderManagement';
+import { AdminTemplateEditor } from '../src/features/workwear/components/AdminTemplateEditor';
+import { UserSizeManager } from '../src/features/workwear/components/UserSizeManager';
+import { AdminBudgetManager } from '../src/features/workwear/components/AdminBudgetManager';
+import { CatalogItem } from '../src/features/workwear/components/CatalogItem';
+import { OrderHistory } from '../src/features/workwear/components/OrderHistory';
+import { AdminOrderManagement } from '../src/features/workwear/components/AdminOrderManagement';
 
 // ... cleaned up top section
 // --- COMPONENTS --- (To be extracted later if too large)

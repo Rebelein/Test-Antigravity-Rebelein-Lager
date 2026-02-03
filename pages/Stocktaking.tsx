@@ -1,10 +1,10 @@
 import React, { useState, useRef } from 'react';
-import { GlassCard, Button } from '../components/UIComponents';
+import { GlassCard, Button } from '../src/components/UIComponents';
 import { supabase } from '../supabaseClient';
 import { ScanLine, X, Loader2, AlertTriangle, Search, ArrowRight, CheckCircle2, Plus, Minus } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { Toaster, toast } from 'sonner';
-import UnifiedScanner from '../components/UnifiedScanner';
+import UnifiedScanner from '../src/components/UnifiedScanner';
 
 const Stocktaking: React.FC = () => {
     const navigate = useNavigate();

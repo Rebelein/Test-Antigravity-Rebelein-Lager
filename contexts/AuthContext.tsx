@@ -9,13 +9,8 @@ interface AuthContextType {
   user: User | null;
   profile: UserProfile | null;
   loading: boolean;
-  isConnected: boolean; // New global state
   signOut: () => Promise<void>;
   refreshProfile: () => Promise<void>;
-  updateWarehousePreference: (type: 'primary' | 'secondary', warehouseId: string) => Promise<void>;
-  toggleCategoryCollapse: (category: string) => Promise<void>;
-  checkConnection: () => Promise<void>; // Manual retry
-  markTourSeen: () => Promise<void>; // Update tour status
 }
 
 const AuthContext = createContext<AuthContextType>({
@@ -23,13 +18,8 @@ const AuthContext = createContext<AuthContextType>({
   user: null,
   profile: null,
   loading: true,
-  isConnected: true,
   signOut: async () => { },
   refreshProfile: async () => { },
-  updateWarehousePreference: async () => { },
-  toggleCategoryCollapse: async () => { },
-  checkConnection: async () => { },
-  markTourSeen: async () => { },
 });
 
 export const useAuth = () => useContext(AuthContext);
@@ -40,52 +30,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
 
-  // Safe initialization for navigator.onLine to prevent build errors
-  const [isConnected, setIsConnected] = useState(() => {
-    return typeof navigator !== 'undefined' ? navigator.onLine : true;
-  });
-
   // DEV MODE: Set to false for Production/Live usage to ensure real DB auth
   const IS_DEV_MODE = false;
   const DEV_USER_ID = '7416346d-0d2a-4027-b2a7-cf603c4bced1';
-
-  // --- CONNECTION MONITORING ---
-  useEffect(() => {
-    if (typeof window === 'undefined') return;
-
-    const handleOnline = () => {
-      setIsConnected(true);
-      checkConnection(); // Verify DB access on reconnect
-    };
-    const handleOffline = () => setIsConnected(false);
-
-    window.addEventListener('online', handleOnline);
-    window.addEventListener('offline', handleOffline);
-
-    return () => {
-      window.removeEventListener('online', handleOnline);
-      window.removeEventListener('offline', handleOffline);
-    };
-  }, []);
-
-  // Initial Connection Check (Heartbeat)
-  const checkConnection = async () => {
-    if (typeof navigator !== 'undefined' && !navigator.onLine) {
-      setIsConnected(false);
-      return;
-    }
-    try {
-      // Simple lightweight query to check DB reachability
-      const { error } = await supabase.from('warehouses').select('id').limit(1);
-      if (error) {
-        console.warn("DB unreachable:", error);
-      }
-      setIsConnected(true);
-    } catch (err) {
-      console.error("Connection check failed:", err);
-      setIsConnected(false);
-    }
-  };
 
   // --- AUTH & PROFILE LOGIC ---
   useEffect(() => {
@@ -204,72 +151,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-  const updateWarehousePreference = async (type: 'primary' | 'secondary', warehouseId: string) => {
-    if (!user) return;
-    try {
-      const column = type === 'primary' ? 'primary_warehouse_id' : 'secondary_warehouse_id';
-      const updates: any = { [column]: warehouseId };
-
-      // Logic: A warehouse cannot be both primary and secondary at the same time.
-      // Swap or clear if needed.
-      if (type === 'primary' && profile?.secondary_warehouse_id === warehouseId) {
-        updates.secondary_warehouse_id = null;
-      }
-      if (type === 'secondary' && profile?.primary_warehouse_id === warehouseId) {
-        updates.primary_warehouse_id = null;
-      }
-
-      // Optimistic UI Update (Immediate feedback)
-      setProfile(prev => prev ? { ...prev, ...updates } : null);
-
-      const { error } = await supabase
-        .from('profiles')
-        .update(updates)
-        .eq('id', user.id);
-
-      if (error) throw error;
-      // Note: Realtime subscription will double-check this, but optimistic update makes it feel instant.
-    } catch (error) {
-      console.error(`Error updating ${type} warehouse:`, error);
-      // Revert on error would go here
-      await refreshProfile();
-      throw error;
-    }
-  };
-
-  const toggleCategoryCollapse = async (category: string) => {
-    if (!profile || !user) return;
-    const currentCollapsed = profile.collapsed_categories || [];
-    let newCollapsed: string[];
-    if (currentCollapsed.includes(category)) {
-      newCollapsed = currentCollapsed.filter(c => c !== category);
-    } else {
-      newCollapsed = [...currentCollapsed, category];
-    }
-
-    // Optimistic Update
-    setProfile({ ...profile, collapsed_categories: newCollapsed });
-
-    try {
-      await supabase.from('profiles').update({ collapsed_categories: newCollapsed }).eq('id', user.id);
-    } catch (error: any) {
-      console.error("Error saving category state:", error);
-    }
-  };
-
-  const markTourSeen = async () => {
-    if (!user || !profile) return;
-
-    // Optimistic update
-    setProfile({ ...profile, has_seen_tour: true });
-
-    try {
-      await supabase.from('profiles').update({ has_seen_tour: true }).eq('id', user.id);
-    } catch (error) {
-      console.error("Error marking tour as seen:", error);
-    }
-  };
-
   const signOut = async () => {
     if (IS_DEV_MODE) {
       alert("Logout im Entwickler-Modus deaktiviert.");
@@ -280,7 +161,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   return (
-    <AuthContext.Provider value={{ session, user, profile, loading, isConnected, signOut, refreshProfile, updateWarehousePreference, toggleCategoryCollapse, checkConnection, markTourSeen }}>
+    <AuthContext.Provider value={{ session, user, profile, loading, signOut, refreshProfile }}>
       {children}
     </AuthContext.Provider>
   );

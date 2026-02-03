@@ -1,6 +1,6 @@
 
 import React, { useEffect, useState, useMemo } from 'react';
-import { GlassCard, Button, GlassInput, GlassSelect } from '../components/UIComponents';
+import { GlassCard, Button, GlassInput, GlassSelect } from '../src/components/UIComponents';
 import { supabase } from '../supabaseClient';
 import { Warehouse, Article } from '../types';
 import { Tag, Printer, Sliders, Search, CheckSquare, Square, ChevronLeft, ChevronRight, Download, ImageIcon, FileText, Box, Layers, Check, Loader2, Edit2 } from 'lucide-react';

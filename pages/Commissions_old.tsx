@@ -1,18 +1,18 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { GlassCard, Button, GlassInput, GlassModal, StatusBadge } from '../components/UIComponents';
+import { GlassCard, Button, GlassInput, GlassModal, StatusBadge } from '../src/components/UIComponents';
 import { supabase } from '../supabaseClient';
 import { useAuth } from '../contexts/AuthContext';
-import { Commission, CommissionItem, Article, Supplier } from '../types';
+import { Commission, CommissionItem, Article, Supplier, ExtendedCommission } from '../types';
 import { Plus, Search, CheckCircle2, Printer, X, Loader2, History, Trash2, BoxSelect, ArrowRight, Clock, LogOut, Undo2, RotateCcw, AlertTriangle, Layers, Tag } from 'lucide-react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { CommissionCleanupModal } from '../components/CommissionCleanupModal';
-import { CommissionCard } from '../components/CommissionCard';
-import { PrintingSection } from '../components/PrintingSection';
-import { useCommissionData } from '../hooks/useCommissionData';
-import { MasterDetailLayout } from '../components/MasterDetailLayout';
-import { CommissionDetailContent } from '../components/commissions/CommissionDetailContent';
-import { CommissionEditContent, ExtendedCommission } from '../components/commissions/CommissionEditContent';
+import { CommissionCleanupModal } from '../src/features/commissions/components/CommissionCleanupModal';
+import { CommissionCard } from '../src/features/commissions/components/CommissionCard';
+import { PrintingSection } from '../src/features/commissions/components/PrintingSection';
+import { useCommissionData } from '../src/features/commissions/hooks/useCommissionData';
+import { MasterDetailLayout } from '../src/components/MasterDetailLayout';
+import { CommissionDetailContent } from '../src/features/commissions/components/CommissionDetailContent';
+import { CommissionEditContent } from '../src/features/commissions/components/CommissionEditContent';
 import { useIsMobile } from '../hooks/useIsMobile';
 
 // --- TYPES ---

@@ -310,3 +310,7 @@ export interface ChangelogEntry {
   }[];
   release_date: string;
 }
+
+export interface ExtendedCommission extends Commission {
+  commission_items?: CommissionItem[];
+}

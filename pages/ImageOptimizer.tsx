@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../supabaseClient';
-import { Button, GlassCard } from '../components/UIComponents';
+import { Button, GlassCard } from '../src/components/UIComponents';
 import { compressImage } from '../utils/imageCompression';
 import { Loader2, CheckCircle, AlertTriangle, Play, ArrowRight, ArrowLeft } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
