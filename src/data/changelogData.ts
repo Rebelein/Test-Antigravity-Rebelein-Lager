@@ -9,6 +9,13 @@ export interface ChangelogEntry {
 
 export const changelogData: ChangelogEntry[] = [
     {
+        version: '0.0.64',
+        release_date: '10.02.2026',
+        changes: [
+            { type: 'info', text: 'System-Wartung: Versionierung und Konfiguration optimiert.' },
+        ]
+    },
+    {
         version: '0.0.63',
         release_date: '03.02.2026',
         changes: [
