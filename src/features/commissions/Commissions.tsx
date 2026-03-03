@@ -155,13 +155,17 @@ const Commissions: React.FC = () => {
         else setShowPrintArea(false);
     }, [queueItems.length]);
 
+    const processedUrlParams = useRef<{ openId: string | null; stateKey: string | null }>({ openId: null, stateKey: null });
+
     // Handle deep links / navigation state
     useEffect(() => {
         const params = new URLSearchParams(location.search);
         const openIdParam = params.get('openId');
         const state = location.state as { editCommissionId?: string; openCreateModal?: boolean; returnTo?: string; openCommissionId?: string } | null;
+        const stateKey = state ? JSON.stringify(state) : null;
 
-        if (openIdParam) {
+        if (openIdParam && processedUrlParams.current.openId !== openIdParam) {
+            processedUrlParams.current.openId = openIdParam;
             const loadScannerTarget = async (id: string) => {
                 let comm = commissions.find(c => c.id === id) as ExtendedCommission;
                 if (!comm) {
@@ -177,7 +181,8 @@ const Commissions: React.FC = () => {
                 }
             };
             loadScannerTarget(openIdParam);
-        } else if (state) {
+        } else if (state && processedUrlParams.current.stateKey !== stateKey) {
+            processedUrlParams.current.stateKey = stateKey;
             if (state.editCommissionId) {
                 navigate(location.pathname, { replace: true, state: {} });
                 const loadAndEdit = async () => {
@@ -255,9 +260,13 @@ const Commissions: React.FC = () => {
             params.delete('openId');
             navigate({ search: params.toString() }, { replace: true });
         }
+        
+        // Reset processed URL tracking to allow reopening same commission later if needed
+        processedUrlParams.current.openId = null;
 
         setSidePanelMode('none');
         setActiveCommission(null); // Explicitly clear active commission
+        setCommItems([]); // Clear items instantly so they don't flash on next open
     };
 
     const handleOpenCreate = () => {
