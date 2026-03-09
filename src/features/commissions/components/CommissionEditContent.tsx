@@ -31,6 +31,7 @@ interface CommissionEditContentProps {
     suppliers: Supplier[];
     onSave: (id?: string, isNew?: boolean) => void;
     onClose: () => void;
+    onLogEvent?: (commId: string, commName: string, action: string, details: string) => Promise<void>;
 }
 
 export const CommissionEditContent: React.FC<CommissionEditContentProps> = ({
@@ -41,7 +42,8 @@ export const CommissionEditContent: React.FC<CommissionEditContentProps> = ({
     availableArticles,
     suppliers,
     onSave,
-    onClose
+    onClose,
+    onLogEvent // <--- Neues prop
 }) => {
     // --- STATE ---
     const [newComm, setNewComm] = useState({ order_number: '', name: '', notes: '' });
@@ -227,6 +229,11 @@ export const CommissionEditContent: React.FC<CommissionEditContentProps> = ({
                 const { data, error } = await supabase.from('commissions').insert(payload).select().single();
                 if (error) throw error;
                 commId = data.id;
+
+                // --- NEU: Logge das Erstellen der Kommission ---
+                if (onLogEvent && commId) {
+                    await onLogEvent(commId, newComm.name, 'created', 'Kommission angelegt');
+                }
             }
 
             if (!commId) throw new Error("ID missing");

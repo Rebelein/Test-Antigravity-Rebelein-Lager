@@ -260,7 +260,7 @@ const Commissions: React.FC = () => {
             params.delete('openId');
             navigate({ search: params.toString() }, { replace: true });
         }
-        
+
         // Reset processed URL tracking to allow reopening same commission later if needed
         processedUrlParams.current.openId = null;
 
@@ -355,6 +355,7 @@ const Commissions: React.FC = () => {
                         suppliers={suppliers}
                         onSave={handleSaveCommission}
                         onClose={handleCloseSidePanel}
+                        onLogEvent={logCommissionEvent}
                     />
                 );
             case 'search':
@@ -421,6 +422,8 @@ const Commissions: React.FC = () => {
                                 await logCommissionEvent(id, activeCommission?.name || 'Unbekannt', 'status_change', `Storno beauftragt: ${type === 'restock' ? 'Einlagern' : 'Lieferant'}`);
 
                                 setActiveCommission(null);
+                                setSidePanelMode('none');
+                                setCommItems([]);
                                 refreshCommissions();
                             } catch (e) {
                                 console.error(e);
@@ -688,6 +691,8 @@ const Commissions: React.FC = () => {
             await logCommissionEvent(activeCommission.id, activeCommission.name, 'status_change', 'Kommission entnommen (Abgeschlossen)');
             setShowConfirmWithdrawModal(false);
             setActiveCommission(null);
+            setSidePanelMode('none');
+            setCommItems([]);
             refreshCommissions();
         } catch (err: any) { alert(err.message); } finally { setIsSubmitting(false); }
     };
@@ -722,6 +727,8 @@ const Commissions: React.FC = () => {
             await supabase.from('commissions').update({ status: 'ReturnPending', is_processed: false }).eq('id', activeCommission.id);
             await logCommissionEvent(activeCommission.id, activeCommission.name, 'status_change', 'Als Retoure markiert');
             setActiveCommission(null);
+            setSidePanelMode('none');
+            setCommItems([]);
             setActiveTab('returns');
             refreshCommissions();
         } catch (e) { console.error(e); } finally { setIsSubmitting(false); }
@@ -746,6 +753,8 @@ const Commissions: React.FC = () => {
             await supabase.from('commissions').update({ status: 'ReturnComplete' }).eq('id', activeCommission.id);
             await logCommissionEvent(activeCommission.id, activeCommission.name, 'status_change', 'Retoure abgeholt');
             setActiveCommission(null);
+            setSidePanelMode('none');
+            setCommItems([]);
             refreshCommissions();
         } catch (e) { console.error(e); } finally { setIsSubmitting(false); }
     };
@@ -837,6 +846,13 @@ const Commissions: React.FC = () => {
             }
             refreshCommissions();
             setShowDeleteModal(false);
+
+            if (activeCommission && activeCommission.id === deleteTarget.id) {
+                setActiveCommission(null);
+                setSidePanelMode('none');
+                setCommItems([]);
+            }
+
             setDeleteTarget(null);
         } catch (err) { console.error(err); } finally { setIsSubmitting(false); }
     };
