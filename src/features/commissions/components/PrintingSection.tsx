@@ -16,6 +16,9 @@ interface PrintingSectionProps {
     loadingHistory: boolean;
     printLogs: any[];
     onReprint: (id: string) => void;
+    selectedHistoryPrintIds: Set<string>;
+    setSelectedHistoryPrintIds: (ids: Set<string>) => void;
+    onReprintBatch: (ids: string[]) => void;
     // New Props for Storno
     activeCommissions: Commission[];
 }
@@ -33,6 +36,9 @@ const PrintingSectionComponent: React.FC<PrintingSectionProps> = ({
     loadingHistory,
     printLogs,
     onReprint,
+    selectedHistoryPrintIds,
+    setSelectedHistoryPrintIds,
+    onReprintBatch,
     activeCommissions = []
 }) => {
     const [mode, setMode] = useState<'print' | 'storno'>('print');
@@ -43,6 +49,34 @@ const PrintingSectionComponent: React.FC<PrintingSectionProps> = ({
         else newSet.add(id);
         setSelectedPrintIds(newSet);
     };
+
+    const toggleHistorySelection = (id: string) => {
+        const newSet = new Set(selectedHistoryPrintIds);
+        if (newSet.has(id)) newSet.delete(id);
+        else newSet.add(id);
+        setSelectedHistoryPrintIds(newSet);
+    };
+
+    // Memoize printed log grouping by Batch ID
+    const groupedLogs = useMemo(() => {
+        const groups: { [key: string]: { batchId: string; timestamp: Date; user: string; logs: any[] } } = {};
+        printLogs.forEach(log => {
+            const match = log.details?.match(/\[Batch:([^\]]+)\]/);
+            const batchId = match ? match[1] : `legacy-${log.id}`; // legacy jobs don't cluster
+            
+            if (!groups[batchId]) {
+                groups[batchId] = {
+                    batchId,
+                    timestamp: new Date(log.created_at),
+                    user: log.profiles?.full_name?.split(' ')[0] || 'Unbekannt',
+                    logs: []
+                };
+            }
+            groups[batchId].logs.push(log);
+        });
+        
+        return Object.values(groups).sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime());
+    }, [printLogs]);
 
     // Memoize storno calculations
     const stornoCommissions = useMemo(() => {
@@ -147,38 +181,77 @@ const PrintingSectionComponent: React.FC<PrintingSectionProps> = ({
                                     )}
                                 </div>
                             ) : (
-                                <div className="space-y-2 animate-in fade-in max-h-[200px] overflow-y-auto touch-pan-y">
-                                    {loadingHistory ? (
-                                        <div className="text-center py-4"><Loader2 className="animate-spin text-blue-400 mx-auto" /></div>
-                                    ) : printLogs.length === 0 ? (
-                                        <div className="text-center py-4 text-white/40 text-xs">Keine Historie vorhanden.</div>
-                                    ) : (
-                                        printLogs.map(log => {
-                                            const commExists = !!log.commission;
-                                            return (
-                                                <div key={log.id} className={`flex items-center justify-between p-2 rounded-lg border border-white/5 ${commExists ? 'bg-white/5' : 'bg-white/5 opacity-50'}`}>
-                                                    <div className="min-w-0 flex-1 pr-2">
-                                                        <div className="text-sm font-bold text-white truncate">{log.commission_name}</div>
-                                                        <div className="text-xs text-white/50 flex gap-2">
-                                                            <span>{new Date(log.created_at).toLocaleString()}</span>
-                                                            <span>• {log.profiles?.full_name?.split(' ')[0]}</span>
+                                <div className="space-y-3 animate-in fade-in">
+                                    <div className="flex gap-2">
+                                        <Button
+                                            className="text-xs h-8 bg-blue-600 hover:bg-blue-500 border-none"
+                                            onClick={() => onReprintBatch(Array.from(selectedHistoryPrintIds))}
+                                            disabled={selectedHistoryPrintIds.size === 0 || isSubmitting}
+                                        >
+                                            {isSubmitting ? <Loader2 className="animate-spin" /> : `Ausgewählte Nachdrucken (${selectedHistoryPrintIds.size})`}
+                                        </Button>
+                                    </div>
+                                    <div className="max-h-[300px] overflow-y-auto touch-pan-y space-y-3 border-t border-white/5 pt-2 custom-scrollbar pr-1">
+                                        {loadingHistory ? (
+                                            <div className="text-center py-4"><Loader2 className="animate-spin text-blue-400 mx-auto" /></div>
+                                        ) : groupedLogs.length === 0 ? (
+                                            <div className="text-center py-4 text-white/40 text-xs">Keine Historie vorhanden.</div>
+                                        ) : (
+                                            groupedLogs.map(batch => (
+                                                <div key={batch.batchId} className="bg-white/5 border border-white/10 rounded-lg p-3">
+                                                    <div className="flex justify-between items-center mb-2 pb-2 border-b border-white/10">
+                                                        <div className="text-xs text-white/50">
+                                                            <span className="font-bold text-white/80">{batch.timestamp.toLocaleString('de-DE')}</span> • {batch.user}
                                                         </div>
-                                                    </div>
-                                                    {commExists ? (
-                                                        <button
-                                                            onClick={() => onReprint(log.commission_id)}
-                                                            className="p-2 bg-blue-500/20 text-blue-300 hover:bg-blue-500 hover:text-white rounded-lg transition-colors"
-                                                            title="Erneut drucken"
+                                                        <button 
+                                                            className="text-[10px] bg-white/10 hover:bg-white/20 text-white/80 px-2 py-1 rounded"
+                                                            onClick={() => {
+                                                                const newSet = new Set(selectedHistoryPrintIds);
+                                                                const allInBatchSelected = batch.logs.every(log => newSet.has(log.commission_id));
+                                                                batch.logs.forEach(log => {
+                                                                    if (log.commission) {
+                                                                        if (allInBatchSelected) newSet.delete(log.commission_id);
+                                                                        else newSet.add(log.commission_id);
+                                                                    }
+                                                                });
+                                                                setSelectedHistoryPrintIds(newSet);
+                                                            }}
                                                         >
-                                                            <Printer size={16} />
+                                                            {batch.logs.every(log => selectedHistoryPrintIds.has(log.commission_id) && !!log.commission) ? 'Alle abwählen' : 'Alle auswählen'}
                                                         </button>
-                                                    ) : (
-                                                        <span className="text-[10px] text-rose-400 italic">Gelöscht</span>
-                                                    )}
+                                                    </div>
+                                                    <div className="space-y-1">
+                                                        {batch.logs.map(log => {
+                                                            const commExists = !!log.commission;
+                                                            return (
+                                                                <div key={log.id} 
+                                                                    className={`flex items-center gap-2 p-1.5 rounded-lg cursor-pointer ${!commExists ? 'opacity-50' : 'hover:bg-white/5'}`}
+                                                                    onClick={() => commExists && toggleHistorySelection(log.commission_id)}
+                                                                >
+                                                                    <div className={`w-4 h-4 rounded border flex items-center justify-center shrink-0 ${selectedHistoryPrintIds.has(log.commission_id) ? 'bg-blue-500 border-blue-500 text-white' : 'border-white/30'}`}>
+                                                                        {selectedHistoryPrintIds.has(log.commission_id) && <Check size={10} />}
+                                                                    </div>
+                                                                    <div className="min-w-0 flex-1">
+                                                                        <div className="text-sm font-semibold text-white truncate">{log.commission_name}</div>
+                                                                    </div>
+                                                                    {!commExists && <span className="text-[10px] text-rose-400 italic">Gelöscht</span>}
+                                                                    {commExists && (
+                                                                         <button
+                                                                            onClick={(e) => { e.stopPropagation(); onReprint(log.commission_id); }}
+                                                                            className="p-1.5 bg-blue-500/20 text-blue-300 hover:bg-blue-500 hover:text-white rounded-lg transition-colors ml-2"
+                                                                            title="Einzeln drucken"
+                                                                        >
+                                                                            <Printer size={14} />
+                                                                        </button>
+                                                                    )}
+                                                                </div>
+                                                            );
+                                                        })}
+                                                    </div>
                                                 </div>
-                                            );
-                                        })
-                                    )}
+                                            ))
+                                        )}
+                                    </div>
                                 </div>
                             )}
                         </>

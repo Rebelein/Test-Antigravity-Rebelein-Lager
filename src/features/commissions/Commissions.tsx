@@ -83,6 +83,7 @@ const Commissions: React.FC = () => {
     const [showPrintArea, setShowPrintArea] = useState(false);
     const [printTab, setPrintTab] = useState<PrintTab>('queue');
     const [selectedPrintIds, setSelectedPrintIds] = useState<Set<string>>(new Set());
+    const [selectedHistoryPrintIds, setSelectedHistoryPrintIds] = useState<Set<string>>(new Set()); // NEU
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [labelDataChanged, setLabelDataChanged] = useState(false);
 
@@ -453,7 +454,7 @@ const Commissions: React.FC = () => {
 
 
     // Printing Logic (Preserved)
-    const handleSinglePrint = async (commId?: string) => {
+    const handleSinglePrint = async (commId?: string, isReprint: boolean = false) => {
         const id = commId || activeCommission?.id;
         if (!id) return;
 
@@ -469,12 +470,39 @@ const Commissions: React.FC = () => {
 
         if (comm) {
             generateBatchPDF([{ comm, items }]);
-            await logCommissionEvent(comm.id, comm.name, 'labels_printed', 'Etikett einzeln gedruckt');
+            const batchId = Math.random().toString(36).substring(2, 9);
+            if (!isReprint) {
+                await logCommissionEvent(comm.id, comm.name, 'labels_printed', `[Batch:${batchId}] Etikett einzeln gedruckt`);
+            } else {
+                 // Wir loggen als 'labels_reprinted', damit es im Tab 'Zuletzt gedruckt' nicht oben auftaucht
+                await logCommissionEvent(comm.id, comm.name, 'labels_reprinted', `Etikett nachgedruckt`);
+            }
         }
         setShowLabelOptionsModal(null);
         setShowLabelUpdateModal(false);
         if (printTab === 'history') fetchPrintHistory();
         if (returnPath) { navigate(returnPath); setReturnPath(null); }
+    };
+    
+    const handleReprintBatch = async (commissionIds: string[]) => {
+        if (commissionIds.length === 0) return;
+        setIsSubmitting(true);
+        try {
+            const printData: { comm: Commission, items: CommissionItem[] }[] = [];
+            for (const id of commissionIds) {
+                const { data: c } = await supabase.from('commissions').select('*').eq('id', id).single();
+                const { data: itemsData } = await supabase.from('commission_items').select('*, article:articles(*)').eq('commission_id', id);
+                if (c && itemsData) {
+                    const items = itemsData.map((i: any) => ({ ...i, article: i.article }));
+                    printData.push({ comm: c, items });
+                    await logCommissionEvent(c.id, c.name, 'labels_reprinted', `Etikett nachgedruckt`);
+                }
+            }
+             if (printData.length > 0) {
+                 generateBatchPDF(printData);
+             }
+             setSelectedHistoryPrintIds(new Set()); // requires state in Commissions.tsx or PrintingSection.
+        } catch (e) { console.error(e); } finally { setIsSubmitting(false); }
     };
 
     const markLabelsAsPrinted = async () => {
@@ -484,12 +512,13 @@ const Commissions: React.FC = () => {
         try {
             const printData: { comm: Commission, items: CommissionItem[] }[] = [];
             const commissionsToPrint = commissions.filter(c => selectedPrintIds.has(c.id));
+            const batchId = Math.random().toString(36).substring(2, 9);
 
             for (const comm of commissionsToPrint) {
                 const { data } = await supabase.from('commission_items').select('*, article:articles(*)').eq('commission_id', comm.id);
                 const items = data ? data.map((i: any) => ({ ...i, article: i.article })) : [];
                 printData.push({ comm, items });
-                await logCommissionEvent(comm.id, comm.name, 'labels_printed', 'Etiketten aus Warteschlange gedruckt');
+                await logCommissionEvent(comm.id, comm.name, 'labels_printed', `[Batch:${batchId}] Etiketten aus Warteschlange gedruckt`);
             }
             generateBatchPDF(printData);
             await supabase.from('commissions').update({ needs_label: false }).in('id', ids);
@@ -898,11 +927,14 @@ const Commissions: React.FC = () => {
                     queueItems={queueItems}
                     selectedPrintIds={selectedPrintIds}
                     setSelectedPrintIds={setSelectedPrintIds}
+                    selectedHistoryPrintIds={selectedHistoryPrintIds}
+                    setSelectedHistoryPrintIds={setSelectedHistoryPrintIds}
                     onMarkAsPrinted={markLabelsAsPrinted}
                     isSubmitting={isSubmitting}
                     loadingHistory={loadingPrintHistory}
                     printLogs={recentPrintLogs}
-                    onReprint={handleSinglePrint}
+                    onReprint={(id) => handleSinglePrint(id, true)}
+                    onReprintBatch={handleReprintBatch}
                     activeCommissions={activeCommissionsForPrint}
                 />
             )}

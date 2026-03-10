@@ -189,7 +189,7 @@ export const useCommissionData = (activeTab: CommissionTab) => {
                 .select('*, commission:commissions(*), profiles(full_name)')
                 .eq('action', 'labels_printed')
                 .order('created_at', { ascending: false })
-                .limit(15);
+                .limit(100);
             if (error) throw error;
             return data as (CommissionEvent & { commission?: Commission })[];
         },
