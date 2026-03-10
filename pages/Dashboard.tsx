@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { GlassCard, StatusBadge, Button, GlassModal } from '../src/components/UIComponents';
-import { AlertTriangle, Wrench, User, CheckCircle2, FileText, ArrowRight, Grid, Database, X, Play, RefreshCw, Check, Copy, Settings, Factory, Warehouse, Tag, Maximize2, Minimize2, PhoneCall, StickyNote, Save, Undo2, Library, Plus, MessageSquare, Monitor, Smartphone, ShoppingCart, LayoutTemplate, Lock, Unlock, History, LayoutDashboard, ChevronUp, ChevronDown, Eye, EyeOff, Zap, Move, Wand2 } from 'lucide-react';
+import { AlertTriangle, Wrench, User, CheckCircle2, FileText, ArrowRight, Grid, Database, X, Play, RefreshCw, Check, Copy, Settings, Factory, Warehouse, Tag, Maximize2, Minimize2, PhoneCall, StickyNote, Save, Undo2, Library, Plus, MessageSquare, Monitor, Smartphone, ShoppingCart, LayoutTemplate, Lock, Unlock, History, LayoutDashboard, ChevronUp, ChevronDown, Eye, EyeOff, Zap, Move, Wand2, Hash, Send, Clock, Circle } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useIsMobile } from '../hooks/useIsMobile';
 import { usePersistentState } from '../hooks/usePersistentState';
@@ -64,6 +64,17 @@ const Dashboard: React.FC = () => {
     const [readyCommissions, setReadyCommissions] = useState<Commission[]>([]);
     const [returnCommissions, setReturnCommissions] = useState<Commission[]>([]);
     const [recentEvents, setRecentEvents] = useState<AppEvent[]>([]);
+    
+    // Tasks & Chat State
+    const [dashboardTasks, setDashboardTasks] = useState<any[]>([]);
+    const [dashboardChannels, setDashboardChannels] = useState<{ id: string, name: string, messages: any[], allMessages: any[] }[]>([]);
+    const [isTasksTileFullscreen, setIsTasksTileFullscreen] = useState(false);
+    const [activeChannelId, setActiveChannelId] = useState<string | null>(null);
+    const [chatInputMessage, setChatInputMessage] = useState('');
+    const [tasksTileTab, setTasksTileTab] = useState<'tasks' | 'chat'>('tasks');
+    const [selectedDashboardTask, setSelectedDashboardTask] = useState<any | null>(null);
+    const [showTaskAppIframe, setShowTaskAppIframe] = useState(false);
+    const [channelReadTimestamps, setChannelReadTimestamps] = usePersistentState<Record<string, string>>('channel_read_timestamps', {});
 
     // ... (utility states unchanged)
     const [showAppDrawer, setShowAppDrawer] = useState(false);
@@ -114,28 +125,31 @@ const Dashboard: React.FC = () => {
 
     const isMobile = useIsMobile();
     // Split View Status: Only active if NOT mobile
-    const isSplitView = !isMobile && (!!selectedMachine || !!selectedKey || !!viewingCommission || showChangelogHistory);
+    const isSplitView = !isMobile && (!!selectedMachine || !!selectedKey || !!viewingCommission || !!selectedDashboardTask || showChangelogHistory);
 
     // --- LAYOUT STATE ---
     // Added 'keys' tile to layout. Adjusted heights/widths to fit.
     const defaultLayouts = {
         lg: [
             { i: 'machines', x: 0, y: 0, w: 1, h: 4 },
-            { i: 'keys', x: 0, y: 4, w: 1, h: 4 }, // New Key Tile below machines
-            { i: 'commissions', x: 1, y: 0, w: 1, h: 8 }, // Taller commissions
-            { i: 'events', x: 0, y: 8, w: 2, h: 3 }
+            { i: 'keys', x: 0, y: 4, w: 1, h: 4 }, 
+            { i: 'commissions', x: 1, y: 0, w: 1, h: 8 }, 
+            { i: 'events', x: 0, y: 8, w: 1, h: 4 },
+            { i: 'tasks', x: 1, y: 8, w: 1, h: 4 }
         ],
         md: [
             { i: 'machines', x: 0, y: 0, w: 1, h: 4 },
             { i: 'keys', x: 0, y: 4, w: 1, h: 4 },
             { i: 'commissions', x: 1, y: 0, w: 1, h: 8 },
-            { i: 'events', x: 0, y: 8, w: 2, h: 3 }
+            { i: 'events', x: 0, y: 8, w: 1, h: 3 },
+            { i: 'tasks', x: 1, y: 8, w: 1, h: 3 }
         ],
         sm: [
             { i: 'machines', x: 0, y: 0, w: 1, h: 4 },
             { i: 'keys', x: 0, y: 4, w: 1, h: 4 },
             { i: 'commissions', x: 0, y: 8, w: 1, h: 4 },
-            { i: 'events', x: 0, y: 12, w: 1, h: 4 }
+            { i: 'events', x: 0, y: 12, w: 1, h: 4 },
+            { i: 'tasks', x: 0, y: 16, w: 1, h: 4 }
         ]
     };
 
@@ -410,6 +424,71 @@ const Dashboard: React.FC = () => {
         }
     }, []);
 
+    const fetchTasksData = useCallback(async () => {
+        try {
+            const { data, error } = await supabase
+                .from('tasks')
+                .select('*, subtasks(*)')
+                .neq('status', 'done')
+                .order('created_at', { ascending: false })
+                .limit(10);
+            
+            if (error) throw error;
+            setDashboardTasks(data || []);
+            
+            // Update selected task if it's currently open
+            if (selectedDashboardTask) {
+                const updatedTask = data?.find(t => t.id === selectedDashboardTask.id);
+                if (updatedTask) setSelectedDashboardTask(updatedTask);
+            }
+        } catch (error) {
+            console.error("Error fetching tasks:", error);
+        }
+    }, [selectedDashboardTask]);
+
+    const fetchChannelsData = useCallback(async () => {
+        try {
+            const { data: channels, error: channelsError } = await supabase
+                .from('channels')
+                .select('*')
+                .order('created_at', { ascending: false });
+            
+            if (channelsError) throw channelsError;
+
+            const { data: messages, error: messagesError } = await supabase
+                .from('messages')
+                .select('*')
+                .order('created_at', { ascending: false })
+                .limit(200);
+
+            if (messagesError) throw messagesError;
+
+            const channelsWithMessages = channels.map(c => {
+               const matches = messages.filter(m => m.channel_id === c.id);
+               return {
+                   ...c,
+                   messages: matches.slice(0, 2), 
+                   allMessages: matches 
+               };
+            });
+
+            setDashboardChannels(channelsWithMessages || []);
+        } catch (error) {
+            console.error("Error fetching channels:", error);
+        }
+    }, []);
+
+    // Effect to update read timestamp when a channel is open and a new message arrives
+    useEffect(() => {
+        if (activeChannelId) {
+            const channel = dashboardChannels.find(c => c.id === activeChannelId);
+            const latestMsg = channel?.allMessages?.[0]?.created_at;
+            if (latestMsg && latestMsg > (channelReadTimestamps[activeChannelId] || '0')) {
+                setChannelReadTimestamps(prev => ({ ...prev, [activeChannelId]: latestMsg }));
+            }
+        }
+    }, [activeChannelId, dashboardChannels, channelReadTimestamps, setChannelReadTimestamps]);
+
     // --- INITIAL LOAD & REALTIME SUBSCRIPTION ---
 
     useEffect(() => {
@@ -422,7 +501,9 @@ const Dashboard: React.FC = () => {
                 fetchKeysData(),
                 fetchSuppliers(),
                 fetchArticles(),
-                fetchUsers()
+                fetchUsers(),
+                fetchTasksData(),
+                fetchChannelsData()
             ]);
             setIsLoading(false);
         };
@@ -446,6 +527,21 @@ const Dashboard: React.FC = () => {
                 'postgres_changes',
                 { event: '*', schema: 'public', table: 'commissions' },
                 () => fetchCommissionsData()
+            )
+            .on(
+                'postgres_changes',
+                { event: '*', schema: 'public', table: 'tasks' },
+                () => fetchTasksData()
+            )
+            .on(
+                'postgres_changes',
+                { event: '*', schema: 'public', table: 'messages' },
+                () => fetchChannelsData()
+            )
+            .on(
+                'postgres_changes',
+                { event: '*', schema: 'public', table: 'channels' },
+                () => fetchChannelsData()
             )
             .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'machine_events' }, fetchRecentEvents)
             .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'commission_events' }, fetchRecentEvents)
@@ -736,6 +832,323 @@ const Dashboard: React.FC = () => {
         </>
     );
 
+    const handleSendMessage = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!chatInputMessage.trim() || !activeChannelId || !user) return;
+        try {
+            await supabase.from('messages').insert([{
+                channel_id: activeChannelId,
+                user_id: user.id,
+                user_email: profile?.full_name || user.email,
+                content: chatInputMessage.trim()
+            }]);
+            setChatInputMessage('');
+            fetchChannelsData();
+        } catch(e) { console.error(e); }
+    };
+
+    const toggleSubtask = async (subtaskId: string, currentCompleted: boolean) => {
+        try {
+            await supabase.from('subtasks').update({ completed: !currentCompleted }).eq('id', subtaskId);
+            fetchTasksData();
+        } catch(e) { console.error(e); }
+    };
+
+    const updateTaskStatus = async (taskId: string, status: string) => {
+        try {
+            await supabase.from('tasks').update({ status }).eq('id', taskId);
+            fetchTasksData();
+            if (status === 'done' && selectedDashboardTask?.id === taskId) {
+               setSelectedDashboardTask(null);
+            }
+        } catch(e) { console.error(e); }
+    };
+
+    const renderTaskDetailNode = () => {
+        if (!selectedDashboardTask) return null;
+        return (
+            <div className="space-y-6 flex flex-col h-full overflow-y-auto w-full">
+                <div>
+                    <div className="flex justify-between items-start mb-4">
+                        <h2 className="text-2xl font-bold text-white pr-4">{selectedDashboardTask.title}</h2>
+                        <div className="flex bg-white/5 border border-white/10 rounded-lg overflow-hidden shrink-0 mt-1">
+                            <button onClick={() => updateTaskStatus(selectedDashboardTask.id, 'todo')} className={`px-3 py-1.5 text-xs font-medium ${selectedDashboardTask.status === 'todo' ? 'bg-white/10 text-white' : 'text-white/40 hover:bg-white/5 hover:text-white/70'} transition-colors`}>Offen</button>
+                            <button onClick={() => updateTaskStatus(selectedDashboardTask.id, 'in_progress')} className={`px-3 py-1.5 text-xs font-medium border-l border-white/10 ${selectedDashboardTask.status === 'in_progress' ? 'bg-teal-500/20 text-teal-400' : 'text-white/40 hover:bg-white/5 hover:text-white/70'} transition-colors`}>In Arbeit</button>
+                            <button onClick={() => updateTaskStatus(selectedDashboardTask.id, 'done')} className={`px-3 py-1.5 text-xs font-medium border-l border-white/10 ${selectedDashboardTask.status === 'done' ? 'bg-emerald-500/20 text-emerald-400' : 'text-white/40 hover:bg-white/5 hover:text-white/70'} transition-colors`}>Erledigt</button>
+                        </div>
+                    </div>
+                    {(() => {
+                        let desc = selectedDashboardTask.description || '';
+                        try {
+                            const parsed = JSON.parse(selectedDashboardTask.description || '{}');
+                            desc = parsed.text || desc;
+                        } catch(e) {}
+                        return desc ? <p className="text-white/70 whitespace-pre-wrap mt-4 bg-white/5 p-4 rounded-xl border border-white/10 leading-relaxed text-sm">{desc}</p> : null;
+                    })()}
+                </div>
+
+                {selectedDashboardTask.subtasks && selectedDashboardTask.subtasks.length > 0 && (
+                    <div>
+                        <h3 className="text-sm font-bold text-white/50 mb-3 uppercase tracking-wider flex items-center gap-2">
+                            <CheckCircle2 size={16}/> Arbeitspunkte
+                        </h3>
+                        <div className="space-y-2">
+                            {selectedDashboardTask.subtasks.map((st: any) => (
+                                <div key={st.id} onClick={() => toggleSubtask(st.id, st.completed)} className="group flex items-center gap-3 p-4 bg-white/5 border border-white/10 rounded-xl cursor-pointer hover:bg-white/10 hover:border-teal-500/30 transition-all">
+                                    <div className="flex-shrink-0 mt-0.5">
+                                        {st.completed ? <CheckCircle2 className="text-teal-400" size={20} /> : <Circle className="text-white/30 group-hover:text-white/50 transition-colors" size={20} />}
+                                    </div>
+                                    <span className={`text-sm font-medium transition-colors ${st.completed ? 'text-white/40 line-through' : 'text-white/90 group-hover:text-teal-300'}`}>{st.title}</span>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                )}
+
+                <div className="flex items-center justify-between border-t border-white/10 pt-4 text-xs text-white/40">
+                    <div className="flex items-center gap-1.5"><User size={14}/> {selectedDashboardTask.user_email?.split('@')[0] || 'Unbekannt'}</div>
+                    <div>{new Date(selectedDashboardTask.created_at).toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })} Uhr</div>
+                </div>
+
+                <div className="mt-2 pt-4 flex justify-end">
+                    <button onClick={() => setShowTaskAppIframe(true)} className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-emerald-500 to-teal-600 rounded-xl text-white font-medium hover:opacity-90 transition-opacity">
+                        <MessageSquare size={16}/> In Tasks-App öffnen
+                    </button>
+                </div>
+            </div>
+        );
+    };
+
+    const renderTasksTileContent = (isFullscreen: boolean) => (
+        <div className="flex flex-col h-full bg-white/5 relative">
+            <div className={`px-6 py-5 border-b border-white/10 bg-white/5 backdrop-blur-xl flex justify-between items-center shrink-0`}>
+                <div className="flex items-center gap-3">
+                    <button
+                        className={`drag-handle p-1.5 rounded-lg hover:bg-white/10 transition-colors ${isTileLocked('tasks') ? 'cursor-default text-white/5 opacity-30' : 'cursor-move text-white/10 hover:text-white/50'}`}
+                        title="Verschieben"
+                    >
+                        <Move size={18} />
+                    </button>
+                    <h2 className="text-xl font-bold text-white flex items-center gap-2">
+                        <MessageSquare size={20} className="text-teal-400" /> Aufgaben & Chat
+                    </h2>
+                </div>
+                <div className="flex gap-2">
+                    <button onClick={() => toggleTileLock('tasks')} className="p-2 text-white/40 hover:text-white transition-colors">
+                        {isTileLocked('tasks') ? <Lock size={16} className="text-rose-500" /> : <Unlock size={16} />}
+                    </button>
+                    <button onClick={() => setIsTasksTileFullscreen(!isFullscreen)} className="p-2 text-white/40 hover:text-white transition-colors h-10 w-10 flex items-center justify-center bg-white/5 rounded-lg border border-white/10">
+                        {isFullscreen ? <Minimize2 size={18} /> : <Maximize2 size={18} />}
+                    </button>
+                    <button onClick={() => setShowTaskAppIframe(true)} className="text-white/40 hover:text-white h-10 px-3 bg-white/5 rounded-lg border border-white/10 flex items-center justify-center gap-2" title="App öffnen">
+                        <ArrowRight size={18} />
+                    </button>
+                </div>
+            </div>
+
+            {!isFullscreen && (
+                <div className="flex border-b border-white/10 shrink-0 bg-white/5">
+                    <button onClick={() => setTasksTileTab('tasks')} className={`flex-1 py-3 text-xs font-bold uppercase transition-colors relative ${tasksTileTab === 'tasks' ? 'text-white' : 'text-white/40'}`}>
+                        Aufgaben
+                        {tasksTileTab === 'tasks' && <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-teal-500" />}
+                    </button>
+                    <button onClick={() => setTasksTileTab('chat')} className={`flex-1 py-3 text-xs font-bold uppercase transition-colors relative ${tasksTileTab === 'chat' ? 'text-white' : 'text-white/40'}`}>
+                        Chat {dashboardChannels.length > 0 && `(${dashboardChannels.length})`}
+                        {tasksTileTab === 'chat' && <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-teal-500" />}
+                    </button>
+                </div>
+            )}
+
+            <div className={`flex-1 flex flex-col md:flex-row divide-y md:divide-y-0 md:divide-x divide-white/10 relative overflow-hidden`}>
+                {/* TASKS */}
+                <div className={`p-4 flex-col gap-3 overflow-hidden h-full ${isFullscreen ? 'w-1/3 flex' : (tasksTileTab === 'tasks' ? 'flex w-full' : 'hidden md:flex md:w-1/2')}`}>
+                    <div className="flex justify-between items-center mb-2 shrink-0">
+                        <span className="text-sm font-bold text-teal-400">Allgemein ({dashboardTasks.length})</span>
+                    </div>
+                    <div className="space-y-3 overflow-y-auto pr-1 pb-4 flex-1 custom-scrollbar">
+                        {dashboardTasks.length === 0 && <div className="text-xs text-white/30 italic">Keine Aufgaben.</div>}
+                        {dashboardTasks.map(task => {
+                            let details = { text: '' };
+                            try { details = JSON.parse(task.description || '{}'); } catch(e) { details = { text: task.description || '' }; }
+                            
+                            const subtasks = task.subtasks || [];
+                            const completedCount = subtasks.filter((s:any) => s.completed).length;
+                            const totalCount = subtasks.length;
+                            const progress = totalCount > 0 ? (completedCount / totalCount) * 100 : 0;
+
+                            return (
+                                <div key={task.id} 
+                                     onClick={(e) => { e.stopPropagation(); setSelectedDashboardTask(task); }}
+                                     className={`cursor-pointer group flex flex-col p-5 rounded-3xl border shadow-lg transition-all flex-shrink-0 ${
+                                        task.status === 'done' ? 'bg-emerald-500/10 border-emerald-500/20' : 
+                                        task.status === 'in_progress' ? 'bg-teal-500/10 border-teal-500/20' : 'bg-white/5 border-white/10 hover:bg-white/10'
+                                     }`}>
+                                    
+                                    <div className="flex justify-between items-start mb-3">
+                                        <div className="mt-0.5 rounded-full transition-transform hover:scale-110">
+                                            {task.status === 'todo' && <Circle size={20} className="text-white/40" />}
+                                            {task.status === 'in_progress' && <Clock size={20} className="text-teal-400" />}
+                                            {task.status === 'done' && <CheckCircle2 size={20} className="text-emerald-400" />}
+                                        </div>
+                                        <span className="rounded-full bg-white/10 px-2.5 py-1 text-xs font-medium text-white/80 shadow-sm border border-white/10">
+                                            {task.status === 'todo' && 'Offen'}
+                                            {task.status === 'in_progress' && 'In Arbeit'}
+                                            {task.status === 'done' && 'Erledigt'}
+                                        </span>
+                                    </div>
+                                    
+                                    <h3 className={`font-semibold text-white mb-2 ${task.status === 'done' ? 'line-through text-white/40' : ''}`}>
+                                        {task.title}
+                                    </h3>
+                                    
+                                    {details.text && (
+                                        <p className="mb-4 text-sm text-white/60 line-clamp-3">
+                                            {details.text}
+                                        </p>
+                                    )}
+                                    
+                                    {totalCount > 0 && (
+                                        <div className="mb-4 flex-1">
+                                            <div className="flex items-center justify-between text-xs text-white/60 mb-1.5">
+                                                <span>Arbeitspunkte</span>
+                                                <span>{completedCount} / {totalCount}</span>
+                                            </div>
+                                            <div className="h-1.5 w-full bg-white/10 rounded-full overflow-hidden mb-3">
+                                                <div className="h-full bg-teal-400 rounded-full transition-all" style={{ width: `${progress}%` }} />
+                                            </div>
+                                            <div className="space-y-1.5 max-h-[120px] overflow-y-auto pr-1 custom-scrollbar">
+                                                {subtasks.map((st:any) => (
+                                                    <div key={st.id} className="flex items-start gap-2 text-xs">
+                                                        <div className="mt-0.5 flex-shrink-0">
+                                                            {st.completed ? (
+                                                                <CheckCircle2 size={16} className="text-teal-400" />
+                                                            ) : (
+                                                                <Circle size={16} className="text-white/30" />
+                                                            )}
+                                                        </div>
+                                                        <span className={st.completed ? "text-white/40 line-through" : "text-white/80"}>
+                                                            {st.title}
+                                                        </span>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    )}
+                                    
+                                    <div className="mt-4 pt-4 flex items-center justify-between border-t border-white/10">
+                                        <span className="text-xs text-white/50">{task.user_email?.split('@')[0]}</span>
+                                        <span className="text-xs text-white/50">
+                                            {new Date(task.created_at).toLocaleDateString('de-DE', { day: 'numeric', month: 'short', year: 'numeric' })}
+                                        </span>
+                                    </div>
+                                </div>
+                            );
+                        })}
+                    </div>
+                </div>
+
+                {/* CHAT */}
+                <div className={`flex-col h-full overflow-hidden ${isFullscreen ? 'w-2/3 flex' : (tasksTileTab === 'chat' ? 'flex w-full' : 'hidden md:flex md:w-1/2')}`}>
+                    {!activeChannelId ? (
+                        <div className="p-4 flex-col gap-3 h-full overflow-hidden flex">
+                            <div className="flex justify-between items-center mb-2 shrink-0">
+                                <span className="text-sm font-bold text-white">Kanäle</span>
+                            </div>
+                            <div className="space-y-3 overflow-y-auto pr-1 pb-4 flex-1 custom-scrollbar">
+                                {dashboardChannels.length === 0 && <div className="text-xs text-white/30 italic">Keine Kanäle.</div>}
+                                {[...dashboardChannels].sort((a, b) => {
+                                    const latestA = a.allMessages?.[0]?.created_at || '0';
+                                    const latestB = b.allMessages?.[0]?.created_at || '0';
+                                    const unreadA = latestA > (channelReadTimestamps[a.id] || '0') ? 1 : 0;
+                                    const unreadB = latestB > (channelReadTimestamps[b.id] || '0') ? 1 : 0;
+                                    
+                                    if (unreadA !== unreadB) return unreadB - unreadA;
+                                    return latestB.localeCompare(latestA); 
+                                }).map(c => {
+                                    const isUnread = (c.allMessages?.[0]?.created_at || '0') > (channelReadTimestamps[c.id] || '0');
+                                    
+                                    return (
+                                        <div key={c.id} 
+                                            onClick={(e) => { 
+                                                e.stopPropagation(); 
+                                                setActiveChannelId(c.id); 
+                                                if (c.allMessages?.[0]) {
+                                                    setChannelReadTimestamps(prev => ({ ...prev, [c.id]: c.allMessages[0].created_at }));
+                                                }
+                                            }} 
+                                            className={`cursor-pointer p-3 bg-white/5 rounded-xl border transition-all ${
+                                                isUnread ? 'border-emerald-500 shadow-[0_0_15px_rgba(16,185,129,0.3)] animate-pulse-slight' : 'border-white/10 hover:border-teal-500/50'
+                                            }`}
+                                        >
+                                            <div className="font-bold text-white text-sm flex justify-between items-center gap-2">
+                                                <div className="flex items-center gap-2"><Hash size={14} className={isUnread ? 'text-emerald-400' : 'text-teal-400'}/> {c.name}</div>
+                                                {isUnread && <span className="flex w-2.5 h-2.5 bg-emerald-500 rounded-full shadow-[0_0_10px_rgba(16,185,129,0.8)]"></span>}
+                                            </div>
+                                            <div className="mt-2 text-xs space-y-1.5 border-t border-white/5 pt-2">
+                                                {c.messages.length === 0 && <span className="text-white/30 italic">Keine Nachrichten</span>}
+                                                {c.messages.map((m: any) => (
+                                                    <div key={m.id} className="text-white/60 truncate" title={m.content}>
+                                                        <span className={`${isUnread ? 'text-emerald-300' : 'text-teal-300'} mr-2 font-medium`}>{m.user_email?.split('@')[0]}:</span>
+                                                        {m.content}
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                        </div>
+                    ) : (
+                        <div className="flex flex-col h-full bg-black/20">
+                            <div className="p-3 border-b border-white/10 flex items-center gap-2 bg-white/5 shrink-0">
+                                <button onClick={(e) => { e.stopPropagation(); setActiveChannelId(null); }} className="p-1.5 hover:bg-teal-500/20 rounded-lg text-white/50 hover:text-teal-300 transition-colors">
+                                    <ArrowRight size={16} className="rotate-180" />
+                                </button>
+                                <div className="font-bold text-white text-sm flex items-center gap-1">
+                                    <Hash size={14} className="text-teal-400"/> 
+                                    {dashboardChannels.find(c => c.id === activeChannelId)?.name}
+                                </div>
+                            </div>
+                            <div className="flex-1 overflow-y-auto p-4 flex flex-col-reverse gap-3 custom-scrollbar">
+                                {dashboardChannels.find(c => c.id === activeChannelId)?.allMessages.map((m: any, idx: number, arr: any[]) => {
+                                    const isMe = m.user_id === user?.id;
+                                    const showHeader = idx === arr.length - 1 || arr[idx + 1].user_id !== m.user_id;
+
+                                    return (
+                                        <div key={m.id} className={`flex flex-col ${isMe ? 'items-end' : 'items-start'}`}>
+                                            {showHeader && (
+                                                <span className="mb-0.5 px-1 text-[10px] font-medium text-white/50">
+                                                    {isMe ? 'Ich' : m.user_email?.split('@')[0]}
+                                                </span>
+                                            )}
+                                            <div className={`max-w-[85%] rounded-2xl px-3 py-2 text-xs shadow-sm ${
+                                                isMe ? 'rounded-tr-sm bg-gradient-to-r from-emerald-500/90 to-teal-600/90 text-white' 
+                                                     : 'rounded-tl-sm border border-white/10 bg-white/10 text-white/90'
+                                            } whitespace-pre-wrap`}>
+                                                {m.content}
+                                            </div>
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                            <form onSubmit={(e) => { e.stopPropagation(); handleSendMessage(e); }} className="p-3 border-t border-white/10 bg-white/5 flex gap-2 shrink-0">
+                                <input 
+                                    value={chatInputMessage} 
+                                    onChange={e => setChatInputMessage(e.target.value)} 
+                                    className="flex-1 bg-white/10 rounded-lg px-3 py-2 text-sm text-white placeholder:text-white/30 focus:outline-none focus:ring-1 focus:ring-teal-500/50" 
+                                    placeholder="Nachricht schreiben..."
+                                />
+                                <button type="submit" disabled={!chatInputMessage.trim()} className="p-2 bg-gradient-to-r from-emerald-500 to-teal-600 rounded-lg text-white disabled:opacity-50 hover:opacity-90">
+                                    <Send size={18}/>
+                                </button>
+                            </form>
+                        </div>
+                    )}
+                </div>
+            </div>
+        </div>
+    );
+
     return (
         <div className="space-y-6 pb-12">
             {/* HEADER */}
@@ -784,6 +1197,14 @@ const Dashboard: React.FC = () => {
                 </div>
             )}
 
+            {isTasksTileFullscreen && (
+                <div className="fixed inset-4 z-[100]">
+                    <GlassCard className="flex flex-col p-0 overflow-hidden border-none bg-gray-900/95 backdrop-blur-xl border border-white/20 shadow-2xl rounded-3xl h-full w-full mx-auto" contentClassName="!p-0 flex flex-col h-full w-full">
+                        {renderTasksTileContent(true)}
+                    </GlassCard>
+                </div>
+            )}
+
             <div className="flex flex-row h-[calc(100vh-140px)] overflow-hidden gap-4 pb-4">
                 {/* LEFT: GRID AREA */}
                 {(() => {
@@ -794,6 +1215,7 @@ const Dashboard: React.FC = () => {
                                     setViewingCommission(null);
                                     setSelectedMachine(null);
                                     setSelectedKey(null);
+                                    setSelectedDashboardTask(null);
                                     setShowChangelogHistory(false);
                                 }
                             }}
@@ -1026,6 +1448,13 @@ const Dashboard: React.FC = () => {
                                         </div>
                                     </GlassCard>
                                 </div>
+
+                                {/* --- TILE 4: AUFGABEN & CHAT --- */}
+                                <div key="tasks">
+                                    <GlassCard className="flex flex-col h-full p-0 overflow-hidden border-none bg-white/5" contentClassName="!p-0 flex flex-col h-full relative">
+                                        {renderTasksTileContent(false)}
+                                    </GlassCard>
+                                </div>
                             </ResponsiveGridLayout>
                             <div className="h-24" /> {/* Spacer */}
                         </div>
@@ -1074,6 +1503,20 @@ const Dashboard: React.FC = () => {
                                             setSelectedKey(null);
                                         }}
                                     />
+                                </div>
+                            )}
+
+                            {/* TASK CONTENT */}
+                            {selectedDashboardTask && (
+                                <div className="h-full bg-slate-950/50 backdrop-blur-2xl rounded-2xl border border-white/10 shadow-xl overflow-hidden flex flex-col relative">
+                                    <div className="absolute top-4 right-4 z-[60]">
+                                        <button onClick={() => setSelectedDashboardTask(null)} className="p-2 bg-black/50 hover:bg-white/10 rounded-full text-white/50 hover:text-white transition-colors">
+                                            <X size={20} />
+                                        </button>
+                                    </div>
+                                    <div className="flex-1 overflow-y-auto custom-scrollbar p-6 pt-12">
+                                        {renderTaskDetailNode()}
+                                    </div>
                                 </div>
                             )}
 
@@ -1620,6 +2063,30 @@ const Dashboard: React.FC = () => {
                                 ))}
                             </div>
                         </div>
+                    </div>
+        </GlassModal>
+            )}
+
+            {/* Task Details Modal For Mobile */}
+            {isMobile && (
+                <GlassModal isOpen={!!selectedDashboardTask} onClose={() => setSelectedDashboardTask(null)} title="Aufgabendetails" fullScreen={isMobile}>
+                    {selectedDashboardTask && (
+                        <div className="w-[600px] max-w-full h-full">
+                            {renderTaskDetailNode()}
+                        </div>
+                    )}
+                </GlassModal>
+            )}
+
+            {/* Iframe Modal for Task App */}
+            {showTaskAppIframe && (
+                <GlassModal isOpen={showTaskAppIframe} onClose={() => setShowTaskAppIframe(false)} title="Tasks App" fullScreen={true}>
+                    <div className="w-full h-full overflow-hidden flex flex-col pt-2">
+                        <iframe 
+                            src="https://task.rebeleinapp.de/" 
+                            className="w-full h-full border-0 bg-white/5"
+                            title="Tasks App Integration"
+                        />
                     </div>
                 </GlassModal>
             )}

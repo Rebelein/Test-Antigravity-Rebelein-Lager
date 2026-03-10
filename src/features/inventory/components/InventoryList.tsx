@@ -39,6 +39,15 @@ interface InventoryListProps {
     headerContent?: React.ReactNode;
 }
 
+const ListHeader = React.forwardRef<HTMLDivElement, { context?: { headerContent: React.ReactNode } }>(({ context }, ref) => {
+    if (!context?.headerContent) return null;
+    return <div ref={ref}>{context.headerContent}</div>;
+});
+
+const ListFooter = React.forwardRef<HTMLDivElement, any>((props, ref) => {
+    return <div ref={ref} className="h-24 md:h-0" />;
+});
+
 export const InventoryList: React.FC<InventoryListProps> = ({
     groupedArticles, collapsedCategories, toggleCategoryCollapse,
     isSelectionMode, selectedArticleIds, toggleCategorySelection, toggleArticleSelection,
@@ -72,14 +81,17 @@ export const InventoryList: React.FC<InventoryListProps> = ({
         });
     }, [categories, collapsedCategories, groupedArticles]);
 
+    const virtuosoComponents = useMemo(() => ({
+        Header: headerContent ? ListHeader as any : undefined,
+        Footer: ListFooter as any
+    }), [!!headerContent]);
+
     return (
         <GroupedVirtuoso
             useWindowScroll={useWindowScroll}
             style={!useWindowScroll ? { height: '100%' } : undefined}
-            components={{
-                Header: headerContent ? () => <>{headerContent}</> : undefined,
-                Footer: () => <div className="h-24 md:h-0" />
-            }}
+            context={{ headerContent }}
+            components={virtuosoComponents}
             groupCounts={groupCounts}
             groupContent={(index) => {
                 const category = categories[index];
