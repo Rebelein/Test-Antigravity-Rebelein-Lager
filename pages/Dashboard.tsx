@@ -75,6 +75,11 @@ const Dashboard: React.FC = () => {
     const [selectedDashboardTask, setSelectedDashboardTask] = useState<any | null>(null);
     const [showTaskAppIframe, setShowTaskAppIframe] = useState(false);
     const [channelReadTimestamps, setChannelReadTimestamps] = usePersistentState<Record<string, string>>('channel_read_timestamps', {});
+    
+    // New persistent states for Tile features
+    const [collapsedTaskIds, setCollapsedTaskIds] = usePersistentState<string[]>('dashboard_collapsed_tasks', []);
+    const [tasksTileSplit, setTasksTileSplit] = usePersistentState<number>('tasks_tile_split', 40); // Initial 40% for tasks
+    const [isResizingTasks, setIsResizingTasks] = useState(false);
 
     // ... (utility states unchanged)
     const [showAppDrawer, setShowAppDrawer] = useState(false);
@@ -919,8 +924,45 @@ const Dashboard: React.FC = () => {
         );
     };
 
+    const toggleTaskCollapse = (taskId: string, e: React.MouseEvent) => {
+        e.stopPropagation();
+        setCollapsedTaskIds(prev => 
+            prev.includes(taskId) ? prev.filter(id => id !== taskId) : [...prev, taskId]
+        );
+    };
+
+    const handleSplitResize = useCallback((e: MouseEvent | TouchEvent) => {
+        if (!isResizingTasks) return;
+        const container = document.getElementById('tasks-tile-container');
+        if (!container) return;
+
+        const rect = container.getBoundingClientRect();
+        const clientX = 'touches' in e ? e.touches[0].clientX : e.clientX;
+        const newWidthPerc = ((clientX - rect.left) / rect.width) * 100;
+        
+        // Constraints
+        setTasksTileSplit(Math.min(Math.max(newWidthPerc, 20), 80));
+    }, [isResizingTasks, setTasksTileSplit]);
+
+    const stopResizing = useCallback(() => setIsResizingTasks(false), []);
+
+    useEffect(() => {
+        if (isResizingTasks) {
+            window.addEventListener('mousemove', handleSplitResize);
+            window.addEventListener('mouseup', stopResizing);
+            window.addEventListener('touchmove', handleSplitResize, { passive: false });
+            window.addEventListener('touchend', stopResizing);
+        }
+        return () => {
+            window.removeEventListener('mousemove', handleSplitResize);
+            window.removeEventListener('mouseup', stopResizing);
+            window.removeEventListener('touchmove', handleSplitResize);
+            window.removeEventListener('touchend', stopResizing);
+        };
+    }, [isResizingTasks, handleSplitResize, stopResizing]);
+
     const renderTasksTileContent = (isFullscreen: boolean) => (
-        <div className="flex flex-col h-full bg-white/5 relative">
+        <div className="flex flex-col h-full bg-white/5 relative" id="tasks-tile-container">
             <div className={`px-6 py-5 border-b border-white/10 bg-white/5 backdrop-blur-xl flex justify-between items-center shrink-0`}>
                 <div className="flex items-center gap-3">
                     <button
@@ -953,19 +995,30 @@ const Dashboard: React.FC = () => {
                         {tasksTileTab === 'tasks' && <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-teal-500" />}
                     </button>
                     <button onClick={() => setTasksTileTab('chat')} className={`flex-1 py-3 text-xs font-bold uppercase transition-colors relative ${tasksTileTab === 'chat' ? 'text-white' : 'text-white/40'}`}>
-                        Chat {dashboardChannels.length > 0 && `(${dashboardChannels.length})`}
+                        <div className="flex items-center justify-center gap-2">
+                            Chat {dashboardChannels.length > 0 && `(${dashboardChannels.length})`}
+                            {dashboardChannels.some(c => (c.allMessages?.[0]?.created_at || '0') > (channelReadTimestamps[c.id] || '0')) && (
+                                <span className="flex h-2 w-2">
+                                    <span className="animate-ping absolute inline-flex h-2 w-2 rounded-full bg-emerald-400 opacity-75" />
+                                    <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500" />
+                                </span>
+                            )}
+                        </div>
                         {tasksTileTab === 'chat' && <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-teal-500" />}
                     </button>
                 </div>
             )}
 
-            <div className={`flex-1 flex flex-col md:flex-row divide-y md:divide-y-0 md:divide-x divide-white/10 relative overflow-hidden`}>
+            <div className={`flex-1 flex flex-col md:flex-row relative overflow-hidden`}>
                 {/* TASKS */}
-                <div className={`p-4 flex-col gap-3 overflow-hidden h-full ${isFullscreen ? 'w-1/3 flex' : (tasksTileTab === 'tasks' ? 'flex w-full' : 'hidden md:flex md:w-1/2')}`}>
+                <div 
+                    style={{ width: isFullscreen ? `${tasksTileSplit}%` : (tasksTileTab === 'tasks' ? '100%' : '0%'), display: (isFullscreen || tasksTileTab === 'tasks') ? 'flex' : 'none' }}
+                    className={`p-4 flex-col gap-3 overflow-hidden h-full border-r border-white/10`}
+                >
                     <div className="flex justify-between items-center mb-2 shrink-0">
-                        <span className="text-sm font-bold text-teal-400">Allgemein ({dashboardTasks.length})</span>
+                        <span className="text-sm font-bold text-teal-400">Aufgaben ({dashboardTasks.length})</span>
                     </div>
-                    <div className="space-y-3 overflow-y-auto pr-1 pb-4 flex-1 custom-scrollbar">
+                    <div className="space-y-2 overflow-y-auto pr-1 pb-4 flex-1 custom-scrollbar">
                         {dashboardTasks.length === 0 && <div className="text-xs text-white/30 italic">Keine Aufgaben.</div>}
                         {dashboardTasks.map(task => {
                             let details = { text: '' };
@@ -975,127 +1028,151 @@ const Dashboard: React.FC = () => {
                             const completedCount = subtasks.filter((s:any) => s.completed).length;
                             const totalCount = subtasks.length;
                             const progress = totalCount > 0 ? (completedCount / totalCount) * 100 : 0;
+                            const isCollapsed = collapsedTaskIds.includes(task.id);
 
                             return (
                                 <div key={task.id} 
                                      onClick={(e) => { e.stopPropagation(); setSelectedDashboardTask(task); }}
-                                     className={`cursor-pointer group flex flex-col p-5 rounded-3xl border shadow-lg transition-all flex-shrink-0 ${
+                                     className={`cursor-pointer group flex flex-col p-3 rounded-2xl border transition-all flex-shrink-0 ${
                                         task.status === 'done' ? 'bg-emerald-500/10 border-emerald-500/20' : 
                                         task.status === 'in_progress' ? 'bg-teal-500/10 border-teal-500/20' : 'bg-white/5 border-white/10 hover:bg-white/10'
                                      }`}>
                                     
-                                    <div className="flex justify-between items-start mb-3">
-                                        <div className="mt-0.5 rounded-full transition-transform hover:scale-110">
-                                            {task.status === 'todo' && <Circle size={20} className="text-white/40" />}
-                                            {task.status === 'in_progress' && <Clock size={20} className="text-teal-400" />}
-                                            {task.status === 'done' && <CheckCircle2 size={20} className="text-emerald-400" />}
+                                    <div className="flex justify-between items-center mb-1">
+                                        <div className="flex items-center gap-2">
+                                            <div className="rounded-full">
+                                                {task.status === 'todo' && <Circle size={16} className="text-white/40" />}
+                                                {task.status === 'in_progress' && <Clock size={16} className="text-teal-400" />}
+                                                {task.status === 'done' && <CheckCircle2 size={16} className="text-emerald-400" />}
+                                            </div>
+                                            <h3 className={`font-semibold text-white text-sm truncate max-w-[150px] ${task.status === 'done' ? 'line-through text-white/40' : ''}`}>
+                                                {task.title}
+                                            </h3>
                                         </div>
-                                        <span className="rounded-full bg-white/10 px-2.5 py-1 text-xs font-medium text-white/80 shadow-sm border border-white/10">
-                                            {task.status === 'todo' && 'Offen'}
-                                            {task.status === 'in_progress' && 'In Arbeit'}
-                                            {task.status === 'done' && 'Erledigt'}
-                                        </span>
+                                        <div className="flex items-center gap-2">
+                                            <span className="rounded-full bg-white/5 px-2 py-0.5 text-[10px] text-white/60 border border-white/5">
+                                                {task.status === 'todo' ? 'Offen' : task.status === 'in_progress' ? 'In Arbeit' : 'Erledigt'}
+                                            </span>
+                                            <button 
+                                                onClick={(e) => toggleTaskCollapse(task.id, e)}
+                                                className="p-1 hover:bg-white/10 rounded-lg text-white/30 hover:text-white transition-colors"
+                                            >
+                                                {isCollapsed ? <ChevronDown size={14} /> : <ChevronUp size={14} />}
+                                            </button>
+                                        </div>
                                     </div>
                                     
-                                    <h3 className={`font-semibold text-white mb-2 ${task.status === 'done' ? 'line-through text-white/40' : ''}`}>
-                                        {task.title}
-                                    </h3>
-                                    
-                                    {details.text && (
-                                        <p className="mb-4 text-sm text-white/60 line-clamp-3">
-                                            {details.text}
-                                        </p>
-                                    )}
-                                    
-                                    {totalCount > 0 && (
-                                        <div className="mb-4 flex-1">
-                                            <div className="flex items-center justify-between text-xs text-white/60 mb-1.5">
-                                                <span>Arbeitspunkte</span>
-                                                <span>{completedCount} / {totalCount}</span>
-                                            </div>
-                                            <div className="h-1.5 w-full bg-white/10 rounded-full overflow-hidden mb-3">
-                                                <div className="h-full bg-teal-400 rounded-full transition-all" style={{ width: `${progress}%` }} />
-                                            </div>
-                                            <div className="space-y-1.5 max-h-[120px] overflow-y-auto pr-1 custom-scrollbar">
-                                                {subtasks.map((st:any) => (
-                                                    <div key={st.id} className="flex items-start gap-2 text-xs">
-                                                        <div className="mt-0.5 flex-shrink-0">
-                                                            {st.completed ? (
-                                                                <CheckCircle2 size={16} className="text-teal-400" />
-                                                            ) : (
-                                                                <Circle size={16} className="text-white/30" />
-                                                            )}
-                                                        </div>
-                                                        <span className={st.completed ? "text-white/40 line-through" : "text-white/80"}>
-                                                            {st.title}
-                                                        </span>
+                                    {!isCollapsed && (
+                                        <div className="mt-2 animate-in slide-in-from-top-2 duration-200">
+                                            {details.text && (
+                                                <p className="mb-3 text-[11px] text-white/50 line-clamp-2">
+                                                    {details.text}
+                                                </p>
+                                            )}
+                                            
+                                            {totalCount > 0 && (
+                                                <div className="mb-2">
+                                                    <div className="flex items-center justify-between text-[10px] text-white/40 mb-1">
+                                                        <span>Progress</span>
+                                                        <span>{completedCount}/{totalCount}</span>
                                                     </div>
-                                                ))}
+                                                    <div className="h-1 w-full bg-white/5 rounded-full overflow-hidden">
+                                                        <div className="h-full bg-teal-500/60 rounded-full transition-all" style={{ width: `${progress}%` }} />
+                                                    </div>
+                                                </div>
+                                            )}
+                                            
+                                            <div className="flex items-center justify-between text-[9px] text-white/30 pt-2 border-t border-white/5">
+                                                <span>{task.user_email?.split('@')[0]}</span>
+                                                <span>{new Date(task.created_at).toLocaleDateString()}</span>
                                             </div>
                                         </div>
                                     )}
-                                    
-                                    <div className="mt-4 pt-4 flex items-center justify-between border-t border-white/10">
-                                        <span className="text-xs text-white/50">{task.user_email?.split('@')[0]}</span>
-                                        <span className="text-xs text-white/50">
-                                            {new Date(task.created_at).toLocaleDateString('de-DE', { day: 'numeric', month: 'short', year: 'numeric' })}
-                                        </span>
-                                    </div>
                                 </div>
                             );
                         })}
                     </div>
                 </div>
 
+                {/* RESIZER (only in fullscreen) */}
+                {isFullscreen && (
+                    <div 
+                        onMouseDown={() => setIsResizingTasks(true)}
+                        onTouchStart={() => setIsResizingTasks(true)}
+                        className={`w-1.5 cursor-col-resize hover:bg-teal-500/50 transition-colors flex items-center justify-center group z-10 ${isResizingTasks ? 'bg-teal-500/50' : 'bg-transparent'}`}
+                    >
+                        <div className="h-8 w-0.5 bg-white/20 rounded-full group-hover:bg-teal-500/50" />
+                    </div>
+                )}
+
                 {/* CHAT */}
-                <div className={`flex-col h-full overflow-hidden ${isFullscreen ? 'w-2/3 flex' : (tasksTileTab === 'chat' ? 'flex w-full' : 'hidden md:flex md:w-1/2')}`}>
+                <div 
+                    style={{ width: isFullscreen ? `${100 - tasksTileSplit}%` : (tasksTileTab === 'chat' ? '100%' : '0%'), display: (isFullscreen || tasksTileTab === 'chat') ? 'flex' : 'none' }}
+                    className={`flex-col h-full overflow-hidden`}
+                >
                     {!activeChannelId ? (
                         <div className="p-4 flex-col gap-3 h-full overflow-hidden flex">
                             <div className="flex justify-between items-center mb-2 shrink-0">
                                 <span className="text-sm font-bold text-white">Kanäle</span>
                             </div>
-                            <div className="space-y-3 overflow-y-auto pr-1 pb-4 flex-1 custom-scrollbar">
+                            <div className="space-y-4 overflow-y-auto pr-1 pb-4 flex-1 custom-scrollbar">
                                 {dashboardChannels.length === 0 && <div className="text-xs text-white/30 italic">Keine Kanäle.</div>}
-                                {[...dashboardChannels].sort((a, b) => {
-                                    const latestA = a.allMessages?.[0]?.created_at || '0';
-                                    const latestB = b.allMessages?.[0]?.created_at || '0';
-                                    const unreadA = latestA > (channelReadTimestamps[a.id] || '0') ? 1 : 0;
-                                    const unreadB = latestB > (channelReadTimestamps[b.id] || '0') ? 1 : 0;
-                                    
-                                    if (unreadA !== unreadB) return unreadB - unreadA;
-                                    return latestB.localeCompare(latestA); 
-                                }).map(c => {
-                                    const isUnread = (c.allMessages?.[0]?.created_at || '0') > (channelReadTimestamps[c.id] || '0');
-                                    
-                                    return (
-                                        <div key={c.id} 
-                                            onClick={(e) => { 
-                                                e.stopPropagation(); 
-                                                setActiveChannelId(c.id); 
-                                                if (c.allMessages?.[0]) {
-                                                    setChannelReadTimestamps(prev => ({ ...prev, [c.id]: c.allMessages[0].created_at }));
-                                                }
-                                            }} 
-                                            className={`cursor-pointer p-3 bg-white/5 rounded-xl border transition-all ${
-                                                isUnread ? 'border-emerald-500 shadow-[0_0_15px_rgba(16,185,129,0.3)] animate-pulse-slight' : 'border-white/10 hover:border-teal-500/50'
-                                            }`}
-                                        >
-                                            <div className="font-bold text-white text-sm flex justify-between items-center gap-2">
-                                                <div className="flex items-center gap-2"><Hash size={14} className={isUnread ? 'text-emerald-400' : 'text-teal-400'}/> {c.name}</div>
-                                                {isUnread && <span className="flex w-2.5 h-2.5 bg-emerald-500 rounded-full shadow-[0_0_10px_rgba(16,185,129,0.8)]"></span>}
-                                            </div>
-                                            <div className="mt-2 text-xs space-y-1.5 border-t border-white/5 pt-2">
-                                                {c.messages.length === 0 && <span className="text-white/30 italic">Keine Nachrichten</span>}
-                                                {c.messages.map((m: any) => (
-                                                    <div key={m.id} className="text-white/60 truncate" title={m.content}>
-                                                        <span className={`${isUnread ? 'text-emerald-300' : 'text-teal-300'} mr-2 font-medium`}>{m.user_email?.split('@')[0]}:</span>
-                                                        {m.content}
-                                                    </div>
-                                                ))}
+                                {(() => {
+                                    // Group channels by category
+                                    const grouped = dashboardChannels.reduce((acc: any, c) => {
+                                        const cat = (c as any).category || 'Allgemein';
+                                        if (!acc[cat]) acc[cat] = [];
+                                        acc[cat].push(c);
+                                        return acc;
+                                    }, {});
+
+                                    return Object.entries(grouped).map(([category, items]: [string, any]) => (
+                                        <div key={category} className="space-y-2">
+                                            <h4 className="text-[10px] font-bold text-white/30 uppercase tracking-widest px-1">{category}</h4>
+                                            <div className="space-y-2">
+                                                {items.sort((a: any, b: any) => {
+                                                    const latestA = a.allMessages?.[0]?.created_at || '0';
+                                                    const latestB = b.allMessages?.[0]?.created_at || '0';
+                                                    const unreadA = latestA > (channelReadTimestamps[a.id] || '0') ? 1 : 0;
+                                                    const unreadB = latestB > (channelReadTimestamps[b.id] || '0') ? 1 : 0;
+                                                    if (unreadA !== unreadB) return unreadB - unreadA;
+                                                    return latestB.localeCompare(latestA); 
+                                                }).map((c: any) => {
+                                                    const isUnread = (c.allMessages?.[0]?.created_at || '0') > (channelReadTimestamps[c.id] || '0');
+                                                    
+                                                    return (
+                                                        <div key={c.id} 
+                                                            onClick={(e) => { 
+                                                                e.stopPropagation(); 
+                                                                setActiveChannelId(c.id); 
+                                                                if (c.allMessages?.[0]) {
+                                                                    setChannelReadTimestamps(prev => ({ ...prev, [c.id]: c.allMessages[0].created_at }));
+                                                                }
+                                                            }} 
+                                                            className={`cursor-pointer p-2.5 bg-white/5 rounded-xl border transition-all ${
+                                                                isUnread ? 'border-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.2)]' : 'border-white/5 hover:border-teal-500/50'
+                                                            }`}
+                                                        >
+                                                            <div className="font-bold text-white text-[13px] flex justify-between items-center gap-2">
+                                                                <div className="flex items-center gap-2 truncate">
+                                                                    <Hash size={12} className={isUnread ? 'text-emerald-400' : 'text-teal-400'}/> 
+                                                                    <span className="truncate">{c.name}</span>
+                                                                </div>
+                                                                {isUnread && <span className="flex w-2 h-2 bg-emerald-500 rounded-full shrink-0"></span>}
+                                                            </div>
+                                                            {c.messages.length > 0 && (
+                                                                <div className="mt-1.5 text-[10px] text-white/40 truncate">
+                                                                    <span className={`${isUnread ? 'text-emerald-300' : 'text-teal-300'} mr-1`}>{c.messages[0].user_email?.split('@')[0]}:</span>
+                                                                    {c.messages[0].content}
+                                                                </div>
+                                                            )}
+                                                        </div>
+                                                    );
+                                                })}
                                             </div>
                                         </div>
-                                    );
-                                })}
+                                    ));
+                                })()}
                             </div>
                         </div>
                     ) : (
@@ -1167,7 +1244,7 @@ const Dashboard: React.FC = () => {
                     >
                         <History size={20} />
                         <span className="absolute -top-2 -right-2 bg-emerald-500 text-white text-[9px] font-bold px-1.5 py-0.5 rounded-full shadow-lg border border-black/50">
-                            v0.0.61
+                            v0.0.69
                         </span>
                     </button>
                     <button
