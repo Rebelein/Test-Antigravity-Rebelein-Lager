@@ -318,7 +318,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
                     "transition-all duration-300 ease-in-out",
                     "lg:pb-8 lg:pt-8 lg:px-4",
                     isSidebarPinned ? 'lg:pl-[18rem]' : 'lg:pl-[7rem]',
-                    "lg:max-w-none",
+                    "lg:max-w-none pb-20 lg:pb-8",
                     updateAvailable ? 'mt-12' : '',
                     // Container scrolling for better control
                     "flex flex-col h-full overflow-hidden"
@@ -348,10 +348,10 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
                 initial={{ y: 100, opacity: 0 }}
                 animate={{ y: 0, opacity: 1 }}
                 transition={{ duration: 0.5, delay: 0.3 }}
-                className="lg:hidden fixed bottom-6 left-0 right-0 z-[160] flex justify-center pointer-events-none"
+                className="lg:hidden fixed bottom-0 left-0 right-0 z-[160] w-full"
             >
-                <div className="pointer-events-auto relative max-w-lg w-full mx-4">
-                    <nav className="glass-panel rounded-full h-16 flex items-center relative overflow-hidden shadow-[0_8px_32px_0_rgba(0,0,0,0.5)] border-white/15">
+                <div className="w-full bg-[#1a1d24] border-t border-white/10 shadow-[0_-4px_24px_rgba(0,0,0,0.5)]">
+                    <nav className="h-16 flex items-center relative overflow-hidden">
                         <div className="flex items-center justify-between overflow-x-auto w-full h-full px-2 sm:px-6 gap-2 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:'none'] [scrollbar-width:'none']">
                             {(() => {
                                 const activeOrder = (sidebarOrder && sidebarOrder.length > 0) ? sidebarOrder : DEFAULT_SIDEBAR_ORDER;
@@ -371,9 +371,11 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
                                                 if (!item) return null;
                                                 const isActive = currentPath === item.id;
                                                 return (
-                                                    <button key={item.id} onClick={() => navigate(`/${item.id}`)} className={clsx("relative flex flex-col items-center justify-center w-10 h-10 sm:w-12 sm:h-12 rounded-full transition-all duration-300 shrink-0", isActive ? 'text-emerald-400' : 'text-white/50 hover:text-white/80')}>
-                                                        {item.icon}
-                                                        {isActive && <motion.span layoutId="nav-dot" className="absolute bottom-0 w-1 h-1 bg-emerald-400 rounded-full shadow-[0_0_8px_rgba(52,211,153,0.8)]" />}
+                                                    <button key={item.id} onClick={() => navigate(`/${item.id}`)} className={clsx("relative flex flex-col items-center justify-center w-12 h-16 transition-all duration-300 shrink-0", isActive ? 'text-emerald-400' : 'text-white/50 hover:text-white/80')}>
+                                                        <div className={clsx("p-1.5 rounded-xl transition-all", isActive ? "bg-white/5" : "")}>
+                                                            {item.icon}
+                                                        </div>
+                                                        <span className={clsx("text-[10px] mt-0.5", isActive ? "font-bold" : "font-medium")}>{item.label}</span>
                                                     </button>
                                                 );
                                             })}
@@ -388,9 +390,11 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
                                                 if (!item) return null;
                                                 const isActive = currentPath === item.id;
                                                 return (
-                                                    <button key={item.id} onClick={() => navigate(`/${item.id}`)} className={clsx("relative flex flex-col items-center justify-center w-10 h-10 sm:w-12 sm:h-12 rounded-full transition-all duration-300 shrink-0", isActive ? 'text-emerald-400' : 'text-white/50 hover:text-white/80')}>
-                                                        {item.icon}
-                                                        {isActive && <motion.span layoutId="nav-dot" className="absolute bottom-0 w-1 h-1 bg-emerald-400 rounded-full shadow-[0_0_8px_rgba(52,211,153,0.8)]" />}
+                                                    <button key={item.id} onClick={() => navigate(`/${item.id}`)} className={clsx("relative flex flex-col items-center justify-center w-12 h-16 transition-all duration-300 shrink-0", isActive ? 'text-emerald-400' : 'text-white/50 hover:text-white/80')}>
+                                                        <div className={clsx("p-1.5 rounded-xl transition-all", isActive ? "bg-white/5" : "")}>
+                                                            {item.icon}
+                                                        </div>
+                                                        <span className={clsx("text-[10px] mt-0.5", isActive ? "font-bold" : "font-medium")}>{item.label}</span>
                                                     </button>
                                                 );
                                             })}
@@ -405,11 +409,11 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
                         whileTap={{ scale: 0.95 }}
                         onClick={handleCenterButtonClick}
                         className={clsx(
-                            "absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-[60%] flex items-center justify-center w-16 h-16 rounded-full shadow-2xl border-4 border-gray-900 transition-all duration-300",
+                            "absolute left-1/2 top-0 -translate-x-1/2 -translate-y-1/2 flex items-center justify-center w-14 h-14 rounded-full shadow-2xl border-4 border-[#1a1d24] transition-all duration-300",
                             currentPath === 'audit' ? 'bg-gradient-to-r from-purple-500 to-fuchsia-600 text-white shadow-purple-500/40' : 'bg-gradient-to-r from-emerald-500 to-teal-600 text-white shadow-emerald-500/40'
                         )}
                     >
-                        <ScanLine size={28} />
+                        <ScanLine size={24} />
                     </motion.button>
                 </div>
             </motion.div>
