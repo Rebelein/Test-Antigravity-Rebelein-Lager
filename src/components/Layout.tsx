@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { NavRoute } from '../../types';
 import { LayoutDashboard, Package, Drill, ShoppingCart, ScanLine, LogOut, UserCircle, WifiOff, RefreshCw, ClipboardList, ClipboardCheck, PanelLeftClose, PanelLeftOpen, Pin, PinOff, ChevronRight, Download, Share, Check, X, Key as KeyIcon, Shirt, Palette } from 'lucide-react';
+import { PushNotificationToggle } from './PushNotificationToggle';
 import { useNavigate, useLocation, Outlet } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { useConnection } from '../../contexts/ConnectionContext';
@@ -279,6 +280,11 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
                         <Palette size={20} />
                         {isSidebarPinned && <span className="text-xs font-medium">Design</span>}
                     </button>
+                    {/* Push Benachrichtigungen */}
+                    <div className={clsx("flex items-center rounded-xl", isSidebarPinned ? 'px-1 py-1 gap-3' : 'justify-center')}>
+                        <PushNotificationToggle userId={profile?.id ?? null} compact={true} />
+                        {isSidebarPinned && <span className="text-xs font-medium text-white/30">Benachrichtigungen</span>}
+                    </div>
                     <button onClick={() => setIsSidebarPinned(!isSidebarPinned)} className={clsx("flex items-center rounded-xl transition-colors text-white/30 hover:text-white hover:bg-white/5", isSidebarPinned ? 'px-4 py-3 gap-3' : 'justify-center p-3')} title={isSidebarPinned ? "Einklappen" : "Menü fixieren"}>
                         {isSidebarPinned ? <PanelLeftClose size={20} /> : <PanelLeftOpen size={20} />}
                         {isSidebarPinned && <span className="text-xs font-medium">Menü einklappen</span>}
@@ -303,6 +309,9 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
                             </div>
                             <span className="text-xs text-white/70 hidden sm:inline">{profile?.full_name?.split(' ')[0] || 'User'}</span>
                         </div>
+                        <div className="w-px h-4 bg-white/10"></div>
+                        {/* Push Toggle Mobile */}
+                        <PushNotificationToggle userId={profile?.id ?? null} compact={true} />
                         <div className="w-px h-4 bg-white/10"></div>
                         <button onClick={handleLogout} className="text-white/40 hover:text-rose-400 transition-colors" title="Abmelden">
                             <LogOut size={14} />

@@ -18,6 +18,7 @@ import { CommissionEditContent } from './components/CommissionEditContent';
 import { useIsMobile } from '../../../hooks/useIsMobile';
 import { toast } from 'sonner';
 import UnifiedScanner from '../../components/UnifiedScanner';
+import { LagerPush } from '../../../utils/sendPush';
 
 // --- TYPES ---
 type CommissionTab = 'active' | 'returns' | 'withdrawn' | 'trash' | 'missing';
@@ -421,6 +422,8 @@ const Commissions: React.FC = () => {
                                 }).eq('id', id);
 
                                 await logCommissionEvent(id, activeCommission?.name || 'Unbekannt', 'status_change', `Storno beauftragt: ${type === 'restock' ? 'Einlagern' : 'Lieferant'}`);
+                                // 🔔 Push: Storno-Benachrichtigung
+                                LagerPush.commissionReturnPending(activeCommission?.name || 'Unbekannt', user?.id || '');
 
                                 setActiveCommission(null);
                                 setSidePanelMode('none');
@@ -705,6 +708,8 @@ const Commissions: React.FC = () => {
             }
             await supabase.from('commissions').update({ status: 'Ready' }).eq('id', activeCommission.id);
             await logCommissionEvent(activeCommission.id, activeCommission.name, 'status_change', 'Status auf BEREIT gesetzt.');
+            // 🔔 Push: Alle LagerApp-User benachrichtigen (außer dem, der es ausgelöst hat)
+            LagerPush.commissionReady(activeCommission.name, user.id);
             setActiveCommission(prev => prev ? { ...prev, status: 'Ready' } : null);
             refreshCommissions();
             setShowConfirmReadyModal(false);
@@ -718,6 +723,8 @@ const Commissions: React.FC = () => {
         try {
             await supabase.from('commissions').update({ status: 'Withdrawn', withdrawn_at: new Date().toISOString() }).eq('id', activeCommission.id);
             await logCommissionEvent(activeCommission.id, activeCommission.name, 'status_change', 'Kommission entnommen (Abgeschlossen)');
+            // 🔔 Push: Entnahme bestätigen
+            LagerPush.commissionWithdrawn(activeCommission.name, user?.id || '');
             setShowConfirmWithdrawModal(false);
             setActiveCommission(null);
             setSidePanelMode('none');
@@ -770,6 +777,8 @@ const Commissions: React.FC = () => {
             await supabase.from('commissions').update({ status: 'ReturnReady' }).eq('id', activeCommission.id);
             printReturnLabel(activeCommission);
             await logCommissionEvent(activeCommission.id, activeCommission.name, 'status_change', 'Retoure ins Abholregal gelegt');
+            // 🔔 Push: Retoure bereit
+            LagerPush.commissionReturnReady(activeCommission.name, user?.id || '');
             setActiveCommission(prev => prev ? { ...prev, status: 'ReturnReady' } : null);
             refreshCommissions();
         } catch (e) { console.error(e); } finally { setIsSubmitting(false); }

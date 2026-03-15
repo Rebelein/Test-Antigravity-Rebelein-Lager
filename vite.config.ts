@@ -17,7 +17,11 @@ export default defineConfig(({ mode }) => {
       react(),
       VitePWA({
         registerType: 'prompt',
-        includeAssets: ['logo.png', 'manifest.json'], // Ensure these are cached
+        // Custom Service Worker mit Push-Support
+        strategies: 'injectManifest',
+        srcDir: 'src',
+        filename: 'sw.ts',
+        includeAssets: ['logo.png', 'manifest.json'],
         manifest: {
           name: 'Rebelein LagerApp',
           short_name: 'LagerApp',
@@ -32,41 +36,9 @@ export default defineConfig(({ mode }) => {
             }
           ]
         },
-        workbox: {
-          maximumFileSizeToCacheInBytes: 5000000, // 5MB limit
-          cleanupOutdatedCaches: true,
-          // Ensure we cache everything needed for offline usage
+        injectManifest: {
+          maximumFileSizeToCacheInBytes: 5000000,
           globPatterns: ['**/*.{js,css,html,ico,png,svg,woff2}'],
-          runtimeCaching: [
-            {
-              urlPattern: /^https:\/\/fonts\.googleapis\.com\/.*/i,
-              handler: 'CacheFirst',
-              options: {
-                cacheName: 'google-fonts-cache',
-                expiration: {
-                  maxEntries: 10,
-                  maxAgeSeconds: 60 * 60 * 24 * 365 // 1 year
-                },
-                cacheableResponse: {
-                  statuses: [0, 200]
-                }
-              }
-            },
-            {
-              urlPattern: /^https:\/\/fonts\.gstatic\.com\/.*/i,
-              handler: 'CacheFirst',
-              options: {
-                cacheName: 'gstatic-fonts-cache',
-                expiration: {
-                  maxEntries: 10,
-                  maxAgeSeconds: 60 * 60 * 24 * 365 // 1 year
-                },
-                cacheableResponse: {
-                  statuses: [0, 200]
-                }
-              }
-            }
-          ]
         }
       })
     ],
