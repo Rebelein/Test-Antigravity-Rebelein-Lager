@@ -125,3 +125,12 @@ self.addEventListener('pushsubscriptionchange', () => {
   });
   console.warn('[SW] Push-Subscription geändert - bitte neu registrieren');
 });
+
+// -----------------------------------------------
+// App Update Listener (SKIP_WAITING)
+// -----------------------------------------------
+self.addEventListener('message', (event) => {
+  if (event.data && event.data.type === 'SKIP_WAITING') {
+    self.skipWaiting();
+  }
+});
