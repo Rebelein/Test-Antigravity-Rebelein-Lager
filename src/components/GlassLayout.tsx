@@ -8,12 +8,12 @@ interface GlassLayoutProps {
 
 export const GlassLayout: React.FC<GlassLayoutProps> = ({ children, className }) => {
   return (
-    <div className={clsx("relative h-[100dvh] w-full bg-slate-950 text-slate-100 font-sans selection:bg-teal-500/30 overflow-hidden", className)}>
+    <div className={clsx("relative h-[100dvh] w-full bg-transparent text-slate-100 font-sans selection:bg-teal-500/30 overflow-hidden", className)}>
 
       {/* Main Background Layers - Static & Performance Optimized */}
       <div className="fixed inset-0 z-0 pointer-events-none">
-        {/* Deep Base Gradient */}
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-slate-900 via-slate-950 to-black" />
+        {/* Transparent Base - Letting Global CSS Background shine through */}
+        <div className="absolute inset-0 bg-transparent" />
 
         {/* Optional: Subtle static accent without heavy blur/blend modes if needed, 
             otherwise clean dark background is best for stability. */}

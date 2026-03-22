@@ -38,7 +38,7 @@ const ProtectedRoute = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen w-full flex items-center justify-center bg-gray-900">
+      <div className="min-h-screen w-full flex items-center justify-center bg-transparent">
         <Loader2 size={40} className="animate-spin text-emerald-500" />
       </div>
     );
@@ -73,7 +73,7 @@ const App: React.FC = () => {
                 <ThemeProvider>
                   <HashRouter>
                     <React.Suspense fallback={
-                      <div className="min-h-screen w-full flex items-center justify-center bg-gray-900">
+                      <div className="min-h-screen w-full flex items-center justify-center bg-transparent">
                         <Loader2 size={40} className="animate-spin text-emerald-500" />
                         <span className="ml-3 text-emerald-500 font-medium">Lade Anwendung...</span>
                       </div>

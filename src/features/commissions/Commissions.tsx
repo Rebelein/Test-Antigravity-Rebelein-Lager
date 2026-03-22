@@ -565,7 +565,7 @@ const Commissions: React.FC = () => {
                 </div>
                 <div class="fold-line"><span class="fold-text">Hier falten / knicken</span></div>
                 <div class="list-area">
-                    ${extItems.length > 0 ? `<div class="list-title">Erwartete externe Bestellungen:</div><ul>${extItems.map(i => `<li><div class="checkbox"></div><div class="item-text"><strong>Externe Bestellung:</strong> ${i.custom_name}${i.is_backorder ? ' <b>[RÜCKSTAND]</b>' : ''}<br><span style="font-size: 8pt; color: #555;">(Vorgang: ${i.external_reference || 'N/A'})</span>${i.notes ? `<br><span style="font-style: italic; font-size: 8pt;">Note: ${i.notes}</span>` : ''}</div></li>`).join('')}</ul><br>` : ''}
+                    ${extItems.length > 0 ? `<div class="list-title">Erwartete externe Bestellungen:</div><ul>${extItems.map(i => `<li><div class="checkbox"></div><div class="item-text"><strong>${i.amount}x</strong> Externe Bestellung: ${i.custom_name}${i.is_backorder ? ' <b>[RÜCKSTAND]</b>' : ''}<br><span style="font-size: 8pt; color: #555;">(Vorgang: ${i.external_reference || 'N/A'})</span>${i.notes ? `<br><span style="font-style: italic; font-size: 8pt;">Note: ${i.notes}</span>` : ''}</div></li>`).join('')}</ul><br>` : ''}
                     ${stockItems.length > 0 ? `<div class="list-title">Material aus Lager:</div><ul>${stockItems.map(i => {
                 return `<li><div class="checkbox"></div><div class="item-text"><strong>${i.amount}x</strong> ${i.article?.name}${i.is_backorder ? ' <b>[RÜCKSTAND]</b>' : ''}<br><span style="font-size: 8pt; color: #555;">Lagerort: ${i.article ? renderLocation(i.article) : '-'}</span>${i.notes ? `<br><span style="font-style: italic; font-size: 8pt;">Note: ${i.notes}</span>` : ''}</div></li>`;
             }).join('')}</ul>` : ''}
@@ -800,7 +800,6 @@ const Commissions: React.FC = () => {
     // Toggle Picked/Backorder
     const toggleActiveItemPicked = async (itemId: string, currentVal: boolean) => {
         const item = commItems.find(i => i.id === itemId);
-        if (item && item.is_backorder) return;
         const newVal = !currentVal;
         await supabase.from('commission_items').update({ is_picked: newVal }).eq('id', itemId);
         setCommItems(prev => prev.map(i => i.id === itemId ? { ...i, is_picked: newVal } : i));

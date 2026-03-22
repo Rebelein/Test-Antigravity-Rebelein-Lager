@@ -117,17 +117,17 @@ export const CommissionCard: React.FC<CommissionCardProps> = memo(({
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0.95 }}
-            whileHover={{ scale: 1.02, y: -2 }}
+            whileHover={{ scale: 1.01, y: -2 }}
             className={`
-                group relative p-4 pl-5 rounded-xl cursor-pointer transition-all duration-200 overflow-hidden
-                bg-white/[0.02] border ${statusColors.border} hover:bg-white/5
+                group relative p-4 pl-5 rounded-xl cursor-pointer transition-all duration-300 overflow-hidden
+                bg-slate-900/70 backdrop-blur-md border ${statusColors.border} shadow-lg shadow-black/40 hover:bg-slate-900/90 hover:shadow-xl
                 ${isTrash || isWithdrawn ? 'opacity-70 hover:opacity-100' : ''}
                 ${className || ''}
             `}
             onClick={() => onClick(commission)}
         >
             {/* Left Color Indicator Bar */}
-            <div className={`absolute left-0 top-0 bottom-0 w-1.5 rounded-l-xl ${statusColors.leftBar}`} />
+            <div className={`absolute left-0 top-0 bottom-0 w-1.5 rounded-l-xl opacity-80 group-hover:opacity-100 transition-opacity ${statusColors.leftBar}`} />
 
             {/* Header: Name + Meta + StatusBadge */}
             <div className="flex justify-between items-start gap-3 mb-3">
@@ -152,14 +152,14 @@ export const CommissionCard: React.FC<CommissionCardProps> = memo(({
                 </div>
 
                 {/* Colored StatusBadge */}
-                <span className={`px-2 py-1 rounded-lg text-xs font-medium border ${statusColors.badge}`}>
+                <span className={`px-2.5 py-1 rounded-lg text-xs font-semibold border shadow-sm ${statusColors.badge}`}>
                     {statusColors.badgeText}
                 </span>
             </div>
 
             {/* Notes */}
             {commission.notes && (
-                <div className="text-sm text-yellow-200/70 italic bg-yellow-500/5 p-2 rounded border border-yellow-500/10 line-clamp-2 mb-3">
+                <div className="text-sm text-yellow-100/90 italic bg-yellow-500/10 p-2.5 rounded-lg border border-yellow-500/20 line-clamp-2 mb-3 shadow-inner">
                     "{commission.notes}"
                 </div>
             )}

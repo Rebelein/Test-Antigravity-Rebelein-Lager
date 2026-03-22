@@ -10,10 +10,10 @@
     --glass-bg: rgba(255, 255, 255, 0.05);
     --glass-hover: rgba(255, 255, 255, 0.08);
 
-    --bg-dark: #030712;
-    --bg-gradient-1: #030712;
-    --bg-gradient-2: #030712;
-    --bg-gradient-3: #030712;
+    --bg-dark: #042f2e;
+    --bg-gradient-1: #022c22;
+    --bg-gradient-2: #042f2e;
+    --bg-gradient-3: #065f46;
 
     --text-primary: #f1f5f9;
     /* slate-100 */
@@ -38,15 +38,11 @@
     --glass-bg: rgba(255, 255, 255, 0.05);
     --glass-hover: rgba(255, 255, 255, 0.08);
 
-    /* Deep Slate/Dark Background (Reference Style) */
-    --bg-dark: #020617;
-    /* slate-950 */
-    --bg-gradient-1: #0f172a;
-    /* slate-900 */
-    --bg-gradient-2: #020617;
-    /* slate-950 */
-    --bg-gradient-3: #000000;
-    /* black */
+    /* Deep Teal/Emerald Background */
+    --bg-dark: #042f2e;
+    --bg-gradient-1: #022c22;
+    --bg-gradient-2: #042f2e;
+    --bg-gradient-3: #065f46;
 
     --text-primary: #f1f5f9;
     /* slate-100 */
@@ -77,25 +73,22 @@
 
 
   body {
-    @apply bg-gray-950 text-white antialiased overflow-x-hidden;
+    @apply text-white antialiased overflow-x-hidden;
     font-family: var(--font-primary);
-    background: var(--bg-dark);
+    background: var(--bg-dark) !important;
   }
 
   /* Default theme background */
   [data-theme="default"] body,
   :root:not([data-theme]) body {
-    background-image:
-      radial-gradient(circle at 50% 0%, rgba(16, 185, 129, 0.15), transparent 40%),
-      radial-gradient(circle at 0% 50%, rgba(14, 165, 233, 0.1), transparent 40%),
-      radial-gradient(circle at 100% 50%, rgba(139, 92, 246, 0.1), transparent 40%);
-    background-attachment: fixed;
+    background: linear-gradient(135deg, var(--bg-gradient-1) 0%, var(--bg-gradient-2) 50%, var(--bg-gradient-3) 100%) !important;
+    background-attachment: fixed !important;
   }
 
   /* Glass dark theme background */
   [data-theme="glass"] body {
-    background: linear-gradient(135deg, var(--bg-gradient-1) 0%, var(--bg-gradient-2) 50%, var(--bg-gradient-3) 100%);
-    background-attachment: fixed;
+    background: linear-gradient(135deg, var(--bg-gradient-1) 0%, var(--bg-gradient-2) 50%, var(--bg-gradient-3) 100%) !important;
+    background-attachment: fixed !important;
   }
 
 

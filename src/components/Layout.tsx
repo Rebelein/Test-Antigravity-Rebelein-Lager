@@ -142,7 +142,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
     // --- STRICT OFFLINE MODE ---
     if (!isConnected) {
         return (
-            <div className="min-h-screen w-full bg-gray-950 flex flex-col items-center justify-center p-6 text-center">
+            <div className="min-h-screen w-full bg-transparent flex flex-col items-center justify-center p-6 text-center">
                 <div className="w-24 h-24 rounded-full bg-red-500/10 flex items-center justify-center mb-6 animate-pulse">
                     <WifiOff size={48} className="text-red-500" />
                 </div>
@@ -359,7 +359,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
                 transition={{ duration: 0.5, delay: 0.3 }}
                 className="lg:hidden fixed bottom-0 left-0 right-0 z-[160] w-full"
             >
-                <div className="w-full bg-[#1a1d24] border-t border-white/10 shadow-[0_-4px_24px_rgba(0,0,0,0.5)]">
+                <div className="w-full bg-black/40 backdrop-blur-xl border-t border-white/10 shadow-[0_-4px_24px_rgba(0,0,0,0.5)]">
                     <nav className="h-16 flex items-center relative overflow-hidden">
                         <div className="flex items-center justify-between overflow-x-auto w-full h-full px-2 sm:px-6 gap-2 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:'none'] [scrollbar-width:'none']">
                             {(() => {
@@ -418,7 +418,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
                         whileTap={{ scale: 0.95 }}
                         onClick={handleCenterButtonClick}
                         className={clsx(
-                            "absolute left-1/2 top-0 -translate-x-1/2 -translate-y-1/2 flex items-center justify-center w-14 h-14 rounded-full shadow-2xl border-4 border-[#1a1d24] transition-all duration-300",
+                            "absolute left-1/2 top-0 -translate-x-1/2 -translate-y-1/2 flex items-center justify-center w-14 h-14 rounded-full shadow-2xl border-4 border-black/40 transition-all duration-300",
                             currentPath === 'audit' ? 'bg-gradient-to-r from-purple-500 to-fuchsia-600 text-white shadow-purple-500/40' : 'bg-gradient-to-r from-emerald-500 to-teal-600 text-white shadow-emerald-500/40'
                         )}
                     >

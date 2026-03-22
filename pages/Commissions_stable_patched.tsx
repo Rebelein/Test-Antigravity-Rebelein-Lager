@@ -648,7 +648,6 @@ const Commissions: React.FC = () => {
     // Toggle Picked/Backorder
     const toggleActiveItemPicked = async (itemId: string, currentVal: boolean) => {
         const item = commItems.find(i => i.id === itemId);
-        if (item && item.is_backorder) return;
         const newVal = !currentVal;
         await supabase.from('commission_items').update({ is_picked: newVal }).eq('id', itemId);
         setCommItems(prev => prev.map(i => i.id === itemId ? { ...i, is_picked: newVal } : i));

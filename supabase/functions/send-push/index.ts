@@ -292,19 +292,19 @@ interface PushPayload {
   data?: Record<string, unknown>;
 }
 
+const corsHeaders = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+};
+
 Deno.serve(async (req: Request) => {
   // CORS
   if (req.method === "OPTIONS") {
-    return new Response(null, {
-      headers: {
-        "Access-Control-Allow-Origin": "*",
-        "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
-      },
-    });
+    return new Response("ok", { headers: corsHeaders });
   }
 
   if (req.method !== "POST") {
-    return new Response("Method not allowed", { status: 405 });
+    return new Response("Method not allowed", { status: 405, headers: corsHeaders });
   }
 
   try {
@@ -313,7 +313,7 @@ Deno.serve(async (req: Request) => {
     if (!pushPayload.title || !pushPayload.body) {
       return new Response(
         JSON.stringify({ error: "title und body sind Pflichtfelder" }),
-        { status: 400, headers: { "Content-Type": "application/json" } }
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
@@ -339,14 +339,14 @@ Deno.serve(async (req: Request) => {
       console.error("DB Error:", error);
       return new Response(
         JSON.stringify({ error: "Datenbankfehler beim Laden der Subscriptions" }),
-        { status: 500, headers: { "Content-Type": "application/json" } }
+        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
     if (!subscriptions || subscriptions.length === 0) {
       return new Response(
         JSON.stringify({ sent: 0, message: "Keine Subscriptions gefunden" }),
-        { status: 200, headers: { "Content-Type": "application/json" } }
+        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
@@ -393,13 +393,13 @@ Deno.serve(async (req: Request) => {
 
     return new Response(
       JSON.stringify({ sent, failed, expired: expiredIds.length }),
-      { status: 200, headers: { "Content-Type": "application/json" } }
+      { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   } catch (err) {
     console.error("Unerwarteter Fehler:", err);
     return new Response(
       JSON.stringify({ error: String(err) }),
-      { status: 500, headers: { "Content-Type": "application/json" } }
+      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   }
 });

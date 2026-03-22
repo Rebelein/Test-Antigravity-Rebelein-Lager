@@ -214,16 +214,15 @@ export const CommissionDetailContent: React.FC<CommissionDetailContentProps> = (
                     {items.length === 0 && <div className="text-center text-white/30 py-4">Keine Positionen.</div>}
                     {items.map(item => (
                         <div key={item.id} className={`flex items-center gap-3 p-3 rounded-xl border transition-all ${item.is_backorder ? 'bg-red-500/10 border-red-500/50' : item.is_picked ? 'bg-emerald-500/10 border-emerald-500/30 opacity-70' : 'bg-white/5 border-white/5'}`}>
-                            {/* Disabled button if backorder */}
+                            {/* Pick Checkbox - always clickable, even if in backorder */}
                             <button
                                 onClick={() => onTogglePicked(item.id, item.is_picked)}
-                                disabled={item.is_backorder || false}
-                                className={`w-6 h-6 rounded border flex items-center justify-center transition-colors ${item.is_backorder ? 'bg-white/5 border-white/10 cursor-not-allowed opacity-50' : item.is_picked ? 'bg-emerald-500 border-emerald-500 text-white' : 'border-white/30 hover:border-emerald-400'}`}
+                                className={`w-6 h-6 rounded border flex items-center justify-center transition-colors ${item.is_picked ? 'bg-emerald-500 border-emerald-500 text-white' : 'border-white/30 hover:border-emerald-400'}`}
                             >
                                 {item.is_picked && <Check size={14} />}
                             </button>
 
-                            <div className={`flex-1 ${item.is_backorder ? 'cursor-default' : 'cursor-pointer'}`} onClick={() => !item.is_backorder && onTogglePicked(item.id, item.is_picked)}>
+                            <div className="flex-1 cursor-pointer" onClick={() => onTogglePicked(item.id, item.is_picked)}>
                                 <div className="font-medium text-white">{item.type === 'Stock' ? item.article?.name : item.custom_name}</div>
                                 <div className="text-xs text-white/50 flex flex-wrap items-center gap-2">
                                     {item.type === 'Stock' ? <><Package size={12} /> Lager: {item.article?.location}</> : <><ExternalLink size={12} /> Extern • Ref: {item.external_reference || '-'}</>}
