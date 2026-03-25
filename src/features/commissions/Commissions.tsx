@@ -299,11 +299,20 @@ const Commissions: React.FC = () => {
                 setSidePanelMode('none');
             }
         } else {
-            // Created new
-            setSidePanelMode('none');
-            if (isNew && id) {
-                // Short timeout to ensure modal transition feels smooth
-                setTimeout(() => setShowLabelOptionsModal(id), 300);
+            // Created new OR Integrated
+            if (!isNew && id) {
+                // Integration case: Open detail
+                const fetchAndOpen = async () => {
+                    const { data } = await supabase.from('commissions').select('*, suppliers(name)').eq('id', id).single();
+                    if (data) handleOpenDetail(data as ExtendedCommission);
+                };
+                fetchAndOpen();
+            } else {
+                setSidePanelMode('none');
+                if (isNew && id) {
+                    // Short timeout to ensure modal transition feels smooth
+                    setTimeout(() => setShowLabelOptionsModal(id), 300);
+                }
             }
         }
     };

@@ -4,6 +4,7 @@ import { Plus, Search, Package, ExternalLink, Trash2, Save, X, BoxSelect, Clipbo
 import { Article, Supplier, Commission, CommissionItem, ExtendedCommission } from '../../../../types';
 import { supabase } from '../../../../supabaseClient';
 import { useIsMobile } from '../../../../hooks/useIsMobile';
+import { DuplicateCommissionModal } from './DuplicateCommissionModal';
 
 // ExtendedCommission moved to types.ts
 
@@ -49,6 +50,10 @@ export const CommissionEditContent: React.FC<CommissionEditContentProps> = ({
     const [newComm, setNewComm] = useState({ order_number: '', name: '', notes: '' });
     const [tempItems, setTempItems] = useState<TempCommissionItem[]>([]);
     const [isSubmitting, setIsSubmitting] = useState(false);
+
+    // Duplikatprüfung
+    const [duplicateFound, setDuplicateFound] = useState<Commission | null>(null);
+    const [showDuplicateModal, setShowDuplicateModal] = useState(false);
 
     // Categories & Search
     const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
@@ -201,9 +206,70 @@ export const CommissionEditContent: React.FC<CommissionEditContentProps> = ({
 
 
     // --- SAVE ---
+    const handleIntegrate = async () => {
+        if (!duplicateFound) return;
+        setIsSubmitting(true);
+        try {
+            const commId = duplicateFound.id;
+            if (tempItems.length > 0) {
+                const itemsPayload = tempItems.map(item => ({
+                    commission_id: commId,
+                    type: item.type,
+                    amount: item.amount,
+                    article_id: item.type === 'Stock' ? item.article?.id : null,
+                    custom_name: item.type === 'External' ? item.customName : null,
+                    external_reference: item.type === 'External' ? item.externalReference : null,
+                    attachment_data: item.attachmentData || null,
+                    is_backorder: item.isBackorder || false,
+                    notes: item.notes || null,
+                    is_picked: item.isPicked || false
+                }));
+                const { error } = await supabase.from('commission_items').insert(itemsPayload);
+                if (error) throw error;
+                
+                if (onLogEvent) {
+                    await onLogEvent(commId, duplicateFound.name, 'updated', 'Positionen aus Duplikat-Erstellung integriert');
+                }
+            }
+            onSave(commId, false);
+            onClose();
+        } catch (err: any) {
+            alert("Fehler bei Integration: " + err.message);
+        } finally {
+            setIsSubmitting(false);
+        }
+    };
+
     const handleFinalizeCreate = async () => {
         if (!primaryWarehouseId) { alert("Bitte Hauptlager wählen."); return; }
         if (!newComm.name) return;
+
+        // --- DUPLIKATPRÜFUNG ---
+        if (!isEditMode && newComm.order_number) {
+            setIsSubmitting(true);
+            try {
+                const { data, error } = await supabase
+                    .from('commissions')
+                    .select('*')
+                    .eq('order_number', newComm.order_number)
+                    .in('status', ['Draft', 'Preparing', 'Ready'])
+                    .is('deleted_at', null)
+                    .limit(1);
+                
+                if (error) throw error;
+
+                if (data && data.length > 0) {
+                    setDuplicateFound(data[0]);
+                    setShowDuplicateModal(true);
+                    setIsSubmitting(false);
+                    return; // Stoppe Erstellung
+                }
+            } catch (err: any) {
+                console.error("Duplicate check error:", err);
+            } finally {
+                // Bei Erfolg setzen wir unten wieder auf true
+            }
+        }
 
         setIsSubmitting(true);
         try {
@@ -524,6 +590,16 @@ export const CommissionEditContent: React.FC<CommissionEditContentProps> = ({
                     </Button>
                 </div>
             </div>
+
+            {duplicateFound && (
+                <DuplicateCommissionModal 
+                    isOpen={showDuplicateModal}
+                    onClose={() => setShowDuplicateModal(false)}
+                    onIntegrate={handleIntegrate}
+                    existingCommission={duplicateFound}
+                    isSubmitting={isSubmitting}
+                />
+            )}
         </div>
     );
 };
