@@ -10,10 +10,10 @@
     --glass-bg: rgba(255, 255, 255, 0.05);
     --glass-hover: rgba(255, 255, 255, 0.08);
 
-    --bg-dark: #042f2e;
-    --bg-gradient-1: #022c22;
-    --bg-gradient-2: #042f2e;
-    --bg-gradient-3: #065f46;
+    --bg-dark: #111827;
+    --bg-gradient-1: #0f172a;
+    --bg-gradient-2: #111827;
+    --bg-gradient-3: #1e293b;
 
     --text-primary: #f1f5f9;
     /* slate-100 */
@@ -39,10 +39,10 @@
     --glass-hover: rgba(255, 255, 255, 0.08);
 
     /* Deep Teal/Emerald Background */
-    --bg-dark: #042f2e;
-    --bg-gradient-1: #022c22;
-    --bg-gradient-2: #042f2e;
-    --bg-gradient-3: #065f46;
+    --bg-dark: #111827;
+    --bg-gradient-1: #0f172a;
+    --bg-gradient-2: #111827;
+    --bg-gradient-3: #1e293b;
 
     --text-primary: #f1f5f9;
     /* slate-100 */

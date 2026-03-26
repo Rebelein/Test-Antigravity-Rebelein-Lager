@@ -166,7 +166,7 @@ export const MasterDetailLayout: React.FC<MasterDetailLayoutProps> = ({
                         exit={{ x: "100%" }}
                         transition={{ type: "spring", damping: 30, stiffness: 300 }}
                         style={{ width: sidebarWidth }}
-                        className="absolute top-0 right-0 h-full bg-slate-950/40 backdrop-blur-2xl shadow-[0_0_50px_-12px_rgba(0,0,0,0.5)] z-50 flex flex-col"
+                        className="absolute top-0 right-0 h-full bg-gray-900/40 backdrop-blur-2xl shadow-[0_0_50px_-12px_rgba(0,0,0,0.5)] z-50 flex flex-col"
                     >
                         {/* Glass Highlight Overlay (Left side) - Thicker, softer glow */}
                         <div className="absolute inset-y-0 left-0 w-px bg-gradient-to-b from-transparent via-white/10 to-transparent pointer-events-none" />

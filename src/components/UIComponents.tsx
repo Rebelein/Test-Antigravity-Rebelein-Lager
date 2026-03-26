@@ -281,7 +281,7 @@ export const AnimatedModal: React.FC<AnimatedModalProps> = ({ isOpen, onClose, c
               transition={{ type: "spring", duration: 0.5, bounce: 0.3 }}
               className={cn(
                 "w-full pointer-events-auto will-change-transform",
-                "bg-slate-950/50 backdrop-blur-2xl border border-white/10 shadow-2xl overflow-hidden flex flex-col",
+                "bg-gray-900/50 backdrop-blur-2xl border border-white/10 shadow-2xl overflow-hidden flex flex-col",
                 fullScreen ? "h-full max-w-none rounded-none border-0" : "max-w-2xl rounded-3xl max-h-[85vh]",
                 className
               )}
