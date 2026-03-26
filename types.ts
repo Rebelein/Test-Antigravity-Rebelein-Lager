@@ -153,6 +153,8 @@ export interface Commission {
   is_processed?: boolean; // Office status
   office_notes?: string; // Office notes
   last_scanned_at?: string; // New: For "Missing" tab verification
+  is_price_inquiry?: boolean; // NEW: Preisanfrage
+  delivery_date_unknown?: boolean; // NEW: Liefertermin unbekannt
 }
 
 export type CommissionItemType = 'Stock' | 'External';

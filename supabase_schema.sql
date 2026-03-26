@@ -183,6 +183,8 @@ CREATE TABLE public.commissions (
     supplier_order_number TEXT,
     is_processed BOOLEAN DEFAULT FALSE, -- Office status
     office_notes TEXT,
+    is_price_inquiry BOOLEAN DEFAULT FALSE, -- NEW: Preisanfrage
+    delivery_date_unknown BOOLEAN DEFAULT FALSE, -- NEW: Liefertermin unbekannt
     created_at TIMESTAMPTZ DEFAULT NOW(),
     withdrawn_at TIMESTAMPTZ,
     deleted_at TIMESTAMPTZ -- Trash bin logic (soft delete)

@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { GlassCard, StatusBadge, Button, GlassModal } from '../src/components/UIComponents';
-import { AlertTriangle, Wrench, User, CheckCircle2, FileText, ArrowRight, Grid, Database, X, Play, RefreshCw, Check, Copy, Settings, Factory, Warehouse, Tag, Maximize2, Minimize2, PhoneCall, StickyNote, Save, Undo2, Library, Plus, MessageSquare, Monitor, Smartphone, ShoppingCart, LayoutTemplate, Lock, Unlock, History, LayoutDashboard, ChevronUp, ChevronDown, Eye, EyeOff, Zap, Move, Wand2, Hash, Send, Clock, Circle } from 'lucide-react';
+import { AlertTriangle, Wrench, User, CheckCircle2, FileText, ArrowRight, Grid, Database, X, Play, RefreshCw, Check, Copy, Settings, Factory, Warehouse, Tag, Maximize2, Minimize2, PhoneCall, StickyNote, Save, Undo2, Library, Plus, MessageSquare, Monitor, Smartphone, ShoppingCart, LayoutTemplate, Lock, Unlock, History, LayoutDashboard, ChevronUp, ChevronDown, Eye, EyeOff, Zap, Move, Wand2, Hash, Send, Clock, Circle, CheckCheck } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useIsMobile } from '../hooks/useIsMobile';
 import { usePersistentState } from '../hooks/usePersistentState';
@@ -60,8 +60,8 @@ const Dashboard: React.FC = () => {
     const [selectedKey, setSelectedKey] = useState<Key | null>(null);
     const [allUsers, setAllUsers] = useState<UserProfile[]>([]);
 
-    const [draftCommissions, setDraftCommissions] = useState<Commission[]>([]);
-    const [readyCommissions, setReadyCommissions] = useState<Commission[]>([]);
+    const [openCommissions, setOpenCommissions] = useState<Commission[]>([]);
+    const [backlogCommissions, setBacklogCommissions] = useState<Commission[]>([]);
     const [returnCommissions, setReturnCommissions] = useState<Commission[]>([]);
     const [recentEvents, setRecentEvents] = useState<AppEvent[]>([]);
     
@@ -126,7 +126,7 @@ const Dashboard: React.FC = () => {
     const [isCommissionTileFullscreen, setIsCommissionTileFullscreen] = useState(false);
     const [viewingCommission, setViewingCommission] = useState<Commission | null>(null);
     const [isSavingProcess, setIsSavingProcess] = useState(false);
-    const [mobileTab, setMobileTab] = useState<'draft' | 'ready' | 'returns'>('draft');
+    const [mobileTab, setMobileTab] = useState<'open' | 'backlog' | 'returns'>('open');
 
     const isMobile = useIsMobile();
     // Split View Status: Only active if NOT mobile
@@ -309,30 +309,43 @@ const Dashboard: React.FC = () => {
                 .from('commissions')
                 .select('*, commission_items(is_backorder, notes)')
                 .is('deleted_at', null) // Only active
-                .in('status', ['Draft', 'Preparing', 'Ready', 'ReturnPending', 'ReturnReady']); // Include Returns
+                .in('status', ['Draft', 'Preparing', 'Ready', 'ReturnPending', 'ReturnReady', 'Missing']); // Include All relevant
 
             if (comms) {
-                setDraftCommissions(comms.filter((c: any) => c.status === 'Draft' || c.status === 'Preparing'));
+                // 1. BACKLOG (Rückstand) - Has items with is_backorder
+                const backlog = comms.filter((c: any) => c.commission_items?.some((i: any) => i.is_backorder));
+                setBacklogCommissions(backlog);
 
-                // Returns (ReturnPending or ReturnReady)
+                // 2. RETURNS (Rückgabe) - ReturnPending or ReturnReady
                 const returns = comms.filter((c: Commission) => c.status === 'ReturnPending' || c.status === 'ReturnReady');
-                // Sort returns: Ready to pickup (ReturnReady) first, then Pending
                 returns.sort((a: Commission, b: Commission) => {
                     if (a.status === b.status) return a.name.localeCompare(b.name);
                     return a.status === 'ReturnReady' ? -1 : 1;
                 });
                 setReturnCommissions(returns);
 
-                // Filter and Sort Ready Commissions
-                const ready = comms.filter((c: Commission) => c.status === 'Ready');
-                ready.sort((a: Commission, b: Commission) => {
-                    if (a.is_processed === b.is_processed) {
-                        return a.name.localeCompare(b.name);
-                    }
-                    return a.is_processed ? 1 : -1; // False (Unprocessed) comes first
-                });
+                // 3. OPEN (Offen/Aktion) - Price Inquiry, Unknown Date OR Ready & Unprocessed
+                const open = comms.filter((c: any) => {
+                    const isBacklog = c.commission_items?.some((i: any) => i.is_backorder);
+                    if (isBacklog) return false; // Backlog stays in backlog column
 
-                setReadyCommissions(ready);
+                    const hasFlag = c.is_price_inquiry || c.delivery_date_unknown;
+                    const isReadyToBook = c.status === 'Ready' && !c.is_processed;
+
+                    return hasFlag || isReadyToBook;
+                });
+                
+                // Sort Open: Ready to book first, then flags
+                open.sort((a: any, b: any) => {
+                    const readyA = a.status === 'Ready' && !a.is_processed ? 1 : 0;
+                    const readyB = b.status === 'Ready' && !b.is_processed ? 1 : 0;
+                    if (readyA !== readyB) return readyB - readyA;
+
+                    const weightA = (a.is_price_inquiry ? 2 : 0) + (a.delivery_date_unknown ? 1 : 0);
+                    const weightB = (b.is_price_inquiry ? 2 : 0) + (b.delivery_date_unknown ? 1 : 0);
+                    return weightB - weightA;
+                });
+                setOpenCommissions(open);
             }
         } catch (error: any) {
             console.error("Error fetching commissions:", error);
@@ -564,6 +577,27 @@ const Dashboard: React.FC = () => {
         setViewingCommission(comm);
     };
 
+    const handleMarkAllAsRead = async () => {
+        const readyToBook = openCommissions.filter(c => c.status === 'Ready' && !c.is_processed);
+        if (readyToBook.length === 0) return;
+
+        const ids = readyToBook.map(c => (c as any).id);
+        
+        try {
+            const { error } = await supabase
+                .from('commissions')
+                .update({ is_processed: true })
+                .in('id', ids);
+
+            if (error) throw error;
+            
+            toast.success(`${ids.length} Kommissionen als gelesen markiert.`);
+            fetchCommissionsData(); // Refresh list
+        } catch (error: any) {
+            toast.error("Fehler beim Aktualisieren: " + error.message);
+        }
+    };
+
     const handleSaveOfficeData = async (isProcessed: boolean, notes: string) => {
         if (!viewingCommission) return;
         setIsSavingProcess(true);
@@ -683,18 +717,18 @@ const Dashboard: React.FC = () => {
             {/* Mobile Tabs */}
             <div className="flex md:hidden border-b border-white/10 shrink-0">
                 <button
-                    onClick={() => setMobileTab('draft')}
-                    className={`flex-1 py-3 text-xs font-bold uppercase tracking-wide transition-colors relative ${mobileTab === 'draft' ? 'text-white' : 'text-white/40'}`}
+                    onClick={() => setMobileTab('open')}
+                    className={`flex-1 py-3 text-xs font-bold uppercase tracking-wide transition-colors relative ${mobileTab === 'open' ? 'text-white' : 'text-white/40'}`}
                 >
-                    In Arbeit
-                    {mobileTab === 'draft' && <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-emerald-500" />}
+                    Offen
+                    {mobileTab === 'open' && <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-emerald-500" />}
                 </button>
                 <button
-                    onClick={() => setMobileTab('ready')}
-                    className={`flex-1 py-3 text-xs font-bold uppercase tracking-wide transition-colors relative ${mobileTab === 'ready' ? 'text-emerald-400' : 'text-white/40'}`}
+                    onClick={() => setMobileTab('backlog')}
+                    className={`flex-1 py-3 text-xs font-bold uppercase tracking-wide transition-colors relative ${mobileTab === 'backlog' ? 'text-rose-400' : 'text-white/40'}`}
                 >
-                    Bereit
-                    {mobileTab === 'ready' && <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-emerald-500" />}
+                    Rückstand
+                    {mobileTab === 'backlog' && <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-rose-500" />}
                 </button>
                 <button
                     onClick={() => setMobileTab('returns')}
@@ -706,95 +740,96 @@ const Dashboard: React.FC = () => {
             </div>
 
             <div className="flex-1 block md:grid md:grid-cols-3 md:divide-x divide-white/10 overflow-hidden relative">
-                {/* Left: Entwurf (Draft) */}
-                <div className={`p-4 flex-col gap-3 bg-gradient-to-b from-white/5 to-transparent overflow-hidden h-full ${mobileTab === 'draft' ? 'flex' : 'hidden md:flex'}`}>
+                {/* Left: Offen (Open) */}
+                <div className={`p-4 flex-col gap-3 bg-gradient-to-b from-white/5 to-transparent overflow-hidden h-full ${mobileTab === 'open' ? 'flex' : 'hidden md:flex'}`}>
                     <div className="flex justify-between items-center mb-2 shrink-0">
-                        <span className="text-sm font-bold text-white">In Arbeit ({draftCommissions.length})</span>
+                        <span className="text-sm font-bold text-white">Aktion Büro ({openCommissions.length})</span>
+                        {openCommissions.some(c => c.status === 'Ready' && !c.is_processed) && (
+                            <button 
+                                onClick={(e) => { e.stopPropagation(); handleMarkAllAsRead(); }}
+                                className="flex items-center gap-1.5 px-2 py-1 rounded-md bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 text-[10px] font-bold transition-all border border-emerald-500/20"
+                                title="Alle 'Bereit' als gelesen markieren"
+                            >
+                                <CheckCheck size={12} />
+                                Alle gelesen
+                            </button>
+                        )}
                     </div>
 
                     <div className={`space-y-3 overflow-y-auto flex-1 min-h-0 pr-1 pb-4`}>
-                        {draftCommissions.length === 0 && <div className="text-xs text-white/30 italic">Leer.</div>}
-                        {draftCommissions.map((c: any) => {
-                            // Check for backorders
-                            const hasBackorder = c.commission_items?.some((i: any) => i.is_backorder);
+                        {openCommissions.length === 0 && <div className="text-xs text-white/30 italic">Keine Aktionen offen.</div>}
+                        {openCommissions.map((c: any) => {
+                            const isReady = c.status === 'Ready' && !c.is_processed;
+                            const isNew = !c.is_processed;
+                            const hasFlag = c.is_price_inquiry || c.delivery_date_unknown;
 
                             return (
                                 <div
                                     key={c.id}
                                     onClick={(e) => { e.stopPropagation(); setViewingCommission(c); }}
-                                    className={`p-3 rounded-xl cursor-pointer transition-all relative group border ${hasBackorder ? 'bg-red-500/10 border-red-500 hover:bg-red-500/20' :
-                                        c.status === 'Preparing' ? 'bg-amber-500/10 border-amber-500/50 hover:bg-amber-500/20' : // NEW YELLOW STYLE
-                                            'bg-white/5 border-white/10 hover:bg-white/10'
-                                        }`}
+                                    className={`p-3 rounded-xl cursor-pointer transition-all relative group border ${
+                                        isReady ? 'bg-emerald-500/10 border-emerald-500 animate-border-pulse-green' : 
+                                        hasFlag ? 'bg-amber-500/10 border-amber-500/50 hover:bg-amber-500/20' : 
+                                        'bg-white/5 border-white/10 hover:bg-white/10'
+                                    }`}
                                 >
                                     <div className="flex justify-between items-start">
-                                        <div className="min-w-0">
+                                        <div className="min-w-0 flex-1 pr-2">
                                             <div className="font-bold text-white text-sm truncate">{c.name}</div>
                                             <div className="text-xs text-white/40 mt-0.5">{c.order_number}</div>
+                                            
+                                            {/* Flags Display */}
+                                            <div className="flex flex-wrap gap-1 mt-2">
+                                                {isReady && (
+                                                    <span className="text-[10px] font-black text-emerald-400 bg-emerald-900/40 px-2 py-1 rounded uppercase border border-emerald-500/40 animate-pulse tracking-wider">Termin vereinbaren</span>
+                                                )}
+                                                {c.is_price_inquiry && (
+                                                    <span className="text-[9px] font-bold text-amber-400 bg-amber-900/30 px-1.5 py-0.5 rounded uppercase border border-amber-500/20">Preisanfrage</span>
+                                                )}
+                                                {c.delivery_date_unknown && (
+                                                    <span className="text-[9px] font-bold text-blue-400 bg-blue-900/30 px-1.5 py-0.5 rounded uppercase border border-blue-500/20">Termin offen</span>
+                                                )}
+                                            </div>
                                         </div>
-                                        {hasBackorder ? (
-                                            <AlertTriangle size={14} className="text-red-400 group-hover:text-red-300 transition-colors" />
-                                        ) : (
-                                            <ArrowRight size={14} className="text-white/20 group-hover:text-emerald-400 transition-colors opacity-0 group-hover:opacity-100" />
+                                        {(isNew || isReady) && (
+                                            <div className={`w-5 h-5 rounded-full flex items-center justify-center shadow-lg shrink-0 ${isReady ? 'bg-emerald-400 text-emerald-950' : 'bg-emerald-500 text-white shadow-emerald-500/40'}`} title="Aktion erforderlich!">
+                                                <Check size={10} strokeWidth={4} />
+                                            </div>
                                         )}
                                     </div>
                                     {c.notes && <div className="mt-2 text-[10px] text-white/30 italic truncate">{c.notes}</div>}
-                                    {hasBackorder && (
-                                        <div className="mt-2 text-[9px] font-bold text-red-400 uppercase tracking-wide bg-red-900/30 px-1.5 py-0.5 rounded inline-block">
-                                            Rückstand!
-                                        </div>
-                                    )}
                                 </div>
                             );
                         })}
                     </div>
                 </div>
 
-                {/* Center: Bereitgestellt (Ready) - INTERACTIVE */}
-                <div className={`p-4 flex-col gap-3 relative overflow-hidden h-full ${mobileTab === 'ready' ? 'flex' : 'hidden md:flex'}`}>
+                {/* Center: Rückstand (Backlog) */}
+                <div className={`p-4 flex-col gap-3 relative overflow-hidden h-full ${mobileTab === 'backlog' ? 'flex' : 'hidden md:flex'}`}>
                     <div className="flex justify-between items-center mb-2 shrink-0">
-                        <span className="text-sm font-bold text-emerald-400">Bereitgestellt ({readyCommissions.length})</span>
+                        <span className="text-sm font-bold text-rose-400">Rückstand ({backlogCommissions.length})</span>
                     </div>
 
                     <div className={`space-y-3 overflow-y-auto flex-1 min-h-0 pr-1 pb-10`}>
-                        {readyCommissions.length === 0 && <div className="text-xs text-white/30 italic">Nichts bereitgestellt.</div>}
-                        {readyCommissions.map(c => {
-                            // Needs processing if NOT processed yet
-                            const needsProcessing = !c.is_processed;
-
+                        {backlogCommissions.length === 0 && <div className="text-xs text-white/30 italic">Kein Rückstand.</div>}
+                        {backlogCommissions.map((c: any) => {
                             return (
                                 <div
                                     key={c.id}
                                     onClick={(e) => { e.stopPropagation(); handleCommissionClick(c); }}
-                                    className={`
-                                        p-3 rounded-xl cursor-pointer transition-all relative group border
-                                        ${needsProcessing ? 'bg-emerald-500/20 border-emerald-500 animate-border-pulse-green' : 'bg-white/5 border-emerald-500/30 hover:bg-white/10'}
-                                    `}
+                                    className="p-3 rounded-xl cursor-pointer transition-all relative group border bg-rose-500/10 border-rose-500/50 hover:bg-rose-500/20"
                                 >
                                     <div className="flex justify-between items-start">
                                         <div className="min-w-0 flex-1 pr-2">
                                             <div className="font-bold text-white text-sm truncate">{c.name}</div>
-                                            <div className="text-xs text-emerald-200/60 mt-0.5">{c.order_number}</div>
-                                            {/* Extended info in fullscreen or if processed */}
-                                            {(isFullscreen || c.office_notes) && c.office_notes && (
-                                                <div className="mt-2 p-2 bg-black/20 rounded-lg text-xs text-white/80 flex gap-2 items-start border border-white/5">
-                                                    <StickyNote size={12} className="shrink-0 mt-0.5 text-amber-400" />
-                                                    <span className="italic">{c.office_notes}</span>
-                                                </div>
-                                            )}
+                                            <div className="text-xs text-rose-200/60 mt-0.5">{c.order_number}</div>
                                         </div>
-
-                                        {/* Status Icon */}
-                                        {c.is_processed ? (
-                                            <div className="w-6 h-6 rounded-full bg-white/10 text-white/50 flex items-center justify-center border border-white/10" title="Vom Büro gesehen">
-                                                <Check size={12} />
-                                            </div>
-                                        ) : (
-                                            <div className="w-6 h-6 rounded-full bg-emerald-500 text-white flex items-center justify-center shadow-lg shadow-emerald-500/40 animate-pulse" title="Neue Bereitstellung!">
-                                                <Check size={12} strokeWidth={3} />
-                                            </div>
-                                        )}
+                                        <AlertTriangle size={14} className="text-rose-400 shrink-0" />
                                     </div>
+                                    <div className="mt-2 text-[9px] font-bold text-rose-400 uppercase tracking-wide bg-rose-900/30 px-1.5 py-0.5 rounded inline-block">
+                                        Rückstand!
+                                    </div>
+                                    {c.notes && <div className="mt-2 text-[10px] text-white/30 italic truncate">{c.notes}</div>}
                                 </div>
                             );
                         })}
@@ -804,7 +839,7 @@ const Dashboard: React.FC = () => {
                 {/* Right: Rückgaben (Returns) */}
                 <div className={`p-4 flex-col gap-3 bg-gradient-to-b from-purple-500/5 to-transparent overflow-hidden h-full ${mobileTab === 'returns' ? 'flex' : 'hidden md:flex'}`}>
                     <div className="flex justify-between items-center mb-2 shrink-0">
-                        <span className="text-sm font-bold text-purple-400">Rückgaben ({returnCommissions.length})</span>
+                        <span className="text-sm font-bold text-purple-400">Rückgabe ({returnCommissions.length})</span>
                     </div>
 
                     <div className={`space-y-3 overflow-y-auto flex-1 min-h-0 pr-1 pb-4`}>

@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { Button, GlassInput } from '../../../components/UIComponents';
-import { Plus, Search, Package, ExternalLink, Trash2, Save, X, BoxSelect, Clipboard, Paperclip, ChevronDown, Loader2, Layers, FileText, ShoppingCart, Copy } from 'lucide-react';
+import { Plus, Search, Package, ExternalLink, Trash2, Save, X, BoxSelect, Clipboard, Paperclip, ChevronDown, Loader2, Layers, FileText, ShoppingCart, Copy, Check } from 'lucide-react';
 import { Article, Supplier, Commission, CommissionItem, ExtendedCommission } from '../../../../types';
 import { supabase } from '../../../../supabaseClient';
 import { useIsMobile } from '../../../../hooks/useIsMobile';
@@ -47,7 +47,13 @@ export const CommissionEditContent: React.FC<CommissionEditContentProps> = ({
     onLogEvent // <--- Neues prop
 }) => {
     // --- STATE ---
-    const [newComm, setNewComm] = useState({ order_number: '', name: '', notes: '' });
+    const [newComm, setNewComm] = useState({ 
+        order_number: '', 
+        name: '', 
+        notes: '',
+        is_price_inquiry: false,
+        delivery_date_unknown: false
+    });
     const [tempItems, setTempItems] = useState<TempCommissionItem[]>([]);
     const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -73,7 +79,9 @@ export const CommissionEditContent: React.FC<CommissionEditContentProps> = ({
             setNewComm({
                 order_number: initialCommission.order_number || '',
                 name: initialCommission.name,
-                notes: initialCommission.notes || ''
+                notes: initialCommission.notes || '',
+                is_price_inquiry: !!initialCommission.is_price_inquiry,
+                delivery_date_unknown: !!initialCommission.delivery_date_unknown
             });
 
             if (initialItems && initialItems.length > 0) {
@@ -95,7 +103,13 @@ export const CommissionEditContent: React.FC<CommissionEditContentProps> = ({
             }
         } else {
             // New Mode
-            setNewComm({ order_number: '', name: '', notes: '' });
+            setNewComm({ 
+                order_number: '', 
+                name: '', 
+                notes: '',
+                is_price_inquiry: false,
+                delivery_date_unknown: false
+            });
             setTempItems([]);
         }
         // Reset UI states
@@ -279,6 +293,8 @@ export const CommissionEditContent: React.FC<CommissionEditContentProps> = ({
                 name: newComm.name,
                 notes: newComm.notes,
                 warehouse_id: primaryWarehouseId,
+                is_price_inquiry: newComm.is_price_inquiry,
+                delivery_date_unknown: newComm.delivery_date_unknown
             };
 
             if (!isEditMode) {
@@ -381,6 +397,35 @@ export const CommissionEditContent: React.FC<CommissionEditContentProps> = ({
                             value={newComm.notes}
                             onChange={e => setNewComm({ ...newComm, notes: e.target.value })}
                         />
+                    </div>
+
+                    {/* NEW: Flags for Office/Dashboard */}
+                    <div className="flex flex-wrap gap-4 pt-2">
+                        <label className="flex items-center gap-3 cursor-pointer group">
+                            <div className="relative flex items-center">
+                                <input
+                                    type="checkbox"
+                                    className="peer h-5 w-5 cursor-pointer appearance-none rounded border border-white/10 bg-[#1A1D24] checked:bg-amber-500 checked:border-amber-500 transition-all"
+                                    checked={newComm.is_price_inquiry}
+                                    onChange={e => setNewComm({ ...newComm, is_price_inquiry: e.target.checked })}
+                                />
+                                <Check className="absolute h-3.5 w-3.5 text-white opacity-0 peer-checked:opacity-100 left-1 pointer-events-none" strokeWidth={4} />
+                            </div>
+                            <span className="text-sm font-medium text-white/70 group-hover:text-white transition-colors">Preisanfrage</span>
+                        </label>
+
+                        <label className="flex items-center gap-3 cursor-pointer group">
+                            <div className="relative flex items-center">
+                                <input
+                                    type="checkbox"
+                                    className="peer h-5 w-5 cursor-pointer appearance-none rounded border border-white/10 bg-[#1A1D24] checked:bg-blue-500 checked:border-blue-500 transition-all"
+                                    checked={newComm.delivery_date_unknown}
+                                    onChange={e => setNewComm({ ...newComm, delivery_date_unknown: e.target.checked })}
+                                />
+                                <Check className="absolute h-3.5 w-3.5 text-white opacity-0 peer-checked:opacity-100 left-1 pointer-events-none" strokeWidth={4} />
+                            </div>
+                            <span className="text-sm font-medium text-white/70 group-hover:text-white transition-colors">Liefertermin unbekannt</span>
+                        </label>
                     </div>
                 </div>
 
