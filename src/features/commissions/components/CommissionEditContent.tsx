@@ -1,12 +1,11 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { Button, GlassInput } from '../../../components/UIComponents';
-import { Plus, Search, Package, ExternalLink, Trash2, Save, X, BoxSelect, Clipboard, Paperclip, ChevronDown, Loader2, Layers, FileText, ShoppingCart, Copy, Check } from 'lucide-react';
+import { Plus, Search, Package, ExternalLink, Trash2, Save, X, BoxSelect, Clipboard, Paperclip, ChevronDown, Loader2, Layers, FileText, ShoppingCart, Copy, Check, Menu } from 'lucide-react';
 import { Article, Supplier, Commission, CommissionItem, ExtendedCommission } from '../../../../types';
 import { supabase } from '../../../../supabaseClient';
 import { useIsMobile } from '../../../../hooks/useIsMobile';
 import { DuplicateCommissionModal } from './DuplicateCommissionModal';
-
-// ExtendedCommission moved to types.ts
+import { StockPickerModal } from './StockPickerModal';
 
 export interface TempCommissionItem {
     uniqueId: string;
@@ -44,7 +43,7 @@ export const CommissionEditContent: React.FC<CommissionEditContentProps> = ({
     suppliers,
     onSave,
     onClose,
-    onLogEvent // <--- Neues prop
+    onLogEvent
 }) => {
     // --- STATE ---
     const [newComm, setNewComm] = useState({ 
@@ -62,16 +61,9 @@ export const CommissionEditContent: React.FC<CommissionEditContentProps> = ({
     const [showDuplicateModal, setShowDuplicateModal] = useState(false);
 
     // Categories & Search
-    const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
-    const [expandStockSearch, setExpandStockSearch] = useState(false);
+    const [isStockPickerOpen, setIsStockPickerOpen] = useState(false);
     const [expandSupplierList, setExpandSupplierList] = useState(false);
-    const [stockSearchTerm, setStockSearchTerm] = useState('');
     const [supplierSearchTerm, setSupplierSearchTerm] = useState('');
-
-    const distinctCategories = useMemo(() => {
-        const cats = new Set(availableArticles.map(a => a.category || 'Sonstiges'));
-        return Array.from(cats).sort();
-    }, [availableArticles]);
 
     // --- INITIALIZATION ---
     useEffect(() => {
@@ -92,7 +84,7 @@ export const CommissionEditContent: React.FC<CommissionEditContentProps> = ({
                     article: item.article,
                     customName: item.custom_name,
                     externalReference: item.external_reference,
-                    attachmentData: item.attachment_data,
+                    attachment_data: item.attachment_data,
                     isBackorder: item.is_backorder,
                     notes: item.notes,
                     isPicked: item.is_picked
@@ -113,28 +105,31 @@ export const CommissionEditContent: React.FC<CommissionEditContentProps> = ({
             setTempItems([]);
         }
         // Reset UI states
-        setSelectedCategory(null);
-        setExpandStockSearch(false);
+        setIsStockPickerOpen(false);
         setExpandSupplierList(false);
-        setStockSearchTerm('');
         setSupplierSearchTerm('');
-    }, [isEditMode, initialCommission?.id]); // FIX: Depend ONLY on ID, not the full object/array references
+    }, [isEditMode, initialCommission?.id]);
 
     // --- LOGIC ---
 
-    const addTempStockItem = (article: Article) => {
+    const addStockItems = (items: { article: Article, amount: number }[]) => {
         setTempItems(prev => {
-            const existing = prev.find(i => i.type === 'Stock' && i.article?.id === article.id);
-            if (existing) {
-                return prev.map(i => i.uniqueId === existing.uniqueId ? { ...i, amount: i.amount + 1 } : i);
-            }
-            return [...prev, {
-                uniqueId: Math.random().toString(36).substr(2, 9),
-                type: 'Stock',
-                amount: 1,
-                article: article,
-                isPicked: false
-            }];
+            const next = [...prev];
+            items.forEach(({ article, amount }) => {
+                const existingIndex = next.findIndex(i => i.type === 'Stock' && i.article?.id === article.id);
+                if (existingIndex !== -1) {
+                    next[existingIndex] = { ...next[existingIndex], amount: next[existingIndex].amount + amount };
+                } else {
+                    next.push({
+                        uniqueId: Math.random().toString(36).substr(2, 9),
+                        type: 'Stock',
+                        amount: amount,
+                        article: article,
+                        isPicked: false
+                    });
+                }
+            });
+            return next;
         });
     };
 
@@ -281,7 +276,6 @@ export const CommissionEditContent: React.FC<CommissionEditContentProps> = ({
             } catch (err: any) {
                 console.error("Duplicate check error:", err);
             } finally {
-                // Bei Erfolg setzen wir unten wieder auf true
             }
         }
 
@@ -302,7 +296,6 @@ export const CommissionEditContent: React.FC<CommissionEditContentProps> = ({
                 payload.needs_label = false;
             }
 
-            // Clean undefined
             Object.keys(payload).forEach(key => (payload as any)[key] === undefined && delete (payload as any)[key]);
 
             if (isEditMode && commId) {
@@ -312,7 +305,6 @@ export const CommissionEditContent: React.FC<CommissionEditContentProps> = ({
                 if (error) throw error;
                 commId = data.id;
 
-                // --- NEU: Logge das Erstellen der Kommission ---
                 if (onLogEvent && commId) {
                     await onLogEvent(commId, newComm.name, 'created', 'Kommission angelegt');
                 }
@@ -341,7 +333,7 @@ export const CommissionEditContent: React.FC<CommissionEditContentProps> = ({
                 if (error) throw error;
             }
 
-            onSave(commId, !isEditMode); // Pass ID and isNew flag
+            onSave(commId, !isEditMode);
             onClose();
         } catch (err: any) {
             alert("Fehler: " + err.message);
@@ -357,7 +349,6 @@ export const CommissionEditContent: React.FC<CommissionEditContentProps> = ({
             {/* LEFT COLUMN - FORM & SEARCH */}
             <div className={`${isMobile ? 'w-full shrink-0 h-auto' : 'w-1/2 shrink-0 border-r border-white/5 overflow-y-auto custom-scrollbar'} flex flex-col p-6 space-y-6 bg-white/[0.02]`}>
                 <div className="space-y-1 pb-2">
-                    {/* Header with Close button for Mobile (since Right Col is below) */}
                     <div className="flex justify-between items-start">
                         <div>
                             <h2 className="text-xl font-bold text-white tracking-tight">{isEditMode ? 'Kommission bearbeiten' : 'Neue Kommission'}</h2>
@@ -375,7 +366,7 @@ export const CommissionEditContent: React.FC<CommissionEditContentProps> = ({
                             placeholder=""
                             value={newComm.order_number}
                             onChange={e => setNewComm({ ...newComm, order_number: e.target.value })}
-                            autoFocus={!isMobile} // Don't autofocus on mobile to prevent keyboard pop-up
+                            autoFocus={!isMobile}
                         />
                     </div>
 
@@ -399,7 +390,6 @@ export const CommissionEditContent: React.FC<CommissionEditContentProps> = ({
                         />
                     </div>
 
-                    {/* NEW: Flags for Office/Dashboard */}
                     <div className="flex flex-wrap gap-4 pt-2">
                         <label className="flex items-center gap-3 cursor-pointer group">
                             <div className="relative flex items-center">
@@ -433,55 +423,22 @@ export const CommissionEditContent: React.FC<CommissionEditContentProps> = ({
 
                 {/* SEARCH TOOLS */}
                 <div className="space-y-3">
-                    {/* Stock Item Search */}
-                    <div className="space-y-2">
-                        <div
-                            onClick={() => setExpandStockSearch(!expandStockSearch)}
-                            className={`w-full bg-[#1A1D24] border ${expandStockSearch ? 'border-emerald-500/50 ring-1 ring-emerald-500/20' : 'border-white/10'} hover:border-white/20 rounded-lg p-3.5 flex items-center justify-between cursor-pointer transition-all group`}
-                        >
-                            <div className="flex items-center gap-3">
-                                <Package className={expandStockSearch ? 'text-emerald-400' : 'text-white/40'} size={18} />
-                                <span className={`text-sm font-semibold ${expandStockSearch ? 'text-white' : 'text-white/70'}`}>Material aus Hauptlager</span>
+                    {/* Stock Item Search Button */}
+                    <button
+                        onClick={() => setIsStockPickerOpen(true)}
+                        className="w-full bg-emerald-500/10 border border-emerald-500/20 hover:bg-emerald-500/20 hover:border-emerald-500/40 rounded-xl p-4 flex items-center justify-between group transition-all"
+                    >
+                        <div className="flex items-center gap-4">
+                            <div className="w-10 h-10 rounded-lg bg-emerald-500/20 flex items-center justify-center text-emerald-400 border border-emerald-500/20">
+                                <Package size={20} />
                             </div>
-                            {expandStockSearch ? <ChevronDown size={16} className="text-white/50 rotate-180" /> : <div className="text-xs text-white/40"><Search size={14} className="inline mr-1" /> Suchen...</div>}
+                            <div className="text-left">
+                                <div className="text-sm font-bold text-white group-hover:text-emerald-300 transition-colors">Material aus Hauptlager</div>
+                                <div className="text-xs text-white/40">Split-View Auswahl nach Kategorien</div>
+                            </div>
                         </div>
-
-                        {expandStockSearch && (
-                            <div className="space-y-2 pl-1 pt-2 animate-in slide-in-from-top-2 fade-in">
-                                <div className="relative">
-                                    <Search className="absolute left-3 top-2.5 text-white/30" size={14} />
-                                    <input
-                                        className="w-full bg-black/40 border border-white/10 rounded-lg py-2 pl-9 text-sm text-white focus:outline-none focus:border-emerald-500/50"
-                                        placeholder="Artikel suchen..."
-                                        value={stockSearchTerm}
-                                        onChange={e => setStockSearchTerm(e.target.value)}
-                                        autoFocus
-                                    />
-                                </div>
-                                <div className="max-h-[300px] overflow-y-auto space-y-1 custom-scrollbar pr-1">
-                                    {selectedCategory && (
-                                        <button onClick={() => setSelectedCategory(null)} className="text-xs text-emerald-400 hover:underline mb-2 flex items-center gap-1 w-full p-1"><ChevronDown size={10} className="rotate-90" /> Zurück zu Kategorien</button>
-                                    )}
-                                    {selectedCategory ? (
-                                        availableArticles
-                                            .filter(a => a.category === selectedCategory && a.name.toLowerCase().includes(stockSearchTerm.toLowerCase()))
-                                            .map(article => (
-                                                <button key={article.id} onClick={() => addTempStockItem(article)} className="w-full text-left p-2.5 rounded-lg hover:bg-emerald-500/10 hover:border-emerald-500/30 border border-transparent flex justify-between items-center group transition-all mb-1">
-                                                    <div><div className="text-sm font-medium text-white/80 group-hover:text-emerald-300 truncate">{article.name}</div><div className="text-[10px] text-white/40">Bestand: {article.stock} Stk • {article.location}</div></div>
-                                                    <Plus size={16} className="text-white/20 group-hover:text-emerald-400" />
-                                                </button>
-                                            ))
-                                    ) : (
-                                        distinctCategories
-                                            .filter(cat => cat.toLowerCase().includes(stockSearchTerm.toLowerCase()))
-                                            .map(cat => (
-                                                <button key={cat} onClick={() => setSelectedCategory(cat)} className="w-full text-left p-2.5 rounded-lg bg-white/5 hover:bg-white/10 border border-white/5 text-xs font-medium text-white flex justify-between group transition-colors mb-1"><span className="flex items-center gap-2"><Layers size={14} className="text-white/40 group-hover:text-white/60" /> {cat}</span> <ChevronDown size={12} className="-rotate-90 text-white/30" /></button>
-                                            ))
-                                    )}
-                                </div>
-                            </div>
-                        )}
-                    </div>
+                        <Plus size={20} className="text-emerald-400/50 group-hover:text-emerald-400 group-hover:scale-110 transition-all" />
+                    </button>
 
                     {/* Supplier Search */}
                     <div className="space-y-2">
@@ -541,7 +498,6 @@ export const CommissionEditContent: React.FC<CommissionEditContentProps> = ({
                                 className={`group relative bg-[#1c1f26] border ${item.isDragging ? 'border-emerald-500 bg-emerald-500/5' : 'border-white/5 hover:border-white/10'} rounded-2xl p-4 transition-all shadow-sm`}
                                 onDragEnter={(e) => handleDragEnter(e, item.uniqueId)} onDragOver={(e) => handleDragOver(e, item.uniqueId)} onDragLeave={(e) => handleDragLeave(e, item.uniqueId)} onDrop={(e) => handleDrop(e, item.uniqueId)}
                             >
-                                {/* HEADER ROW: Type, Name, Quantity */}
                                 <div className="flex items-start justify-between gap-3 mb-3">
                                     <div className="flex-1 min-w-0">
                                         <div className="flex items-center gap-2 mb-1">
@@ -552,7 +508,7 @@ export const CommissionEditContent: React.FC<CommissionEditContentProps> = ({
                                         </div>
 
                                         {item.type === 'Stock' ? (
-                                            <div className="font-bold text-base text-white truncate pr-2" title={item.article?.name}>{item.article?.name}</div>
+                                            <div className="font-bold text-base text-white pr-2" title={item.article?.name}>{item.article?.name}</div>
                                         ) : (
                                             <input
                                                 className="w-full bg-transparent border-0 border-b border-white/10 text-white font-bold text-base focus:outline-none focus:border-blue-500/50 pb-0.5 placeholder-white/20 p-0"
@@ -570,7 +526,6 @@ export const CommissionEditContent: React.FC<CommissionEditContentProps> = ({
                                     </div>
                                 </div>
 
-                                {/* DETAILS ROW: Inputs */}
                                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3">
                                     <div className="relative group/input">
                                         <input
@@ -602,7 +557,6 @@ export const CommissionEditContent: React.FC<CommissionEditContentProps> = ({
                                     </div>
                                 </div>
 
-                                {/* FOOTER ROW: Attachments & Actions */}
                                 <div className="flex items-center justify-between pt-2 border-t border-white/5">
                                     <div className="flex items-center gap-2">
                                         <div className="relative">
@@ -645,6 +599,13 @@ export const CommissionEditContent: React.FC<CommissionEditContentProps> = ({
                     isSubmitting={isSubmitting}
                 />
             )}
+
+            <StockPickerModal 
+                isOpen={isStockPickerOpen}
+                onClose={() => setIsStockPickerOpen(false)}
+                articles={availableArticles}
+                onAddItems={addStockItems}
+            />
         </div>
     );
 };

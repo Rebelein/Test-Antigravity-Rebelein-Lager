@@ -555,20 +555,35 @@ const Commissions: React.FC = () => {
             docTitle = `Kommission_${cleanName}_${timestamp}`;
         }
 
-        const pagesHtml = data.map(({ comm, items }) => {
-            const stockItems = items.filter(i => i.type === 'Stock');
-            const extItems = items.filter(i => i.type === 'External');
+        const pagesHtml = data.flatMap(({ comm, items }) => {
+            const ITEMS_PER_PAGE = 8; // Maximal 8 Positionen pro DIN A6 Seite (sicherer Puffer für Notizen)
+            const chunks = [];
+            
+            if (!items || items.length === 0) {
+                chunks.push([]);
+            } else {
+                for (let i = 0; i < items.length; i += ITEMS_PER_PAGE) {
+                    chunks.push(items.slice(i, i + ITEMS_PER_PAGE));
+                }
+            }
+
             const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(`COMM:${comm.id}`)}`;
             const notesHtml = comm.notes ? `<div class="notes" style="font-size: 10pt; margin-top: 2mm; font-style: italic; color: #000; border-top: 1px dotted #aaa; padding-top: 1mm; line-height: 1.2;">${comm.notes}</div>` : '';
             const renderLocation = (article: Article) => (!article.category && !article.location) ? '-' : `${article.category || ''} / ${article.location || ''}`;
 
-            return `
+            return chunks.map((chunk, index) => {
+                const stockItems = chunk.filter(i => i.type === 'Stock');
+                const extItems = chunk.filter(i => i.type === 'External');
+                const pageIndicator = chunks.length > 1 ? `<div style="font-size: 9pt; font-weight: bold; margin-top: 2mm; color: #d97706;">Seite ${index + 1} von ${chunks.length}</div>` : '';
+
+                return `
             <div class="page">
                 <div class="label-area">
                     <div class="header-text">
                         <div class="commission-title">${comm.name}</div>
                         <div class="order-id">Auftrag: ${comm.order_number || '-'}</div>
-                        ${notesHtml}
+                        ${pageIndicator}
+                        ${index === 0 ? notesHtml : ''}
                     </div>
                     <div class="qr-container"><img src="${qrUrl}" class="qr-code" /></div>
                 </div>
@@ -581,6 +596,7 @@ const Commissions: React.FC = () => {
                 </div>
             </div>
           `;
+            });
         }).join('');
 
         printWindow.document.write(`

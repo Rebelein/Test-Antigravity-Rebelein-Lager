@@ -9,12 +9,13 @@ import { Article } from '../../../types';
 import { Button, GlassCard } from '../../components/UIComponents';
 import { useAuth } from '../../../contexts/AuthContext';
 import { useUserPreferences } from '../../../contexts/UserPreferencesContext';
-import { Plus, ListChecks, CheckSquare, Loader2, Copy, Trash2, X, Check, Layers, Wand2 } from 'lucide-react';
+import { Plus, ListChecks, CheckSquare, Loader2, Copy, Trash2, X, Check, Layers, Wand2, Menu, ChevronRight, Hash, Filter } from 'lucide-react';
 import { InventoryToolbar } from './components/InventoryToolbar';
 import { InventoryList } from './components/InventoryList';
 import { MasterDetailLayout } from '../../components/MasterDetailLayout';
 import { ArticleDetailContent } from './components/ArticleDetailContent';
 import { ArticleEditForm } from './components/ArticleEditForm';
+import { clsx } from 'clsx';
 
 interface SortConfig {
     key: string;
@@ -32,6 +33,10 @@ const Inventory = () => {
     const [viewMode, setViewMode] = useState<'primary' | 'secondary'>('primary');
     // Header Collapse State
     const [isHeaderExpanded, setIsHeaderExpanded] = useState(!isMobile);
+    
+    // --- CATEGORY SIDEBAR STATE ---
+    const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
+    const [isMobileCategoryOpen, setIsMobileCategoryOpen] = useState(false);
 
     const {
         articles, warehouses, suppliers, loading,
@@ -114,9 +119,15 @@ const Inventory = () => {
             if (activeFilter === 'on_order') matchesFilter = !!article.onOrderDate;
             if (activeFilter === 'no_stock') matchesFilter = article.stock === 0;
 
-            return matchesSearch && matchesFilter;
+            // NEW: Category Filter
+            let matchesCategory = true;
+            if (selectedCategory) {
+                matchesCategory = (article.category || 'Unkategorisiert') === selectedCategory;
+            }
+
+            return matchesSearch && matchesFilter && matchesCategory;
         });
-    }, [articles, currentWarehouseId, searchTerm, activeFilter]);
+    }, [articles, currentWarehouseId, searchTerm, activeFilter, selectedCategory]);
 
     const sortedArticles = useMemo(() => {
         return [...filteredArticles].sort((a, b) => {
@@ -151,8 +162,9 @@ const Inventory = () => {
     }, [sortedArticles]);
 
     const distinctCategories = useMemo(() => {
-        return Array.from(new Set(articles.map(a => a.category || 'Unkategorisiert')))
+        const cats = Array.from(new Set(articles.map(a => a.category || 'Unkategorisiert')))
             .sort((a, b) => a.localeCompare(b, undefined, { numeric: true, sensitivity: 'base' }));
+        return cats;
     }, [articles]);
 
     // --- EVENT HANDLERS ---
@@ -385,12 +397,62 @@ const Inventory = () => {
 
     if (loading || authLoading) return <div className="flex flex-col items-center justify-center h-[60vh] text-white/50"><Loader2 size={40} className="animate-spin mb-4 text-emerald-400" /><p>Lade Lagerbestand...</p></div>;
 
+    const CategorySidebar = () => (
+        <div className="flex flex-col gap-1 py-2 h-full overflow-y-auto custom-scrollbar pr-2">
+            <button
+                onClick={() => { setSelectedCategory(null); setIsMobileCategoryOpen(false); }}
+                className={clsx(
+                    "flex items-center justify-between px-4 py-3 rounded-xl transition-all duration-200 text-left",
+                    !selectedCategory ? "bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 shadow-lg shadow-emerald-500/10" : "text-white/60 hover:text-white hover:bg-white/5"
+                )}
+            >
+                <div className="flex items-center gap-3">
+                    <Layers size={18} />
+                    <span className="font-medium text-sm">Alle Kategorien</span>
+                </div>
+                {!selectedCategory && <div className="w-1.5 h-1.5 rounded-full bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.8)]" />}
+            </button>
+            <div className="h-px bg-white/5 my-2 mx-4" />
+            {distinctCategories.map(cat => (
+                <button
+                    key={cat}
+                    onClick={() => { setSelectedCategory(cat); setIsMobileCategoryOpen(false); }}
+                    className={clsx(
+                        "flex items-center justify-between px-4 py-2.5 rounded-xl transition-all duration-200 text-left group",
+                        selectedCategory === cat ? "bg-emerald-500/20 text-emerald-400 border border-emerald-500/30" : "text-white/50 hover:text-white hover:bg-white/5"
+                    )}
+                >
+                    <div className="flex items-center gap-3">
+                        <ChevronRight size={14} className={clsx("transition-transform", selectedCategory === cat ? "rotate-90 text-emerald-400" : "text-white/20 group-hover:text-white/40")} />
+                        <span className="text-sm truncate">{cat}</span>
+                    </div>
+                    {selectedCategory === cat && <div className="w-1.5 h-1.5 rounded-full bg-emerald-400" />}
+                </button>
+            ))}
+        </div>
+    );
+
     const headerContent = (
         <>
             <header className="flex flex-col md:flex-row md:items-center justify-between gap-4 px-1 pt-4 pb-2">
-                <h1 className="text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-emerald-300 to-teal-200">Lagerbestand</h1>
-                <div className="flex gap-3">
-                    <Button variant={isSelectionMode ? 'secondary' : 'primary'} className={`transition-colors ${isSelectionMode ? 'bg-white/20 text-white' : 'bg-white/10 text-white/70 hover:text-white'}`} onClick={toggleSelectionMode} icon={isSelectionMode ? <CheckSquare size={18} /> : <ListChecks size={18} />}>{isSelectionMode ? 'Fertig' : 'Auswahl'}</Button>
+                <div className="flex items-center gap-3">
+                    {isMobile && (
+                        <button 
+                            onClick={() => setIsMobileCategoryOpen(true)}
+                            className="p-2.5 rounded-xl bg-white/5 text-emerald-400 border border-white/10 active:scale-95 transition-transform"
+                        >
+                            <Menu size={20} />
+                        </button>
+                    )}
+                    <div>
+                        <h1 className="text-2xl sm:text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-emerald-300 to-teal-200">Lagerbestand</h1>
+                        {selectedCategory && <p className="text-xs text-emerald-400/70 font-medium truncate max-w-[200px]">{selectedCategory}</p>}
+                    </div>
+                </div>
+                <div className="flex gap-2">
+                    <Button variant={isSelectionMode ? 'secondary' : 'primary'} className={clsx("transition-all", isSelectionMode ? 'bg-white/20 text-white' : 'bg-white/5 text-white/70 hover:text-white border-white/10')} onClick={toggleSelectionMode} icon={isSelectionMode ? <CheckSquare size={18} /> : <ListChecks size={18} />}>
+                        <span className="hidden sm:inline">{isSelectionMode ? 'Fertig' : 'Auswahl'}</span>
+                    </Button>
                     <Button variant="primary" icon={<Plus size={18} />} onClick={() => openNewArticleModal()}>Neu</Button>
                 </div>
             </header>
@@ -416,33 +478,80 @@ const Inventory = () => {
     );
 
     const listContent = (
-        <div className={`relative h-full flex flex-col overflow-hidden`}>
-            {/* Virtuoso handles scrolling internally, ensuring proper loading */}
-            <InventoryList
-                groupedArticles={groupedArticles}
-                collapsedCategories={collapsedCategories}
-                toggleCategoryCollapse={toggleCategoryCollapse}
-                isSelectionMode={isSelectionMode}
-                selectedArticleIds={selectedArticleIds}
-                toggleCategorySelection={toggleCategorySelection}
-                toggleArticleSelection={toggleArticleSelection}
-                handleQuickAddToCategory={handleQuickAddToCategory}
-                expandedArticleId={expandedArticleId}
-                quickStockAmount={quickStockAmount}
-                isBooking={isBooking}
-                onCardClick={handleCardClick}
-                onQuickStockChange={setQuickStockAmount}
-                onIncrementStock={handleIncrementStock}
-                onDecrementStock={handleDecrementStock}
-                onCancelQuickBook={(e) => { e.stopPropagation(); setExpandedArticleId(null); }}
-                onQuickSave={handleQuickSave}
-                onOpenDetail={openDetail}
-                orderDetails={orderDetails}
-                copiedField={copiedField}
-                onCopy={handleCopy}
-                useWindowScroll={false}
-                headerContent={headerContent}
-            />
+        <div className="relative h-full flex flex-col overflow-hidden">
+            <div className="flex h-full overflow-hidden">
+                {/* Desktop Sidebar */}
+                {!isMobile && (
+                    <aside className="w-64 flex-shrink-0 border-r border-white/5 flex flex-col animate-in slide-in-from-left duration-500">
+                        <div className="px-4 py-2 flex items-center gap-2 text-white/30 uppercase tracking-widest text-[10px] font-bold">
+                            <Filter size={10} />
+                            Kategorien
+                        </div>
+                        <CategorySidebar />
+                    </aside>
+                )}
+
+                <div className="flex-1 h-full overflow-hidden flex flex-col">
+                    <InventoryList
+                        groupedArticles={groupedArticles}
+                        collapsedCategories={collapsedCategories}
+                        toggleCategoryCollapse={toggleCategoryCollapse}
+                        isSelectionMode={isSelectionMode}
+                        selectedArticleIds={selectedArticleIds}
+                        toggleCategorySelection={toggleCategorySelection}
+                        toggleArticleSelection={toggleArticleSelection}
+                        handleQuickAddToCategory={handleQuickAddToCategory}
+                        expandedArticleId={expandedArticleId}
+                        quickStockAmount={quickStockAmount}
+                        isBooking={isBooking}
+                        onCardClick={handleCardClick}
+                        onQuickStockChange={setQuickStockAmount}
+                        onIncrementStock={handleIncrementStock}
+                        onDecrementStock={handleDecrementStock}
+                        onCancelQuickBook={(e) => { e.stopPropagation(); setExpandedArticleId(null); }}
+                        onQuickSave={handleQuickSave}
+                        onOpenDetail={openDetail}
+                        orderDetails={orderDetails}
+                        copiedField={copiedField}
+                        onCopy={handleCopy}
+                        useWindowScroll={false}
+                        headerContent={headerContent}
+                        hideGroupHeaders={true}
+                    />
+                </div>
+            </div>
+
+            {/* Mobile Category Drawer */}
+            <AnimatePresence>
+                {isMobileCategoryOpen && (
+                    <>
+                        <motion.div 
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            exit={{ opacity: 0 }}
+                            onClick={() => setIsMobileCategoryOpen(false)}
+                            className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[200] lg:hidden"
+                        />
+                        <motion.div 
+                            initial={{ x: '-100%' }}
+                            animate={{ x: 0 }}
+                            exit={{ x: '-100%' }}
+                            transition={{ type: 'spring', damping: 25, stiffness: 200 }}
+                            className="fixed left-0 top-0 bottom-0 w-[80%] max-w-sm bg-[#1a1a1a] z-[201] border-r border-white/10 p-6 flex flex-col lg:hidden shadow-2xl shadow-black"
+                        >
+                            <div className="flex items-center justify-between mb-8">
+                                <h2 className="text-2xl font-bold text-white">Kategorien</h2>
+                                <button onClick={() => setIsMobileCategoryOpen(false)} className="p-2 text-white/40 hover:text-white">
+                                    <X size={24} />
+                                </button>
+                            </div>
+                            <div className="flex-1 overflow-hidden">
+                                <CategorySidebar />
+                            </div>
+                        </motion.div>
+                    </>
+                )}
+            </AnimatePresence>
 
             {isSelectionMode && selectedArticleIds.size > 0 && (
                 <div className="absolute bottom-4 left-0 right-0 p-4 z-[90] flex justify-center animate-in slide-in-from-bottom-5 pointer-events-none">
