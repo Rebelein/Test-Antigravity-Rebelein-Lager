@@ -1,0 +1,3 @@
+- [x] utils/ai.ts erstellt (DRY für Gemini)
+- [x] SQL Migrationen nach supabase/migrations verschoben
+- [x] React-query custom hooks für Stammdaten verwendet

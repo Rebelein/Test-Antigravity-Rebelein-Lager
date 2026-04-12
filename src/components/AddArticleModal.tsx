@@ -3,7 +3,8 @@ import { GlassCard, Button, GlassSelect, GlassInput } from './UIComponents';
 import { Article, Warehouse, Supplier, ManufacturerSku, ArticleSupplier } from '../../types';
 import { supabase } from '../../supabaseClient';
 import { useAuth } from '../../contexts/AuthContext';
-import { GoogleGenAI, Type } from "@google/genai";
+import { Type } from "@google/genai";
+import { createAIClient } from '../../utils/ai';
 import {
     Plus, Loader2, Check, X, Link as LinkIcon, Sparkles, Edit, Trash2, ExternalLink,
     Image as ImageIcon, Hash, Wand2, Globe, Clipboard, FileImage, Layers, Type as TypeIcon,
@@ -217,19 +218,11 @@ export const AddArticleModal: React.FC<AddArticleModalProps> = ({
         }
     };
 
-    // --- AI LOGIC (COPIED) ---
-    const getApiKey = () => {
-        // @ts-ignore
-        if (typeof import.meta !== 'undefined' && import.meta.env && import.meta.env.VITE_API_KEY) return import.meta.env.VITE_API_KEY;
-        return '';
-    };
-
     const analyzeWithGemini = async () => {
-        setIsAnalyzing(true); setAiAnalysisResult(null); const apiKey = getApiKey();
-        if (!apiKey) { alert("Fehler: API Key nicht gefunden."); setIsAnalyzing(false); return; }
+        setIsAnalyzing(true); setAiAnalysisResult(null);
         try {
             const supplierNames = suppliers.map(s => s.name).join(', ');
-            const ai = new GoogleGenAI({ apiKey: apiKey });
+            const ai = createAIClient();
             const schema = {
                 type: Type.OBJECT,
                 properties: {

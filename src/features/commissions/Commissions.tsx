@@ -5,7 +5,8 @@ import { supabase } from '../../../supabaseClient';
 import { useAuth } from '../../../contexts/AuthContext';
 import { useUserPreferences } from '../../../contexts/UserPreferencesContext';
 import { Commission, CommissionItem, Article, Supplier } from '../../../types';
-import { Plus, Search, CheckCircle2, Printer, X, Loader2, History, Trash2, BoxSelect, ArrowRight, Clock, LogOut, Undo2, RotateCcw, AlertTriangle, Layers, Tag, ScanLine, Truck, Calendar } from 'lucide-react';
+import { Plus, Search, CheckCircle2, Printer, X, Loader2, History, Trash2, BoxSelect, ArrowRight, Clock, LogOut, Undo2, RotateCcw, AlertTriangle, Layers, Tag, ScanLine, Truck, Calendar, Menu, Filter, ChevronRight } from 'lucide-react';
+import { clsx } from 'clsx';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { CommissionCleanupModal } from './components/CommissionCleanupModal';
 import { CommissionCard } from './components/CommissionCard';
@@ -32,6 +33,8 @@ const Commissions: React.FC = () => {
     const navigate = useNavigate();
 
     const [activeTab, setActiveTab] = useState<CommissionTab>('active');
+    const [activeSubFilter, setActiveSubFilter] = useState<'all' | 'ready' | 'preparing' | 'draft' | 'returnReady' | 'returnPending'>('all');
+    const [isMobileCategoryOpen, setIsMobileCategoryOpen] = useState(false);
 
     // --- CUSTOM HOOK ---
     const {
@@ -865,7 +868,7 @@ const Commissions: React.FC = () => {
     }, [commissions]);
 
     const renderCategory = (title: string, statusKey: 'ready' | 'preparing' | 'draft' | 'returnReady' | 'returnPending', items: ExtendedCommission[], colorClass: string) => {
-        const isCollapsed = collapsedCategories[statusKey];
+        const isCollapsed = activeSubFilter === 'all' ? collapsedCategories[statusKey] : false;
         if (items.length === 0) return null;
         return (
             <div className="mb-6">
@@ -877,7 +880,7 @@ const Commissions: React.FC = () => {
                         </div>
                     </div>
                     {!isCollapsed && (
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 pt-4">
+                        <div className="grid grid-cols-[repeat(auto-fill,minmax(320px,1fr))] gap-3 pt-4">
                             {items.map(comm => (
                                 <CommissionCard key={comm.id} commission={comm} colorClass={colorClass} statusKey={statusKey} onClick={handleOpenDetail} onEdit={handleEditCommission} onDelete={(id, name, mode, e) => { handleDelete(id, name, mode, e); }} onPrintLabel={undefined} />
                             ))}
@@ -929,76 +932,261 @@ const Commissions: React.FC = () => {
 
     const isMobile = useIsMobile();
 
-    const listContent = (
-        <div className="flex flex-col space-y-4 pb-24 pt-4 px-1 h-full overflow-y-auto custom-scrollbar">
+    const CommissionSidebar = () => (
+        <div className="flex flex-col gap-1 py-2 h-full overflow-y-auto custom-scrollbar pr-2">
+            <button
+                onClick={() => { setActiveTab('active'); setActiveSubFilter('all'); setIsMobileCategoryOpen(false); }}
+                className={clsx(
+                    "flex items-center justify-between px-4 py-3 rounded-xl transition-all duration-200 text-left group w-full gap-3",
+                    activeTab === 'active' && activeSubFilter === 'all' ? "bg-emerald-500/20 text-emerald-400 border border-emerald-500/30" : "text-white/50 hover:text-white hover:bg-white/5"
+                )}
+            >
+                <div className="flex items-center gap-3">
+                    <Clock size={18} className={clsx(activeTab === 'active' && activeSubFilter === 'all' ? "text-emerald-400" : "text-white/30 group-hover:text-white/50")} />
+                    <span className="font-medium text-sm">Aktive</span>
+                </div>
+            </button>
 
-            <header className="flex flex-col gap-4">
-                <div className={`flex ${isMobile ? 'flex-col items-start gap-3' : 'justify-between items-center'}`}>
-                    <h1 className="text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-emerald-300 to-teal-200">Komm.</h1>
-                    <div className={`flex gap-2 ${isMobile ? 'w-full overflow-x-auto pb-1 no-scrollbar' : ''}`}>
-                        <Button icon={<Search size={18} />} variant="secondary" onClick={() => setSidePanelMode('search')} />
-                        <Button icon={<History size={18} />} variant="secondary" onClick={() => { setSidePanelMode('history'); fetchHistory(); }} />
-                        <Button icon={<BoxSelect size={18} />} variant="secondary" onClick={() => { setActiveTab('missing'); setShowCleanupModal(true); }} className="bg-orange-500/10 text-orange-400 hover:bg-orange-500 hover:text-white" />
-                        <Button icon={<Plus size={18} />} onClick={handleOpenCreate}>Neu</Button>
+            {activeTab === 'active' && (
+                <div className="flex flex-col gap-1 pl-4 mb-2">
+                    <div className="w-px h-2 bg-white/10 ml-4"></div>
+                    <button
+                        onClick={() => { setActiveSubFilter('ready'); setIsMobileCategoryOpen(false); }}
+                        className={clsx(
+                            "flex items-center justify-between px-3 py-2 rounded-xl transition-all duration-200 text-left group w-full gap-2",
+                            activeSubFilter === 'ready' ? "bg-emerald-500/10 text-emerald-300 border border-emerald-500/20" : "text-white/40 hover:text-white hover:bg-white/5"
+                        )}
+                    >
+                        <span className="text-xs font-medium truncate">Bereitgestellt</span>
+                        <span className="bg-white/5 text-white/40 text-[10px] px-1.5 py-0.5 rounded-full">{filteredGroups.ready.length}</span>
+                    </button>
+                    <button
+                        onClick={() => { setActiveSubFilter('preparing'); setIsMobileCategoryOpen(false); }}
+                        className={clsx(
+                            "flex items-center justify-between px-3 py-2 rounded-xl transition-all duration-200 text-left group w-full gap-2",
+                            activeSubFilter === 'preparing' ? "bg-blue-500/10 text-blue-300 border border-blue-500/20" : "text-white/40 hover:text-white hover:bg-white/5"
+                        )}
+                    >
+                        <span className="text-xs font-medium truncate">In Vorbereitung</span>
+                        <span className="bg-white/5 text-white/40 text-[10px] px-1.5 py-0.5 rounded-full">{filteredGroups.preparing.length}</span>
+                    </button>
+                    <button
+                        onClick={() => { setActiveSubFilter('draft'); setIsMobileCategoryOpen(false); }}
+                        className={clsx(
+                            "flex items-center justify-between px-3 py-2 rounded-xl transition-all duration-200 text-left group w-full gap-2",
+                            activeSubFilter === 'draft' ? "bg-gray-500/10 text-gray-300 border border-gray-500/20" : "text-white/40 hover:text-white hover:bg-white/5"
+                        )}
+                    >
+                        <span className="text-xs font-medium truncate">Entwürfe</span>
+                        <span className="bg-white/5 text-white/40 text-[10px] px-1.5 py-0.5 rounded-full">{filteredGroups.draft.length}</span>
+                    </button>
+                </div>
+            )}
+
+            <button
+                onClick={() => { setActiveTab('returns'); setActiveSubFilter('all'); setIsMobileCategoryOpen(false); }}
+                className={clsx(
+                    "flex items-center justify-between px-4 py-3 rounded-xl transition-all duration-200 text-left group w-full gap-3",
+                    activeTab === 'returns' && activeSubFilter === 'all' ? "bg-purple-500/20 text-purple-400 border border-purple-500/30" : "text-white/50 hover:text-white hover:bg-white/5"
+                )}
+            >
+                <div className="flex items-center gap-3">
+                    <RotateCcw size={18} className={clsx(activeTab === 'returns' && activeSubFilter === 'all' ? "text-purple-400" : "text-white/30 group-hover:text-white/50")} />
+                    <span className="font-medium text-sm">Retouren</span>
+                </div>
+                {tabCounts.returns > 0 && <span className="bg-purple-500 text-white text-[10px] px-1.5 py-0.5 rounded-full">{tabCounts.returns}</span>}
+            </button>
+
+            {activeTab === 'returns' && (
+                <div className="flex flex-col gap-1 pl-4 mb-2">
+                    <div className="w-px h-2 bg-white/10 ml-4"></div>
+                    <button
+                        onClick={() => { setActiveSubFilter('returnReady'); setIsMobileCategoryOpen(false); }}
+                        className={clsx(
+                            "flex items-center justify-between px-3 py-2 rounded-xl transition-all duration-200 text-left group w-full gap-2",
+                            activeSubFilter === 'returnReady' ? "bg-purple-500/10 text-purple-300 border border-purple-500/20" : "text-white/40 hover:text-white hover:bg-white/5"
+                        )}
+                    >
+                        <span className="text-xs font-medium truncate">Abholbereit</span>
+                        <span className="bg-white/5 text-white/40 text-[10px] px-1.5 py-0.5 rounded-full">{filteredGroups.returnReady.length}</span>
+                    </button>
+                    <button
+                        onClick={() => { setActiveSubFilter('returnPending'); setIsMobileCategoryOpen(false); }}
+                        className={clsx(
+                            "flex items-center justify-between px-3 py-2 rounded-xl transition-all duration-200 text-left group w-full gap-2",
+                            activeSubFilter === 'returnPending' ? "bg-orange-500/10 text-orange-300 border border-orange-500/20" : "text-white/40 hover:text-white hover:bg-white/5"
+                        )}
+                    >
+                        <span className="text-xs font-medium truncate">Angemeldet</span>
+                        <span className="bg-white/5 text-white/40 text-[10px] px-1.5 py-0.5 rounded-full">{filteredGroups.returnPending.length}</span>
+                    </button>
+                </div>
+            )}
+
+            <button
+                onClick={() => { setActiveTab('withdrawn'); setIsMobileCategoryOpen(false); }}
+                className={clsx(
+                    "flex items-center justify-between px-4 py-3 rounded-xl transition-all duration-200 text-left group w-full gap-3",
+                    activeTab === 'withdrawn' ? "bg-blue-500/20 text-blue-400 border border-blue-500/30" : "text-white/50 hover:text-white hover:bg-white/5"
+                )}
+            >
+                <div className="flex items-center gap-3">
+                    <CheckCircle2 size={18} className={clsx(activeTab === 'withdrawn' ? "text-blue-400" : "text-white/30 group-hover:text-white/50")} />
+                    <span className="font-medium text-sm">Entnommen</span>
+                </div>
+            </button>
+
+            <div className="h-px bg-white/5 my-2 mx-4" />
+
+            <button
+                onClick={() => { setActiveTab('missing'); setIsMobileCategoryOpen(false); }}
+                className={clsx(
+                    "flex items-center justify-between px-4 py-3 rounded-xl transition-all duration-200 text-left group w-full gap-3",
+                    activeTab === 'missing' ? "bg-orange-500/20 text-orange-400 border border-orange-500/30" : "text-white/50 hover:text-white hover:bg-white/5"
+                )}
+            >
+                <div className="flex items-center gap-3">
+                    <AlertTriangle size={18} className={clsx(activeTab === 'missing' ? "text-orange-400" : "text-white/30 group-hover:text-white/50")} />
+                    <span className="font-medium text-sm">Vermisst</span>
+                </div>
+            </button>
+
+            <button
+                onClick={() => { setActiveTab('trash'); setIsMobileCategoryOpen(false); }}
+                className={clsx(
+                    "flex items-center justify-between px-4 py-3 rounded-xl transition-all duration-200 text-left group w-full gap-3",
+                    activeTab === 'trash' ? "bg-red-500/20 text-red-400 border border-red-500/30" : "text-white/50 hover:text-white hover:bg-white/5"
+                )}
+            >
+                <div className="flex items-center gap-3">
+                    <Trash2 size={18} className={clsx(activeTab === 'trash' ? "text-red-400" : "text-white/30 group-hover:text-white/50")} />
+                    <span className="font-medium text-sm">Papierkorb</span>
+                </div>
+            </button>
+        </div>
+    );
+
+    const listContent = (
+        <div className="relative h-full flex flex-col overflow-hidden">
+            <header className="flex flex-col md:flex-row md:items-center justify-between gap-4 px-1 pt-4 pb-4 border-b border-white/5 shrink-0">
+                <div className="flex items-center gap-3">
+                    {isMobile && (
+                        <button 
+                            onClick={() => setIsMobileCategoryOpen(true)}
+                            className="p-2.5 rounded-xl bg-white/5 text-emerald-400 border border-white/10 active:scale-95 transition-transform"
+                        >
+                            <Menu size={20} />
+                        </button>
+                    )}
+                    <div>
+                        <h1 className="text-2xl sm:text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-emerald-300 to-teal-200">Komm.</h1>
                     </div>
                 </div>
-                <div className="flex gap-2 p-1 bg-black/20 rounded-xl w-full sm:w-fit border border-white/5 overflow-x-auto">
-                    <button onClick={() => setActiveTab('active')} className={`flex-1 px-4 py-2 rounded-lg text-sm font-medium whitespace-nowrap ${activeTab === 'active' ? 'bg-white/10 text-white' : 'text-white/50'}`}>Aktive</button>
-                    <button onClick={() => setActiveTab('missing')} className={`flex-1 px-4 py-2 rounded-lg text-sm font-medium whitespace-nowrap ${activeTab === 'missing' ? 'bg-white/10 text-white' : 'text-white/50'}`}>Vermisst</button>
-                    <button onClick={() => setActiveTab('withdrawn')} className={`flex-1 px-4 py-2 rounded-lg text-sm font-medium whitespace-nowrap ${activeTab === 'withdrawn' ? 'bg-white/10 text-white' : 'text-white/50'}`}>Entnommen</button>
-                    <button onClick={() => setActiveTab('trash')} className={`flex-1 px-4 py-2 rounded-lg text-sm font-medium whitespace-nowrap flex gap-2 ${activeTab === 'trash' ? 'bg-white/10 text-white' : 'text-white/50'}`}>Papierkorb</button>
-                    <button onClick={() => setActiveTab('returns')} className={`flex-1 px-4 py-2 rounded-lg text-sm font-medium whitespace-nowrap flex gap-2 ${activeTab === 'returns' ? 'bg-white/10 text-white' : 'text-white/50'}`}>Retouren {tabCounts.returns > 0 && <span className="bg-purple-500 text-white text-[10px] px-1.5 rounded-full">{tabCounts.returns}</span>}</button>
+                <div className={`flex gap-2 ${isMobile ? 'w-full overflow-x-auto pb-1 no-scrollbar' : ''}`}>
+                    <Button icon={<Search size={18} />} variant="secondary" onClick={() => setSidePanelMode('search')} />
+                    <Button icon={<History size={18} />} variant="secondary" onClick={() => { setSidePanelMode('history'); fetchHistory(); }} />
+                    <Button icon={<BoxSelect size={18} />} variant="secondary" onClick={() => { setActiveTab('missing'); setShowCleanupModal(true); }} className="bg-orange-500/10 text-orange-400 hover:bg-orange-500 hover:text-white" />
+                    <Button icon={<Plus size={18} />} onClick={handleOpenCreate}>Neu</Button>
                 </div>
             </header>
 
-            {activeTab === 'active' && (
-                <PrintingSection
-                    showPrintArea={showPrintArea}
-                    setShowPrintArea={setShowPrintArea}
-                    printTab={printTab}
-                    setPrintTab={setPrintTab}
-                    queueItems={queueItems}
-                    selectedPrintIds={selectedPrintIds}
-                    setSelectedPrintIds={setSelectedPrintIds}
-                    selectedHistoryPrintIds={selectedHistoryPrintIds}
-                    setSelectedHistoryPrintIds={setSelectedHistoryPrintIds}
-                    onMarkAsPrinted={markLabelsAsPrinted}
-                    isSubmitting={isSubmitting}
-                    loadingHistory={loadingPrintHistory}
-                    printLogs={recentPrintLogs}
-                    onReprint={(id) => handleSinglePrint(id, true)}
-                    onReprintBatch={handleReprintBatch}
-                    activeCommissions={activeCommissionsForPrint}
-                />
-            )}
+            <div className="flex h-full overflow-hidden mt-2">
+                {/* Desktop Sidebar */}
+                {!isMobile && (
+                    <aside className="w-64 flex-shrink-0 border-r border-white/5 flex flex-col pr-4 animate-in slide-in-from-left duration-500">
+                        <div className="px-4 py-2 flex items-center gap-2 text-white/30 uppercase tracking-widest text-[10px] font-bold">
+                            <Filter size={10} />
+                            Ansicht
+                        </div>
+                        <CommissionSidebar />
+                    </aside>
+                )}
 
-            {loading ? (
-                <div className="flex-1 flex items-center justify-center">
-                    <Loader2 className="animate-spin text-emerald-400" size={32} />
-                </div>
-            ) : (
-                <div className="flex-1 min-h-0 pr-1">
-                    <div className="grid grid-cols-1 gap-4">
+                {/* Mobile Sidebar Overlay */}
+                <AnimatePresence>
+                    {isMobile && isMobileCategoryOpen && (
+                        <>
+                            <motion.div
+                                initial={{ opacity: 0 }}
+                                animate={{ opacity: 1 }}
+                                exit={{ opacity: 0 }}
+                                onClick={() => setIsMobileCategoryOpen(false)}
+                                className="fixed inset-0 bg-black/60 backdrop-blur-sm z-40"
+                            />
+                            <motion.aside
+                                initial={{ x: '-100%' }}
+                                animate={{ x: 0 }}
+                                exit={{ x: '-100%' }}
+                                transition={{ type: 'spring', damping: 25, stiffness: 200 }}
+                                className="fixed inset-y-0 left-0 w-[80%] max-w-sm bg-gray-900 border-r border-white/10 shadow-2xl z-50 flex flex-col"
+                            >
+                                <div className="p-4 border-b border-white/10 flex items-center justify-between">
+                                    <div className="flex items-center gap-2 text-emerald-400 font-bold uppercase tracking-wider text-sm">
+                                        <Filter size={16} /> Ansicht
+                                    </div>
+                                    <button onClick={() => setIsMobileCategoryOpen(false)} className="p-2 rounded-xl bg-white/5 text-white/50 hover:text-white">
+                                        <X size={20} />
+                                    </button>
+                                </div>
+                                <div className="p-2 flex-1 overflow-hidden">
+                                    <CommissionSidebar />
+                                </div>
+                            </motion.aside>
+                        </>
+                    )}
+                </AnimatePresence>
+
+                {/* Content Area */}
+                <div className="flex-1 h-full overflow-hidden flex flex-col lg:pl-4">
+                    <div className="flex-1 overflow-y-auto custom-scrollbar pb-24 pr-2 flex flex-col space-y-4">
+                        {activeTab === 'active' && (
+                            <PrintingSection
+                                showPrintArea={showPrintArea}
+                                setShowPrintArea={setShowPrintArea}
+                                printTab={printTab}
+                                setPrintTab={setPrintTab}
+                                queueItems={queueItems}
+                                selectedPrintIds={selectedPrintIds}
+                                setSelectedPrintIds={setSelectedPrintIds}
+                                selectedHistoryPrintIds={selectedHistoryPrintIds}
+                                setSelectedHistoryPrintIds={setSelectedHistoryPrintIds}
+                                onMarkAsPrinted={markLabelsAsPrinted}
+                                isSubmitting={isSubmitting}
+                                loadingHistory={loadingPrintHistory}
+                                printLogs={recentPrintLogs}
+                                onReprint={(id) => handleSinglePrint(id, true)}
+                                onReprintBatch={handleReprintBatch}
+                                activeCommissions={activeCommissionsForPrint}
+                            />
+                        )}
+
+                        {loading ? (
+                            <div className="flex-1 flex items-center justify-center">
+                                <Loader2 className="animate-spin text-emerald-400" size={32} />
+                            </div>
+                        ) : (
+                            <div className="flex-1 min-h-0 pr-1">
+                                <div className="grid grid-cols-1 gap-4">
                         {commissions.length === 0 && <div className="text-white/40 text-center py-10">Keine Einträge.</div>}
 
                         {activeTab === 'active' && (
                             <>
-                                {renderCategory("Bereitgestellt", 'ready', filteredGroups.ready, 'text-emerald-400')}
-                                {renderCategory("In Vorbereitung", 'preparing', filteredGroups.preparing, 'text-blue-400')}
-                                {renderCategory("Entwürfe", 'draft', filteredGroups.draft, 'text-white/60')}
+                                {(activeSubFilter === 'all' || activeSubFilter === 'ready') && renderCategory("Bereitgestellt", 'ready', filteredGroups.ready, 'text-emerald-400')}
+                                {(activeSubFilter === 'all' || activeSubFilter === 'preparing') && renderCategory("In Vorbereitung", 'preparing', filteredGroups.preparing, 'text-blue-400')}
+                                {(activeSubFilter === 'all' || activeSubFilter === 'draft') && renderCategory("Entwürfe", 'draft', filteredGroups.draft, 'text-white/60')}
                             </>
                         )}
 
                         {activeTab === 'returns' && (
                             <>
-                                {renderCategory("Abholbereit", 'returnReady', filteredGroups.returnReady, 'text-purple-400')}
-                                {renderCategory("Angemeldet", 'returnPending', filteredGroups.returnPending, 'text-orange-400')}
+                                {(activeSubFilter === 'all' || activeSubFilter === 'returnReady') && renderCategory("Abholbereit", 'returnReady', filteredGroups.returnReady, 'text-purple-400')}
+                                {(activeSubFilter === 'all' || activeSubFilter === 'returnPending') && renderCategory("Angemeldet", 'returnPending', filteredGroups.returnPending, 'text-orange-400')}
                             </>
                         )}
 
 
                         {activeTab === 'withdrawn' && (
-                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                            <div className="grid grid-cols-[repeat(auto-fill,minmax(320px,1fr))] gap-4">
                                 {commissions.filter(c => ['Withdrawn', 'ReturnComplete'].includes(c.status)).map(c => <CommissionCard key={c.id} commission={c} onClick={handleOpenDetail} onEdit={handleEditCommission} onDelete={handleDelete} className="opacity-80 hover:opacity-100" colorClass="border-blue-500/20" statusKey="withdrawn" />)}
                             </div>
                         )}
@@ -1237,7 +1425,7 @@ const Commissions: React.FC = () => {
                         )}
 
                         {activeTab === 'trash' && (
-                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                            <div className="grid grid-cols-[repeat(auto-fill,minmax(320px,1fr))] gap-4">
                                 {commissions.map(c => (
                                     <GlassCard key={c.id} className="opacity-60 border-rose-500/20">
                                         <div className="p-3 flex justify-between items-center">
@@ -1257,9 +1445,11 @@ const Commissions: React.FC = () => {
                     </div>
                 </div>
             )}
+                    </div>
+                </div>
+            </div>
         </div>
     );
-
 
     const isWidePanel = sidePanelMode === 'create' || sidePanelMode === 'edit';
 

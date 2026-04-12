@@ -304,13 +304,13 @@ export interface WorkwearOrderItem {
 }
 
 export interface ChangelogEntry {
-  id: string;
+  id?: string;
   version: string;
   changes: {
     type: 'feature' | 'fix' | 'info';
     text: string;
   }[];
-  release_date: string;
+  release_date?: string;
 }
 
 export interface ExtendedCommission extends Commission {

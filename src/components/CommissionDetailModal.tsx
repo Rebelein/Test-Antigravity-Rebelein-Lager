@@ -1,19 +1,8 @@
 import React from 'react';
 import { GlassModal } from './UIComponents';
-import { CommissionDetailContent } from './CommissionDetailContent';
+import { CommissionDetailContent } from '../features/commissions/components/CommissionDetailContent';
 
-interface ExtendedCommission {
-    id: string;
-    name: string;
-    order_number?: string;
-    status: string;
-    notes?: string;
-    commission_items?: any[];
-    deleted_at?: string | null;
-    suppliers?: { name: string };
-    office_notes?: string;
-    is_processed?: boolean;
-}
+import { ExtendedCommission } from '../../types';
 
 interface CommissionDetailModalProps {
     isOpen: boolean;

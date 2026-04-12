@@ -6,22 +6,22 @@ import Layout from './src/components/Layout';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
 // Lazy Load Pages for Performance
-const Dashboard = React.lazy(() => import('./pages/Dashboard'));
+const Dashboard = React.lazy(() => import('./src/features/dashboard/Dashboard'));
 const Inventory = React.lazy(() => import('./src/features/inventory/Inventory'));
-const Machines = React.lazy(() => import('./pages/Machines'));
-const Orders = React.lazy(() => import('./pages/Orders'));
-const Stocktaking = React.lazy(() => import('./pages/Stocktaking'));
+const Machines = React.lazy(() => import('./src/features/machines/Machines'));
+const Orders = React.lazy(() => import('./src/features/orders/Orders'));
+const Stocktaking = React.lazy(() => import('./src/features/inventory/Stocktaking'));
 const StockAudit = React.lazy(() => import('./src/features/inventory/StockAudit'));
-const Warehouses = React.lazy(() => import('./pages/Warehouses'));
-const Suppliers = React.lazy(() => import('./pages/Suppliers'));
-const Labels = React.lazy(() => import('./pages/Labels'));
+const Warehouses = React.lazy(() => import('./src/features/warehouses/Warehouses'));
+const Suppliers = React.lazy(() => import('./src/features/suppliers/Suppliers'));
+const Labels = React.lazy(() => import('./src/features/labels/Labels'));
 const Commissions = React.lazy(() => import('./src/features/commissions/Commissions'));
-const ShelfEditor = React.lazy(() => import('./pages/ShelfEditor'));
-const Keys = React.lazy(() => import('./pages/Keys'));
-const Login = React.lazy(() => import('./pages/Login'));
-const Workwear = React.lazy(() => import('./pages/Workwear'));
-const PrintProtocol = React.lazy(() => import('./pages/PrintProtocol'));
-const ImageOptimizer = React.lazy(() => import('./pages/ImageOptimizer'));
+const ShelfEditor = React.lazy(() => import('./src/features/inventory/ShelfEditor'));
+const Keys = React.lazy(() => import('./src/features/keys/Keys'));
+const Login = React.lazy(() => import('./src/pages/Login'));
+const Workwear = React.lazy(() => import('./src/features/workwear/Workwear'));
+const PrintProtocol = React.lazy(() => import('./src/pages/PrintProtocol'));
+const ImageOptimizer = React.lazy(() => import('./src/features/tools/ImageOptimizer'));
 
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { ConnectionProvider } from './contexts/ConnectionContext';

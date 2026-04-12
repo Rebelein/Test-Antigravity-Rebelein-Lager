@@ -3,7 +3,8 @@ import { supabase } from '../../../../supabaseClient';
 import { Article, Warehouse, Supplier, ManufacturerSku, ArticleSupplier } from '../../../../types';
 import { Button } from '../../../components/UIComponents';
 import { X, ChevronDown, Trash2, Plus, Sparkles, Loader2, FileImage, Globe, CheckCircle2, ImageIcon, Clipboard, Hash, Star, Layers, Wand2, Pencil } from 'lucide-react';
-import { GoogleGenAI, Type } from "@google/genai";
+import { Type } from "@google/genai";
+import { createAIClient } from '../../../../utils/ai';
 import { compressImage } from '../../../../utils/imageCompression';
 
 interface ArticleEditFormProps {
@@ -231,20 +232,12 @@ export const ArticleEditForm: React.FC<ArticleEditFormProps> = ({
     const removeTempSupplier = (idx: number) => setTempSuppliers(prev => prev.filter((_, i) => i !== idx));
     const togglePreferredSupplier = (idx: number) => setTempSuppliers(prev => prev.map((s, i) => ({ ...s, isPreferred: i === idx })));
 
-    // --- LOGIC: AI ---
-    const getApiKey = () => {
-        // @ts-ignore
-        if (typeof import.meta !== 'undefined' && import.meta.env && import.meta.env.VITE_API_KEY) return import.meta.env.VITE_API_KEY;
-        return '';
-    };
-
     const analyzeWithGemini = async () => {
-        setIsAnalyzing(true); setAiAnalysisResult(null); const apiKey = getApiKey();
-        if (!apiKey) { alert("Fehler: API Key nicht gefunden."); setIsAnalyzing(false); return; }
+        setIsAnalyzing(true); setAiAnalysisResult(null);
 
         try {
             const supplierNames = suppliers.map(s => s.name).join(', ');
-            const ai = new GoogleGenAI({ apiKey: apiKey });
+            const ai = createAIClient();
             const schema = {
                 type: Type.OBJECT,
                 properties: {

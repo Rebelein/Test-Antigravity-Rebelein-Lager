@@ -1,5 +1,5 @@
 import React from 'react';
-import { Article, Warehouse, Supplier } from '../../types';
+import { Article, Warehouse, Supplier } from '../../../../types';
 import { ArticleEditForm } from './ArticleEditForm';
 
 interface ArticleEditModalProps {

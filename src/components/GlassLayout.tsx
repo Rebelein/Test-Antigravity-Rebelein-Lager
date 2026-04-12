@@ -13,8 +13,8 @@ export const GlassLayout: React.FC<GlassLayoutProps> = ({ children, className })
       {/* Main Background Layers - Animated Blobs matching Login page */}
       <div className="fixed inset-0 z-0 pointer-events-none overflow-hidden">
         {/* Background Blobs */}
-        <div className="absolute top-[-20%] left-[-10%] w-[600px] h-[600px] bg-emerald-600/20 rounded-full blur-[120px] animate-pulse-slow" />
-        <div className="absolute bottom-[-10%] right-[-20%] w-[500px] h-[500px] bg-teal-600/20 rounded-full blur-[100px]" />
+        <div className="absolute top-[-20%] left-[-10%] w-[600px] h-[600px] bg-slate-600/20 rounded-full blur-[120px] animate-pulse-slow" />
+        <div className="absolute bottom-[-10%] right-[-20%] w-[500px] h-[500px] bg-gray-600/20 rounded-full blur-[100px]" />
       </div>
 
       {/* Content Area */}

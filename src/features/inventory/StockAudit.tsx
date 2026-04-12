@@ -8,6 +8,7 @@ import { useUserPreferences } from '../../../contexts/UserPreferencesContext';
 import { Toaster, toast } from 'sonner';
 import { useTheme } from '../../../contexts/ThemeContext';
 import UnifiedScanner from '../../components/UnifiedScanner';
+import { useWarehouses } from '../../../hooks/queries/useWarehouses';
 
 
 
@@ -21,7 +22,7 @@ const StockAudit: React.FC = () => {
     const [loading, setLoading] = useState(true);
 
     // Warehouse State
-    const [warehouses, setWarehouses] = useState<Warehouse[]>([]);
+    const { data: warehouses = [] } = useWarehouses();
     const [isWarehouseModalOpen, setIsWarehouseModalOpen] = useState(false);
 
     // Data
@@ -50,7 +51,9 @@ const StockAudit: React.FC = () => {
     const activeWarehouse = warehouses.find(w => w.id === activeWarehouseId);
 
     useEffect(() => {
-        fetchWarehouses();
+        if (!profile?.primary_warehouse_id && warehouses.length > 0) {
+            setIsWarehouseModalOpen(true);
+        }
 
         // Listen for global event from Layout button
         const handleOpenScanner = () => setIsScannerOpen(true);
@@ -73,22 +76,7 @@ const StockAudit: React.FC = () => {
         calculateRecommendations();
     }, [articles, activeTab]);
 
-    const fetchWarehouses = async () => {
-        const { data } = await supabase.from('warehouses').select('*').order('name');
-        if (data) {
-            setWarehouses(data.map((w: any) => ({
-                id: w.id,
-                name: w.name,
-                type: w.type,
-                location: w.location
-            })));
 
-            // If no preference set, open selection immediately
-            if (!profile?.primary_warehouse_id && data.length > 0) {
-                setIsWarehouseModalOpen(true);
-            }
-        }
-    };
 
     const handleSelectWarehouse = async (warehouseId: string) => {
         await updateWarehousePreference('primary', warehouseId);

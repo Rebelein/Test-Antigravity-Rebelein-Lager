@@ -40,9 +40,9 @@
 
     /* Deep Teal/Emerald Background */
     --bg-dark: #121212;
-    --bg-gradient-1: #2a2a2a;
-    --bg-gradient-2: #1e1e1e;
-    --bg-gradient-3: #121212;
+    --bg-gradient-1: #1a1a1a;
+    --bg-gradient-2: #242424;
+    --bg-gradient-3: #2d2d2d;
 
     --text-primary: #f1f5f9;
     /* slate-100 */
@@ -60,12 +60,12 @@
     --gold-light: #e8c9a0;
 
     /* Orb Colors (Teal, Emerald, Blue/Purple) */
-    --orb-1-color: rgba(20, 184, 166, 0.2);
-    /* teal */
-    --orb-2-color: rgba(16, 185, 129, 0.2);
-    /* emerald */
-    --orb-3-color: rgba(37, 99, 235, 0.1);
-    /* blue */
+    --orb-1-color: rgba(255, 255, 255, 0.06);
+    /* neutral white */
+    --orb-2-color: rgba(255, 255, 255, 0.04);
+    /* neutral white */
+    --orb-3-color: rgba(255, 255, 255, 0.02);
+    /* neutral white */
 
     --font-primary: 'Inter', sans-serif;
   }
