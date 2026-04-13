@@ -9,7 +9,7 @@ export const useUsers = () => useQuery({
     const { data, error } = await supabase
       .from('profiles')
       .select('*')
-      .order('display_name');
+      .order('full_name');
     if (error) throw error;
     return (data || []) as UserProfile[];
   },

@@ -435,3 +435,38 @@
   object-fit: cover !important;
   border-radius: 0 !important;
 }
+
+/* ============================================
+   iOS SPECIFIC OPTIMIZATIONS
+   Ensuring perfect compatibility with Safari/iOS
+============================================ */
+@layer base {
+  /* Prevent iOS input zoom: Inputs must have at least 16px font-size */
+  input[type="text"],
+  input[type="number"],
+  input[type="email"],
+  input[type="password"],
+  input[type="search"],
+  input[type="tel"],
+  input[type="url"],
+  textarea,
+  select {
+    font-size: 16px !important;
+  }
+
+  /* Prevent delay on double-tap to zoom for interactive elements */
+  button, 
+  a, 
+  [role="button"] {
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  /* Support for Safe Area Insets (Notch & Home Indicator) */
+  .safe-padding-top {
+    padding-top: env(safe-area-inset-top);
+  }
+  .safe-padding-bottom {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+}

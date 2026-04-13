@@ -453,7 +453,7 @@ const Inventory = () => {
                     <Button variant={isSelectionMode ? 'secondary' : 'primary'} className={clsx("transition-all", isSelectionMode ? 'bg-white/20 text-white' : 'bg-white/5 text-white/70 hover:text-white border-white/10')} onClick={toggleSelectionMode} icon={isSelectionMode ? <CheckSquare size={18} /> : <ListChecks size={18} />}>
                         <span className="hidden sm:inline">{isSelectionMode ? 'Fertig' : 'Auswahl'}</span>
                     </Button>
-                    <Button variant="primary" icon={<Plus size={18} />} onClick={() => openNewArticleModal()}>Neu</Button>
+                    <Button variant="primary" icon={<Plus size={18} />} onClick={() => openNewArticleModal(selectedCategory || undefined)}>Neu</Button>
                 </div>
             </header>
 

@@ -11,10 +11,10 @@ const ShelfEditor: React.FC = () => {
     const navigate = useNavigate();
 
     // Data States
-    const { data: warehouses = [] } = useWarehouses();
+    const { data: warehouses = [], isLoading: warehousesLoading } = useWarehouses();
     const [selectedWarehouse, setSelectedWarehouse] = useState<Warehouse | null>(null);
     const [shelves, setShelves] = useState<string[]>([]);
-    const [loading, setLoading] = useState(true);
+    const [loading, setLoading] = useState(false);
 
     // Edit State
     const [editingShelf, setEditingShelf] = useState<string | null>(null);
@@ -117,7 +117,7 @@ const ShelfEditor: React.FC = () => {
                 // STEP 1: SELECT WAREHOUSE
                 <div className="grid grid-cols-1 gap-4">
                     <h2 className="text-white/60 text-sm font-bold uppercase tracking-wider ml-1">Lager wählen</h2>
-                    {loading ? <div className="flex justify-center py-10"><Loader2 className="animate-spin text-white/30" /></div> :
+                    {warehousesLoading ? <div className="flex justify-center py-10"><Loader2 className="animate-spin text-white/30" /></div> :
                         warehouses.map(w => (
                             <GlassCard key={w.id} onClick={() => setSelectedWarehouse(w)} className="cursor-pointer hover:bg-white/10 transition-colors group">
                                 <div className="flex items-center gap-4">

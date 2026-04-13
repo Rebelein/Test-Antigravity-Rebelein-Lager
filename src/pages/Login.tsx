@@ -90,43 +90,71 @@ const Login: React.FC = () => {
 
         {!showSql ? (
           <form onSubmit={handleAuth} className="space-y-4">
-            {!isLogin && (
-              <GlassInput
-                icon={<User size={20} />}
-                name="fullName"
-                id="fullName"
-                placeholder="Voller Name (z.B. Max Mustermann)"
-                value={fullName}
-                onChange={(e) => setFullName(e.target.value)}
-                required
-                autoComplete="name"
-              />
+            {!isLogin ? (
+              // REGISTRATION FORM FIELDS
+              <>
+                <GlassInput
+                  icon={<User size={20} />}
+                  name="fullName"
+                  id="register-fullName"
+                  placeholder="Voller Name (z.B. Max Mustermann)"
+                  value={fullName}
+                  onChange={(e) => setFullName(e.target.value)}
+                  required
+                  autoComplete="name"
+                />
+                <GlassInput
+                  icon={<Mail size={20} />}
+                  type="email"
+                  name="email"
+                  id="register-email"
+                  placeholder="E-Mail Adresse"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  required
+                  autoComplete="username"
+                />
+                <GlassInput
+                  icon={<Lock size={20} />}
+                  type="password"
+                  name="password"
+                  id="register-password"
+                  placeholder="Neues Passwort"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
+                  minLength={6}
+                  autoComplete="new-password"
+                />
+              </>
+            ) : (
+              // LOGIN FORM FIELDS
+              <>
+                <GlassInput
+                  icon={<Mail size={20} />}
+                  type="email"
+                  name="email"
+                  id="login-email"
+                  placeholder="E-Mail Adresse"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  required
+                  autoComplete="username"
+                />
+                <GlassInput
+                  icon={<Lock size={20} />}
+                  type="password"
+                  name="password"
+                  id="login-password"
+                  placeholder="Passwort"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
+                  minLength={6}
+                  autoComplete="current-password"
+                />
+              </>
             )}
-
-            <GlassInput
-              icon={<Mail size={20} />}
-              type="email"
-              name="email"
-              id="email"
-              placeholder="E-Mail Adresse"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              required
-              autoComplete="username email"
-            />
-
-            <GlassInput
-              icon={<Lock size={20} />}
-              type="password"
-              name="password"
-              id="password"
-              placeholder="Passwort"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-              minLength={6}
-              autoComplete={isLogin ? "current-password" : "new-password"}
-            />
 
             {error && (
               <div className="p-3 rounded-lg bg-red-500/20 border border-red-500/30 text-red-200 text-sm flex items-center gap-2">
