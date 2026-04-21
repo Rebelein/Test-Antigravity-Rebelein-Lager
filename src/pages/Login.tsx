@@ -1,29 +1,27 @@
-
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../../supabaseClient';
 import { GlassCard, Button, GlassInput } from '../components/UIComponents';
 import { useNavigate } from 'react-router-dom';
-import { Lock, Mail, User, Loader2, AlertCircle, Database, Copy, Check } from 'lucide-react';
+import { Lock, Mail, User, LogIn, UserPlus, AlertCircle, Database, Copy, Check } from 'lucide-react';
 import { toast } from 'sonner';
-import { initializeDatabase, MANUAL_SETUP_SQL } from '../../utils/dbInit';
+import { MANUAL_SETUP_SQL } from '../../utils/dbInit';
 import { useAuth } from '../../contexts/AuthContext';
 
 const Login: React.FC = () => {
   const navigate = useNavigate();
-  const { session } = useAuth(); // Zugriff auf aktuellen Session-Status
+  const { session } = useAuth();
   const [isLogin, setIsLogin] = useState(true);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [fullName, setFullName] = useState('');
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [msg, setMsg] = useState<string | null>(null);
 
   // DB Setup States
   const [showSql, setShowSql] = useState(false);
   const [sqlCopied, setSqlCopied] = useState(false);
 
-  const [error, setError] = useState<string | null>(null);
-
-  // Wenn Benutzer bereits eingeloggt ist (z.B. durch persistierte Session), direkt weiterleiten
   useEffect(() => {
     if (session) {
       navigate('/dashboard', { replace: true });
@@ -34,6 +32,7 @@ const Login: React.FC = () => {
     e.preventDefault();
     setLoading(true);
     setError(null);
+    setMsg(null);
 
     try {
       if (isLogin) {
@@ -44,23 +43,31 @@ const Login: React.FC = () => {
         if (error) throw error;
         navigate('/dashboard');
       } else {
+        if (!fullName.trim()) {
+            throw new Error("Bitte gib einen Namen ein.");
+        }
+
         const { error } = await supabase.auth.signUp({
           email,
           password,
           options: {
             data: {
               full_name: fullName,
-            },
-          },
+            }
+          }
         });
         if (error) throw error;
-        alert('Registrierung erfolgreich! Du wirst nun eingeloggt.');
-        navigate('/dashboard');
+        setMsg("Registrierung erfolgreich! Du kannst dich nun einloggen.");
+        setIsLogin(true);
       }
     } catch (err: any) {
-      console.error("Login Error:", err);
-      setError(err.message);
-      toast.error("Login fehlgeschlagen: " + (err.message || "Unbekannter Fehler"));
+      console.error(err);
+      if (err.message && err.message.includes("Invalid login credentials")) {
+        setError("Login fehlgeschlagen. Ist das Passwort falsch oder hast du deine E-Mail noch nicht bestätigt?");
+      } else {
+        setError(err.message || "Ein unbekannter Fehler ist aufgetreten.");
+      }
+      toast.error("Authentifizierung fehlgeschlagen");
     } finally {
       setLoading(false);
     }
@@ -73,106 +80,114 @@ const Login: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen w-full flex items-center justify-center bg-gray-900 p-4 relative overflow-hidden">
+    <div className="min-h-screen w-full flex flex-col items-center justify-center bg-gray-900 p-6 relative overflow-hidden">
       {/* Background Blobs */}
-      <div className="fixed top-[-20%] left-[-10%] w-[600px] h-[600px] bg-slate-600/20 rounded-full blur-[120px] animate-pulse-slow pointer-events-none" />
-      <div className="fixed bottom-[-10%] right-[-20%] w-[500px] h-[500px] bg-gray-600/20 rounded-full blur-[100px] pointer-events-none" />
+      <div className="fixed top-[-20%] left-[-10%] w-[600px] h-[600px] bg-emerald-600/10 rounded-full blur-[120px] animate-pulse-slow pointer-events-none" />
+      <div className="fixed bottom-[-10%] right-[-20%] w-[500px] h-[500px] bg-teal-600/10 rounded-full blur-[100px] pointer-events-none" />
 
-      <GlassCard className="w-full max-w-md relative z-10">
-        <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-emerald-300 to-teal-200 mb-2">
-            Rebelein LagerApp
-          </h1>
-          <p className="text-white/50">
-            {isLogin ? 'Willkommen zurück! Bitte einloggen.' : 'Neuen Benutzerzugang erstellen.'}
-          </p>
-        </div>
+      <div className="text-center mb-8 relative z-10">
+        <h1 className="text-4xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-emerald-300 to-teal-200">
+          Rebelein LagerApp
+        </h1>
+        <p className="text-white/60 mt-2">
+          {showSql ? 'Datenbank Setup Code' : (isLogin ? 'Willkommen zurück!' : 'Neuen Benutzerzugang erstellen.')}
+        </p>
+      </div>
 
+      <GlassCard className="w-full max-w-md relative z-10 p-0 overflow-hidden border border-white/10 shadow-2xl backdrop-blur-xl">
         {!showSql ? (
-          <form onSubmit={handleAuth} className="space-y-4">
-            {!isLogin ? (
-              // REGISTRATION FORM FIELDS
-              <>
-                <GlassInput
-                  icon={<User size={20} />}
-                  name="fullName"
-                  id="register-fullName"
-                  placeholder="Voller Name (z.B. Max Mustermann)"
-                  value={fullName}
-                  onChange={(e) => setFullName(e.target.value)}
-                  required
-                  autoComplete="name"
-                />
-                <GlassInput
-                  icon={<Mail size={20} />}
-                  type="email"
-                  name="email"
-                  id="register-email"
-                  placeholder="E-Mail Adresse"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  required
-                  autoComplete="username"
-                />
-                <GlassInput
-                  icon={<Lock size={20} />}
-                  type="password"
-                  name="password"
-                  id="register-password"
-                  placeholder="Neues Passwort"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  required
-                  minLength={6}
-                  autoComplete="new-password"
-                />
-              </>
-            ) : (
-              // LOGIN FORM FIELDS
-              <>
-                <GlassInput
-                  icon={<Mail size={20} />}
-                  type="email"
-                  name="email"
-                  id="login-email"
-                  placeholder="E-Mail Adresse"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  required
-                  autoComplete="username"
-                />
-                <GlassInput
-                  icon={<Lock size={20} />}
-                  type="password"
-                  name="password"
-                  id="login-password"
-                  placeholder="Passwort"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  required
-                  minLength={6}
-                  autoComplete="current-password"
-                />
-              </>
-            )}
+          <>
+            <div className="flex justify-center mb-6 border-b border-white/10 pb-4 pt-6">
+              <button
+                type="button"
+                onClick={() => { setIsLogin(true); setError(null); setMsg(null); }}
+                className={`mx-4 pb-1 text-sm font-medium transition-colors ${
+                  isLogin ? 'text-teal-400 border-b-2 border-teal-400' : 'text-white/50 hover:text-white/80'
+                }`}
+              >
+                Anmelden
+              </button>
+              <button
+                type="button"
+                onClick={() => { setIsLogin(false); setError(null); setMsg(null); }}
+                className={`mx-4 pb-1 text-sm font-medium transition-colors ${
+                  !isLogin ? 'text-teal-400 border-b-2 border-teal-400' : 'text-white/50 hover:text-white/80'
+                }`}
+              >
+                Registrieren
+              </button>
+            </div>
 
-            {error && (
-              <div className="p-3 rounded-lg bg-red-500/20 border border-red-500/30 text-red-200 text-sm flex items-center gap-2">
-                <AlertCircle size={16} />
-                {error}
+            <form onSubmit={handleAuth} className="space-y-4 px-6 pb-6">
+              
+              {!isLogin && (
+                 <div className="animate-in fade-in slide-in-from-top-2 duration-300">
+                    <div className="flex items-center gap-2 text-teal-200 mb-2 text-xs uppercase tracking-wider font-bold">
+                      <User size={14} /> Anzeigename
+                    </div>
+                    <GlassInput
+                      type="text"
+                      name="fullName"
+                      placeholder="Max Mustermann"
+                      value={fullName}
+                      onChange={(e) => setFullName(e.target.value)}
+                      required={!isLogin}
+                    />
+                 </div>
+              )}
+
+              <div>
+                <div className="flex items-center gap-2 text-teal-200 mb-2 text-xs uppercase tracking-wider font-bold">
+                  <Mail size={14} /> Email
+                </div>
+                <GlassInput
+                  type="email"
+                  name="email"
+                  autoComplete="email"
+                  placeholder="name@beispiel.de"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  required
+                />
               </div>
-            )}
 
-            <Button
-              type="submit"
-              className="w-full mt-6"
-              disabled={loading}
-            >
-              {loading ? <Loader2 size={20} className="animate-spin" /> : (isLogin ? 'Einloggen' : 'Registrieren')}
-            </Button>
-          </form>
+              <div>
+                 <div className="flex items-center gap-2 text-teal-200 mb-2 text-xs uppercase tracking-wider font-bold">
+                  <Lock size={14} /> Passwort
+                </div>
+                <GlassInput
+                  type="password"
+                  name="password"
+                  autoComplete={isLogin ? "current-password" : "new-password"}
+                  placeholder="••••••••"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
+                  minLength={6}
+                />
+              </div>
+
+              {error && (
+                <div className="bg-red-500/20 border border-red-500/50 p-3 rounded-lg text-red-200 text-sm flex items-start gap-2">
+                  <AlertCircle size={16} className="mt-0.5 shrink-0" />
+                  <span>{error}</span>
+                </div>
+              )}
+
+              {msg && (
+                <div className="bg-emerald-500/20 border border-emerald-500/50 p-3 rounded-lg text-emerald-200 text-sm flex items-start gap-2">
+                  <Check size={16} className="mt-0.5 shrink-0" />
+                  <span>{msg}</span>
+                </div>
+              )}
+
+              <Button type="submit" disabled={loading} className="w-full mt-4 flex items-center justify-center gap-2">
+                {loading ? 'Lade...' : isLogin ? <><LogIn size={18}/> Einloggen</> : <><UserPlus size={18}/> Account erstellen</>}
+              </Button>
+            </form>
+          </>
         ) : (
-          <div className="animate-in fade-in zoom-in duration-200">
+          <div className="p-6 animate-in fade-in zoom-in duration-200">
             <div className="bg-black/40 rounded-xl border border-white/10 p-4 mb-4">
               <h3 className="text-emerald-400 font-bold mb-2 flex items-center gap-2">
                 <Database size={16} /> Initial SQL Setup
@@ -187,6 +202,7 @@ const Login: React.FC = () => {
                   value={MANUAL_SETUP_SQL}
                 />
                 <button
+                  type="button"
                   onClick={copySqlToClipboard}
                   className="absolute top-2 right-2 p-1.5 bg-white/10 hover:bg-white/20 rounded-md text-white transition-colors"
                 >
@@ -196,27 +212,19 @@ const Login: React.FC = () => {
             </div>
           </div>
         )}
-
-        <div className="mt-6 text-center space-y-4">
-          {!showSql && (
-            <button
-              onClick={() => setIsLogin(!isLogin)}
-              className="text-sm text-white/60 hover:text-emerald-300 transition-colors block w-full"
-            >
-              {isLogin ? 'Noch keinen Account? Registrieren' : 'Bereits einen Account? Einloggen'}
-            </button>
-          )}
-
-          {/* Emergency DB Init Toggle */}
-          <button
-            onClick={() => setShowSql(!showSql)}
-            className="text-xs text-white/20 hover:text-emerald-400/80 flex items-center justify-center gap-1 w-full transition-colors pt-4 border-t border-white/5"
-          >
-            <Database size={12} />
-            <span>{showSql ? 'Zurück zum Login' : 'Datenbank Setup Code anzeigen'}</span>
-          </button>
-        </div>
       </GlassCard>
+
+      <div className="mt-6 text-center z-10 w-full max-w-md">
+        {/* Emergency DB Init Toggle */}
+        <button
+          type="button"
+          onClick={() => setShowSql(!showSql)}
+          className="text-xs text-white/20 hover:text-emerald-400/80 flex items-center justify-center gap-1 w-full transition-colors pt-4 border-t border-white/5"
+        >
+          <Database size={12} />
+          <span>{showSql ? 'Zurück zum Login' : 'Datenbank Setup Code anzeigen'}</span>
+        </button>
+      </div>
     </div>
   );
 };

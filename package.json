@@ -1,7 +1,7 @@
 {
   "name": "rebelein-lagerapp",
   "private": true,
-  "version": "0.0.79",
+  "version": "0.0.80",
   "type": "module",
   "engines": {
     "node": ">=20.0.0"

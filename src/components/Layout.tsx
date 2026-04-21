@@ -174,7 +174,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
                         initial={{ y: -100, opacity: 0 }}
                         animate={{ y: 0, opacity: 1 }}
                         exit={{ y: -100, opacity: 0 }}
-                        className="fixed top-4 left-1/2 -translate-x-1/2 z-[100] glass-panel px-6 py-3 rounded-full flex items-center gap-4 shadow-2xl border-emerald-500/30"
+                        className="fixed top-4 left-1/2 -translate-x-1/2 z-[100] glass-panel px-6 py-3 rounded-full flex items-center gap-4 shadow-2xl border-emerald-500/30 mt-[env(safe-area-inset-top)]"
                     >
                         <div className="flex items-center gap-2 text-sm font-medium text-emerald-400">
                             <RefreshCw className="animate-spin" size={18} />
@@ -299,7 +299,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
                 initial={{ y: -50, opacity: 0 }}
                 animate={{ y: 0, opacity: 1 }}
                 transition={{ duration: 0.5 }}
-                className={clsx("lg:hidden fixed left-0 right-0 z-40 px-4 py-2 flex justify-end pointer-events-none max-w-4xl mx-auto", updateAvailable ? 'top-12' : 'top-0')}
+                className={clsx("lg:hidden fixed left-0 right-0 z-40 px-4 py-2 flex justify-end pointer-events-none max-w-4xl mx-auto mt-[env(safe-area-inset-top)]", updateAvailable ? 'top-12' : 'top-0')}
             >
                 <div className="pointer-events-auto flex items-center gap-2">
                     <div className="glass-panel rounded-full px-3 py-1.5 flex items-center gap-3 shadow-lg">
@@ -342,7 +342,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
                             animate={{ opacity: 1, y: 0, scale: 1 }}
                             exit={{ opacity: 0, y: -20, scale: 0.98 }}
                             transition={{ duration: 0.3, ease: "easeOut" }}
-                            className="w-full h-full flex flex-col overflow-hidden px-4 pt-16 lg:pt-0 lg:px-0"
+                            className="w-full h-full flex flex-col overflow-hidden px-4 pt-[calc(env(safe-area-inset-top)+4rem)] lg:pt-0 lg:px-0"
                         >
                             {children}
                         </motion.div>

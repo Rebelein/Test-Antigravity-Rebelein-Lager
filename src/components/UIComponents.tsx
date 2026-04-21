@@ -287,7 +287,7 @@ export const AnimatedModal: React.FC<AnimatedModalProps> = ({ isOpen, onClose, c
               )}
             >
               {title && (
-                <div className="px-6 py-4 border-b border-white/10 flex justify-between items-center shrink-0">
+                <div className={cn("px-6 py-4 border-b border-white/10 flex justify-between items-center shrink-0", fullScreen && "pt-[calc(env(safe-area-inset-top)+1rem)]")}>
                   <h3 className="text-lg font-semibold text-white">{title}</h3>
                   <button onClick={onClose} className="p-2 rounded-full hover:bg-white/10 text-white/50 hover:text-white transition-colors">
                     <X size={20} />
