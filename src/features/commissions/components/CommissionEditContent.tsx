@@ -293,7 +293,7 @@ export const CommissionEditContent: React.FC<CommissionEditContentProps> = ({
 
             if (!isEditMode) {
                 payload.status = 'Draft';
-                payload.needs_label = false;
+                payload.needs_label = true;
             }
 
             Object.keys(payload).forEach(key => (payload as any)[key] === undefined && delete (payload as any)[key]);

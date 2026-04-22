@@ -77,7 +77,6 @@ const Commissions: React.FC = () => {
     // --- OTHER MODALS ---
     const [showConfirmReadyModal, setShowConfirmReadyModal] = useState(false);
     const [showConfirmWithdrawModal, setShowConfirmWithdrawModal] = useState(false);
-    const [showLabelOptionsModal, setShowLabelOptionsModal] = useState<string | null>(null);
     const [showDeleteModal, setShowDeleteModal] = useState(false);
     const [deleteTarget, setDeleteTarget] = useState<{ id: string, name: string, mode: 'trash' | 'permanent' } | null>(null);
     const [showLabelUpdateModal, setShowLabelUpdateModal] = useState(false);
@@ -312,9 +311,8 @@ const Commissions: React.FC = () => {
                 fetchAndOpen();
             } else {
                 setSidePanelMode('none');
-                if (isNew && id) {
-                    // Short timeout to ensure modal transition feels smooth
-                    setTimeout(() => setShowLabelOptionsModal(id), 300);
+                if (isNew) {
+                    toast.success('Kommission erstellt und zur Druckwarteschlange hinzugefügt');
                 }
             }
         }
@@ -1506,37 +1504,6 @@ const Commissions: React.FC = () => {
                     </div>
                 </GlassModal>
             )}
-
-            <GlassModal isOpen={!!showLabelOptionsModal} onClose={() => setShowLabelOptionsModal(null)} className="max-w-md text-center">
-                <div className="p-6">
-                    <Tag size={48} className="mx-auto text-blue-500 mb-4" />
-                    <h2 className="text-xl font-bold text-white mb-2">Kommission erstellt!</h2>
-                    <p className="text-white/60 mb-6">Möchtest du direkt ein Etikett drucken?</p>
-
-                    <div className="space-y-3">
-                        <Button onClick={() => handleSinglePrint(showLabelOptionsModal!)} className="w-full py-3 bg-emerald-600 hover:bg-emerald-500" icon={<Printer size={18} />}>Sofort drucken</Button>
-                        <Button onClick={() => {
-                            // Find commission name for the log/queue
-                            const comm = commissions.find(c => c.id === showLabelOptionsModal); // Might need refresh?
-                            // Actually handleQueue requires finding it. 
-                            // Since we just refreshed, it should be in commissions list soon or we fetch it.
-                            // For now, let's just trigger queue logic which handles update.
-                            // But handleAddToQueue helper function is missing in this version of code?!
-                            // Let's implement queue logic inline or verify if handleAddToQueue exists.
-                            // Checking previous view_file of Commissions.tsx... handleAddToQueue was NOT in the file viewing (Step 236). 
-                            // I need to implement the queue action logic here or add the helper.
-                            // Let's use supabase directly for queueing to be safe and simple.
-                            const addToQueue = async () => {
-                                await supabase.from('commissions').update({ needs_label: true }).eq('id', showLabelOptionsModal);
-                                setShowLabelOptionsModal(null);
-                                refreshCommissions();
-                            };
-                            addToQueue();
-                        }} className="w-full py-3 bg-blue-600 hover:bg-blue-500" icon={<Layers size={18} />}>Zur Druckwarteschlange</Button>
-                        <Button onClick={() => setShowLabelOptionsModal(null)} variant="secondary" className="w-full">Schließen</Button>
-                    </div>
-                </div>
-            </GlassModal>
 
             {showCleanupModal && (
                 <CommissionCleanupModal
