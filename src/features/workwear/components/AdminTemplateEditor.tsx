@@ -146,7 +146,7 @@ export const AdminTemplateEditor: React.FC<AdminTemplateEditorProps> = ({ onBack
                 </Button>
                 <div>
                     <h2 className="text-2xl font-bold text-white">Artikel Vorlagen</h2>
-                    <p className="text-white/50">Katalog verwalten</p>
+                    <p className="text-muted-foreground">Katalog verwalten</p>
                 </div>
                 <div className="ml-auto">
                     <Button onClick={() => {
@@ -166,19 +166,19 @@ export const AdminTemplateEditor: React.FC<AdminTemplateEditorProps> = ({ onBack
                             {item.image_url ? (
                                 <img src={item.image_url} alt={item.name} className="w-full h-full object-cover" />
                             ) : (
-                                <ImageIcon className="text-white/20" />
+                                <ImageIcon className="text-muted-foreground" />
                             )}
                         </div>
                         <div className="flex-1 min-w-0">
                             <div className="flex justify-between items-start">
                                 <div className="text-xs text-emerald-400 font-medium uppercase">{item.category}</div>
                                 <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                                    <button onClick={() => handleEdit(item)} className="p-1 hover:bg-white/10 rounded text-emerald-400"><Edit2 size={14} /></button>
-                                    <button onClick={() => handleDelete(item.id)} className="p-1 hover:bg-white/10 rounded text-rose-400"><Trash2 size={14} /></button>
+                                    <button onClick={() => handleEdit(item)} className="p-1 hover:bg-muted rounded text-emerald-400"><Edit2 size={14} /></button>
+                                    <button onClick={() => handleDelete(item.id)} className="p-1 hover:bg-muted rounded text-rose-400"><Trash2 size={14} /></button>
                                 </div>
                             </div>
                             <h3 className="font-bold text-white truncate">{item.name}</h3>
-                            <div className="text-sm text-white/50">{item.article_number}</div>
+                            <div className="text-sm text-muted-foreground">{item.article_number}</div>
                             <div className="mt-2 font-mono text-emerald-300">{item.price?.toFixed(2)} €</div>
                         </div>
                     </GlassCard>
@@ -186,13 +186,13 @@ export const AdminTemplateEditor: React.FC<AdminTemplateEditorProps> = ({ onBack
             </div>
 
             <GlassModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)}>
-                <div className="p-6 border-b border-white/10 flex justify-between items-center">
+                <div className="p-6 border-b border-border flex justify-between items-center">
                     <h2 className="text-xl font-bold">{editingId ? 'Artikel bearbeiten' : 'Neuer Artikel'}</h2>
-                    <button onClick={() => setIsModalOpen(false)}><X className="text-white/50 hover:text-white" /></button>
+                    <button onClick={() => setIsModalOpen(false)}><X className="text-muted-foreground hover:text-white" /></button>
                 </div>
                 <div className="p-6 space-y-4">
                     <div className="space-y-1">
-                        <label className="text-xs font-medium text-white/60 ml-1">Bezeichnung</label>
+                        <label className="text-xs font-medium text-muted-foreground ml-1">Bezeichnung</label>
                         <Input
                             value={formData.name || ''}
                             onChange={e => setFormData({ ...formData, name: e.target.value })}
@@ -201,16 +201,16 @@ export const AdminTemplateEditor: React.FC<AdminTemplateEditorProps> = ({ onBack
                     </div>
                     <div className="grid grid-cols-2 gap-4">
                         <div className="space-y-1">
-                            <label className="text-xs font-medium text-white/60 ml-1">Artikelnummer</label>
+                            <label className="text-xs font-medium text-muted-foreground ml-1">Artikelnummer</label>
                             <Input
                                 value={formData.article_number || ''}
                                 onChange={e => setFormData({ ...formData, article_number: e.target.value })}
                             />
                         </div>
                         <div className="space-y-1">
-                            <label className="text-xs font-medium text-white/60 ml-1">Kategorie</label>
+                            <label className="text-xs font-medium text-muted-foreground ml-1">Kategorie</label>
                             <select
-                                className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white outline-none focus:border-emerald-500/50"
+                                className="w-full bg-muted border border-border rounded-xl px-4 py-3 text-white outline-none focus:border-emerald-500/50"
                                 value={formData.category}
                                 onChange={e => setFormData({ ...formData, category: e.target.value })}
                             >
@@ -226,7 +226,7 @@ export const AdminTemplateEditor: React.FC<AdminTemplateEditorProps> = ({ onBack
                     </div>
                     <div className="grid grid-cols-2 gap-4">
                         <div className="space-y-1">
-                            <label className="text-xs font-medium text-white/60 ml-1">Preis (€)</label>
+                            <label className="text-xs font-medium text-muted-foreground ml-1">Preis (€)</label>
                             <Input
                                 type="number"
                                 value={formData.price?.toString() || ''}
@@ -234,15 +234,15 @@ export const AdminTemplateEditor: React.FC<AdminTemplateEditorProps> = ({ onBack
                             />
                         </div>
                         <div className="space-y-1">
-                            <label className="text-xs font-medium text-white/60 ml-1">Bild</label>
+                            <label className="text-xs font-medium text-muted-foreground ml-1">Bild</label>
                             <div className="flex gap-4 items-center">
                                 {formData.image_url && (
-                                    <div className="w-16 h-16 bg-black/30 rounded-lg overflow-hidden shrink-0 border border-white/10">
+                                    <div className="w-16 h-16 bg-black/30 rounded-lg overflow-hidden shrink-0 border border-border">
                                         <img src={formData.image_url} className="w-full h-full object-cover" />
                                     </div>
                                 )}
                                 <div className="flex-1 flex gap-2">
-                                    <label className="flex-1 flex items-center justify-center px-4 py-3 bg-white/5 border border-white/10 hover:bg-white/10 rounded-xl cursor-pointer transition-colors text-sm font-medium text-white/70 hover:text-white">
+                                    <label className="flex-1 flex items-center justify-center px-4 py-3 bg-muted border border-border hover:bg-muted rounded-xl cursor-pointer transition-colors text-sm font-medium text-muted-foreground hover:text-white">
                                         <ImageIcon size={18} className="mr-2" />
                                         {formData.image_url ? 'Bild ändern' : 'Hochladen'}
                                         <input
@@ -272,8 +272,8 @@ export const AdminTemplateEditor: React.FC<AdminTemplateEditorProps> = ({ onBack
                             <div
                                 onClick={() => setFormData(prev => ({ ...prev, has_logo: !prev.has_logo }))}
                                 className={clsx(
-                                    "w-12 h-7 rounded-full p-1 transition-colors cursor-pointer border border-white/10",
-                                    formData.has_logo ? 'bg-emerald-500' : 'bg-black/40'
+                                    "w-12 h-7 rounded-full p-1 transition-colors cursor-pointer border border-border",
+                                    formData.has_logo ? 'bg-primary' : 'bg-black/40'
                                 )}
                             >
                                 <div className={clsx(
@@ -281,7 +281,7 @@ export const AdminTemplateEditor: React.FC<AdminTemplateEditorProps> = ({ onBack
                                     formData.has_logo ? 'translate-x-5' : 'translate-x-0'
                                 )} />
                             </div>
-                            <span className="text-sm font-medium text-white/80">Mit Firmenlogo (wird automatisch angehängt)</span>
+                            <span className="text-sm font-medium text-muted-foreground">Mit Firmenlogo (wird automatisch angehängt)</span>
                         </div>
                     </div>
                 </div>

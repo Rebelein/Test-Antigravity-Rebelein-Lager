@@ -125,9 +125,9 @@ export const OrderHistory: React.FC<OrderHistoryProps> = ({ role }) => {
         switch (status) {
             case 'REQUESTED': return { label: 'Angefragt', color: 'text-amber-400', bg: 'bg-amber-500/10', icon: <Clock size={16} /> };
             case 'ORDERED': return { label: 'Bestellt', color: 'text-blue-400', bg: 'bg-blue-500/10', icon: <Package size={16} /> };
-            case 'COMPLETED': return { label: 'Abgeschlossen', color: 'text-emerald-400', bg: 'bg-emerald-500/10', icon: <CheckCircle size={16} /> };
+            case 'COMPLETED': return { label: 'Abgeschlossen', color: 'text-emerald-400', bg: 'bg-primary/10', icon: <CheckCircle size={16} /> };
             case 'RETURNED': return { label: 'Retourniert', color: 'text-rose-400', bg: 'bg-rose-500/10', icon: <AlertCircle size={16} /> };
-            default: return { label: status, color: 'text-white', bg: 'bg-white/10', icon: <Clock size={16} /> };
+            default: return { label: status, color: 'text-white', bg: 'bg-muted', icon: <Clock size={16} /> };
         }
     };
 
@@ -139,7 +139,7 @@ export const OrderHistory: React.FC<OrderHistoryProps> = ({ role }) => {
             <GlassCard key={order.id} className="overflow-hidden transition-all duration-300 mb-4">
                 <div
                     onClick={() => setExpandedOrder(isExpanded ? null : order.id)}
-                    className="p-4 flex items-center justify-between cursor-pointer hover:bg-white/5"
+                    className="p-4 flex items-center justify-between cursor-pointer hover:bg-muted"
                 >
                     <div className="flex items-center gap-4">
                         <div className={clsx("w-10 h-10 rounded-full flex items-center justify-center", status.bg, status.color)}>
@@ -153,20 +153,20 @@ export const OrderHistory: React.FC<OrderHistoryProps> = ({ role }) => {
                     <div className="flex items-center gap-4">
                         <div className="text-right hidden sm:block">
                             <div className="font-mono font-bold text-emerald-400">{order.total_amount.toFixed(2)} €</div>
-                            {isAdmin && <div className="text-xs text-white/40">{order.profile?.full_name}</div>}
+                            {isAdmin && <div className="text-xs text-muted-foreground">{order.profile?.full_name}</div>}
                         </div>
 
                         {(isAdmin || order.status === 'REQUESTED') && (
                             <button
                                 onClick={(e) => { e.stopPropagation(); deleteOrder(order.id); }}
-                                className="w-8 h-8 flex items-center justify-center text-white/30 hover:text-rose-400 hover:bg-rose-500/10 rounded-full transition-colors"
+                                className="w-8 h-8 flex items-center justify-center text-muted-foreground hover:text-rose-400 hover:bg-rose-500/10 rounded-full transition-colors"
                                 title="Bestellung löschen"
                             >
                                 <Trash2 size={16} />
                             </button>
                         )}
 
-                        {isExpanded ? <ChevronUp className="text-white/50" /> : <ChevronDown className="text-white/50" />}
+                        {isExpanded ? <ChevronUp className="text-muted-foreground" /> : <ChevronDown className="text-muted-foreground" />}
                     </div>
                 </div>
 
@@ -175,12 +175,12 @@ export const OrderHistory: React.FC<OrderHistoryProps> = ({ role }) => {
                     <div className="bg-black/20 border-t border-white/5 p-4 space-y-3">
                         {order.items.map(item => (
                             <div key={item.id} className="flex items-center gap-4">
-                                <div className="w-12 h-12 bg-white/5 rounded overflow-hidden flex items-center justify-center shrink-0">
-                                    {item.template_image ? <img src={item.template_image} className="w-full h-full object-cover" /> : <Shirt size={20} className="text-white/20" />}
+                                <div className="w-12 h-12 bg-muted rounded overflow-hidden flex items-center justify-center shrink-0">
+                                    {item.template_image ? <img src={item.template_image} className="w-full h-full object-cover" /> : <Shirt size={20} className="text-muted-foreground" />}
                                 </div>
                                 <div className="flex-1">
                                     <div className="text-sm font-medium text-white">{item.template_name}</div>
-                                    <div className="text-xs text-white/50">Größe: {item.size} • Menge: {item.quantity} {item.use_logo && '• Mit Logo'}</div>
+                                    <div className="text-xs text-muted-foreground">Größe: {item.size} • Menge: {item.quantity} {item.use_logo && '• Mit Logo'}</div>
                                 </div>
                                 <div className="text-emerald-400 font-mono text-sm">
                                     {(item.price_at_order || 0).toFixed(2)} €
@@ -197,7 +197,7 @@ export const OrderHistory: React.FC<OrderHistoryProps> = ({ role }) => {
 
     if (orders.length === 0) {
         return (
-            <div className="text-center py-12 text-white/50">
+            <div className="text-center py-12 text-muted-foreground">
                 <Package size={48} className="mx-auto mb-4 opacity-50" />
                 <p>Noch keine Bestellungen vorhanden.</p>
             </div>
@@ -234,22 +234,22 @@ export const OrderHistory: React.FC<OrderHistoryProps> = ({ role }) => {
                     <div key={userId} className="space-y-2">
                         <button
                             onClick={() => setExpandedUser(expandedUser === userId ? null : userId)}
-                            className="w-full flex items-center justify-between p-4 bg-white/5 hover:bg-white/10 rounded-xl transition-colors text-left"
+                            className="w-full flex items-center justify-between p-4 bg-muted hover:bg-muted rounded-xl transition-colors text-left"
                         >
                             <div className="flex items-center gap-3">
-                                <div className="w-8 h-8 rounded-full bg-emerald-500/20 flex items-center justify-center text-emerald-400">
+                                <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center text-emerald-400">
                                     <User size={16} />
                                 </div>
                                 <div>
                                     <div className="font-bold text-white">{name}</div>
-                                    <div className="text-xs text-white/50">{orders.length} Bestellungen</div>
+                                    <div className="text-xs text-muted-foreground">{orders.length} Bestellungen</div>
                                 </div>
                             </div>
-                            {expandedUser === userId ? <ChevronUp className="text-white/40" /> : <ChevronDown className="text-white/40" />}
+                            {expandedUser === userId ? <ChevronUp className="text-muted-foreground" /> : <ChevronDown className="text-muted-foreground" />}
                         </button>
 
                         {expandedUser === userId && (
-                            <div className="pl-4 space-y-4 border-l-2 border-white/10 ml-4 py-2">
+                            <div className="pl-4 space-y-4 border-l-2 border-border ml-4 py-2">
                                 {orders.map(order => renderOrderCard(order))}
                             </div>
                         )}
@@ -263,7 +263,7 @@ export const OrderHistory: React.FC<OrderHistoryProps> = ({ role }) => {
                     className="max-w-[400px]"
                 >
                     <div className="p-6">
-                        <p className="text-white/70 mb-8">{confirmModal.message}</p>
+                        <p className="text-muted-foreground mb-8">{confirmModal.message}</p>
                         <div className="flex justify-end gap-4">
                             <Button
                                 variant="ghost"
@@ -298,7 +298,7 @@ export const OrderHistory: React.FC<OrderHistoryProps> = ({ role }) => {
                 className="max-w-[400px]"
             >
                 <div className="p-6">
-                    <p className="text-white/70 mb-8">{confirmModal.message}</p>
+                    <p className="text-muted-foreground mb-8">{confirmModal.message}</p>
                     <div className="flex justify-end gap-4">
                         <Button
                             variant="ghost"

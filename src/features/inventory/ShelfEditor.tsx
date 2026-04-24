@@ -102,33 +102,33 @@ const ShelfEditor: React.FC = () => {
     return (
         <div className="h-full overflow-y-auto custom-scrollbar space-y-6 pb-24 px-1">
             <header className="flex items-center gap-3">
-                <button onClick={() => navigate('/dashboard')} className="p-2 bg-white/5 rounded-full hover:bg-white/10 text-white/50 hover:text-white transition-colors">
+                <button onClick={() => navigate('/dashboard')} className="p-2 bg-muted rounded-full hover:bg-muted text-muted-foreground hover:text-white transition-colors">
                     <ArrowRight className="rotate-180" size={20} />
                 </button>
                 <div>
                     <h1 className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-amber-200 to-orange-100">
                         Regal-Editor
                     </h1>
-                    <p className="text-white/50 text-xs">Kategorien verwalten & umbenennen</p>
+                    <p className="text-muted-foreground text-xs">Kategorien verwalten & umbenennen</p>
                 </div>
             </header>
 
             {!selectedWarehouse ? (
                 // STEP 1: SELECT WAREHOUSE
                 <div className="grid grid-cols-1 gap-4">
-                    <h2 className="text-white/60 text-sm font-bold uppercase tracking-wider ml-1">Lager wählen</h2>
-                    {warehousesLoading ? <div className="flex justify-center py-10"><Loader2 className="animate-spin text-white/30" /></div> :
+                    <h2 className="text-muted-foreground text-sm font-bold uppercase tracking-wider ml-1">Lager wählen</h2>
+                    {warehousesLoading ? <div className="flex justify-center py-10"><Loader2 className="animate-spin text-muted-foreground" /></div> :
                         warehouses.map(w => (
-                            <GlassCard key={w.id} onClick={() => setSelectedWarehouse(w)} className="cursor-pointer hover:bg-white/10 transition-colors group">
+                            <GlassCard key={w.id} onClick={() => setSelectedWarehouse(w)} className="cursor-pointer hover:bg-muted transition-colors group">
                                 <div className="flex items-center gap-4">
-                                    <div className="w-12 h-12 rounded-xl bg-white/5 flex items-center justify-center border border-white/5">
+                                    <div className="w-12 h-12 rounded-xl bg-muted flex items-center justify-center border border-white/5">
                                         {getWarehouseIcon(w.type)}
                                     </div>
                                     <div className="flex-1">
                                         <h3 className="font-bold text-white group-hover:text-amber-200 transition-colors">{w.name}</h3>
-                                        <p className="text-xs text-white/40">{w.location || 'Kein Standort'}</p>
+                                        <p className="text-xs text-muted-foreground">{w.location || 'Kein Standort'}</p>
                                     </div>
-                                    <ArrowRight size={18} className="text-white/20 group-hover:text-white" />
+                                    <ArrowRight size={18} className="text-muted-foreground group-hover:text-white" />
                                 </div>
                             </GlassCard>
                         ))}
@@ -136,14 +136,14 @@ const ShelfEditor: React.FC = () => {
             ) : (
                 // STEP 2: EDIT SHELVES
                 <div className="space-y-4">
-                    <div className="flex items-center justify-between bg-white/5 p-3 rounded-xl border border-white/10">
+                    <div className="flex items-center justify-between bg-muted p-3 rounded-xl border border-border">
                         <div className="flex items-center gap-3">
                             <div className="w-10 h-10 rounded-lg bg-amber-500/10 flex items-center justify-center text-amber-400">
                                 {getWarehouseIcon(selectedWarehouse.type)}
                             </div>
                             <div>
                                 <div className="font-bold text-white">{selectedWarehouse.name}</div>
-                                <div className="text-xs text-white/50">{shelves.length} Kategorien gefunden</div>
+                                <div className="text-xs text-muted-foreground">{shelves.length} Kategorien gefunden</div>
                             </div>
                         </div>
                         <button onClick={() => { setSelectedWarehouse(null); setShelves([]); }} className="text-xs text-amber-400 hover:underline">Ändern</button>
@@ -152,16 +152,16 @@ const ShelfEditor: React.FC = () => {
                     {loading ? (
                         <div className="flex justify-center py-10"><Loader2 className="animate-spin text-amber-400" /></div>
                     ) : shelves.length === 0 ? (
-                        <div className="text-center text-white/30 py-10">Keine Artikel/Kategorien in diesem Lager.</div>
+                        <div className="text-center text-muted-foreground py-10">Keine Artikel/Kategorien in diesem Lager.</div>
                     ) : (
                         <div className="grid grid-cols-1 gap-3">
                             {shelves.map(shelf => (
-                                <div key={shelf} className="bg-white/5 border border-white/10 rounded-xl p-4 flex items-center justify-between">
+                                <div key={shelf} className="bg-muted border border-border rounded-xl p-4 flex items-center justify-between">
                                     <div className="flex items-center gap-3">
-                                        <Library size={18} className="text-white/30" />
+                                        <Library size={18} className="text-muted-foreground" />
                                         <span className="font-medium text-white">{shelf}</span>
                                     </div>
-                                    <button onClick={() => handleOpenEdit(shelf)} className="p-2 bg-white/5 hover:bg-white/20 rounded-lg text-white/60 hover:text-white transition-colors">
+                                    <button onClick={() => handleOpenEdit(shelf)} className="p-2 bg-muted hover:bg-muted rounded-lg text-muted-foreground hover:text-white transition-colors">
                                         <Edit2 size={16} />
                                     </button>
                                 </div>
@@ -173,11 +173,11 @@ const ShelfEditor: React.FC = () => {
 
             {/* EDIT MODAL */}
             {editingShelf && (
-                <div className="fixed inset-0 z-[170] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in">
+                <div className="fixed inset-0 z-[170] flex items-center justify-center p-4 bg-black/30 backdrop-blur-sm animate-in fade-in">
                     <GlassCard className="w-full max-w-md">
                         <div className="flex justify-between items-center mb-4">
                             <h3 className="text-lg font-bold text-white">Regal umbenennen</h3>
-                            <button onClick={() => setEditingShelf(null)}><X className="text-white/50 hover:text-white" /></button>
+                            <button onClick={() => setEditingShelf(null)}><X className="text-muted-foreground hover:text-white" /></button>
                         </div>
 
                         <div className="space-y-4">
@@ -186,11 +186,11 @@ const ShelfEditor: React.FC = () => {
                             </div>
 
                             <div>
-                                <label className="text-xs text-white/50 mb-1 block">Neuer Name</label>
+                                <label className="text-xs text-muted-foreground mb-1 block">Neuer Name</label>
                                 <GlassInput
                                     value={newShelfName}
                                     onChange={e => setNewShelfName(e.target.value)}
-                                    autoFocus
+                                    autoFocus={false}
                                     placeholder="Neuer Name..."
                                 />
                             </div>

@@ -53,7 +53,7 @@ export const KeyExportTemplate = React.forwardRef<HTMLDivElement, KeyExportTempl
                 <div className="print-container">
                     <div className="mb-6 break-inside-avoid col-span-full">
                         <h1 className="text-2xl font-bold mb-2">Schlüsselverzeichnis</h1>
-                        <p className="text-sm text-gray-500">
+                        <p className="text-sm text-muted-foreground">
                             Stand: {new Date().toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' })}
                         </p>
                     </div>
@@ -73,7 +73,7 @@ export const KeyExportTemplate = React.forwardRef<HTMLDivElement, KeyExportTempl
                                         style={{ backgroundColor: cat.color }}
                                     ></div>
                                     <h2 className="text-lg font-bold uppercase tracking-wider">{cat.name}</h2>
-                                    <span className="text-xs bg-gray-100 px-2 py-0.5 rounded-full text-gray-500 ml-auto">
+                                    <span className="text-xs bg-gray-100 px-2 py-0.5 rounded-full text-muted-foreground ml-auto">
                                         {catKeys.length}
                                     </span>
                                 </div>
@@ -82,18 +82,18 @@ export const KeyExportTemplate = React.forwardRef<HTMLDivElement, KeyExportTempl
                                     {catKeys.map((key) => (
                                         <div key={key.id} className="key-row flex items-start gap-3 py-2 border-b border-gray-100 last:border-0">
                                             <div className="w-12 shrink-0 flex flex-col items-center justify-center bg-gray-50 rounded p-1">
-                                                <span className="text-[10px] text-gray-400 uppercase">Platz</span>
+                                                <span className="text-[10px] text-muted-foreground uppercase">Platz</span>
                                                 <span className="font-bold text-lg leading-none">{key.slot_number}</span>
                                             </div>
                                             <div className="flex-grow min-w-0">
                                                 <div className="font-bold text-base truncate">{key.name}</div>
                                                 {key.address && (
-                                                    <div className="text-xs text-gray-500 flex items-center gap-1 truncate">
+                                                    <div className="text-xs text-muted-foreground flex items-center gap-1 truncate">
                                                         <MapPin size={10} /> {key.address}
                                                     </div>
                                                 )}
                                                 {key.owner && (
-                                                    <div className="text-[10px] text-gray-400 mt-0.5">
+                                                    <div className="text-[10px] text-muted-foreground mt-0.5">
                                                         Eigentümer: {key.owner}
                                                     </div>
                                                 )}
@@ -117,19 +117,19 @@ export const KeyExportTemplate = React.forwardRef<HTMLDivElement, KeyExportTempl
                             <div key="uncategorized" className="category-section">
                                 <div className="flex items-center gap-2 border-b-2 border-gray-300 pb-2 mb-3">
                                     <div className="w-4 h-4 rounded-full bg-gray-300"></div>
-                                    <h2 className="text-lg font-bold uppercase tracking-wider text-gray-600">Ohne Kategorie</h2>
+                                    <h2 className="text-lg font-bold uppercase tracking-wider text-muted-foreground">Ohne Kategorie</h2>
                                 </div>
                                 <div className="space-y-0">
                                     {uncategorizedKeys.map((key) => (
                                         <div key={key.id} className="key-row flex items-start gap-3 py-2 border-b border-gray-100 last:border-0">
                                             <div className="w-12 shrink-0 flex flex-col items-center justify-center bg-gray-50 rounded p-1">
-                                                <span className="text-[10px] text-gray-400 uppercase">Platz</span>
+                                                <span className="text-[10px] text-muted-foreground uppercase">Platz</span>
                                                 <span className="font-bold text-lg leading-none">{key.slot_number}</span>
                                             </div>
                                             <div className="flex-grow min-w-0">
                                                 <div className="font-bold text-base truncate">{key.name}</div>
                                                 {key.address && (
-                                                    <div className="text-xs text-gray-500 flex items-center gap-1 truncate">
+                                                    <div className="text-xs text-muted-foreground flex items-center gap-1 truncate">
                                                         <MapPin size={10} /> {key.address}
                                                     </div>
                                                 )}
@@ -146,7 +146,7 @@ export const KeyExportTemplate = React.forwardRef<HTMLDivElement, KeyExportTempl
                 </div>
 
                 {/* Print Footer */}
-                <div className="hidden print:block fixed bottom-4 left-10 text-[10px] text-gray-400">
+                <div className="hidden print:block fixed bottom-4 left-10 text-[10px] text-muted-foreground">
                     Rebelein LagerApp &bull; Schlüsselverzeichnis
                 </div>
             </div>

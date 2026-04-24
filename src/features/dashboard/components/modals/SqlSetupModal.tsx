@@ -52,23 +52,23 @@ export const SqlSetupModal: React.FC<SqlSetupModalProps> = ({ isOpen, onClose, o
     };
 
     return (
-        <div className="fixed inset-0 z-[170] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-200">
-            <div className="w-full max-w-3xl bg-gray-900 border border-white/10 rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[85vh]">
-                <div className="p-6 border-b border-white/10 flex justify-between items-center bg-white/5">
+        <div className="fixed inset-0 z-[170] flex items-center justify-center p-4 bg-black/30 backdrop-blur-sm animate-in fade-in duration-200">
+            <div className="w-full max-w-3xl bg-background border border-border rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[85vh]">
+                <div className="p-6 border-b border-border flex justify-between items-center bg-muted">
                     <div className="flex items-center gap-3">
                         <Database className="text-emerald-400" size={24} />
                         <div>
                             <h2 className="text-xl font-bold text-white">Datenbank Einrichtung</h2>
-                            <p className="text-xs text-white/50">Reparatur & SQL Befehle</p>
+                            <p className="text-xs text-muted-foreground">Reparatur & SQL Befehle</p>
                         </div>
                     </div>
-                    <button onClick={onClose} className="p-2 hover:bg-white/10 rounded-full text-white/60 hover:text-white">
+                    <button onClick={onClose} className="p-2 hover:bg-muted rounded-full text-muted-foreground hover:text-white">
                         <X size={20} />
                     </button>
                 </div>
 
                 <div className="p-6 overflow-y-auto space-y-6">
-                    <div className="bg-emerald-500/10 border border-emerald-500/20 rounded-xl p-4 space-y-3">
+                    <div className="bg-primary/10 border border-emerald-500/20 rounded-xl p-4 space-y-3">
                         <h3 className="text-lg font-semibold text-emerald-300 flex items-center gap-2">
                             <Settings size={18} /> Automatische Einrichtung
                         </h3>
@@ -98,22 +98,22 @@ export const SqlSetupModal: React.FC<SqlSetupModalProps> = ({ isOpen, onClose, o
                         )}
                     </div>
 
-                    <div className="flex items-center gap-4 text-white/30 text-xs uppercase">
-                        <div className="h-px bg-white/10 flex-1" />
+                    <div className="flex items-center gap-4 text-muted-foreground text-xs uppercase">
+                        <div className="h-px bg-muted flex-1" />
                         ODER
-                        <div className="h-px bg-white/10 flex-1" />
+                        <div className="h-px bg-muted flex-1" />
                     </div>
 
                     <div>
                         <h3 className="text-lg font-semibold text-white mb-2">Manuelles SQL</h3>
                         <div className="relative group">
-                            <pre className="bg-black/50 p-4 rounded-xl text-xs font-mono text-emerald-300/80 overflow-x-auto border border-white/10 whitespace-pre-wrap max-h-[300px] overflow-y-auto">
+                            <pre className="bg-black/50 p-4 rounded-xl text-xs font-mono text-emerald-300/80 overflow-x-auto border border-border whitespace-pre-wrap max-h-[300px] overflow-y-auto">
                                 {MANUAL_SETUP_SQL}
                             </pre>
                             <div className="absolute top-2 right-2">
                                 <Button
                                     onClick={copySqlToClipboard}
-                                    className="py-1 px-3 text-xs bg-white/10 hover:bg-white/20 border-none"
+                                    className="py-1 px-3 text-xs bg-muted hover:bg-muted border-none"
                                     icon={sqlCopied ? <Check size={14} /> : <Copy size={14} />}
                                 >
                                     {sqlCopied ? 'Kopiert!' : 'Kopieren'}

@@ -27,7 +27,7 @@ const PrintProtocol: React.FC = () => {
     }, []);
 
     if (!data) {
-        return <div className="p-10 text-center text-gray-500">Lade Protokoll...</div>;
+        return <div className="p-10 text-center text-muted-foreground">Lade Protokoll...</div>;
     }
 
     return (

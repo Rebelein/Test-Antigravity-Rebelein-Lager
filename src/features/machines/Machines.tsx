@@ -9,6 +9,7 @@ import { MasterDetailLayout } from '../../components/MasterDetailLayout';
 import { MachineDetailContent } from '../../features/machines/components/MachineDetailContent';
 import { MachineEditForm } from '../../features/machines/components/MachineEditForm';
 import { toast } from 'sonner';
+import { PageWrapper } from '../../components/ui/PageWrapper';
 
 const Machines: React.FC = () => {
     const { user } = useAuth();
@@ -196,7 +197,7 @@ const Machines: React.FC = () => {
                     <h1 className="text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-emerald-300 to-teal-200">
                         Maschinenpark
                     </h1>
-                    <p className="text-white/50">Verwaltung und Verleih von Werkzeugen.</p>
+                    <p className="text-muted-foreground">Verwaltung und Verleih von Werkzeugen.</p>
                 </div>
                 <Button icon={<Plus size={18} />} onClick={handleCreate}>Neu</Button>
             </header>
@@ -205,23 +206,23 @@ const Machines: React.FC = () => {
             <div className="flex gap-2 p-1 bg-black/20 rounded-xl border border-white/5 mb-6">
                 <button
                     onClick={() => setActiveTab('available')}
-                    className={`flex-1 py-2 rounded-lg text-sm font-medium transition-all flex items-center justify-center gap-2 ${activeTab === 'available' ? 'bg-emerald-500/20 text-emerald-200 border border-emerald-500/30 shadow' : 'text-white/50'}`}
+                    className={`flex-1 py-2 rounded-lg text-sm font-medium transition-all flex items-center justify-center gap-2 ${activeTab === 'available' ? 'bg-primary/20 text-emerald-200 border border-emerald-500/30 shadow' : 'text-muted-foreground'}`}
                 >
-                    <Drill size={16} /> Verfügbar <span className="ml-1 bg-white/10 px-1.5 rounded text-[10px]">{availableCount}</span>
+                    <Drill size={16} /> Verfügbar <span className="ml-1 bg-muted px-1.5 rounded text-[10px]">{availableCount}</span>
                 </button>
                 <button
                     onClick={() => setActiveTab('unavailable')}
-                    className={`flex-1 py-2 rounded-lg text-sm font-medium transition-all flex items-center justify-center gap-2 ${activeTab === 'unavailable' ? 'bg-rose-500/20 text-rose-200 border border-rose-500/30 shadow' : 'text-white/50'}`}
+                    className={`flex-1 py-2 rounded-lg text-sm font-medium transition-all flex items-center justify-center gap-2 ${activeTab === 'unavailable' ? 'bg-rose-500/20 text-rose-200 border border-rose-500/30 shadow' : 'text-muted-foreground'}`}
                 >
-                    <Lock size={16} /> Verliehen / Defekt <span className="ml-1 bg-white/10 px-1.5 rounded text-[10px]">{unavailableCount}</span>
+                    <Lock size={16} /> Verliehen / Defekt <span className="ml-1 bg-muted px-1.5 rounded text-[10px]">{unavailableCount}</span>
                 </button>
             </div>
 
             {/* Search */}
             <div className="relative mb-4">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-white/30" size={18} />
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" size={18} />
                 <input
-                    className="w-full bg-white/5 border border-white/10 rounded-xl py-3 pl-10 pr-4 text-white focus:outline-none focus:border-emerald-500 transition-colors"
+                    className="w-full bg-muted border border-border rounded-xl py-3 pl-10 pr-4 text-white focus:outline-none focus:border-emerald-500 transition-colors"
                     placeholder="Maschine suchen..."
                     value={searchTerm}
                     onChange={e => setSearchTerm(e.target.value)}
@@ -229,17 +230,18 @@ const Machines: React.FC = () => {
             </div>
 
             {/* List */}
-            <div className="flex flex-col gap-3">
+            <motion.div className="flex flex-col gap-3" variants={containerVariants} initial="hidden" animate="show">
                 {visibleMachines.map((machine) => (
-                    <div
+                    <motion.div
+                        variants={itemVariants}
                         key={machine.id}
                         onClick={() => { setSelectedMachine(machine); setIsCreating(false); setIsEditing(false); }}
-                        className={`bg-white/5 backdrop-blur-md border border-white/10 rounded-xl p-2.5 flex items-center gap-3 hover:bg-white/10 transition-all cursor-pointer ${selectedMachine?.id === machine.id && !isCreating ? 'border-emerald-500/50 bg-emerald-500/5' : ''}`}
+                        className={`bg-muted backdrop-blur-sm border border-border rounded-xl p-2.5 flex items-center gap-3 hover:bg-muted transition-all cursor-pointer ${selectedMachine?.id === machine.id && !isCreating ? 'border-emerald-500/50 bg-primary/5' : ''}`}
                     >
                         <div className="w-14 h-14 shrink-0 rounded-lg bg-black/30 overflow-hidden relative border border-white/5">
                             <img src={machine.image || `https://picsum.photos/seed/${machine.id}/200`} className="w-full h-full object-cover opacity-90" />
                             {machine.status !== MachineStatus.AVAILABLE && (
-                                <div className="absolute inset-0 bg-black/60 flex items-center justify-center">
+                                <div className="absolute inset-0 bg-black/30 flex items-center justify-center">
                                     {machine.status === MachineStatus.REPAIR ? <Wrench size={16} className="text-rose-400" /> : <User size={16} className="text-white" />}
                                 </div>
                             )}
@@ -252,14 +254,14 @@ const Machines: React.FC = () => {
                             </div>
                         </div>
                         <div className="flex gap-2">
-                            <button onClick={(e) => handleContextMenuClick(e, machine.id)} className="p-2 text-white/40 hover:text-white hover:bg-white/10 rounded-lg transition-colors">
+                            <button onClick={(e) => handleContextMenuClick(e, machine.id)} className="p-2 text-muted-foreground hover:text-white hover:bg-muted rounded-lg transition-colors">
                                 <MoreVertical size={20} />
                             </button>
                         </div>
-                    </div>
+                    </motion.div>
                 ))}
-                {visibleMachines.length === 0 && <div className="text-center py-8 text-white/30">Keine Maschinen gefunden.</div>}
-            </div>
+                {visibleMachines.length === 0 && <div className="text-center py-8 text-muted-foreground">Keine Maschinen gefunden.</div>}
+            </motion.div>
         </div>
     );
 
@@ -291,6 +293,7 @@ const Machines: React.FC = () => {
     };
 
     return (
+        <PageWrapper>
         <MasterDetailLayout
             title="Maschinenpark"
             isOpen={!!selectedMachine || isCreating}
@@ -300,15 +303,15 @@ const Machines: React.FC = () => {
         >
             {/* CONTEXT MENU */}
             {contextMenu && (
-                <div className="fixed bg-[#1a1d24] border border-white/10 rounded-xl shadow-2xl z-[9999] overflow-hidden w-48" style={{ top: contextMenu.y, left: contextMenu.x }}>
+                <div className="fixed bg-[#1a1d24] border border-border rounded-xl shadow-2xl z-[9999] overflow-hidden w-48" style={{ top: contextMenu.y, left: contextMenu.x }}>
                     {(() => {
                         const m = machines.find(mac => mac.id === contextMenu.id);
                         if (!m) return null;
                         return (
                             <div className="py-1">
-                                <button onClick={() => { handlePrintLabel(m); }} className="w-full text-left px-4 py-3 text-sm text-white hover:bg-white/10 flex gap-3 items-center"><Printer size={16} /> Etikett</button>
-                                <button onClick={() => { handleEdit(m); }} className="w-full text-left px-4 py-3 text-sm text-white hover:bg-white/10 flex gap-3 items-center"><Edit2 size={16} /> Bearbeiten</button>
-                                <div className="h-px bg-white/10 my-1"></div>
+                                <button onClick={() => { handlePrintLabel(m); }} className="w-full text-left px-4 py-3 text-sm text-white hover:bg-muted flex gap-3 items-center"><Printer size={16} /> Etikett</button>
+                                <button onClick={() => { handleEdit(m); }} className="w-full text-left px-4 py-3 text-sm text-white hover:bg-muted flex gap-3 items-center"><Edit2 size={16} /> Bearbeiten</button>
+                                <div className="h-px bg-muted my-1"></div>
                                 <button onClick={() => { handleDeleteMachine(m); }} className="w-full text-left px-4 py-3 text-sm text-rose-400 hover:bg-rose-500/10 flex gap-3 items-center"><Trash2 size={16} /> Löschen</button>
                             </div>
                         )
@@ -316,8 +319,8 @@ const Machines: React.FC = () => {
                 </div>
             )}
         </MasterDetailLayout>
+        </PageWrapper>
     );
 };
-
 
 export default Machines;

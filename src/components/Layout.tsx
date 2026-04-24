@@ -21,6 +21,7 @@ import { usePersistentState } from '../../hooks/usePersistentState';
 import NotificationToast from './NotificationToast';
 import { useIsIOS } from '../../hooks/useIsIOS';
 import { ALL_NAV_ITEMS, DEFAULT_SIDEBAR_ORDER } from './NavConfig';
+import { AnimatedBackground } from './ui/AnimatedBackground';
 
 interface LayoutProps {
     children: React.ReactNode;
@@ -147,7 +148,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
                     <WifiOff size={48} className="text-red-500" />
                 </div>
                 <h1 className="text-2xl font-bold text-white mb-2">Keine Verbindung</h1>
-                <p className="text-white/50 mb-8 max-w-xs">
+                <p className="text-muted-foreground mb-8 max-w-xs">
                     Um sicherzustellen, dass du immer mit aktuellen Lagerbeständen arbeitest, ist die Nutzung offline deaktiviert.
                 </p>
                 <Button onClick={() => checkConnection()} icon={<RefreshCw size={18} />}>
@@ -161,6 +162,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
 
     return (
         <GlassLayout>
+            <AnimatedBackground />
             {/* --- THEME SELECTOR MODAL --- */}
             <ThemeSelector isOpen={showThemeSelector} onClose={() => setShowThemeSelector(false)} />
 
@@ -174,7 +176,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
                         initial={{ y: -100, opacity: 0 }}
                         animate={{ y: 0, opacity: 1 }}
                         exit={{ y: -100, opacity: 0 }}
-                        className="fixed top-4 left-1/2 -translate-x-1/2 z-[100] glass-panel px-6 py-3 rounded-full flex items-center gap-4 shadow-2xl border-emerald-500/30 mt-[env(safe-area-inset-top)]"
+                        className="fixed top-4 left-1/2 -translate-x-1/2 z-[100] bg-card text-card-foreground shadow-sm rounded-xl border border-border px-6 py-3 rounded-full flex items-center gap-4 shadow-2xl border-emerald-500/30 mt-[env(safe-area-inset-top)]"
                     >
                         <div className="flex items-center gap-2 text-sm font-medium text-emerald-400">
                             <RefreshCw className="animate-spin" size={18} />
@@ -182,7 +184,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
                         </div>
                         <button
                             onClick={reloadPage}
-                            className="bg-emerald-500 text-white px-4 py-1.5 rounded-full text-xs font-bold uppercase tracking-wider hover:bg-emerald-400 transition-colors shadow-lg shadow-emerald-500/20"
+                            className="bg-primary text-white px-4 py-1.5 rounded-full text-xs font-bold uppercase tracking-wider hover:bg-primary transition-colors shadow-lg shadow-emerald-500/20"
                         >
                             Aktualisieren
                         </button>
@@ -205,7 +207,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
                 transition={{ duration: 0.5, delay: 0.2 }}
                 className={clsx(
                     "hidden lg:flex flex-col justify-between fixed left-4 top-4 bottom-4 z-50",
-                    "glass-panel rounded-3xl border-white/10 shadow-2xl backdrop-blur-xl", // Enhanced blur
+                    "bg-card text-card-foreground shadow-sm rounded-xl border border-border rounded-3xl border-border shadow-2xl backdrop-blur-sm", // Enhanced blur
                     "transition-all duration-300 ease-spring",
                     isSidebarPinned ? 'w-64' : 'w-20'
                 )}
@@ -232,8 +234,8 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
                                         isScanner
                                             ? 'bg-gradient-to-r from-emerald-500 to-teal-600 text-white shadow-lg shadow-emerald-500/20 hover:shadow-emerald-500/40 mt-4 mb-4'
                                             : isActive
-                                                ? 'bg-white/10 text-emerald-400 shadow-inner'
-                                                : 'text-white/50 hover:text-white hover:bg-white/5'
+                                                ? 'bg-muted text-emerald-400 shadow-inner'
+                                                : 'text-muted-foreground hover:text-white hover:bg-muted'
                                     )}
                                 >
                                     <div className={clsx("transition-transform duration-200", isScanner && !isSidebarPinned && 'scale-110')}>{item.icon}</div>
@@ -241,12 +243,12 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
 
                                     {/* Tooltip for collapsed state */}
                                     {!isSidebarPinned && (
-                                        <div className="absolute left-full ml-4 px-3 py-1.5 bg-gray-900/90 backdrop-blur-md border border-white/10 text-white text-xs font-medium rounded-lg opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity whitespace-nowrap z-50 shadow-xl flex items-center">
+                                        <div className="absolute left-full ml-4 px-3 py-1.5 bg-background/90 backdrop-blur-sm border border-border text-white text-xs font-medium rounded-lg opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity whitespace-nowrap z-50 shadow-xl flex items-center">
                                             {item.label}
-                                            <div className="absolute left-0 top-1/2 -translate-x-1/2 -translate-y-1/2 w-2 h-2 bg-gray-900/90 border-l border-b border-white/10 rotate-45"></div>
+                                            <div className="absolute left-0 top-1/2 -translate-x-1/2 -translate-y-1/2 w-2 h-2 bg-background/90 border-l border-b border-border rotate-45"></div>
                                         </div>
                                     )}
-                                    {isSidebarPinned && isActive && !isScanner && <motion.div layoutId="active-pill" className="absolute right-3 w-1.5 h-1.5 rounded-full bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.8)]" />}
+                                    {isSidebarPinned && isActive && !isScanner && <motion.div layoutId="active-pill" className="absolute right-3 w-1.5 h-1.5 rounded-full bg-primary shadow-[0_0_8px_rgba(52,211,153,0.8)]" />}
                                 </button>
                             );
                         });
@@ -255,24 +257,24 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
 
                 <div className="p-3 border-t border-white/5 flex flex-col gap-2">
                     <div className={clsx("flex items-center rounded-xl bg-black/20 border border-white/5", isSidebarPinned ? 'p-3 gap-3' : 'justify-center p-2')}>
-                        <div className="w-8 h-8 rounded-full bg-emerald-500/20 flex items-center justify-center text-emerald-400 text-xs font-bold shrink-0">
+                        <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center text-emerald-400 text-xs font-bold shrink-0">
                             {profile?.full_name ? profile.full_name.charAt(0) : <UserCircle size={18} />}
                         </div>
                         {isSidebarPinned && (
                             <div className="flex-1 min-w-0 overflow-hidden">
                                 <div className="text-xs font-bold text-white truncate">{profile?.full_name?.split(' ')[0] || 'User'}</div>
-                                <div className="text-[10px] text-white/40 truncate">Angemeldet</div>
+                                <div className="text-[10px] text-muted-foreground truncate">Angemeldet</div>
                             </div>
                         )}
-                        {isSidebarPinned && <button onClick={handleLogout} className="text-white/40 hover:text-rose-400 transition-colors p-1"><LogOut size={16} /></button>}
+                        {isSidebarPinned && <button onClick={handleLogout} className="text-muted-foreground hover:text-rose-400 transition-colors p-1"><LogOut size={16} /></button>}
                     </div>
-                    {!isSidebarPinned && <button onClick={handleLogout} className="flex justify-center p-3 rounded-xl text-white/40 hover:text-rose-400 hover:bg-white/5 transition-colors"><LogOut size={20} /></button>}
+                    {!isSidebarPinned && <button onClick={handleLogout} className="flex justify-center p-3 rounded-xl text-muted-foreground hover:text-rose-400 hover:bg-muted transition-colors"><LogOut size={20} /></button>}
                     {/* Theme Selector Button */}
                     <button
                         onClick={() => setShowThemeSelector(true)}
                         className={clsx(
-                            "flex items-center rounded-xl transition-colors hover:bg-white/5",
-                            theme === 'glass' ? 'text-amber-400/70 hover:text-amber-400' : 'text-white/30 hover:text-white',
+                            "flex items-center rounded-xl transition-colors hover:bg-muted",
+                            theme === 'glass' ? 'text-amber-400/70 hover:text-amber-400' : 'text-muted-foreground hover:text-white',
                             isSidebarPinned ? 'px-4 py-3 gap-3' : 'justify-center p-3'
                         )}
                         title="Design ändern"
@@ -283,9 +285,9 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
                     {/* Push Benachrichtigungen */}
                     <div className={clsx("flex items-center rounded-xl", isSidebarPinned ? 'px-1 py-1 gap-3' : 'justify-center')}>
                         <PushNotificationToggle userId={profile?.id ?? null} compact={true} />
-                        {isSidebarPinned && <span className="text-xs font-medium text-white/30">Benachrichtigungen</span>}
+                        {isSidebarPinned && <span className="text-xs font-medium text-muted-foreground">Benachrichtigungen</span>}
                     </div>
-                    <button onClick={() => setIsSidebarPinned(!isSidebarPinned)} className={clsx("flex items-center rounded-xl transition-colors text-white/30 hover:text-white hover:bg-white/5", isSidebarPinned ? 'px-4 py-3 gap-3' : 'justify-center p-3')} title={isSidebarPinned ? "Einklappen" : "Menü fixieren"}>
+                    <button onClick={() => setIsSidebarPinned(!isSidebarPinned)} className={clsx("flex items-center rounded-xl transition-colors text-muted-foreground hover:text-white hover:bg-muted", isSidebarPinned ? 'px-4 py-3 gap-3' : 'justify-center p-3')} title={isSidebarPinned ? "Einklappen" : "Menü fixieren"}>
                         {isSidebarPinned ? <PanelLeftClose size={20} /> : <PanelLeftOpen size={20} />}
                         {isSidebarPinned && <span className="text-xs font-medium">Menü einklappen</span>}
                     </button>
@@ -302,18 +304,18 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
                 className={clsx("lg:hidden fixed left-0 right-0 z-40 px-4 py-2 flex justify-end pointer-events-none max-w-4xl mx-auto mt-[env(safe-area-inset-top)]", updateAvailable ? 'top-12' : 'top-0')}
             >
                 <div className="pointer-events-auto flex items-center gap-2">
-                    <div className="glass-panel rounded-full px-3 py-1.5 flex items-center gap-3 shadow-lg">
+                    <div className="bg-card text-card-foreground shadow-sm rounded-xl border border-border rounded-full px-3 py-1.5 flex items-center gap-3 shadow-lg">
                         <div className="flex items-center gap-2">
-                            <div className="w-6 h-6 rounded-full bg-emerald-500/30 flex items-center justify-center text-emerald-300 text-xs font-bold">
+                            <div className="w-6 h-6 rounded-full bg-primary/30 flex items-center justify-center text-emerald-300 text-xs font-bold">
                                 {profile?.full_name ? profile.full_name.charAt(0) : <UserCircle size={14} />}
                             </div>
-                            <span className="text-xs text-white/70 hidden sm:inline">{profile?.full_name?.split(' ')[0] || 'User'}</span>
+                            <span className="text-xs text-muted-foreground hidden sm:inline">{profile?.full_name?.split(' ')[0] || 'User'}</span>
                         </div>
-                        <div className="w-px h-4 bg-white/10"></div>
+                        <div className="w-px h-4 bg-muted"></div>
                         {/* Push Toggle Mobile */}
                         <PushNotificationToggle userId={profile?.id ?? null} compact={true} />
-                        <div className="w-px h-4 bg-white/10"></div>
-                        <button onClick={handleLogout} className="text-white/40 hover:text-rose-400 transition-colors" title="Abmelden">
+                        <div className="w-px h-4 bg-muted"></div>
+                        <button onClick={handleLogout} className="text-muted-foreground hover:text-rose-400 transition-colors" title="Abmelden">
                             <LogOut size={14} />
                         </button>
                     </div>
@@ -359,7 +361,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
                 transition={{ duration: 0.5, delay: 0.3 }}
                 className="lg:hidden fixed bottom-0 left-0 right-0 z-[160] w-full"
             >
-                <div className="w-full bg-black/40 backdrop-blur-xl border-t border-white/10 shadow-[0_-4px_24px_rgba(0,0,0,0.5)]">
+                <div className="w-full bg-black/30 backdrop-blur-sm border-t border-border shadow-[0_-4px_24px_rgba(0,0,0,0.5)]">
                     <nav className="h-16 flex items-center relative overflow-hidden">
                         <div className="flex items-center justify-between overflow-x-auto w-full h-full px-2 sm:px-6 gap-2 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:'none'] [scrollbar-width:'none']">
                             {(() => {
@@ -380,8 +382,8 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
                                                 if (!item) return null;
                                                 const isActive = currentPath === item.id;
                                                 return (
-                                                    <button key={item.id} onClick={() => navigate(`/${item.id}`)} className={clsx("relative flex flex-col items-center justify-center w-12 h-16 transition-all duration-300 shrink-0", isActive ? 'text-emerald-400' : 'text-white/50 hover:text-white/80')}>
-                                                        <div className={clsx("p-1.5 rounded-xl transition-all", isActive ? "bg-white/5" : "")}>
+                                                    <button key={item.id} onClick={() => navigate(`/${item.id}`)} className={clsx("relative flex flex-col items-center justify-center w-12 h-16 transition-all duration-300 shrink-0", isActive ? 'text-emerald-400' : 'text-muted-foreground hover:text-muted-foreground')}>
+                                                        <div className={clsx("p-1.5 rounded-xl transition-all", isActive ? "bg-muted" : "")}>
                                                             {item.icon}
                                                         </div>
                                                         <span className={clsx("text-[10px] mt-0.5", isActive ? "font-bold" : "font-medium")}>{item.label}</span>
@@ -399,8 +401,8 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
                                                 if (!item) return null;
                                                 const isActive = currentPath === item.id;
                                                 return (
-                                                    <button key={item.id} onClick={() => navigate(`/${item.id}`)} className={clsx("relative flex flex-col items-center justify-center w-12 h-16 transition-all duration-300 shrink-0", isActive ? 'text-emerald-400' : 'text-white/50 hover:text-white/80')}>
-                                                        <div className={clsx("p-1.5 rounded-xl transition-all", isActive ? "bg-white/5" : "")}>
+                                                    <button key={item.id} onClick={() => navigate(`/${item.id}`)} className={clsx("relative flex flex-col items-center justify-center w-12 h-16 transition-all duration-300 shrink-0", isActive ? 'text-emerald-400' : 'text-muted-foreground hover:text-muted-foreground')}>
+                                                        <div className={clsx("p-1.5 rounded-xl transition-all", isActive ? "bg-muted" : "")}>
                                                             {item.icon}
                                                         </div>
                                                         <span className={clsx("text-[10px] mt-0.5", isActive ? "font-bold" : "font-medium")}>{item.label}</span>

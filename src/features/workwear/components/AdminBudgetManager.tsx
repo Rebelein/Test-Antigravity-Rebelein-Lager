@@ -165,19 +165,19 @@ export const AdminBudgetManager: React.FC<AdminBudgetManagerProps> = ({ onBack }
                 </Button>
                 <div>
                     <h2 className="text-2xl font-bold text-white">Einstellungen & Budget</h2>
-                    <p className="text-white/50">Verwaltung für Jahr {currentYear}</p>
+                    <p className="text-muted-foreground">Verwaltung für Jahr {currentYear}</p>
                 </div>
             </div>
 
             {/* Global Settings Card */}
             <GlassCard className="p-6 flex flex-col md:flex-row items-center gap-6">
-                <div className="w-20 h-20 bg-white/5 rounded-xl flex items-center justify-center overflow-hidden border border-white/10 shrink-0">
-                    {logoUrl ? <img src={logoUrl} className="w-full h-full object-contain p-2" /> : <div className="text-xs text-white/30 text-center">Kein Logo</div>}
+                <div className="w-20 h-20 bg-muted rounded-xl flex items-center justify-center overflow-hidden border border-border shrink-0">
+                    {logoUrl ? <img src={logoUrl} className="w-full h-full object-contain p-2" /> : <div className="text-xs text-muted-foreground text-center">Kein Logo</div>}
                 </div>
                 <div className="flex-1 text-center md:text-left">
                     <h3 className="text-lg font-bold text-white">Firmenlogo</h3>
-                    <p className="text-white/50 text-sm mb-4">Dieses Logo wird für Artikel verwendet, bei denen "Mit Firmenlogo" aktiviert ist.</p>
-                    <label className="inline-flex items-center gap-2 px-4 py-2 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 rounded-lg cursor-pointer transition-colors text-sm font-medium border border-emerald-500/20">
+                    <p className="text-muted-foreground text-sm mb-4">Dieses Logo wird für Artikel verwendet, bei denen "Mit Firmenlogo" aktiviert ist.</p>
+                    <label className="inline-flex items-center gap-2 px-4 py-2 bg-primary/10 hover:bg-primary/20 text-emerald-400 rounded-lg cursor-pointer transition-colors text-sm font-medium border border-emerald-500/20">
                         {uploadingLogo ? 'Lade hoch...' : 'Logo hochladen / ändern'}
                         <input type="file" accept="image/*" className="hidden" onChange={handleLogoUpload} disabled={uploadingLogo} />
                     </label>
@@ -190,7 +190,7 @@ export const AdminBudgetManager: React.FC<AdminBudgetManagerProps> = ({ onBack }
             </div>
 
             <GlassCard className="p-4 flex gap-2">
-                <Search className="text-white/40" />
+                <Search className="text-muted-foreground" />
                 <input
                     type="text"
                     placeholder="Benutzer suchen..."
@@ -203,19 +203,19 @@ export const AdminBudgetManager: React.FC<AdminBudgetManagerProps> = ({ onBack }
             <div className="grid gap-4">
                 {filteredUsers.map(user => (
                     <GlassCard key={user.id} className="p-4 flex flex-col md:flex-row items-center gap-4">
-                        <div className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center text-white/50 shrink-0">
+                        <div className="w-10 h-10 rounded-full bg-muted flex items-center justify-center text-muted-foreground shrink-0">
                             {user.avatar_url ? <img src={user.avatar_url} className="w-full h-full rounded-full" /> : <UserCircle />}
                         </div>
                         <div className="flex-1 text-center md:text-left">
                             <div className="font-bold text-white">{user.full_name || 'Unbekannt'}</div>
-                            <div className="text-xs text-white/50">{user.email}</div>
+                            <div className="text-xs text-muted-foreground">{user.email}</div>
                         </div>
 
                         {/* Role Selector */}
                         <div className="w-full md:w-40">
-                            <label className="text-[10px] uppercase text-white/30 font-bold ml-1">Rolle</label>
+                            <label className="text-[10px] uppercase text-muted-foreground font-bold ml-1">Rolle</label>
                             <select
-                                className="w-full bg-black/20 border border-white/10 rounded-lg px-2 py-2 text-sm text-white outline-none focus:border-emerald-500/50"
+                                className="w-full bg-black/20 border border-border rounded-lg px-2 py-2 text-sm text-white outline-none focus:border-emerald-500/50"
                                 value={user.workwear_role || 'monteur'}
                                 onChange={(e) => handleRoleChange(user.id, e.target.value as WorkwearRole)}
                             >
@@ -228,15 +228,15 @@ export const AdminBudgetManager: React.FC<AdminBudgetManagerProps> = ({ onBack }
                         {/* Budget Input */}
                         <div className="w-full md:w-40 flex items-end gap-2">
                             <div className="flex-1">
-                                <label className="text-[10px] uppercase text-white/30 font-bold ml-1">Budget {currentYear} (€)</label>
+                                <label className="text-[10px] uppercase text-muted-foreground font-bold ml-1">Budget {currentYear} (€)</label>
                                 <input
                                     type="number"
-                                    className="w-full bg-black/20 border border-white/10 rounded-lg px-2 py-2 text-sm text-white outline-none focus:border-emerald-500/50"
+                                    className="w-full bg-black/20 border border-border rounded-lg px-2 py-2 text-sm text-white outline-none focus:border-emerald-500/50"
                                     value={user.budget_limit}
                                     onChange={(e) => handleBudgetChange(user.id, parseFloat(e.target.value))}
                                 />
                             </div>
-                            <Button onClick={() => saveBudget(user)} variant="ghost" className="h-[38px] w-[38px] p-0 flex items-center justify-center bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20">
+                            <Button onClick={() => saveBudget(user)} variant="ghost" className="h-[38px] w-[38px] p-0 flex items-center justify-center bg-primary/10 text-emerald-400 hover:bg-primary/20">
                                 <Save size={18} />
                             </Button>
                         </div>

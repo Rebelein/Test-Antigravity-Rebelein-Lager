@@ -45,12 +45,12 @@ export const InventoryToolbar: React.FC<InventoryToolbarProps> = ({
     };
 
     return (
-        <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl p-1.5 flex flex-col gap-2 shadow-lg sticky top-0 z-30 transition-all duration-300">
+        <div className="bg-muted backdrop-blur-sm border border-border rounded-2xl p-1.5 flex flex-col gap-2 shadow-lg sticky top-0 z-30 transition-all duration-300">
             {/* Top Row: Warehouse Name & Search & Toggle */}
             <div className="flex items-center gap-2">
                 {/* Compact Warehouse Indicator (Always visible) */}
                 <div
-                    className="flex-1 flex items-center gap-2 px-3 py-1.5 rounded-xl bg-black/20 border border-white/5 cursor-pointer hover:bg-white/5 transition-colors overflow-hidden"
+                    className="flex-1 flex items-center gap-2 px-3 py-1.5 rounded-xl bg-black/20 border border-white/5 cursor-pointer hover:bg-muted transition-colors overflow-hidden"
                     onClick={onToggle}
                 >
                     <div className="flex flex-col min-w-0">
@@ -65,7 +65,7 @@ export const InventoryToolbar: React.FC<InventoryToolbarProps> = ({
 
                 {/* Search Bar (Always visible) */}
                 <div className="flex-[2] flex items-center bg-black/20 border border-white/5 rounded-xl px-3 py-1.5">
-                    <Search size={14} className="text-white/40 mr-2 shrink-0" />
+                    <Search size={14} className="text-muted-foreground mr-2 shrink-0" />
                     <input
                         type="text"
                         placeholder="Suchen..."
@@ -79,8 +79,8 @@ export const InventoryToolbar: React.FC<InventoryToolbarProps> = ({
                 <button
                     onClick={onToggle}
                     className={`p-2 rounded-xl border transition-all ${isExpanded
-                        ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400'
-                        : 'bg-white/5 border-white/10 text-white/50 hover:text-white'
+                        ? 'bg-primary/10 border-emerald-500/30 text-emerald-400'
+                        : 'bg-muted border-border text-muted-foreground hover:text-white'
                         }`}
                 >
                     <Settings2 size={18} className={`transition-transform duration-300 ${isExpanded ? 'rotate-180' : ''}`} />
@@ -99,24 +99,24 @@ export const InventoryToolbar: React.FC<InventoryToolbarProps> = ({
                         {/* Warehouse Switching Buttons */}
                         <div className="flex items-center gap-2 w-full pt-1">
                             <div className="flex items-center gap-2 p-1 bg-black/20 rounded-xl border border-white/5 overflow-hidden">
-                                <button onClick={() => setViewMode('primary')} className={`px-4 py-1.5 rounded-lg text-xs font-medium transition-colors ${viewMode === 'primary' ? 'bg-emerald-600 text-white shadow-lg' : 'text-white/50 hover:text-white'}`}>Lager</button>
-                                <button onClick={() => setViewMode('secondary')} className={`px-4 py-1.5 rounded-lg text-xs font-medium transition-colors ${viewMode === 'secondary' ? 'bg-blue-600 text-white shadow-lg' : 'text-white/50 hover:text-white'}`}>Favorit</button>
+                                <button onClick={() => setViewMode('primary')} className={`px-4 py-1.5 rounded-lg text-xs font-medium transition-colors ${viewMode === 'primary' ? 'bg-primary text-white shadow-lg' : 'text-muted-foreground hover:text-white'}`}>Lager</button>
+                                <button onClick={() => setViewMode('secondary')} className={`px-4 py-1.5 rounded-lg text-xs font-medium transition-colors ${viewMode === 'secondary' ? 'bg-blue-600 text-white shadow-lg' : 'text-muted-foreground hover:text-white'}`}>Favorit</button>
                             </div>
 
                             {/* Warehouse Dropdown (Detailed) */}
                             <div className="relative flex-1" ref={dropdownRef}>
                                 <button
                                     onClick={() => setIsWarehouseDropdownOpen(!isWarehouseDropdownOpen)}
-                                    className="w-full flex items-center justify-between gap-2 px-3 py-1.5 rounded-xl bg-white/5 border border-white/10 text-xs text-white hover:bg-white/10 transition-colors"
+                                    className="w-full flex items-center justify-between gap-2 px-3 py-1.5 rounded-xl bg-muted border border-border text-xs text-white hover:bg-muted transition-colors"
                                 >
                                     <span className="truncate">{currentWarehouse ? currentWarehouse.name : 'Lager wählen...'}</span>
                                     <ChevronDown size={12} className={`transition-transform duration-200 ${isWarehouseDropdownOpen ? 'rotate-180' : ''}`} />
                                 </button>
                                 {isWarehouseDropdownOpen && (
-                                    <div className="absolute top-full left-0 mt-2 w-full min-w-[200px] bg-slate-900 border border-white/10 rounded-xl z-50 shadow-2xl backdrop-blur-xl overflow-hidden">
+                                    <div className="absolute top-full left-0 mt-2 w-full min-w-[200px] bg-card border border-border rounded-xl z-50 shadow-2xl backdrop-blur-sm overflow-hidden">
                                         <div className="max-h-60 overflow-y-auto p-1 space-y-1">
                                             {warehouses.map(w => (
-                                                <button key={w.id} onClick={() => handleWhChange(w.id)} className={`w-full text-left px-3 py-2 text-xs rounded-lg flex items-center justify-between ${currentWarehouse?.id === w.id ? 'bg-emerald-500/10 text-emerald-400 font-medium' : 'text-white hover:bg-white/5'}`}>
+                                                <button key={w.id} onClick={() => handleWhChange(w.id)} className={`w-full text-left px-3 py-2 text-xs rounded-lg flex items-center justify-between ${currentWarehouse?.id === w.id ? 'bg-primary/10 text-emerald-400 font-medium' : 'text-white hover:bg-muted'}`}>
                                                     <span>{w.name}</span>
                                                     {currentWarehouse?.id === w.id && <Check size={12} />}
                                                 </button>
@@ -135,8 +135,8 @@ export const InventoryToolbar: React.FC<InventoryToolbarProps> = ({
                                         key={filter}
                                         onClick={() => setActiveFilter(filter)}
                                         className={`px-3 py-1.5 rounded-lg text-[11px] font-medium border transition-all ${activeFilter === filter
-                                            ? 'bg-white/10 text-white border-white/20'
-                                            : 'text-white/40 border-transparent hover:text-white hover:bg-white/5'
+                                            ? 'bg-muted text-white border-border'
+                                            : 'text-muted-foreground border-transparent hover:text-white hover:bg-muted'
                                             }`}
                                     >
                                         {filter}
@@ -153,10 +153,10 @@ export const InventoryToolbar: React.FC<InventoryToolbarProps> = ({
                                 }}
                                 className="text-[11px] py-1 pl-8 pr-7 bg-black/20 border-white/5 min-w-[130px]"
                             >
-                                <option value="location-asc" className="bg-slate-900">Fach (Auf)</option>
-                                <option value="location-desc" className="bg-slate-900">Fach (Ab)</option>
-                                <option value="name-asc" className="bg-slate-900">Name (A-Z)</option>
-                                <option value="name-desc" className="bg-slate-900">Name (Z-A)</option>
+                                <option value="location-asc" className="bg-card">Fach (Auf)</option>
+                                <option value="location-desc" className="bg-card">Fach (Ab)</option>
+                                <option value="name-asc" className="bg-card">Name (A-Z)</option>
+                                <option value="name-desc" className="bg-card">Name (Z-A)</option>
                             </GlassSelect>
                         </div>
                     </motion.div>

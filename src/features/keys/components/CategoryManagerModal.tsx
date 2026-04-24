@@ -81,7 +81,7 @@ export const CategoryManagerModal: React.FC<CategoryManagerModalProps> = ({ isOp
             <div className="p-6 space-y-6">
 
                 {/* Create New */}
-                <div className="bg-white/5 p-4 rounded-xl border border-white/10 space-y-4">
+                <div className="bg-muted p-4 rounded-xl border border-border space-y-4">
                     <h3 className="text-sm font-bold text-white uppercase tracking-wider">Neue Kategorie</h3>
                     <div className="flex gap-2">
                         <div className="flex-1">
@@ -111,22 +111,22 @@ export const CategoryManagerModal: React.FC<CategoryManagerModalProps> = ({ isOp
                         ))}
                     </div>
 
-                    <Button onClick={handleCreate} disabled={loading || !newCategoryName} className="w-full bg-emerald-600 hover:bg-emerald-500">
+                    <Button onClick={handleCreate} disabled={loading || !newCategoryName} className="w-full bg-primary hover:bg-primary">
                         <Plus size={16} className="mr-2" /> Erstellen
                     </Button>
                 </div>
 
                 {/* List */}
                 <div className="space-y-2 max-h-[300px] overflow-y-auto">
-                    <h3 className="text-sm font-bold text-white/50 uppercase tracking-wider mb-2">Vorhandene Kategorien</h3>
-                    {categories.length === 0 && <p className="text-center text-gray-500 py-4">Keine Kategorien vorhanden.</p>}
+                    <h3 className="text-sm font-bold text-muted-foreground uppercase tracking-wider mb-2">Vorhandene Kategorien</h3>
+                    {categories.length === 0 && <p className="text-center text-muted-foreground py-4">Keine Kategorien vorhanden.</p>}
                     {categories.map(cat => (
                         <div key={cat.id} className="flex justify-between items-center p-3 bg-black/20 rounded-lg border border-white/5">
                             <div className="flex items-center gap-3">
                                 <div className="w-4 h-4 rounded-full" style={{ backgroundColor: cat.color }}></div>
                                 <span className="font-bold text-white">{cat.name}</span>
                             </div>
-                            <button onClick={() => handleDelete(cat.id)} className="text-white/30 hover:text-red-400 p-2">
+                            <button onClick={() => handleDelete(cat.id)} className="text-muted-foreground hover:text-red-400 p-2">
                                 <Trash2 size={16} />
                             </button>
                         </div>

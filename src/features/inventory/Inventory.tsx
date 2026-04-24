@@ -16,6 +16,7 @@ import { MasterDetailLayout } from '../../components/MasterDetailLayout';
 import { ArticleDetailContent } from './components/ArticleDetailContent';
 import { ArticleEditForm } from './components/ArticleEditForm';
 import { clsx } from 'clsx';
+import { PageWrapper } from '../../components/ui/PageWrapper';
 
 interface SortConfig {
     key: string;
@@ -395,7 +396,7 @@ const Inventory = () => {
         }
     };
 
-    if (loading || authLoading) return <div className="flex flex-col items-center justify-center h-[60vh] text-white/50"><Loader2 size={40} className="animate-spin mb-4 text-emerald-400" /><p>Lade Lagerbestand...</p></div>;
+    if (loading || authLoading) return <div className="flex flex-col items-center justify-center h-[60vh] text-muted-foreground"><Loader2 size={40} className="animate-spin mb-4 text-emerald-400" /><p>Lade Lagerbestand...</p></div>;
 
     const CategorySidebar = () => (
         <div className="flex flex-col gap-1 py-2 h-full overflow-y-auto custom-scrollbar pr-2">
@@ -403,30 +404,30 @@ const Inventory = () => {
                 onClick={() => { setSelectedCategory(null); setIsMobileCategoryOpen(false); }}
                 className={clsx(
                     "flex items-center justify-between px-4 py-3 rounded-xl transition-all duration-200 text-left",
-                    !selectedCategory ? "bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 shadow-lg shadow-emerald-500/10" : "text-white/60 hover:text-white hover:bg-white/5"
+                    !selectedCategory ? "bg-primary/20 text-emerald-400 border border-emerald-500/30 shadow-lg shadow-emerald-500/10" : "text-muted-foreground hover:text-white hover:bg-muted"
                 )}
             >
                 <div className="flex items-center gap-3">
                     <Layers size={18} />
                     <span className="font-medium text-sm">Alle Kategorien</span>
                 </div>
-                {!selectedCategory && <div className="w-1.5 h-1.5 rounded-full bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.8)]" />}
+                {!selectedCategory && <div className="w-1.5 h-1.5 rounded-full bg-primary shadow-[0_0_8px_rgba(52,211,153,0.8)]" />}
             </button>
-            <div className="h-px bg-white/5 my-2 mx-4" />
+            <div className="h-px bg-muted my-2 mx-4" />
             {distinctCategories.map(cat => (
                 <button
                     key={cat}
                     onClick={() => { setSelectedCategory(cat); setIsMobileCategoryOpen(false); }}
                     className={clsx(
                         "flex items-center justify-between px-4 py-2.5 rounded-xl transition-all duration-200 text-left group",
-                        selectedCategory === cat ? "bg-emerald-500/20 text-emerald-400 border border-emerald-500/30" : "text-white/50 hover:text-white hover:bg-white/5"
+                        selectedCategory === cat ? "bg-primary/20 text-emerald-400 border border-emerald-500/30" : "text-muted-foreground hover:text-white hover:bg-muted"
                     )}
                 >
                     <div className="flex items-center gap-3">
-                        <ChevronRight size={14} className={clsx("transition-transform", selectedCategory === cat ? "rotate-90 text-emerald-400" : "text-white/20 group-hover:text-white/40")} />
+                        <ChevronRight size={14} className={clsx("transition-transform", selectedCategory === cat ? "rotate-90 text-emerald-400" : "text-muted-foreground group-hover:text-muted-foreground")} />
                         <span className="text-sm truncate">{cat}</span>
                     </div>
-                    {selectedCategory === cat && <div className="w-1.5 h-1.5 rounded-full bg-emerald-400" />}
+                    {selectedCategory === cat && <div className="w-1.5 h-1.5 rounded-full bg-primary" />}
                 </button>
             ))}
         </div>
@@ -439,7 +440,7 @@ const Inventory = () => {
                     {isMobile && (
                         <button 
                             onClick={() => setIsMobileCategoryOpen(true)}
-                            className="p-2.5 rounded-xl bg-white/5 text-emerald-400 border border-white/10 active:scale-95 transition-transform"
+                            className="p-2.5 rounded-xl bg-muted text-emerald-400 border border-border active:scale-95 transition-transform"
                         >
                             <Menu size={20} />
                         </button>
@@ -450,7 +451,7 @@ const Inventory = () => {
                     </div>
                 </div>
                 <div className="flex gap-2">
-                    <Button variant={isSelectionMode ? 'secondary' : 'primary'} className={clsx("transition-all", isSelectionMode ? 'bg-white/20 text-white' : 'bg-white/5 text-white/70 hover:text-white border-white/10')} onClick={toggleSelectionMode} icon={isSelectionMode ? <CheckSquare size={18} /> : <ListChecks size={18} />}>
+                    <Button variant={isSelectionMode ? 'secondary' : 'primary'} className={clsx("transition-all", isSelectionMode ? 'bg-muted text-white' : 'bg-muted text-muted-foreground hover:text-white border-border')} onClick={toggleSelectionMode} icon={isSelectionMode ? <CheckSquare size={18} /> : <ListChecks size={18} />}>
                         <span className="hidden sm:inline">{isSelectionMode ? 'Fertig' : 'Auswahl'}</span>
                     </Button>
                     <Button variant="primary" icon={<Plus size={18} />} onClick={() => openNewArticleModal(selectedCategory || undefined)}>Neu</Button>
@@ -483,7 +484,7 @@ const Inventory = () => {
                 {/* Desktop Sidebar */}
                 {!isMobile && (
                     <aside className="w-64 flex-shrink-0 border-r border-white/5 flex flex-col animate-in slide-in-from-left duration-500">
-                        <div className="px-4 py-2 flex items-center gap-2 text-white/30 uppercase tracking-widest text-[10px] font-bold">
+                        <div className="px-4 py-2 flex items-center gap-2 text-muted-foreground uppercase tracking-widest text-[10px] font-bold">
                             <Filter size={10} />
                             Kategorien
                         </div>
@@ -530,18 +531,18 @@ const Inventory = () => {
                             animate={{ opacity: 1 }}
                             exit={{ opacity: 0 }}
                             onClick={() => setIsMobileCategoryOpen(false)}
-                            className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[200] lg:hidden"
+                            className="fixed inset-0 bg-black/30 backdrop-blur-sm z-[200] lg:hidden"
                         />
                         <motion.div 
                             initial={{ x: '-100%' }}
                             animate={{ x: 0 }}
                             exit={{ x: '-100%' }}
                             transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-                            className="fixed left-0 top-0 bottom-0 w-[80%] max-w-sm bg-[#1a1a1a] z-[201] border-r border-white/10 p-6 flex flex-col lg:hidden shadow-2xl shadow-black"
+                            className="fixed left-0 top-0 bottom-0 w-[80%] max-w-sm bg-[#1a1a1a] z-[201] border-r border-border p-6 flex flex-col lg:hidden shadow-2xl shadow-black"
                         >
                             <div className="flex items-center justify-between mb-8">
                                 <h2 className="text-2xl font-bold text-white">Kategorien</h2>
-                                <button onClick={() => setIsMobileCategoryOpen(false)} className="p-2 text-white/40 hover:text-white">
+                                <button onClick={() => setIsMobileCategoryOpen(false)} className="p-2 text-muted-foreground hover:text-white">
                                     <X size={24} />
                                 </button>
                             </div>
@@ -555,10 +556,10 @@ const Inventory = () => {
 
             {isSelectionMode && selectedArticleIds.size > 0 && (
                 <div className="absolute bottom-4 left-0 right-0 p-4 z-[90] flex justify-center animate-in slide-in-from-bottom-5 pointer-events-none">
-                    <div className="bg-black/80 backdrop-blur-xl border border-white/20 rounded-2xl shadow-2xl p-3 flex items-center gap-4 max-w-lg w-full pointer-events-auto">
+                    <div className="bg-black/30 backdrop-blur-sm border border-border rounded-2xl shadow-2xl p-3 flex items-center gap-4 max-w-lg w-full pointer-events-auto">
                         <div className="pl-2 font-bold text-white whitespace-nowrap">{selectedArticleIds.size} Ausgewählt</div>
-                        <div className="h-6 w-px bg-white/20"></div>
-                        <Button onClick={handleOpenCopyModal} icon={<Copy size={16} />} className="flex-1 bg-emerald-600 hover:bg-emerald-500 text-xs sm:text-sm whitespace-nowrap">In anderes Lager kopieren</Button>
+                        <div className="h-6 w-px bg-muted"></div>
+                        <Button onClick={handleOpenCopyModal} icon={<Copy size={16} />} className="flex-1 bg-primary hover:bg-primary text-xs sm:text-sm whitespace-nowrap">In anderes Lager kopieren</Button>
                     </div>
                 </div>
             )}
@@ -566,8 +567,9 @@ const Inventory = () => {
     );
 
     return (
-        <>
-            <MasterDetailLayout
+        <PageWrapper>
+            <>
+                <MasterDetailLayout
                 isOpen={!!selectedArticle || isEditModalOpen}
                 onClose={() => { setSelectedArticle(null); setIsEditModalOpen(false); }}
                 title={isEditModalOpen ? (isEditMode ? 'Artikel bearbeiten' : 'Neuer Artikel') : (selectedArticle ? selectedArticle.name : 'Details')}
@@ -598,7 +600,7 @@ const Inventory = () => {
                             hasNavigation={true}
                         />
                     ) : (
-                        <div className="flex flex-col items-center justify-center h-full text-white/30">
+                        <div className="flex flex-col items-center justify-center h-full text-muted-foreground">
                             <Layers size={64} strokeWidth={1} className="mb-4 opacity-50" />
                             <p>Wähle einen Artikel aus</p>
                         </div>
@@ -607,7 +609,7 @@ const Inventory = () => {
             />
 
             {showDeleteModal && deleteTargetId && (
-                <div className="fixed inset-0 z-[170] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in zoom-in-95">
+                <div className="fixed inset-0 z-[170] flex items-center justify-center p-4 bg-black/30 backdrop-blur-sm animate-in fade-in zoom-in-95">
                     <GlassCard className="w-full max-w-sm p-6 flex flex-col items-center text-center">
                         <div className="w-16 h-16 rounded-full bg-red-500/10 flex items-center justify-center mb-4 text-red-400 border border-red-500/20"><Trash2 size={32} /></div>
                         <h3 className="text-xl font-bold text-white mb-2">Artikel löschen?</h3>
@@ -617,15 +619,16 @@ const Inventory = () => {
             )}
 
             {isCopyModalOpen && (
-                <div className="fixed inset-0 z-[170] flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-in fade-in zoom-in-95">
+                <div className="fixed inset-0 z-[170] flex items-center justify-center p-4 bg-black/30 backdrop-blur-sm animate-in fade-in zoom-in-95">
                     <GlassCard className="w-full max-w-lg">
                         <h2 className="text-xl font-bold text-white mb-4">Artikel Kopieren (Beta)</h2>
-                        <div className="text-white/60 mb-6">Funktion wird implementiert...</div>
+                        <div className="text-muted-foreground mb-6">Funktion wird implementiert...</div>
                         <Button onClick={() => setIsCopyModalOpen(false)}>Schließen</Button>
                     </GlassCard>
                 </div>
             )}
         </>
+        </PageWrapper>
     );
 };
 

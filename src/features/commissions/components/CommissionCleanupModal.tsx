@@ -242,16 +242,16 @@ const CommissionCleanupModalComponent: React.FC<CommissionCleanupModalProps> = (
         <GlassModal isOpen={isOpen} onClose={onClose} className="w-[95vw] max-w-4xl h-[90vh] flex flex-col p-0 overflow-hidden">
 
             {/* HEADER */}
-            <div className="p-4 border-b border-white/10 flex justify-between items-center bg-black/20">
+            <div className="p-4 border-b border-border flex justify-between items-center bg-black/20">
                 <div className="flex items-center gap-2">
                     <BoxSelect size={20} className="text-emerald-400" />
                     <h2 className="text-lg font-bold text-white">Bestand prüfen (Audit)</h2>
                 </div>
-                <button onClick={onClose} className="p-2 hover:bg-white/10 rounded-full text-white/60 hover:text-white"><X size={20} /></button>
+                <button onClick={onClose} className="p-2 hover:bg-muted rounded-full text-muted-foreground hover:text-white"><X size={20} /></button>
             </div>
 
             {/* CONTENT */}
-            <div className="flex-1 bg-gray-900 relative overflow-hidden flex flex-col">
+            <div className="flex-1 bg-background relative overflow-hidden flex flex-col">
 
                 {step === 'scan' && (
                     <>
@@ -265,12 +265,12 @@ const CommissionCleanupModalComponent: React.FC<CommissionCleanupModalProps> = (
 
                             {/* Stats Overlay */}
                             <div className="absolute top-4 left-4 right-4 flex justify-between pointer-events-none">
-                                <div className="bg-black/60 backdrop-blur px-3 py-1.5 rounded-lg text-white border border-white/10">
-                                    <div className="text-xs text-white/50">Erwartet</div>
+                                <div className="bg-black/30 backdrop-blur px-3 py-1.5 rounded-lg text-white border border-border">
+                                    <div className="text-xs text-muted-foreground">Erwartet</div>
                                     <div className="font-bold text-lg">{expectedCommissions.length}</div>
                                 </div>
-                                <div className="bg-black/60 backdrop-blur px-3 py-1.5 rounded-lg text-white border border-white/10">
-                                    <div className="text-xs text-white/50">Gefunden</div>
+                                <div className="bg-black/30 backdrop-blur px-3 py-1.5 rounded-lg text-white border border-border">
+                                    <div className="text-xs text-muted-foreground">Gefunden</div>
                                     <div className="font-bold text-lg text-emerald-400">{foundCommissions.length}</div>
                                 </div>
                             </div>
@@ -278,7 +278,7 @@ const CommissionCleanupModalComponent: React.FC<CommissionCleanupModalProps> = (
                             {/* Debug Info */}
                             {lastScannedDebug && (
                                 <div className="absolute bottom-20 left-0 right-0 text-center pointer-events-none">
-                                    <span className="bg-black/50 text-white/50 text-xs px-2 py-1 rounded backdrop-blur">
+                                    <span className="bg-black/50 text-muted-foreground text-xs px-2 py-1 rounded backdrop-blur">
                                         Letzter Scan: {lastScannedDebug}
                                     </span>
                                 </div>
@@ -286,11 +286,11 @@ const CommissionCleanupModalComponent: React.FC<CommissionCleanupModalProps> = (
                         </div>
 
                         {/* Scan Footer */}
-                        <div className="p-4 bg-gray-800 border-t border-white/10 space-y-3">
+                        <div className="p-4 bg-card border-t border-border space-y-3">
                             <div className="relative">
-                                <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-white/30" size={16} />
+                                <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" size={16} />
                                 <input
-                                    className="w-full bg-white/5 border border-white/10 rounded-lg py-3 pl-10 pr-4 text-white text-sm focus:outline-none focus:ring-1 focus:ring-emerald-500"
+                                    className="w-full bg-muted border border-border rounded-lg py-3 pl-10 pr-4 text-white text-sm focus:outline-none focus:ring-1 focus:ring-emerald-500"
                                     placeholder="Manuelle ID Eingabe (COMM:...)"
                                     onKeyDown={(e) => {
                                         if (e.key === 'Enter') {
@@ -300,7 +300,7 @@ const CommissionCleanupModalComponent: React.FC<CommissionCleanupModalProps> = (
                                     }}
                                 />
                             </div>
-                            <Button onClick={handleFinishScan} className="w-full bg-emerald-600 hover:bg-emerald-500 py-4 text-lg">
+                            <Button onClick={handleFinishScan} className="w-full bg-primary hover:bg-primary py-4 text-lg">
                                 Scannen beenden & Auswerten
                             </Button>
                         </div>
@@ -308,10 +308,10 @@ const CommissionCleanupModalComponent: React.FC<CommissionCleanupModalProps> = (
                 )}
 
                 {step === 'review' && (
-                    <div className="flex-1 flex flex-col overflow-hidden bg-gray-900">
-                        <div className="p-4 bg-gray-800/50 border-b border-white/5">
+                    <div className="flex-1 flex flex-col overflow-hidden bg-background">
+                        <div className="p-4 bg-card/50 border-b border-white/5">
                             <h3 className="text-white font-bold mb-1">Auswertung</h3>
-                            <p className="text-sm text-white/60">
+                            <p className="text-sm text-muted-foreground">
                                 {foundCommissions.length} von {expectedCommissions.length} Kommissionen gefunden.
                             </p>
                         </div>
@@ -327,7 +327,7 @@ const CommissionCleanupModalComponent: React.FC<CommissionCleanupModalProps> = (
                                     </div>
                                     <div className="space-y-2 opacity-60">
                                         {foundCommissions.map(c => (
-                                            <div key={c.id} className="p-3 bg-white/5 rounded-lg border border-white/5 flex justify-between items-center">
+                                            <div key={c.id} className="p-3 bg-muted rounded-lg border border-white/5 flex justify-between items-center">
                                                 <span className="text-white text-sm">{c.name}</span>
                                                 <StatusBadge status={c.status} size="sm" />
                                             </div>
@@ -343,7 +343,7 @@ const CommissionCleanupModalComponent: React.FC<CommissionCleanupModalProps> = (
                                     <h4 className="text-rose-400 font-bold uppercase text-xs tracking-wider">Vermisst - Nicht gescannt ({missingCommissions.length})</h4>
                                 </div>
                                 {missingCommissions.length === 0 ? (
-                                    <div className="text-white/30 text-sm italic">Alles vollständig! 👍</div>
+                                    <div className="text-muted-foreground text-sm italic">Alles vollständig! 👍</div>
                                 ) : (
                                     <div className="space-y-2">
                                         {missingCommissions.map(c => (
@@ -369,14 +369,14 @@ const CommissionCleanupModalComponent: React.FC<CommissionCleanupModalProps> = (
                             </div>
 
                             {unexpectedCount > 0 && (
-                                <div className="text-xs text-white/30 italic mt-4 text-center">
+                                <div className="text-xs text-muted-foreground italic mt-4 text-center">
                                     + {unexpectedCount} unbekannte/irrelevante Codes gescannt.
                                 </div>
                             )}
 
                         </div>
 
-                        <div className="p-4 border-t border-white/10 bg-gray-800 flex flex-col gap-3">
+                        <div className="p-4 border-t border-border bg-card flex flex-col gap-3">
                             <div className="grid grid-cols-2 gap-3">
                                 <Button
                                     onClick={() => handleCleanup(missingCommissions.map(c => c.id), 'missing', false)}

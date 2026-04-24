@@ -187,21 +187,21 @@ const ImageOptimizer: React.FC = () => {
     return (
         <div className="min-h-screen bg-[#0f1115] text-white p-6 pb-24 space-y-8">
             <header className="flex items-center gap-4">
-                <button onClick={() => navigate('/dashboard')} className="p-2 bg-white/5 rounded-full hover:bg-white/10 text-white/50 hover:text-white"><ArrowLeft size={20} /></button>
+                <button onClick={() => navigate('/dashboard')} className="p-2 bg-muted rounded-full hover:bg-muted text-muted-foreground hover:text-white"><ArrowLeft size={20} /></button>
                 <div>
                     <h1 className="text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-purple-400 to-blue-400">
                         Bild-Optimierer
                     </h1>
-                    <p className="text-white/50">Komprimiert nachträglich alle Artikelbilder</p>
+                    <p className="text-muted-foreground">Komprimiert nachträglich alle Artikelbilder</p>
                 </div>
             </header>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <GlassCard className="flex flex-col items-center justify-center p-6">
                     <div className="text-3xl font-bold text-white">{stats.total}</div>
-                    <div className="text-xs text-white/50 uppercase tracking-wider">Gesamt Bilder</div>
+                    <div className="text-xs text-muted-foreground uppercase tracking-wider">Gesamt Bilder</div>
                 </GlassCard>
-                <GlassCard className="flex flex-col items-center justify-center p-6 border-emerald-500/20 bg-emerald-500/5">
+                <GlassCard className="flex flex-col items-center justify-center p-6 border-emerald-500/20 bg-primary/5">
                     <div className="text-3xl font-bold text-emerald-400">{stats.optimized}</div>
                     <div className="text-xs text-emerald-200/50 uppercase tracking-wider">Bereits Optimiert (WebP)</div>
                 </GlassCard>
@@ -221,7 +221,7 @@ const ImageOptimizer: React.FC = () => {
                                 <AlertTriangle size={32} />
                             </div>
                             <h2 className="text-xl font-bold text-white">Optimierung erforderlich</h2>
-                            <p className="text-white/60 max-w-md">
+                            <p className="text-muted-foreground max-w-md">
                                 Es wurden {stats.pending} Bilder gefunden, die noch nicht im WebP-Format vorliegen.
                                 Starten Sie den Prozess, um Speicherplatz zu und Ladezeiten zu verbessern.
                             </p>
@@ -235,17 +235,17 @@ const ImageOptimizer: React.FC = () => {
                                 </Button>
                             ) : (
                                 <div className="w-full max-w-md space-y-2">
-                                    <div className="flex justify-between text-xs text-white/50">
+                                    <div className="flex justify-between text-xs text-muted-foreground">
                                         <span>Verarbeite... {progress.current} / {progress.total}</span>
                                         <span>{Math.round((progress.current / progress.total) * 100)}%</span>
                                     </div>
-                                    <div className="h-2 bg-white/10 rounded-full overflow-hidden">
+                                    <div className="h-2 bg-muted rounded-full overflow-hidden">
                                         <div
                                             className="h-full bg-gradient-to-r from-purple-500 to-blue-500 transition-all duration-300"
                                             style={{ width: `${(progress.current / progress.total) * 100}%` }}
                                         />
                                     </div>
-                                    <div className="flex justify-between text-[10px] text-white/30 pt-1">
+                                    <div className="flex justify-between text-[10px] text-muted-foreground pt-1">
                                         <span className="text-emerald-400">Erfolg: {progress.success}</span>
                                         <span className="text-rose-400">Fehler: {progress.failed}</span>
                                     </div>
@@ -253,17 +253,17 @@ const ImageOptimizer: React.FC = () => {
                             )}
                         </GlassCard>
                     ) : (
-                        <GlassCard className="p-8 flex flex-col items-center text-center space-y-4 border-emerald-500/20 bg-emerald-500/5">
-                            <div className="w-16 h-16 rounded-full bg-emerald-500/10 flex items-center justify-center text-emerald-400 mb-2">
+                        <GlassCard className="p-8 flex flex-col items-center text-center space-y-4 border-emerald-500/20 bg-primary/5">
+                            <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center text-emerald-400 mb-2">
                                 <CheckCircle size={32} />
                             </div>
                             <h2 className="text-xl font-bold text-white">Alles optimiert!</h2>
-                            <p className="text-white/60">Alle Artikelbilder sind auf dem neuesten Stand.</p>
+                            <p className="text-muted-foreground">Alle Artikelbilder sind auf dem neuesten Stand.</p>
                         </GlassCard>
                     )}
 
                     {logs.length > 0 && (
-                        <div className="bg-black/50 rounded-xl p-4 font-mono text-xs text-white/50 max-h-[300px] overflow-y-auto">
+                        <div className="bg-black/50 rounded-xl p-4 font-mono text-xs text-muted-foreground max-h-[300px] overflow-y-auto">
                             {logs.map((log, i) => (
                                 <div key={i} className="border-b border-white/5 py-1 last:border-0">{log}</div>
                             ))}

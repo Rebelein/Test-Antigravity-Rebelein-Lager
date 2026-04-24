@@ -36,6 +36,9 @@ import { TasksTile } from '../../features/dashboard/components/tiles/TasksTile';
 import { DashboardDetailPanel, TaskDetailContent } from '../../features/dashboard/components/DashboardDetailPanel';
 import { useDashboardData } from '../../features/dashboard/hooks/useDashboardData';
 import { DashboardToolbar } from '../../features/dashboard/components/DashboardToolbar';
+import { SpotlightCard } from '../../components/ui/SpotlightCard';
+import { ShinyText } from '../../components/ui/ShinyText';
+import { PageWrapper } from '../../components/ui/PageWrapper';
 
 const ResponsiveGridLayout = WidthProvider(Responsive);
 
@@ -308,6 +311,7 @@ const Dashboard: React.FC = () => {
     };
 
     return (
+        <PageWrapper>
         <div className="space-y-6 pb-12">
             {/* HEADER */}
             <DashboardToolbar 
@@ -323,7 +327,7 @@ const Dashboard: React.FC = () => {
             {/* Fullscreen Overlays */}
             {isCommissionTileFullscreen && (
                 <div className="fixed inset-4 z-[100]">
-                    <GlassCard className="flex flex-col p-0 overflow-hidden border-none bg-gray-900/95 backdrop-blur-xl border border-white/20 shadow-2xl rounded-3xl h-full" contentClassName="!p-0 flex flex-col h-full">
+                    <GlassCard className="flex flex-col p-0 overflow-hidden border-none bg-background/95 backdrop-blur-sm border border-border shadow-2xl rounded-3xl h-full" contentClassName="!p-0 flex flex-col h-full">
                         <CommissionsTile
                             openCommissions={openCommissions}
                             backlogCommissions={backlogCommissions}
@@ -344,7 +348,7 @@ const Dashboard: React.FC = () => {
 
             {isTasksTileFullscreen && (
                 <div className="fixed inset-4 z-[100]">
-                    <GlassCard className="flex flex-col p-0 overflow-hidden border-none bg-gray-900/95 backdrop-blur-xl border border-white/20 shadow-2xl rounded-3xl h-full w-full mx-auto" contentClassName="!p-0 flex flex-col h-full w-full">
+                    <GlassCard className="flex flex-col p-0 overflow-hidden border-none bg-background/95 backdrop-blur-sm border border-border shadow-2xl rounded-3xl h-full w-full mx-auto" contentClassName="!p-0 flex flex-col h-full w-full">
                         <TasksTile
                             tasks={dashboardTasks}
                             channels={dashboardChannels}
@@ -392,7 +396,7 @@ const Dashboard: React.FC = () => {
                                 draggableHandle=".drag-handle"
                             >
                                 {/* --- TILE 1: MASCHINENSTATUS --- */}
-                                <div key="machines">
+                                <SpotlightCard key="machines" className="h-full">
                                     <MachinesTile
                                         rentedMachines={rentedMachines}
                                         repairMachines={repairMachines}
@@ -400,20 +404,20 @@ const Dashboard: React.FC = () => {
                                         onToggleLock={() => toggleTileLock('machines')}
                                         onSelectMachine={setSelectedMachine}
                                     />
-                                </div>
+                                </SpotlightCard>
 
                                 {/* --- TILE 1.5: KEY STATUS (NEW) --- */}
-                                <div key="keys">
+                                <SpotlightCard key="keys" className="h-full">
                                     <KeysTile
                                         rentedKeys={rentedKeys}
                                         isLocked={isTileLocked('keys')}
                                         onToggleLock={() => toggleTileLock('keys')}
                                         onSelectKey={setSelectedKey}
                                     />
-                                </div>
+                                </SpotlightCard>
 
                                 {/* --- TILE 2: KOMMISSIONEN --- */}
-                                <div key="commissions">
+                                <SpotlightCard key="commissions" className="h-full">
                                     <CommissionsTile
                                         openCommissions={openCommissions}
                                         backlogCommissions={backlogCommissions}
@@ -428,19 +432,19 @@ const Dashboard: React.FC = () => {
                                         onMarkAllAsRead={handleMarkAllAsRead}
                                         onMobileTabChange={setMobileTab}
                                     />
-                                </div>
+                                </SpotlightCard>
 
                                 {/* --- TILE 3: EREIGNISLISTE --- */}
-                                <div key="events">
+                                <SpotlightCard key="events" className="h-full">
                                     <EventsTile
                                         recentEvents={recentEvents}
                                         isLocked={isTileLocked('events')}
                                         onToggleLock={() => toggleTileLock('events')}
                                     />
-                                </div>
+                                </SpotlightCard>
 
                                 {/* --- TILE 4: AUFGABEN & CHAT --- */}
-                                <div key="tasks">
+                                <SpotlightCard key="tasks" className="h-full">
                                     <TasksTile
                                         tasks={dashboardTasks}
                                         channels={dashboardChannels}
@@ -455,7 +459,7 @@ const Dashboard: React.FC = () => {
                                         onTasksRefresh={fetchTasksData}
                                         onChannelsRefresh={fetchChannelsData}
                                     />
-                                </div>
+                                </SpotlightCard>
                             </ResponsiveGridLayout>
                             <div className="h-24" /> {/* Spacer */}
                         </div>
@@ -496,12 +500,12 @@ const Dashboard: React.FC = () => {
 
             {/* CREATE COMMISSION MODAL (Directly on Dashboard) */}
             {showCreateCommissionModal && (
-                <div className="fixed inset-0 z-[170] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
+                <div className="fixed inset-0 z-[170] flex items-center justify-center p-4 bg-black/30 backdrop-blur-sm">
                     <div
                         onMouseDown={(e) => e.stopPropagation()}
                         onClick={(e) => e.stopPropagation()}
                         onTouchStart={(e) => e.stopPropagation()}
-                        className="w-full max-w-5xl h-[85vh] overflow-hidden rounded-2xl bg-[#0a0a0a] border border-white/10 shadow-2xl flex flex-col relative"
+                        className="w-full max-w-5xl h-[85vh] overflow-hidden rounded-2xl bg-[#0a0a0a] border border-border shadow-2xl flex flex-col relative"
                     >
                         <CommissionEditContent
                             isEditMode={false}
@@ -564,7 +568,7 @@ const Dashboard: React.FC = () => {
                     <div className="w-full h-full overflow-hidden flex flex-col pt-2">
                         <iframe 
                             src="https://task.rebeleinapp.de/" 
-                            className="w-full h-full border-0 bg-white/5"
+                            className="w-full h-full border-0 bg-muted"
                             title="Tasks App Integration"
                         />
                     </div>
@@ -572,7 +576,9 @@ const Dashboard: React.FC = () => {
             )}
 
         </div >
+        </PageWrapper>
     );
 };
 
 export default Dashboard;
+Dashboard;

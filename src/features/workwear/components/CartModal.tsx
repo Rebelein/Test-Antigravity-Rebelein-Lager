@@ -30,23 +30,23 @@ export const CartModal: React.FC<CartModalProps> = ({
         <GlassModal isOpen={isOpen} onClose={onClose} title="Warenkorb">
             <div className="p-6">
                 {cart.length === 0 ? (
-                    <div className="text-center py-8 text-white/50">Der Warenkorb ist leer.</div>
+                    <div className="text-center py-8 text-muted-foreground">Der Warenkorb ist leer.</div>
                 ) : (
                     <div className="space-y-4">
                         {cart.map(item => (
-                            <div key={item.id} className="flex items-center gap-4 bg-white/5 p-3 rounded-lg border border-white/5">
+                            <div key={item.id} className="flex items-center gap-4 bg-muted p-3 rounded-lg border border-white/5">
                                 <div className="w-12 h-12 bg-black/30 rounded flex items-center justify-center shrink-0 overflow-hidden">
                                     {item.type === 'catalog' && item.template?.image_url ? (
                                         <img src={item.template.image_url} className="w-full h-full object-cover" alt="" />
                                     ) : (
-                                        <Shirt className="text-white/20" />
+                                        <Shirt className="text-muted-foreground" />
                                     )}
                                 </div>
                                 <div className="flex-1 min-w-0">
                                     <div className="font-bold text-white truncate">
                                         {item.type === 'catalog' ? item.template!.name : item.customData!.name}
                                     </div>
-                                    <div className="text-xs text-white/50">
+                                    <div className="text-xs text-muted-foreground">
                                         Größe: {item.size} | Menge: {item.quantity} |
                                         {item.type === 'catalog' && item.template!.has_logo ? ' Mit Logo' : ' Ohne Logo'}
                                     </div>
@@ -54,14 +54,14 @@ export const CartModal: React.FC<CartModalProps> = ({
                                 <div className="font-mono text-emerald-300">
                                     {((item.type === 'catalog' ? item.template!.price : item.customData!.price) * item.quantity).toFixed(2)} €
                                 </div>
-                                <button onClick={() => onRemove(item.id)} className="p-2 hover:bg-white/10 rounded-full text-white/40 hover:text-rose-400">
+                                <button onClick={() => onRemove(item.id)} className="p-2 hover:bg-muted rounded-full text-muted-foreground hover:text-rose-400">
                                     <Trash2 size={16} />
                                 </button>
                             </div>
                         ))}
 
-                        <div className="border-t border-white/10 pt-4 mt-4 flex justify-between items-center">
-                            <div className="text-white/60">Gesamtsumme</div>
+                        <div className="border-t border-border pt-4 mt-4 flex justify-between items-center">
+                            <div className="text-muted-foreground">Gesamtsumme</div>
                             <div className="text-xl font-bold text-emerald-400 font-mono">{cartTotal.toFixed(2)} €</div>
                         </div>
 

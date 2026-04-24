@@ -77,23 +77,23 @@ export const UserSizeManager = () => {
     return (
         <div className="max-w-2xl mx-auto space-y-6">
             <div className="text-center mb-8">
-                <div className="w-16 h-16 bg-emerald-500/10 rounded-full flex items-center justify-center mx-auto mb-4 text-emerald-400">
+                <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4 text-emerald-400">
                     <Ruler size={32} />
                 </div>
                 <h2 className="text-2xl font-bold text-white">Meine Größen</h2>
-                <p className="text-white/50">Hinterlege hier deine Konfektionsgrößen, damit sie bei Bestellungen automatisch vorgeschlagen werden.</p>
+                <p className="text-muted-foreground">Hinterlege hier deine Konfektionsgrößen, damit sie bei Bestellungen automatisch vorgeschlagen werden.</p>
             </div>
 
             <GlassCard className="p-6 grid grid-cols-1 md:grid-cols-2 gap-6">
                 {CATEGORIES.map(cat => (
                     <div key={cat} className="space-y-2">
-                        <label className="text-sm font-medium text-white/70 block ml-1">{cat}</label>
+                        <label className="text-sm font-medium text-muted-foreground block ml-1">{cat}</label>
                         <select
-                            className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white outline-none focus:border-emerald-500/50 appearance-none transition-colors hover:bg-white/10"
+                            className="w-full bg-muted border border-border rounded-xl px-4 py-3 text-white outline-none focus:border-emerald-500/50 appearance-none transition-colors hover:bg-muted"
                             value={sizes[cat] || ''}
                             onChange={(e) => setSizes(prev => ({ ...prev, [cat]: e.target.value }))}
                         >
-                            <option value="" disabled className="bg-zinc-900 text-white/50">Bitte wählen...</option>
+                            <option value="" disabled className="bg-zinc-900 text-muted-foreground">Bitte wählen...</option>
                             {getSizeOptions(cat).map(opt => (
                                 <option key={opt} value={opt} className="bg-zinc-900">{opt}</option>
                             ))}

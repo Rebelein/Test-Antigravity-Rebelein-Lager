@@ -120,25 +120,80 @@ export const MasterDetailLayout: React.FC<MasterDetailLayoutProps> = ({
     // MOBILE LAYOUT: Use Modal or Slide-Over behavior
     if (isMobile) {
         return (
-            <>
-                <div className={`w-full h-full flex flex-col overflow-hidden ${className}`}>
+            <div className="w-full h-full relative bg-black">
+                {/* Wrap list in a motion div to create iOS/Vaul scale down effect */}
+                <motion.div 
+                    animate={{ 
+                        scale: isOpen ? 0.93 : 1, 
+                        opacity: isOpen ? 0.5 : 1,
+                        borderRadius: isOpen ? '1.5rem' : '0rem',
+                        y: isOpen ? '10px' : '0px'
+                    }}
+                    transition={{ type: "spring", damping: 25, stiffness: 300 }}
+                    className={`w-full h-full flex flex-col overflow-hidden bg-background origin-top ${className}`}
+                >
                     {listContent}
-                </div>
+                </motion.div>
 
                 <AnimatePresence>
                     {isOpen && (
-                        <GlassModal
-                            isOpen={isOpen}
-                            onClose={onClose}
-                            title={title || 'Details'}
-                            fullScreen={true}
-                        >
-                            {detailContent}
-                        </GlassModal>
+                        <>
+                            {/* Mobile Backdrop */}
+                            <motion.div
+                                initial={{ opacity: 0 }}
+                                animate={{ opacity: 1 }}
+                                exit={{ opacity: 0 }}
+                                onClick={onClose}
+                                className="fixed inset-0 z-[170] bg-black/40 backdrop-blur-[2px]"
+                            />
+                            
+                            {/* Mobile Bottom Sheet */}
+                            <motion.div
+                                initial={{ y: "100%" }}
+                                animate={{ y: 0 }}
+                                exit={{ y: "100%" }}
+                                transition={{ type: "spring", damping: 25, stiffness: 300, mass: 0.8 }}
+                                // We use drag="y" to allow swiping down to close
+                                drag="y"
+                                dragConstraints={{ top: 0 }}
+                                dragElastic={0.2}
+                                onDragEnd={(e, info) => {
+                                    if (info.offset.y > 100 || info.velocity.y > 500) {
+                                        onClose();
+                                    }
+                                }}
+                                className="fixed inset-x-0 bottom-0 z-[180] bg-card text-card-foreground shadow-[0_-10px_40px_rgba(0,0,0,0.3)] rounded-t-[2rem] flex flex-col h-[90vh] ring-1 ring-white/10"
+                            >
+                                {/* Drag Handle */}
+                                <div className="w-full flex justify-center py-3 shrink-0 cursor-grab active:cursor-grabbing">
+                                    <div className="w-12 h-1.5 bg-muted-foreground/30 rounded-full" />
+                                </div>
+
+                                {/* Sheet Header */}
+                                {!hideHeader && title && (
+                                    <div className="flex items-center justify-between px-6 pb-4 border-b border-border/50 shrink-0">
+                                        <h2 className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-white to-white/70 truncate pr-4">
+                                            {title}
+                                        </h2>
+                                        <button
+                                            onClick={onClose}
+                                            className="p-2 -mr-2 rounded-full hover:bg-white/10 text-muted-foreground hover:text-white transition-all focus:outline-none"
+                                        >
+                                            <X size={20} />
+                                        </button>
+                                    </div>
+                                )}
+
+                                {/* Content */}
+                                <div className={`flex-1 overflow-y-auto custom-scrollbar relative z-0 ${contentClassName}`}>
+                                    {detailContent}
+                                </div>
+                            </motion.div>
+                        </>
                     )}
                 </AnimatePresence>
                 {children}
-            </>
+            </div>
         );
     }
 
@@ -149,7 +204,7 @@ export const MasterDetailLayout: React.FC<MasterDetailLayoutProps> = ({
             <motion.div
                 initial={false}
                 animate={{ width: !isOpen ? "100%" : `calc(100% - ${sidebarWidth}px)` }}
-                transition={{ type: "spring", damping: 30, stiffness: 300 }}
+                transition={{ type: "spring", damping: 30, stiffness: 350 }}
                 className="h-full overflow-hidden"
             >
                 <div className="h-full w-full overflow-y-auto custom-scrollbar pr-2">
@@ -161,34 +216,34 @@ export const MasterDetailLayout: React.FC<MasterDetailLayoutProps> = ({
             <AnimatePresence>
                 {isOpen && (
                     <motion.div
-                        initial={{ x: "100%" }}
-                        animate={{ x: 0 }}
-                        exit={{ x: "100%" }}
-                        transition={{ type: "spring", damping: 30, stiffness: 300 }}
+                        initial={{ x: "100%", opacity: 0.5 }}
+                        animate={{ x: 0, opacity: 1 }}
+                        exit={{ x: "100%", opacity: 0.5 }}
+                        transition={{ type: "spring", damping: 30, stiffness: 350, mass: 0.8 }}
                         style={{ width: sidebarWidth }}
-                        className="absolute top-0 right-0 h-full bg-gray-900/40 backdrop-blur-2xl shadow-[0_0_50px_-12px_rgba(0,0,0,0.5)] z-50 flex flex-col"
+                        className="absolute top-0 right-0 h-full bg-card/95 backdrop-blur-3xl shadow-[-20px_0_50px_-10px_rgba(0,0,0,0.5)] z-50 flex flex-col border-l border-border ring-1 ring-white/5"
                     >
-                        {/* Glass Highlight Overlay (Left side) - Thicker, softer glow */}
-                        <div className="absolute inset-y-0 left-0 w-px bg-gradient-to-b from-transparent via-white/10 to-transparent pointer-events-none" />
+                        {/* Highlight Overlay (Left side) */}
+                        <div className="absolute inset-y-0 left-0 w-px bg-gradient-to-b from-transparent via-primary/30 to-transparent pointer-events-none" />
 
                         {/* RESIZE HANDLE */}
                         <div
-                            className="absolute left-0 top-0 bottom-0 w-1.5 cursor-col-resize hover:bg-emerald-500/50 transition-colors z-[60] -ml-[3px] group"
+                            className="absolute left-0 top-0 bottom-0 w-2 cursor-col-resize hover:bg-primary/20 transition-colors z-[60] -ml-[4px] group flex items-center justify-center"
                             onMouseDown={startResizing}
                             onTouchStart={startResizing}
                         >
-                            <div className="absolute left-0.5 top-1/2 -translate-y-1/2 h-8 w-0.5 bg-white/20 rounded-full opacity-0 group-hover:opacity-100 transition-opacity" />
+                            <div className="h-12 w-1 bg-white/20 rounded-full opacity-0 group-hover:opacity-100 transition-opacity" />
                         </div>
 
                         {/* Drawer Header */}
                         {!hideHeader && (
-                            <div className="flex items-center justify-between p-4 border-b border-white/5 bg-white/[0.02] shrink-0 backdrop-blur-sm">
-                                <h2 className="text-lg font-bold text-slate-100 truncate pr-4 text-shadow-sm">
+                            <div className="flex items-center justify-between px-6 py-5 border-b border-border/50 shrink-0 bg-transparent z-10 relative">
+                                <h2 className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-white to-white/70 truncate pr-4">
                                     {title || 'Details'}
                                 </h2>
                                 <button
                                     onClick={onClose}
-                                    className="p-2 hover:bg-white/10 rounded-xl text-white/50 hover:text-white transition-all duration-200"
+                                    className="p-2 -mr-2 rounded-full hover:bg-white/10 text-muted-foreground hover:text-white transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-primary/50"
                                 >
                                     <X size={20} />
                                 </button>
@@ -196,7 +251,7 @@ export const MasterDetailLayout: React.FC<MasterDetailLayoutProps> = ({
                         )}
 
                         {/* Detail Content */}
-                        <div className={`flex-1 ${contentClassName}`}>
+                        <div className={`flex-1 relative z-0 ${contentClassName}`}>
                             {detailContent}
                         </div>
                     </motion.div>

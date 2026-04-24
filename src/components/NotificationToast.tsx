@@ -19,7 +19,7 @@ const NotificationToast: React.FC = () => {
                         className="pointer-events-auto"
                     >
                         <div className={`
-                            relative overflow-hidden rounded-2xl border backdrop-blur-xl shadow-2xl p-4 flex items-start gap-3
+                            relative overflow-hidden rounded-2xl border backdrop-blur-sm shadow-2xl p-4 flex items-start gap-3
                             ${getStyleForType(notification.type)}
                         `}>
                             {/* Icon */}
@@ -30,13 +30,13 @@ const NotificationToast: React.FC = () => {
                             {/* Content */}
                             <div className="flex-1 min-w-0">
                                 <h4 className="text-sm font-bold text-white leading-tight">{notification.title}</h4>
-                                <p className="text-xs text-white/80 mt-1 leading-relaxed">{notification.message}</p>
+                                <p className="text-xs text-muted-foreground mt-1 leading-relaxed">{notification.message}</p>
                             </div>
 
                             {/* Close Button */}
                             <button
                                 onClick={() => removeNotification(notification.id)}
-                                className="shrink-0 text-white/40 hover:text-white transition-colors"
+                                className="shrink-0 text-muted-foreground hover:text-white transition-colors"
                             >
                                 <X size={16} />
                             </button>
@@ -46,7 +46,7 @@ const NotificationToast: React.FC = () => {
                                 initial={{ width: "100%" }}
                                 animate={{ width: "0%" }}
                                 transition={{ duration: 6, ease: "linear" }}
-                                className="absolute bottom-0 left-0 h-0.5 bg-white/30"
+                                className="absolute bottom-0 left-0 h-0.5 bg-muted"
                             />
                         </div>
                     </motion.div>
@@ -58,11 +58,11 @@ const NotificationToast: React.FC = () => {
 
 const getStyleForType = (type: string) => {
     switch (type) {
-        case 'success': return 'bg-emerald-500/80 border-emerald-400/50';
+        case 'success': return 'bg-primary/80 border-emerald-400/50';
         case 'error': return 'bg-red-500/80 border-red-400/50';
         case 'warning': return 'bg-amber-500/80 border-amber-400/50';
         case 'update': return 'bg-blue-500/80 border-blue-400/50';
-        default: return 'bg-gray-800/80 border-white/20'; // info
+        default: return 'bg-card/80 border-border'; // info
     }
 };
 

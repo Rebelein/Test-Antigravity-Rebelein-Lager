@@ -152,13 +152,13 @@ const Stocktaking: React.FC = () => {
                     <ScanLine className="text-emerald-400" size={24} />
                     <h1 className="text-xl font-bold text-white">Scanner</h1>
                 </div>
-                <button onClick={() => navigate('/dashboard')} className="p-2 bg-white/10 rounded-full text-white/80 hover:text-white backdrop-blur-md">
+                <button onClick={() => navigate('/dashboard')} className="p-2 bg-muted rounded-full text-muted-foreground hover:text-white backdrop-blur-sm">
                     <X size={24} />
                 </button>
             </div>
 
             {/* SCANNER VIEWPORT */}
-            <div className="flex-1 relative overflow-hidden bg-gray-900">
+            <div className="flex-1 relative overflow-hidden bg-background">
                 {/* UNIFIED SCANNER */}
                 {!scannedResult && (
                     <UnifiedScanner
@@ -172,7 +172,7 @@ const Stocktaking: React.FC = () => {
 
                 {/* Error Toast */}
                 {error && (
-                    <div className="absolute bottom-40 left-4 right-4 p-4 bg-red-500/90 backdrop-blur-md text-white rounded-xl border border-red-400/50 flex items-center gap-3 animate-in slide-in-from-bottom-5 z-30">
+                    <div className="absolute bottom-40 left-4 right-4 p-4 bg-red-500/90 backdrop-blur-sm text-white rounded-xl border border-red-400/50 flex items-center gap-3 animate-in slide-in-from-bottom-5 z-30">
                         <AlertTriangle size={24} className="shrink-0" />
                         <span className="text-sm font-medium">{error}</span>
                     </div>
@@ -183,18 +183,18 @@ const Stocktaking: React.FC = () => {
             {!scannedResult && (
                 <div className="p-6 bg-black pb-24 z-20">
                     <div className="relative">
-                        <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-white/30" size={20} />
+                        <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground" size={20} />
                         <input
                             type="text"
                             placeholder="Code manuell eingeben..."
-                            className="w-full bg-white/10 border border-white/10 rounded-xl py-4 pl-12 pr-4 text-white placeholder-white/30 focus:outline-none focus:ring-2 focus:ring-emerald-500/50"
+                            className="w-full bg-muted border border-border rounded-xl py-4 pl-12 pr-4 text-white placeholder-white/30 focus:outline-none focus:ring-2 focus:ring-emerald-500/50"
                             onKeyDown={(e) => {
                                 if (e.key === 'Enter') handleScanSuccess((e.target as HTMLInputElement).value);
                             }}
                         />
                         <button
                             onClick={(e) => handleScanSuccess((e.currentTarget.previousElementSibling as HTMLInputElement).value)}
-                            className="absolute right-2 top-1/2 -translate-y-1/2 p-2 bg-emerald-600 rounded-lg text-white"
+                            className="absolute right-2 top-1/2 -translate-y-1/2 p-2 bg-primary rounded-lg text-white"
                         >
                             <ArrowRight size={20} />
                         </button>
@@ -204,7 +204,7 @@ const Stocktaking: React.FC = () => {
 
             {/* RESULT MODAL */}
             {scannedResult && scannedResult.type === 'article' && (
-                <div className="absolute inset-0 z-30 bg-black/60 backdrop-blur-sm flex items-end sm:items-center justify-center sm:p-4">
+                <div className="absolute inset-0 z-30 bg-black/30 backdrop-blur-sm flex items-end sm:items-center justify-center sm:p-4">
                     <GlassCard className="w-full sm:max-w-sm rounded-t-3xl sm:rounded-3xl animate-in slide-in-from-bottom-full sm:slide-in-from-bottom-10 flex flex-col max-h-[90vh]">
 
                         {/* Title & Close */}
@@ -213,19 +213,19 @@ const Stocktaking: React.FC = () => {
                                 <CheckCircle2 size={24} />
                                 <span className="font-bold">Artikel gefunden</span>
                             </div>
-                            <button onClick={handleCloseResult} className="text-white/50 hover:text-white"><X size={24} /></button>
+                            <button onClick={handleCloseResult} className="text-muted-foreground hover:text-white"><X size={24} /></button>
                         </div>
 
                         {/* Article Info */}
                         <div className="flex gap-4 mb-6 shrink-0">
-                            <div className="w-20 h-20 bg-white/10 rounded-xl overflow-hidden shrink-0 border border-white/10">
+                            <div className="w-20 h-20 bg-muted rounded-xl overflow-hidden shrink-0 border border-border">
                                 <img src={scannedResult.data.image_url || `https://picsum.photos/seed/${scannedResult.data.id}/200`} className="w-full h-full object-cover" />
                             </div>
                             <div>
                                 <h3 className="font-bold text-white line-clamp-2">{scannedResult.data.name}</h3>
-                                <div className="text-sm text-white/50 mt-1">{scannedResult.data.sku}</div>
+                                <div className="text-sm text-muted-foreground mt-1">{scannedResult.data.sku}</div>
                                 <div className="mt-2 flex items-center gap-2">
-                                    <span className="text-xs px-2 py-0.5 bg-white/10 rounded text-white/70">{scannedResult.data.location || 'Kein Ort'}</span>
+                                    <span className="text-xs px-2 py-0.5 bg-muted rounded text-muted-foreground">{scannedResult.data.location || 'Kein Ort'}</span>
                                     <span className={`text-sm font-bold ${scannedResult.data.stock < scannedResult.data.target_stock ? 'text-rose-400' : 'text-emerald-400'}`}>
                                         Bestand: {scannedResult.data.stock}
                                     </span>
@@ -234,17 +234,17 @@ const Stocktaking: React.FC = () => {
                         </div>
 
                         {/* Quick Booking Section */}
-                        <div className="bg-white/5 rounded-xl p-4 mb-4 border border-white/10 shrink-0">
+                        <div className="bg-muted rounded-xl p-4 mb-4 border border-border shrink-0">
                             <div className="flex items-center justify-between gap-4 mb-4">
                                 <button
                                     onClick={() => setBookingAmount(prev => prev - 1)}
-                                    className="w-12 h-12 flex items-center justify-center rounded-xl bg-white/10 hover:bg-white/20 text-white transition-colors"
+                                    className="w-12 h-12 flex items-center justify-center rounded-xl bg-muted hover:bg-muted text-white transition-colors"
                                 >
                                     <Minus size={24} />
                                 </button>
 
                                 <div className="flex flex-col items-center">
-                                    <span className="text-xs text-white/50 uppercase tracking-wider font-medium mb-1">Menge</span>
+                                    <span className="text-xs text-muted-foreground uppercase tracking-wider font-medium mb-1">Menge</span>
                                     <span className={`text-3xl font-bold font-mono ${bookingAmount > 0 ? 'text-emerald-400' :
                                         bookingAmount < 0 ? 'text-rose-400' : 'text-white'
                                         }`}>
@@ -254,7 +254,7 @@ const Stocktaking: React.FC = () => {
 
                                 <button
                                     onClick={() => setBookingAmount(prev => prev + 1)}
-                                    className="w-12 h-12 flex items-center justify-center rounded-xl bg-white/10 hover:bg-white/20 text-white transition-colors"
+                                    className="w-12 h-12 flex items-center justify-center rounded-xl bg-muted hover:bg-muted text-white transition-colors"
                                 >
                                     <Plus size={24} />
                                 </button>
@@ -264,10 +264,10 @@ const Stocktaking: React.FC = () => {
                                 onClick={handleQuickBook}
                                 disabled={bookingAmount === 0 || isBooking}
                                 className={`w-full py-4 text-lg font-bold shadow-lg transition-all ${bookingAmount > 0
-                                    ? 'bg-emerald-600 hover:bg-emerald-500 shadow-emerald-900/20'
+                                    ? 'bg-primary hover:bg-primary shadow-emerald-900/20'
                                     : bookingAmount < 0
                                         ? 'bg-rose-600 hover:bg-rose-500 shadow-rose-900/20'
-                                        : 'bg-white/10 text-white/30 cursor-not-allowed'
+                                        : 'bg-muted text-muted-foreground cursor-not-allowed'
                                     }`}
                             >
                                 {isBooking ? (

@@ -31,7 +31,7 @@ export const GlassCard: React.FC<GlassCardProps> = ({
   const variants = {
     default: "bg-white/[0.08] border-white/[0.15]", // Reference default
     subtle: "bg-white/[0.02] border-white/5",
-    prominent: "bg-white/[0.12] border-white/20 shadow-2xl"
+    prominent: "bg-white/[0.12] border-border shadow-2xl"
   };
 
   return (
@@ -78,13 +78,13 @@ export const GlassInput: React.FC<GlassInputProps> = ({ icon, className = '', ..
   return (
     <div className="relative w-full group">
       {icon && (
-        <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-white/50 group-focus-within:text-teal-400 transition-colors duration-300">
+        <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-muted-foreground group-focus-within:text-teal-400 transition-colors duration-300">
           {icon}
         </div>
       )}
       <input
         className={cn(
-          "w-full bg-black/20 backdrop-blur-md border border-white/10 rounded-xl py-3 pr-4 text-white placeholder-white/20",
+          "w-full bg-black/30 backdrop-blur-sm border border-border rounded-xl py-3 pr-4 text-white placeholder-white/20",
           "shadow-[inset_0_2px_4px_rgba(0,0,0,0.3)]", // Reference Inner Shadow
           "focus:outline-none focus:bg-black/30 focus:border-teal-500/30 focus:ring-2 focus:ring-teal-500/50",
           "transition-all duration-200",
@@ -106,7 +106,7 @@ export const GlassSelect: React.FC<GlassSelectProps> = ({ icon, children, classN
   return (
     <div className="relative w-full group">
       {icon && (
-        <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-white/50 group-hover:text-white/80 transition-colors">
+        <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-muted-foreground group-hover:text-muted-foreground transition-colors">
           {icon}
         </div>
       )}
@@ -125,7 +125,7 @@ export const GlassSelect: React.FC<GlassSelectProps> = ({ icon, children, classN
       >
         {children}
       </select>
-      <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-white/50 group-hover:text-white transition-colors">
+      <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-muted-foreground group-hover:text-white transition-colors">
         <ChevronDown size={18} />
       </div>
     </div>
@@ -144,10 +144,10 @@ interface ButtonProps extends HTMLMotionProps<"button"> {
 
 export const Button: React.FC<ButtonProps> = ({ children, variant = 'primary', size = 'md', icon, className = '', isLoading, disabled, ...props }) => {
   const variants = {
-    primary: "bg-gradient-to-br from-emerald-500 to-teal-600 hover:from-emerald-400 hover:to-teal-500 text-white shadow-lg shadow-teal-900/20 border border-white/20 group relative overflow-hidden",
-    secondary: "bg-white/10 hover:bg-white/20 text-white border border-white/10 backdrop-blur-md",
+    primary: "bg-gradient-to-br from-emerald-500 to-teal-600 hover:from-emerald-400 hover:to-teal-500 text-white shadow-lg shadow-teal-900/20 border border-border group relative overflow-hidden",
+    secondary: "bg-muted hover:bg-muted text-white border border-border backdrop-blur-sm",
     danger: "bg-gradient-to-br from-red-500/80 to-rose-600/80 hover:from-red-500 hover:to-rose-600 text-white border border-red-500/30 shadow-red-900/20",
-    ghost: "bg-transparent hover:bg-white/5 text-white/50 hover:text-white border-transparent shadow-none"
+    ghost: "bg-transparent hover:bg-muted text-muted-foreground hover:text-white border-transparent shadow-none"
   };
 
   const sizes = {
@@ -161,7 +161,7 @@ export const Button: React.FC<ButtonProps> = ({ children, variant = 'primary', s
       whileHover={{ scale: 1.02 }}
       whileTap={{ scale: 0.98 }}
       className={cn(
-        "flex items-center justify-center gap-2 rounded-xl font-medium transition-all duration-200 backdrop-blur-md relative overflow-hidden",
+        "flex items-center justify-center gap-2 rounded-xl font-medium transition-all duration-200 backdrop-blur-sm relative overflow-hidden",
         variants[variant],
         sizes[size],
         className,
@@ -171,7 +171,7 @@ export const Button: React.FC<ButtonProps> = ({ children, variant = 'primary', s
       {...props}
     >
       {isLoading ? (
-        <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+        <div className="w-5 h-5 border-2 border-border border-t-white rounded-full animate-spin" />
       ) : (
         <>
           {icon && <span className="w-5 h-5 flex items-center justify-center relative z-10">{icon}</span>}
@@ -189,7 +189,7 @@ export const StatusBadge: React.FC<{ status: string, size?: 'sm' | 'md' }> = ({ 
   const getStyle = (s: string) => {
     switch (s) {
       case 'Available':
-        return "bg-emerald-500/20 text-emerald-300 border-emerald-500/30";
+        return "bg-primary/20 text-emerald-300 border-emerald-500/30";
       case 'Rented':
         return "bg-amber-500/20 text-amber-300 border-amber-500/30";
       case 'In Repair':
@@ -199,7 +199,7 @@ export const StatusBadge: React.FC<{ status: string, size?: 'sm' | 'md' }> = ({ 
       case 'ReturnComplete':
       case 'Withdrawn':
       case 'Received':
-        return "bg-emerald-500/20 text-emerald-300 border-emerald-500/30";
+        return "bg-primary/20 text-emerald-300 border-emerald-500/30";
       case 'Preparing':
       case 'ReturnPending':
       case 'PartiallyReceived':
@@ -212,7 +212,7 @@ export const StatusBadge: React.FC<{ status: string, size?: 'sm' | 'md' }> = ({ 
       case 'Missing':
         return "bg-rose-500/20 text-rose-300 border-rose-500/30";
       default:
-        return "bg-white/10 text-white/50 border-white/10";
+        return "bg-muted text-muted-foreground border-border";
     }
   };
 
@@ -265,36 +265,40 @@ export const AnimatedModal: React.FC<AnimatedModalProps> = ({ isOpen, onClose, c
         <>
           {/* Backdrop */}
           <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
+            initial={{ opacity: 0, backdropFilter: "blur(0px)" }}
+            animate={{ opacity: 1, backdropFilter: "blur(4px)" }}
+            exit={{ opacity: 0, backdropFilter: "blur(0px)" }}
             onClick={onClose}
-            className="fixed inset-0 z-[170] bg-black/50 backdrop-blur-lg flex items-center justify-center p-4 content-center"
+            className="fixed inset-0 z-[170] bg-black/40 flex items-center justify-center p-4 content-center transition-all"
           />
 
           {/* Modal Content */}
-          <div className={`fixed inset-0 z-[180] flex items-center justify-center ${fullScreen ? 'p-0' : 'p-4'} pointer-events-none`}>
+          <div className={`fixed inset-0 z-[180] flex items-center justify-center ${fullScreen ? 'p-0' : 'p-4 md:p-6'} pointer-events-none`}>
             <motion.div
-              initial={{ opacity: 0, scale: 0.95, y: 20 }}
+              initial={{ opacity: 0, scale: 0.9, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 20 }}
-              transition={{ type: "spring", duration: 0.5, bounce: 0.3 }}
+              transition={{ type: "spring", damping: 25, stiffness: 300, mass: 0.8 }}
               className={cn(
-                "w-full pointer-events-auto will-change-transform",
-                "bg-gray-900/50 backdrop-blur-2xl border border-white/10 shadow-2xl overflow-hidden flex flex-col",
-                fullScreen ? "h-full max-w-none rounded-none border-0" : "max-w-2xl rounded-3xl max-h-[85vh]",
+                "w-full pointer-events-auto will-change-transform relative",
+                "bg-card text-card-foreground shadow-2xl overflow-hidden flex flex-col",
+                "ring-1 ring-white/10 shadow-[inset_0_1px_0_rgba(255,255,255,0.1)]",
+                fullScreen ? "h-full max-w-none rounded-none" : "max-w-2xl rounded-[2rem] max-h-[85vh]",
                 className
               )}
             >
+              {/* Subtle top gradient glow */}
+              <div className="absolute top-0 inset-x-0 h-px bg-gradient-to-r from-transparent via-primary/30 to-transparent" />
+              
               {title && (
-                <div className={cn("px-6 py-4 border-b border-white/10 flex justify-between items-center shrink-0", fullScreen && "pt-[calc(env(safe-area-inset-top)+1rem)]")}>
-                  <h3 className="text-lg font-semibold text-white">{title}</h3>
-                  <button onClick={onClose} className="p-2 rounded-full hover:bg-white/10 text-white/50 hover:text-white transition-colors">
+                <div className={cn("px-6 py-5 border-b border-border/50 flex justify-between items-center shrink-0 bg-background/50 backdrop-blur-md z-10", fullScreen && "pt-[calc(env(safe-area-inset-top)+1.25rem)]")}>
+                  <h3 className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-white to-white/70">{title}</h3>
+                  <button onClick={onClose} className="p-2 -mr-2 rounded-full hover:bg-white/10 text-muted-foreground hover:text-white transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-primary/50">
                     <X size={20} />
                   </button>
                 </div>
               )}
-              <div className="p-0 overflow-y-auto custom-scrollbar flex-1 h-full">
+              <div className="p-0 overflow-y-auto custom-scrollbar flex-1 h-full relative z-0">
                 {children}
               </div>
             </motion.div>
@@ -313,7 +317,7 @@ export const PageHeader: React.FC<{ title: string; subtitle?: string; actions?: 
   <header className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
     <div>
       <h1 className="text-3xl font-bold text-white mb-2 bg-clip-text text-transparent bg-gradient-to-r from-white to-white/70">{title}</h1>
-      {subtitle && <p className="text-white/50">{subtitle}</p>}
+      {subtitle && <p className="text-muted-foreground">{subtitle}</p>}
     </div>
     {actions && <div className="flex items-center gap-3">{actions}</div>}
   </header>

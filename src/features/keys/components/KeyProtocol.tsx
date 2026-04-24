@@ -71,13 +71,13 @@ export const KeyProtocol = React.forwardRef<HTMLDivElement, KeyProtocolProps>(({
             {/* Contract Partners */}
             <section className="grid grid-cols-2 gap-8 mb-8">
                 <div className="border border-gray-400 p-4 rounded-sm bg-gray-50/50">
-                    <h3 className="font-bold text-xs uppercase text-gray-400 mb-2 tracking-widest">{ownRole} (Wir)</h3>
+                    <h3 className="font-bold text-xs uppercase text-muted-foreground mb-2 tracking-widest">{ownRole} (Wir)</h3>
                     <p className="font-bold text-lg leading-tight">{companyName}</p>
                     <div className="mt-6 border-b border-gray-300 border-dashed w-3/4"></div>
-                    <p className="text-[10px] text-gray-400 mt-1 uppercase">Mitarbeiter Handzeichen</p>
+                    <p className="text-[10px] text-muted-foreground mt-1 uppercase">Mitarbeiter Handzeichen</p>
                 </div>
                 <div className="border border-gray-400 p-4 rounded-sm bg-gray-50/50">
-                    <h3 className="font-bold text-xs uppercase text-gray-400 mb-2 tracking-widest">{partnerRole}</h3>
+                    <h3 className="font-bold text-xs uppercase text-muted-foreground mb-2 tracking-widest">{partnerRole}</h3>
                     <p className="font-bold text-lg leading-tight mb-1">{partnerName}</p>
                     {partnerAddress && <p className="whitespace-pre-wrap text-sm text-gray-700 leading-snug">{partnerAddress}</p>}
                 </div>
@@ -120,7 +120,7 @@ export const KeyProtocol = React.forwardRef<HTMLDivElement, KeyProtocolProps>(({
 
             {/* Disclaimer & Footer Section */}
             <div className="mt-8 page-break-inside-avoid">
-                <div className="mb-8 text-xs text-gray-500 text-justify leading-relaxed">
+                <div className="mb-8 text-xs text-muted-foreground text-justify leading-relaxed">
                     <p>
                         {type === 'issue'
                             ? 'Der Empfänger bestätigt hiermit den Erhalt der oben aufgeführten Schlüssel und verpflichtet sich zu deren sorgfältiger Aufbewahrung und Rückgabe. Für Verlust oder Beschädigung haftet der Empfänger in vollem Umfang.'

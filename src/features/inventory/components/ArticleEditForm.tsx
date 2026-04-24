@@ -441,7 +441,7 @@ export const ArticleEditForm: React.FC<ArticleEditFormProps> = ({
     return (
         <div className="h-full flex flex-col bg-[#1a1d24] sm:bg-transparent">
             {/* Header */}
-            <div className="p-4 sm:p-6 border-b border-white/10 flex justify-between items-center bg-white/5 sticky top-0 z-10 backdrop-blur-xl shrink-0">
+            <div className="p-4 sm:p-6 border-b border-border flex justify-between items-center bg-muted sticky top-0 z-10 backdrop-blur-sm shrink-0">
                 <div className="flex items-center gap-3">
                     <h2 className="text-xl font-bold text-white">{isEditMode ? 'Artikel bearbeiten' : 'Neuer Artikel'}</h2>
                     <button onClick={() => setShowAiScan(!showAiScan)} className="flex items-center gap-2 bg-gradient-to-r from-purple-500 to-blue-500 hover:from-purple-400 hover:to-blue-400 text-white text-xs font-bold px-3 py-1.5 rounded-full shadow-lg shadow-purple-500/20 transition-all transform hover:scale-105">
@@ -449,12 +449,12 @@ export const ArticleEditForm: React.FC<ArticleEditFormProps> = ({
                     </button>
                     {hasNavigation && onNavigate && (
                         <div className="flex gap-1 ml-2">
-                            <button onClick={() => onNavigate('prev')} className="p-1.5 rounded-lg bg-white/5 hover:bg-white/10 text-white/50 hover:text-white"><ChevronDown size={16} className="rotate-90" /></button>
-                            <button onClick={() => onNavigate('next')} className="p-1.5 rounded-lg bg-white/5 hover:bg-white/10 text-white/50 hover:text-white"><ChevronDown size={16} className="-rotate-90" /></button>
+                            <button onClick={() => onNavigate('prev')} className="p-1.5 rounded-lg bg-muted hover:bg-muted text-muted-foreground hover:text-white"><ChevronDown size={16} className="rotate-90" /></button>
+                            <button onClick={() => onNavigate('next')} className="p-1.5 rounded-lg bg-muted hover:bg-muted text-muted-foreground hover:text-white"><ChevronDown size={16} className="-rotate-90" /></button>
                         </div>
                     )}
                 </div>
-                <button onClick={onCancel} className="p-2 rounded-full hover:bg-white/5 text-white/60 hover:text-white"><X size={20} /></button>
+                <button onClick={onCancel} className="p-2 rounded-full hover:bg-muted text-muted-foreground hover:text-white"><X size={20} /></button>
             </div>
 
             {/* Content */}
@@ -465,37 +465,37 @@ export const ArticleEditForm: React.FC<ArticleEditFormProps> = ({
                     <div className="bg-[#1a1d24]/95 border border-purple-500/20 rounded-xl p-4 shadow-2xl mb-6">
                         {/* ... AI UI (Simplified for brevity, copying logic structure) */}
                         <div className="flex gap-2 mb-4">
-                            <button onClick={() => { setAiMode('image'); setAiAnalysisResult(null); }} className={`flex-1 py-1.5 text-xs font-bold rounded-lg transition-all ${aiMode === 'image' ? 'bg-purple-500 text-white' : 'bg-white/5 text-white/50'}`}>Bild-Scan</button>
-                            <button onClick={() => { setAiMode('link'); setAiAnalysisResult(null); }} className={`flex-1 py-1.5 text-xs font-bold rounded-lg transition-all ${aiMode === 'link' ? 'bg-blue-500 text-white' : 'bg-white/5 text-white/50'}`}>Link</button>
+                            <button onClick={() => { setAiMode('image'); setAiAnalysisResult(null); }} className={`flex-1 py-1.5 text-xs font-bold rounded-lg transition-all ${aiMode === 'image' ? 'bg-purple-500 text-white' : 'bg-muted text-muted-foreground'}`}>Bild-Scan</button>
+                            <button onClick={() => { setAiMode('link'); setAiAnalysisResult(null); }} className={`flex-1 py-1.5 text-xs font-bold rounded-lg transition-all ${aiMode === 'link' ? 'bg-blue-500 text-white' : 'bg-muted text-muted-foreground'}`}>Link</button>
                         </div>
                         {!aiAnalysisResult ? (
                             <div className="space-y-3">
                                 {aiMode === 'image' && (
                                     <div className="flex flex-col gap-2">
-                                        <div className="relative w-full aspect-[21/9] rounded-lg border-2 border-dashed border-white/20 bg-white/5 flex flex-col items-center justify-center cursor-pointer hover:border-purple-500/50" onClick={() => aiFileInputRef.current?.click()}>
+                                        <div className="relative w-full aspect-[21/9] rounded-lg border-2 border-dashed border-border bg-muted flex flex-col items-center justify-center cursor-pointer hover:border-purple-500/50" onClick={() => aiFileInputRef.current?.click()}>
                                             {aiImagePreview ? (
                                                 <div className="relative w-full h-full"><img src={aiImagePreview} className="w-full h-full object-contain" /><button onClick={(e) => { e.stopPropagation(); setAiImagePreview(null); setAiSelectedFile(null); }} className="absolute top-2 right-2 p-1 bg-black/50 rounded-full text-white"><X size={14} /></button></div>
                                             ) : (
-                                                <div className="text-center text-white/40"><FileImage className="mx-auto mb-2 opacity-50" size={24} /><span className="text-xs">Bild hier ablegen</span></div>
+                                                <div className="text-center text-muted-foreground"><FileImage className="mx-auto mb-2 opacity-50" size={24} /><span className="text-xs">Bild hier ablegen</span></div>
                                             )}
                                             <input type="file" ref={aiFileInputRef} className="hidden" accept="image/*" onChange={(e) => { if (e.target.files?.[0]) { setAiSelectedFile(e.target.files[0]); const r = new FileReader(); r.onload = x => setAiImagePreview(x.target?.result as string); r.readAsDataURL(e.target.files[0]); } }} />
                                         </div>
                                         {!aiImagePreview && (
-                                            <button type="button" onClick={handlePasteAiImage} className="w-full py-2 rounded-lg bg-white/5 border border-white/10 text-xs text-white/60 hover:text-white flex items-center justify-center gap-2 hover:bg-white/10 transition-colors">
+                                            <button type="button" onClick={handlePasteAiImage} className="w-full py-2 rounded-lg bg-muted border border-border text-xs text-muted-foreground hover:text-white flex items-center justify-center gap-2 hover:bg-muted transition-colors">
                                                 <Clipboard size={14} /> Aus Zwischenablage einfügen
                                             </button>
                                         )}
                                     </div>
                                 )}
                                 {aiMode === 'link' && (
-                                    <div className="relative"><input className="w-full bg-white/5 border border-white/10 rounded-lg py-2 pl-9 text-sm text-white" placeholder="https://..." value={aiUrlInput} onChange={(e) => setAiUrlInput(e.target.value)} /><Globe className="absolute left-3 top-1/2 -translate-y-1/2 text-white/30" size={14} /></div>
+                                    <div className="relative"><input className="w-full bg-muted border border-border rounded-lg py-2 pl-9 text-sm text-white" placeholder="https://..." value={aiUrlInput} onChange={(e) => setAiUrlInput(e.target.value)} /><Globe className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" size={14} /></div>
                                 )}
                                 <Button onClick={analyzeWithGemini} disabled={isAnalyzing} className="w-full h-8 text-xs bg-gradient-to-r from-purple-500 to-blue-500 border-none">{isAnalyzing ? <Loader2 className="animate-spin" /> : 'Analysieren'}</Button>
                             </div>
                         ) : (
                             <div className="space-y-2">
                                 <div className="flex items-center gap-2 text-emerald-400 text-xs font-bold"><CheckCircle2 size={14} /> <span>Gefunden!</span></div>
-                                <button onClick={() => applyAiResult(aiAnalysisResult.name)} className="w-full text-left p-2 rounded-lg bg-white/5 hover:bg-white/10 border border-white/10 text-sm text-white">{aiAnalysisResult.name}</button>
+                                <button onClick={() => applyAiResult(aiAnalysisResult.name)} className="w-full text-left p-2 rounded-lg bg-muted hover:bg-muted border border-border text-sm text-white">{aiAnalysisResult.name}</button>
                             </div>
                         )}
                     </div>
@@ -508,7 +508,7 @@ export const ArticleEditForm: React.FC<ArticleEditFormProps> = ({
                     <div>
                         <label className="text-xs text-blue-300/70 font-bold uppercase tracking-wider mb-1 block">Bezeichnung</label>
                         <input
-                            className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white text-xl font-bold focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500/50 transition-all placeholder:text-white/20"
+                            className="w-full bg-muted border border-border rounded-xl px-4 py-3 text-white text-xl font-bold focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500/50 transition-all placeholder:text-muted-foreground"
                             value={newArticle.name}
                             onChange={e => setNewArticle({ ...newArticle, name: e.target.value })}
                             placeholder="Artikelbezeichnung..."
@@ -522,16 +522,16 @@ export const ArticleEditForm: React.FC<ArticleEditFormProps> = ({
                         <div className="flex items-center gap-4 shrink-0">
                             <div
                                 onClick={() => fileInputRef.current?.click()}
-                                className="w-28 h-28 shrink-0 rounded-2xl border-2 border-dashed border-white/10 bg-white/5 flex items-center justify-center relative overflow-hidden group hover:border-white/20 cursor-pointer transition-all hover:bg-white/10"
+                                className="w-28 h-28 shrink-0 rounded-2xl border-2 border-dashed border-border bg-muted flex items-center justify-center relative overflow-hidden group hover:border-border cursor-pointer transition-all hover:bg-muted"
                             >
                                 <input type="file" ref={fileInputRef} className="hidden" accept="image/*" onChange={handleFileUpload} onClick={(e) => e.stopPropagation()} />
-                                {isUploading ? <Loader2 className="animate-spin text-emerald-400" /> : newArticle.image ? <img src={newArticle.image} className="w-full h-full object-cover" /> : <div className="flex flex-col items-center text-white/30"><ImageIcon size={24} /><span className="text-[10px] mt-1">Bild</span></div>}
-                                {newArticle.image && !isUploading && <button onClick={(e) => { e.stopPropagation(); setNewArticle(prev => ({ ...prev, image: '' })); }} className="absolute inset-0 bg-black/60 flex items-center justify-center opacity-0 group-hover:opacity-100 text-red-300 transition-opacity"><Trash2 size={20} /></button>}
+                                {isUploading ? <Loader2 className="animate-spin text-emerald-400" /> : newArticle.image ? <img src={newArticle.image} className="w-full h-full object-cover" /> : <div className="flex flex-col items-center text-muted-foreground"><ImageIcon size={24} /><span className="text-[10px] mt-1">Bild</span></div>}
+                                {newArticle.image && !isUploading && <button onClick={(e) => { e.stopPropagation(); setNewArticle(prev => ({ ...prev, image: '' })); }} className="absolute inset-0 bg-black/30 flex items-center justify-center opacity-0 group-hover:opacity-100 text-red-300 transition-opacity"><Trash2 size={20} /></button>}
                             </div>
                             <div className="flex flex-col gap-2">
-                                <button type="button" onClick={() => fileInputRef.current?.click()} className="md:hidden px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-xs text-white/60 hover:text-white">Upload</button>
+                                <button type="button" onClick={() => fileInputRef.current?.click()} className="md:hidden px-3 py-2 rounded-lg bg-muted border border-border text-xs text-muted-foreground hover:text-white">Upload</button>
                                 {!newArticle.image && !isUploading && (
-                                    <button type="button" onClick={handlePasteImage} className="w-10 h-10 md:w-auto md:h-auto md:px-3 md:py-2 rounded-xl bg-white/5 border border-white/10 text-xs text-white/60 hover:text-white flex items-center justify-center gap-2 hover:bg-white/10 transition-colors" title="Aus Zwischenablage einfügen">
+                                    <button type="button" onClick={handlePasteImage} className="w-10 h-10 md:w-auto md:h-auto md:px-3 md:py-2 rounded-xl bg-muted border border-border text-xs text-muted-foreground hover:text-white flex items-center justify-center gap-2 hover:bg-muted transition-colors" title="Aus Zwischenablage einfügen">
                                         <Clipboard size={16} />
                                         <span className="hidden md:inline">Einfügen</span>
                                     </button>
@@ -544,8 +544,8 @@ export const ArticleEditForm: React.FC<ArticleEditFormProps> = ({
 
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 <div>
-                                    <label className="text-xs text-white/40 mb-1 block">EAN / Barcode</label>
-                                    <input className="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-2 text-white/80 font-mono text-sm focus:ring-1 focus:ring-white/20" value={newArticle.ean} onChange={e => setNewArticle({ ...newArticle, ean: e.target.value })} placeholder="EAN Scannen..." />
+                                    <label className="text-xs text-muted-foreground mb-1 block">EAN / Barcode</label>
+                                    <input className="w-full bg-muted border border-border rounded-xl px-3 py-2 text-muted-foreground font-mono text-sm focus:ring-1 focus:ring-white/20" value={newArticle.ean} onChange={e => setNewArticle({ ...newArticle, ean: e.target.value })} placeholder="EAN Scannen..." />
                                 </div>
 
                                 {/* Stock - Inline for desktop */}
@@ -566,38 +566,38 @@ export const ArticleEditForm: React.FC<ArticleEditFormProps> = ({
                     {/* LOCATION HEADER BAR */}
                     <div className="bg-gradient-to-r from-white/5 to-transparent p-4 rounded-2xl border border-white/5 flex flex-col md:flex-row gap-4 items-center">
                         <div className="flex-1 w-full">
-                            <label className="text-xs text-white/40 mb-1.5 block flex items-center gap-1"><Layers size={12} /> Regal / Kategorie</label>
+                            <label className="text-xs text-muted-foreground mb-1.5 block flex items-center gap-1"><Layers size={12} /> Regal / Kategorie</label>
                             {isManualCategory ? (
                                 <div className="flex gap-2">
-                                    <input className="flex-1 bg-black/40 border border-white/10 rounded-xl px-3 py-2 text-white" value={newArticle.category} onChange={e => setNewArticle({ ...newArticle, category: e.target.value })} placeholder="Kategorie benennen..." autoFocus />
-                                    <button onClick={() => setIsManualCategory(false)} className="p-2 bg-white/10 rounded-xl text-white/60 hover:text-white border border-white/5"><ChevronDown size={20} /></button>
+                                    <input className="flex-1 bg-black/40 border border-border rounded-xl px-3 py-2 text-white" value={newArticle.category} onChange={e => setNewArticle({ ...newArticle, category: e.target.value })} placeholder="Kategorie benennen..." autoFocus={false} />
+                                    <button onClick={() => setIsManualCategory(false)} className="p-2 bg-muted rounded-xl text-muted-foreground hover:text-white border border-white/5"><ChevronDown size={20} /></button>
                                 </div>
                             ) : (
                                 <div className="relative w-full">
-                                    <select className="w-full bg-black/40 border border-white/10 rounded-xl py-2.5 pl-3 pr-10 text-white appearance-none text-sm font-medium" value={newArticle.category} onChange={e => e.target.value === '___NEW___' ? (setNewArticle({ ...newArticle, category: '' }), setIsManualCategory(true)) : setNewArticle({ ...newArticle, category: e.target.value })}>
+                                    <select className="w-full bg-black/40 border border-border rounded-xl py-2.5 pl-3 pr-10 text-white appearance-none text-sm font-medium" value={newArticle.category} onChange={e => e.target.value === '___NEW___' ? (setNewArticle({ ...newArticle, category: '' }), setIsManualCategory(true)) : setNewArticle({ ...newArticle, category: e.target.value })}>
                                         <option value="" disabled>Kategorie wählen...</option>
                                         {distinctCategories.map(c => <option key={c} value={c}>{c}</option>)}
                                         <option value="___NEW___" className="text-emerald-400 font-bold">+ Neue Kategorie</option>
                                     </select>
-                                    <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 text-white/50 pointer-events-none" size={16} />
+                                    <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none" size={16} />
                                 </div>
                             )}
                         </div>
 
-                        <div className="hidden md:block w-px h-10 bg-white/10 mx-2"></div>
+                        <div className="hidden md:block w-px h-10 bg-muted mx-2"></div>
 
                         <div className="flex-1 w-full">
-                            <label className="text-xs text-white/40 mb-1.5 block flex items-center gap-1"><Hash size={12} /> Lagerort / Fach</label>
+                            <label className="text-xs text-muted-foreground mb-1.5 block flex items-center gap-1"><Hash size={12} /> Lagerort / Fach</label>
                             <div className="flex gap-2 relative group">
                                 <input
-                                    className="w-full bg-black/40 border border-white/10 rounded-xl px-3 py-2 text-white font-mono transition-colors group-hover:border-white/20 focus:border-emerald-500/50 focus:ring-1 focus:ring-emerald-500/50"
+                                    className="w-full bg-black/40 border border-border rounded-xl px-3 py-2 text-white font-mono transition-colors group-hover:border-border focus:border-emerald-500/50 focus:ring-1 focus:ring-emerald-500/50"
                                     value={newArticle.location}
                                     onChange={e => setNewArticle({ ...newArticle, location: e.target.value })}
                                     placeholder="z.B. A-01"
                                 />
                                 <button
                                     onClick={handleAutoLocation}
-                                    className="absolute right-1 top-1 py-1 px-3 h-[calc(100%-8px)] rounded-lg bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border border-emerald-500/20 active:scale-95 transition-all text-xs font-bold flex items-center gap-2"
+                                    className="absolute right-1 top-1 py-1 px-3 h-[calc(100%-8px)] rounded-lg bg-primary/10 hover:bg-primary/20 text-emerald-400 border border-emerald-500/20 active:scale-95 transition-all text-xs font-bold flex items-center gap-2"
                                     title="Nächstes freies Fach vorschlagen"
                                 >
                                     <Wand2 size={14} /> Auto
@@ -611,24 +611,24 @@ export const ArticleEditForm: React.FC<ArticleEditFormProps> = ({
 
                         {/* SKUs Panel */}
                         <div className="bg-white/[0.02] border border-white/5 rounded-2xl p-4 flex flex-col gap-3">
-                            <label className="text-xs text-white/40 font-bold uppercase tracking-wider flex items-center justify-between">
+                            <label className="text-xs text-muted-foreground font-bold uppercase tracking-wider flex items-center justify-between">
                                 <span>Alternative SKUs</span>
-                                <span className="bg-white/10 text-white/60 px-1.5 py-0.5 rounded text-[10px]">{tempSkus.length}</span>
+                                <span className="bg-muted text-muted-foreground px-1.5 py-0.5 rounded text-[10px]">{tempSkus.length}</span>
                             </label>
 
                             <div className="flex gap-2">
-                                <input className="flex-1 bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-sm text-white font-mono placeholder:text-white/20 focus:bg-white/10 transition-colors outline-none" value={tempSkuInput} onChange={e => setTempSkuInput(e.target.value)} onKeyDown={e => e.key === 'Enter' && addTempSku()} placeholder="Neue SKU..." />
-                                <button type="button" onClick={() => addTempSku()} className="px-3 bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg text-white/60 hover:text-white transition-colors"><Plus size={18} /></button>
+                                <input className="flex-1 bg-muted border border-border rounded-lg px-3 py-2 text-sm text-white font-mono placeholder:text-muted-foreground focus:bg-muted transition-colors outline-none" value={tempSkuInput} onChange={e => setTempSkuInput(e.target.value)} onKeyDown={e => e.key === 'Enter' && addTempSku()} placeholder="Neue SKU..." />
+                                <button type="button" onClick={() => addTempSku()} className="px-3 bg-muted hover:bg-muted border border-border rounded-lg text-muted-foreground hover:text-white transition-colors"><Plus size={18} /></button>
                             </div>
 
                             <div className="flex flex-wrap gap-2 mt-1">
-                                {tempSkus.length === 0 && <div className="text-xs text-white/20 italic p-2">Keine weiteren SKUs</div>}
+                                {tempSkus.length === 0 && <div className="text-xs text-muted-foreground italic p-2">Keine weiteren SKUs</div>}
                                 {tempSkus.map((s, idx) => (
-                                    <div key={idx} className={`flex items-center gap-2 pl-3 pr-1 py-1.5 rounded-lg border text-xs transition-all ${s.isPreferred ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-300' : 'bg-white/5 border-white/5 text-white/70 hover:bg-white/10'}`}>
+                                    <div key={idx} className={`flex items-center gap-2 pl-3 pr-1 py-1.5 rounded-lg border text-xs transition-all ${s.isPreferred ? 'bg-primary/10 border-emerald-500/20 text-emerald-300' : 'bg-muted border-white/5 text-muted-foreground hover:bg-muted'}`}>
                                         <span className="font-mono">{s.sku}</span>
-                                        <div className="flex gap-0.5 border-l border-white/10 ml-1 pl-1">
-                                            <button onClick={() => togglePreferredSku(idx)} className={`p-1 hover:text-white rounded ${s.isPreferred ? 'text-emerald-400' : 'text-white/20'}`}><Star size={12} fill={s.isPreferred ? "currentColor" : "none"} /></button>
-                                            <button onClick={() => removeTempSku(idx)} className="p-1 hover:text-rose-400 text-white/30 rounded"><X size={12} /></button>
+                                        <div className="flex gap-0.5 border-l border-border ml-1 pl-1">
+                                            <button onClick={() => togglePreferredSku(idx)} className={`p-1 hover:text-white rounded ${s.isPreferred ? 'text-emerald-400' : 'text-muted-foreground'}`}><Star size={12} fill={s.isPreferred ? "currentColor" : "none"} /></button>
+                                            <button onClick={() => removeTempSku(idx)} className="p-1 hover:text-rose-400 text-muted-foreground rounded"><X size={12} /></button>
                                         </div>
                                     </div>
                                 ))}
@@ -637,37 +637,37 @@ export const ArticleEditForm: React.FC<ArticleEditFormProps> = ({
 
                         {/* Suppliers Panel */}
                         <div className="bg-white/[0.02] border border-white/5 rounded-2xl p-4 flex flex-col gap-3">
-                            <label className="text-xs text-white/40 font-bold uppercase tracking-wider flex items-center justify-between">
+                            <label className="text-xs text-muted-foreground font-bold uppercase tracking-wider flex items-center justify-between">
                                 <span>Lieferanten</span>
-                                <span className="bg-white/10 text-white/60 px-1.5 py-0.5 rounded text-[10px]">{tempSuppliers.length}</span>
+                                <span className="bg-muted text-muted-foreground px-1.5 py-0.5 rounded text-[10px]">{tempSuppliers.length}</span>
                             </label>
 
                             <div className="bg-black/20 p-3 rounded-xl border border-white/5 space-y-2">
                                 <div className="flex gap-2">
                                     <select className="flex-1 bg-transparent text-white text-xs outline-none" value={tempSupplierSelect} onChange={e => setTempSupplierSelect(e.target.value)}>
-                                        <option value="" className="bg-gray-900 text-gray-400">Lieferant auswählen...</option>
-                                        {suppliers.map(s => <option key={s.id} value={s.id} className="bg-gray-900">{s.name}</option>)}
+                                        <option value="" className="bg-background text-muted-foreground">Lieferant auswählen...</option>
+                                        {suppliers.map(s => <option key={s.id} value={s.id} className="bg-background">{s.name}</option>)}
                                     </select>
-                                    <button onClick={addTempSupplier} disabled={!tempSupplierSelect} className="p-2 bg-white/10 hover:bg-white/20 text-white rounded-lg transition-colors disabled:opacity-50" title={editingSupplierIdx !== null ? 'Speichern' : 'Hinzufügen'}>
+                                    <button onClick={addTempSupplier} disabled={!tempSupplierSelect} className="p-2 bg-muted hover:bg-muted text-white rounded-lg transition-colors disabled:opacity-50" title={editingSupplierIdx !== null ? 'Speichern' : 'Hinzufügen'}>
                                         {editingSupplierIdx !== null ? <CheckCircle2 size={18} /> : <Plus size={18} />}
                                     </button>
                                 </div>
                                 <div className="grid grid-cols-2 gap-2">
-                                    <input className="bg-white/5 border border-white/10 rounded px-2 py-1.5 text-xs text-white placeholder:text-white/20" placeholder="Art-Nr. beim Lieferant" value={tempSupplierSkuInput} onChange={e => setTempSupplierSkuInput(e.target.value)} />
-                                    <input className="bg-white/5 border border-white/10 rounded px-2 py-1.5 text-xs text-white placeholder:text-white/20" placeholder="Produkt-Link (URL)" value={tempSupplierUrlInput} onChange={e => setTempSupplierUrlInput(e.target.value)} />
+                                    <input className="bg-muted border border-border rounded px-2 py-1.5 text-xs text-white placeholder:text-muted-foreground" placeholder="Art-Nr. beim Lieferant" value={tempSupplierSkuInput} onChange={e => setTempSupplierSkuInput(e.target.value)} />
+                                    <input className="bg-muted border border-border rounded px-2 py-1.5 text-xs text-white placeholder:text-muted-foreground" placeholder="Produkt-Link (URL)" value={tempSupplierUrlInput} onChange={e => setTempSupplierUrlInput(e.target.value)} />
                                 </div>
                             </div>
 
                             <div className="space-y-2 max-h-[160px] overflow-y-auto pr-1 custom-scrollbar">
                                 {tempSuppliers.map((s, idx) => (
-                                    <div key={idx} className={`relative group p-2.5 rounded-lg border transition-all ${s.isPreferred ? 'bg-emerald-500/5 border-emerald-500/20' : 'bg-white/5 border-white/5 hover:border-white/10'}`}>
+                                    <div key={idx} className={`relative group p-2.5 rounded-lg border transition-all ${s.isPreferred ? 'bg-primary/5 border-emerald-500/20' : 'bg-muted border-white/5 hover:border-border'}`}>
                                         <div className="flex justify-between items-start">
                                             <div className="flex-1 min-w-0">
                                                 <div className="flex items-center gap-2">
                                                     <span className={`font-bold text-xs ${s.isPreferred ? 'text-emerald-300' : 'text-white'}`}>{s.supplierName}</span>
-                                                    {s.isPreferred && <span className="text-[9px] bg-emerald-500/20 text-emerald-400 px-1 rounded uppercase tracking-wider">Main</span>}
+                                                    {s.isPreferred && <span className="text-[9px] bg-primary/20 text-emerald-400 px-1 rounded uppercase tracking-wider">Main</span>}
                                                 </div>
-                                                {s.supplierSku && <div className="text-[10px] text-white/50 font-mono mt-0.5">#{s.supplierSku}</div>}
+                                                {s.supplierSku && <div className="text-[10px] text-muted-foreground font-mono mt-0.5">#{s.supplierSku}</div>}
                                                 {s.url && (
                                                     <div className="flex items-center gap-1 text-[10px] text-emerald-400/80 mt-0.5" title={s.url}>
                                                         <Globe size={10} />
@@ -676,9 +676,9 @@ export const ArticleEditForm: React.FC<ArticleEditFormProps> = ({
                                                 )}
                                             </div>
                                             <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                                                <button onClick={() => togglePreferredSupplier(idx)} className={`p-1.5 rounded transition-colors ${s.isPreferred ? 'text-emerald-400' : 'text-white/20 hover:text-yellow-400'}`}><Star size={12} fill={s.isPreferred ? "currentColor" : "none"} /></button>
-                                                <button onClick={() => startEditSupplier(idx)} className="p-1.5 rounded text-white/30 hover:text-blue-400"><Pencil size={12} /></button>
-                                                <button onClick={() => removeTempSupplier(idx)} className="p-1.5 rounded text-white/30 hover:text-rose-400"><Trash2 size={12} /></button>
+                                                <button onClick={() => togglePreferredSupplier(idx)} className={`p-1.5 rounded transition-colors ${s.isPreferred ? 'text-emerald-400' : 'text-muted-foreground hover:text-yellow-400'}`}><Star size={12} fill={s.isPreferred ? "currentColor" : "none"} /></button>
+                                                <button onClick={() => startEditSupplier(idx)} className="p-1.5 rounded text-muted-foreground hover:text-blue-400"><Pencil size={12} /></button>
+                                                <button onClick={() => removeTempSupplier(idx)} className="p-1.5 rounded text-muted-foreground hover:text-rose-400"><Trash2 size={12} /></button>
                                             </div>
                                         </div>
                                     </div>
@@ -689,13 +689,13 @@ export const ArticleEditForm: React.FC<ArticleEditFormProps> = ({
                 </div>
             </div>
 
-            <div className="p-4 sm:p-6 border-t border-white/10 flex justify-end gap-3 bg-black/20 rounded-b-2xl sticky bottom-0 z-10 backdrop-blur-xl shrink-0">
+            <div className="p-4 sm:p-6 border-t border-border flex justify-end gap-3 bg-black/20 rounded-b-2xl sticky bottom-0 z-10 backdrop-blur-sm shrink-0">
                 <Button variant="secondary" onClick={onCancel}>Abbrechen</Button>
                 {!isEditMode && !hideSaveAndNext && (
                     <Button
                         onClick={() => handleSave(false)}
                         disabled={isSubmitting}
-                        className="bg-emerald-600/20 text-emerald-400 hover:bg-emerald-600/30 border-emerald-500/30"
+                        className="bg-primary/20 text-emerald-400 hover:bg-primary/30 border-emerald-500/30"
                     >
                         {isSubmitting ? <Loader2 className="animate-spin" /> : 'Speichern & Weiter'}
                     </Button>

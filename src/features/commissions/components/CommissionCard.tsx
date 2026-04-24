@@ -28,8 +28,8 @@ const getStatusColors = (statusKey: string) => {
         case 'ready':
             return {
                 border: 'border-emerald-500/50',
-                leftBar: 'bg-emerald-500',
-                badge: 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40',
+                leftBar: 'bg-primary',
+                badge: 'bg-primary/20 text-emerald-300 border-emerald-500/40',
                 badgeText: 'Bereitgestellt'
             };
         case 'preparing':
@@ -77,9 +77,9 @@ const getStatusColors = (statusKey: string) => {
             };
         default:
             return {
-                border: 'border-white/20',
-                leftBar: 'bg-white/50',
-                badge: 'bg-white/10 text-white/70 border-white/20',
+                border: 'border-border',
+                leftBar: 'bg-muted',
+                badge: 'bg-muted text-muted-foreground border-border',
                 badgeText: 'Unbekannt'
             };
     }
@@ -120,7 +120,7 @@ export const CommissionCard: React.FC<CommissionCardProps> = memo(({
             whileHover={{ scale: 1.01, y: -2 }}
             className={`
                 group relative p-4 pl-5 rounded-xl cursor-pointer transition-all duration-300 overflow-hidden
-                bg-slate-900/70 backdrop-blur-md border ${statusColors.border} shadow-lg shadow-black/40 hover:bg-slate-900/90 hover:shadow-xl
+                bg-card backdrop-blur-sm border ${statusColors.border} shadow-lg shadow-black/40 hover:bg-card hover:shadow-xl
                 ${isTrash || isWithdrawn ? 'opacity-70 hover:opacity-100' : ''}
                 ${className || ''}
             `}
@@ -135,7 +135,7 @@ export const CommissionCard: React.FC<CommissionCardProps> = memo(({
                     <h3 className="font-bold text-lg text-white leading-tight mb-1 truncate">
                         {commission.name}
                     </h3>
-                    <div className="flex items-center gap-2 text-xs text-white/50 flex-wrap">
+                    <div className="flex items-center gap-2 text-xs text-muted-foreground flex-wrap">
                         {commission.created_at && (
                             <span className="flex items-center">
                                 <Calendar size={10} className="mr-1" />
@@ -143,7 +143,7 @@ export const CommissionCard: React.FC<CommissionCardProps> = memo(({
                             </span>
                         )}
                         {commission.order_number && (
-                            <span className="font-mono bg-white/5 px-1.5 py-0.5 rounded flex items-center">
+                            <span className="font-mono bg-muted px-1.5 py-0.5 rounded flex items-center">
                                 <FileText size={10} className="mr-1" />
                                 {commission.order_number}
                             </span>
@@ -194,7 +194,7 @@ export const CommissionCard: React.FC<CommissionCardProps> = memo(({
                         );
                     })}
                     {commission.commission_items.length > 6 && (
-                        <span className="px-2 py-0.5 rounded-full text-[10px] font-medium bg-white/5 border border-white/10 text-white/40">
+                        <span className="px-2 py-0.5 rounded-full text-[10px] font-medium bg-muted border border-border text-muted-foreground">
                             +{commission.commission_items.length - 6} weitere
                         </span>
                     )}
@@ -203,7 +203,7 @@ export const CommissionCard: React.FC<CommissionCardProps> = memo(({
 
             {/* Progress Bar (Only for Preparing) */}
             {statusKey === 'preparing' && (
-                <div className="w-full bg-gray-700/50 rounded-full h-1.5 mb-3 overflow-hidden">
+                <div className="w-full bg-card rounded-full h-1.5 mb-3 overflow-hidden">
                     <motion.div
                         className="h-full bg-blue-500"
                         initial={{ width: 0 }}
@@ -214,7 +214,7 @@ export const CommissionCard: React.FC<CommissionCardProps> = memo(({
 
             {/* Status Indicator (Ready = Abholbereit) */}
             {statusKey === 'ready' && (
-                <div className="flex items-center text-emerald-400 text-xs bg-emerald-500/10 p-1.5 rounded w-fit mb-3">
+                <div className="flex items-center text-emerald-400 text-xs bg-primary/10 p-1.5 rounded w-fit mb-3">
                     <CheckCircle2 size={12} className="mr-1.5" />
                     <span>Abholbereit</span>
                 </div>
@@ -229,8 +229,8 @@ export const CommissionCard: React.FC<CommissionCardProps> = memo(({
             )}
 
             {/* Footer with separator */}
-            <div className="flex items-center justify-between pt-2 border-t border-white/10">
-                <span className="text-sm text-white/70 flex items-center gap-1">
+            <div className="flex items-center justify-between pt-2 border-t border-border">
+                <span className="text-sm text-muted-foreground flex items-center gap-1">
                     <Package size={12} />
                     {itemCount} {itemCount === 1 ? 'Position' : 'Positionen'}
                 </span>
@@ -240,7 +240,7 @@ export const CommissionCard: React.FC<CommissionCardProps> = memo(({
                     {!isTrash && !isWithdrawn && onEdit && (
                         <button
                             onClick={(e) => { e.stopPropagation(); onEdit(commission); }}
-                            className="p-1.5 hover:bg-white/10 rounded-lg text-blue-400 transition-colors"
+                            className="p-1.5 hover:bg-muted rounded-lg text-blue-400 transition-colors"
                             title="Bearbeiten"
                         >
                             <Edit2 size={14} />
@@ -250,7 +250,7 @@ export const CommissionCard: React.FC<CommissionCardProps> = memo(({
                     {onPrintLabel && !isTrash && !isWithdrawn && (
                         <button
                             onClick={(e) => { e.stopPropagation(); onPrintLabel(commission.id, commission.name); }}
-                            className={`p-1.5 hover:bg-white/10 rounded-lg transition-colors ${commission.needs_label ? 'text-amber-400 animate-pulse' : 'text-white/40'}`}
+                            className={`p-1.5 hover:bg-muted rounded-lg transition-colors ${commission.needs_label ? 'text-amber-400 animate-pulse' : 'text-muted-foreground'}`}
                             title="Etikett drucken"
                         >
                             <Printer size={14} />
@@ -270,7 +270,7 @@ export const CommissionCard: React.FC<CommissionCardProps> = memo(({
                     {isTrash && onRestore && (
                         <button
                             onClick={(e) => onRestore(commission.id, commission.name, e)}
-                            className="p-1.5 hover:bg-emerald-500/20 rounded-lg text-emerald-400 transition-colors"
+                            className="p-1.5 hover:bg-primary/20 rounded-lg text-emerald-400 transition-colors"
                             title="Wiederherstellen"
                         >
                             <Undo2 size={14} />

@@ -164,12 +164,12 @@ export const OrderProposalContent: React.FC<OrderProposalContentProps> = ({ prop
     return (
         <div className="flex flex-col h-full bg-transparent text-slate-100">
             {/* Header */}
-            <div className="p-4 sm:p-6 border-b border-white/10 flex justify-between items-center bg-white/[0.02] shrink-0">
+            <div className="p-4 sm:p-6 border-b border-border flex justify-between items-center bg-white/[0.02] shrink-0">
                 <div>
                     <h2 className="text-xl font-bold text-white">Bestellvorschlag</h2>
-                    <p className="text-sm text-white/50">{proposal.supplier}</p>
+                    <p className="text-sm text-muted-foreground">{proposal.supplier}</p>
                 </div>
-                <button onClick={onClose} className="p-2 rounded-full hover:bg-white/10 text-white/60 hover:text-white"><X size={20} /></button>
+                <button onClick={onClose} className="p-2 rounded-full hover:bg-muted text-muted-foreground hover:text-white"><X size={20} /></button>
             </div>
 
             {/* Content List */}
@@ -177,29 +177,29 @@ export const OrderProposalContent: React.FC<OrderProposalContentProps> = ({ prop
                 {proposal.articles.map((item) => (
                     <div
                         key={item.article.id}
-                        className={`flex flex-col p-3 rounded-xl border transition-colors ${selectedItemIds.has(item.article.id) ? 'bg-emerald-500/5 border-emerald-500/30' : 'bg-white/5 border-white/5'}`}
+                        className={`flex flex-col p-3 rounded-xl border transition-colors ${selectedItemIds.has(item.article.id) ? 'bg-primary/5 border-emerald-500/30' : 'bg-muted border-white/5'}`}
                     >
                         <div className="flex items-start gap-3 mb-2" onClick={() => toggleProposalItem(item.article.id)}>
-                            <div className={`mt-0.5 w-5 h-5 rounded border flex items-center justify-center cursor-pointer ${selectedItemIds.has(item.article.id) ? 'bg-emerald-500 border-emerald-500 text-white' : 'border-white/30'}`}>
+                            <div className={`mt-0.5 w-5 h-5 rounded border flex items-center justify-center cursor-pointer ${selectedItemIds.has(item.article.id) ? 'bg-primary border-emerald-500 text-white' : 'border-border'}`}>
                                 {selectedItemIds.has(item.article.id) && <Check size={12} />}
                             </div>
                             <div className="flex-1 cursor-pointer">
                                 <div className="text-sm font-bold text-white line-clamp-2">{item.article.name}</div>
-                                <div className="text-xs text-white/50 flex gap-2">
+                                <div className="text-xs text-muted-foreground flex gap-2">
                                     <span>Lager: {item.article.stock} / Soll: {item.article.targetStock}</span>
-                                    <span className="font-mono text-white/30">{item.article.supplierSku}</span>
+                                    <span className="font-mono text-muted-foreground">{item.article.supplierSku}</span>
                                 </div>
                             </div>
                         </div>
                         {selectedItemIds.has(item.article.id) && (
                             <div className="flex items-center gap-3 pl-8">
-                                <div className="text-xs text-white/40">Menge:</div>
-                                <div className="flex items-center bg-black/30 rounded-lg border border-white/10">
-                                    <button onClick={() => updateProposalQuantity(item.article.id, -1)} className="p-2 hover:bg-white/10 rounded-l-lg text-white"><Minus size={14} /></button>
+                                <div className="text-xs text-muted-foreground">Menge:</div>
+                                <div className="flex items-center bg-black/30 rounded-lg border border-border">
+                                    <button onClick={() => updateProposalQuantity(item.article.id, -1)} className="p-2 hover:bg-muted rounded-l-lg text-white"><Minus size={14} /></button>
                                     <div className="w-12 text-center font-bold text-white text-sm">
                                         {proposalQuantities[item.article.id] || item.missingAmount}
                                     </div>
-                                    <button onClick={() => updateProposalQuantity(item.article.id, 1)} className="p-2 hover:bg-white/10 rounded-r-lg text-white"><Plus size={14} /></button>
+                                    <button onClick={() => updateProposalQuantity(item.article.id, 1)} className="p-2 hover:bg-muted rounded-r-lg text-white"><Plus size={14} /></button>
                                 </div>
                             </div>
                         )}
@@ -208,53 +208,53 @@ export const OrderProposalContent: React.FC<OrderProposalContentProps> = ({ prop
             </div>
 
             {/* Footer Form */}
-            <div className="p-4 sm:p-6 border-t border-white/10 bg-white/5 shrink-0 space-y-4">
+            <div className="p-4 sm:p-6 border-t border-border bg-muted shrink-0 space-y-4">
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div>
-                        <label className="text-xs text-white/50 mb-1 block">Auftrags-Nr. (Lieferant)</label>
+                        <label className="text-xs text-muted-foreground mb-1 block">Auftrags-Nr. (Lieferant)</label>
                         <input
-                            className="w-full bg-black/20 border border-white/10 rounded-lg p-2 text-sm text-white focus:outline-none focus:border-emerald-500/50"
+                            className="w-full bg-black/20 border border-border rounded-lg p-2 text-sm text-white focus:outline-none focus:border-emerald-500/50"
                             placeholder="z.B. 2024-9988"
                             value={newOrderNumber}
                             onChange={e => setNewOrderNumber(e.target.value)}
                         />
                     </div>
                     <div>
-                        <label className="text-xs text-white/50 mb-1 block flex justify-between">
+                        <label className="text-xs text-muted-foreground mb-1 block flex justify-between">
                             <span>Kommission (Intern)</span>
                             {commissionCopied && <span className="text-emerald-400 font-bold">Kopiert!</span>}
                         </label>
                         <div className="relative group cursor-pointer" onClick={handleCopyCommission}>
                             <input
-                                className="w-full bg-black/20 border border-white/10 rounded-lg p-2 pr-8 text-sm text-white focus:outline-none focus:border-emerald-500/50 cursor-pointer"
+                                className="w-full bg-black/20 border border-border rounded-lg p-2 pr-8 text-sm text-white focus:outline-none focus:border-emerald-500/50 cursor-pointer"
                                 placeholder="Automatisch..."
                                 value={newCommissionNumber}
                                 readOnly
                             />
-                            <div className="absolute right-2 top-2 text-white/30 group-hover:text-white">
+                            <div className="absolute right-2 top-2 text-muted-foreground group-hover:text-white">
                                 {commissionCopied ? <Check size={16} className="text-emerald-400" /> : <Copy size={16} />}
                             </div>
                         </div>
                     </div>
                 </div>
 
-                <button onClick={() => setShowSkuCopyModal(true)} className="w-full py-2.5 rounded-xl border border-white/10 bg-black/20 hover:bg-white/10 text-white text-xs font-bold flex items-center justify-center gap-2 transition-colors">
+                <button onClick={() => setShowSkuCopyModal(true)} className="w-full py-2.5 rounded-xl border border-border bg-black/20 hover:bg-muted text-white text-xs font-bold flex items-center justify-center gap-2 transition-colors">
                     <Copy size={14} /> Artikel-Nrn. kopieren
                 </button>
 
                 <div className="flex gap-3">
-                    <Button variant="secondary" onClick={handleProposalCsvDownload} icon={<FileText size={16} />} className="flex-1 bg-white/5 hover:bg-white/10">CSV Export</Button>
-                    <Button onClick={createOrder} disabled={selectedItemIds.size === 0} className="flex-[2] bg-emerald-600 hover:bg-emerald-500">Bestellen ({selectedItemIds.size})</Button>
+                    <Button variant="secondary" onClick={handleProposalCsvDownload} icon={<FileText size={16} />} className="flex-1 bg-muted hover:bg-muted">CSV Export</Button>
+                    <Button onClick={createOrder} disabled={selectedItemIds.size === 0} className="flex-[2] bg-primary hover:bg-primary">Bestellen ({selectedItemIds.size})</Button>
                 </div>
             </div>
 
             {/* INLINE MODAL: Copy SKU List */}
             {showSkuCopyModal && (
-                <div className="absolute inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
-                    <div className="w-full max-w-sm bg-[#1a1d24] border border-white/20 rounded-2xl shadow-xl flex flex-col max-h-[80%]">
-                        <div className="p-4 border-b border-white/10 flex justify-between items-center bg-white/5">
+                <div className="absolute inset-0 z-50 bg-black/30 backdrop-blur-sm flex items-center justify-center p-4">
+                    <div className="w-full max-w-sm bg-[#1a1d24] border border-border rounded-2xl shadow-xl flex flex-col max-h-[80%]">
+                        <div className="p-4 border-b border-border flex justify-between items-center bg-muted">
                             <h3 className="font-bold text-white">Artikel kopieren</h3>
-                            <button onClick={() => setShowSkuCopyModal(false)}><X size={18} className="text-white/60 hover:text-white" /></button>
+                            <button onClick={() => setShowSkuCopyModal(false)}><X size={18} className="text-muted-foreground hover:text-white" /></button>
                         </div>
                         <div className="flex-1 overflow-y-auto p-4 space-y-2">
                             {proposal.articles
@@ -266,19 +266,19 @@ export const OrderProposalContent: React.FC<OrderProposalContentProps> = ({ prop
                                             key={item.article.id}
                                             onClick={() => handleCopySku(item.article.supplierSku || item.article.sku || '', item.article.id)}
                                             className={`p-3 rounded-xl border cursor-pointer transition-all flex justify-between items-center group ${isCopied
-                                                ? 'bg-emerald-500/20 border-emerald-500/50'
-                                                : 'bg-white/5 border-white/5 hover:bg-white/10'
+                                                ? 'bg-primary/20 border-emerald-500/50'
+                                                : 'bg-muted border-white/5 hover:bg-muted'
                                                 }`}
                                         >
                                             <div className="flex-1 min-w-0 pr-3">
                                                 <div className={`text-sm font-bold truncate ${isCopied ? 'text-emerald-400' : 'text-white'}`}>
                                                     {item.article.name}
                                                 </div>
-                                                <div className="text-xs font-mono text-white/50 flex items-center gap-2">
+                                                <div className="text-xs font-mono text-muted-foreground flex items-center gap-2">
                                                     {item.article.supplierSku || 'Keine Art-Nr.'}
                                                 </div>
                                             </div>
-                                            <div className={`p-2 rounded-lg ${isCopied ? 'bg-emerald-500 text-white' : 'bg-black/20 text-white/30 group-hover:text-white'}`}>
+                                            <div className={`p-2 rounded-lg ${isCopied ? 'bg-primary text-white' : 'bg-black/20 text-muted-foreground group-hover:text-white'}`}>
                                                 {isCopied ? <Check size={16} /> : <Copy size={16} />}
                                             </div>
                                         </div>

@@ -8,7 +8,7 @@ interface GlassLayoutProps {
 
 export const GlassLayout: React.FC<GlassLayoutProps> = ({ children, className }) => {
   return (
-    <div className={clsx("relative h-[100dvh] w-full bg-gray-900 text-slate-100 font-sans selection:bg-teal-500/30 overflow-hidden", className)}>
+    <div className={clsx("relative h-[100dvh] w-full bg-background text-slate-100 font-sans selection:bg-teal-500/30 overflow-hidden", className)}>
 
       {/* Main Background Layers - Animated Blobs matching Login page */}
       <div className="fixed inset-0 z-0 pointer-events-none overflow-hidden">

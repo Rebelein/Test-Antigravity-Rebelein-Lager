@@ -44,29 +44,29 @@ export const OnboardingTour: React.FC<OnboardingTourProps> = ({ onComplete }) =>
   const stepData = STEPS[currentStep];
 
   return (
-    <div className="fixed inset-0 z-[9999] flex items-center justify-center p-6 bg-black/90 backdrop-blur-lg animate-in fade-in duration-300">
+    <div className="fixed inset-0 z-[9999] flex items-center justify-center p-6 bg-black/30 backdrop-blur-sm animate-in fade-in duration-300">
       <GlassCard className="w-full max-w-sm flex flex-col items-center text-center relative overflow-hidden">
         {/* Progress Bar */}
-        <div className="absolute top-0 left-0 right-0 h-1 bg-white/10">
+        <div className="absolute top-0 left-0 right-0 h-1 bg-muted">
           <div 
-            className="h-full bg-emerald-500 transition-all duration-300 ease-out" 
+            className="h-full bg-primary transition-all duration-300 ease-out" 
             style={{ width: `${((currentStep + 1) / STEPS.length) * 100}%` }} 
           />
         </div>
 
         <div className="py-8 px-2 flex-1 flex flex-col items-center justify-center">
-          <div className="w-24 h-24 rounded-full bg-white/5 flex items-center justify-center mb-6 animate-in zoom-in duration-300 key={currentStep}">
+          <div className="w-24 h-24 rounded-full bg-muted flex items-center justify-center mb-6 animate-in zoom-in duration-300 key={currentStep}">
              {stepData.icon}
           </div>
           <h2 className="text-2xl font-bold text-white mb-3">{stepData.title}</h2>
-          <p className="text-white/70 text-sm leading-relaxed min-h-[80px]">
+          <p className="text-muted-foreground text-sm leading-relaxed min-h-[80px]">
             {stepData.content}
           </p>
         </div>
 
         <div className="w-full pt-4 flex gap-3">
           {currentStep < STEPS.length - 1 ? (
-            <Button onClick={handleNext} className="w-full bg-emerald-600 hover:bg-emerald-500 shadow-lg shadow-emerald-500/20">
+            <Button onClick={handleNext} className="w-full bg-primary hover:bg-primary shadow-lg shadow-emerald-500/20">
               Weiter <ArrowRight size={16} className="ml-1"/>
             </Button>
           ) : (
@@ -78,7 +78,7 @@ export const OnboardingTour: React.FC<OnboardingTourProps> = ({ onComplete }) =>
         
         <div className="mt-4 flex gap-1">
             {STEPS.map((_, idx) => (
-                <div key={idx} className={`w-2 h-2 rounded-full transition-colors ${idx === currentStep ? 'bg-white' : 'bg-white/20'}`} />
+                <div key={idx} className={`w-2 h-2 rounded-full transition-colors ${idx === currentStep ? 'bg-white' : 'bg-muted'}`} />
             ))}
         </div>
       </GlassCard>

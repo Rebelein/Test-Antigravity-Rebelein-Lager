@@ -47,8 +47,8 @@ export const PageManagerModal: React.FC<PageManagerModalProps> = ({ isOpen, onCl
             title="Seiten Verwaltung"
         >
             <div className="p-6 space-y-6">
-                <div className="bg-white/5 border border-white/10 rounded-xl p-4 mb-4">
-                    <p className="text-sm text-white/60">
+                <div className="bg-muted border border-border rounded-xl p-4 mb-4">
+                    <p className="text-sm text-muted-foreground">
                         Hier kannst du entscheiden, welche Seiten in der Sidebar (und mobil unten) angezeigt werden und in welcher Reihenfolge.
                     </p>
                 </div>
@@ -62,9 +62,9 @@ export const PageManagerModal: React.FC<PageManagerModalProps> = ({ isOpen, onCl
                             if (!item) return null;
 
                             return (
-                                <div key={itemId} className="flex items-center justify-between p-3 bg-white/5 border border-white/10 rounded-xl group hover:bg-white/10 transition-colors">
+                                <div key={itemId} className="flex items-center justify-between p-3 bg-muted border border-border rounded-xl group hover:bg-muted transition-colors">
                                     <div className="flex items-center gap-3">
-                                        <div className="text-white/50">{item.icon}</div>
+                                        <div className="text-muted-foreground">{item.icon}</div>
                                         <span className="font-medium text-white">{item.label}</span>
                                     </div>
 
@@ -73,14 +73,14 @@ export const PageManagerModal: React.FC<PageManagerModalProps> = ({ isOpen, onCl
                                             <button
                                                 disabled={index === 0}
                                                 onClick={() => moveSidebarItem(index, 'up')}
-                                                className="p-1 hover:bg-white/10 rounded text-white/40 hover:text-white disabled:opacity-20"
+                                                className="p-1 hover:bg-muted rounded text-muted-foreground hover:text-white disabled:opacity-20"
                                             >
                                                 <ChevronUp size={14} />
                                             </button>
                                             <button
                                                 disabled={index === activeOrder.length - 1}
                                                 onClick={() => moveSidebarItem(index, 'down')}
-                                                className="p-1 hover:bg-white/10 rounded text-white/40 hover:text-white disabled:opacity-20"
+                                                className="p-1 hover:bg-muted rounded text-muted-foreground hover:text-white disabled:opacity-20"
                                             >
                                                 <ChevronDown size={14} />
                                             </button>
@@ -88,7 +88,7 @@ export const PageManagerModal: React.FC<PageManagerModalProps> = ({ isOpen, onCl
 
                                         <button
                                             onClick={() => toggleSidebarItem(itemId)}
-                                            className="p-2 bg-emerald-500/20 text-emerald-400 hover:bg-emerald-500/30 rounded-lg transition-colors"
+                                            className="p-2 bg-primary/20 text-emerald-400 hover:bg-primary/30 rounded-lg transition-colors"
                                             title="Ausblenden"
                                         >
                                             <Eye size={18} />
@@ -102,20 +102,20 @@ export const PageManagerModal: React.FC<PageManagerModalProps> = ({ isOpen, onCl
 
                 {/* INACTIVE PAGES LIST */}
                 <div>
-                    <h3 className="text-xs font-bold text-white/40 uppercase tracking-wider mb-3 mt-6">Verfügbare Seiten ("Ausgeblendet")</h3>
+                    <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-3 mt-6">Verfügbare Seiten ("Ausgeblendet")</h3>
                     <div className="space-y-2">
                         {ALL_NAV_ITEMS.filter(i => !activeOrder.includes(i.id)).length === 0 && (
-                            <div className="text-white/30 text-sm italic py-2">Alle Seiten sind aktiv.</div>
+                            <div className="text-muted-foreground text-sm italic py-2">Alle Seiten sind aktiv.</div>
                         )}
                         {ALL_NAV_ITEMS.filter(i => !activeOrder.includes(i.id)).map(item => (
-                            <div key={item.id} className="flex items-center justify-between p-3 bg-white/5 border border-white/5 rounded-xl opacity-60 hover:opacity-100 transition-opacity">
+                            <div key={item.id} className="flex items-center justify-between p-3 bg-muted border border-white/5 rounded-xl opacity-60 hover:opacity-100 transition-opacity">
                                 <div className="flex items-center gap-3">
-                                    <div className="text-white/50 grayscale">{item.icon}</div>
-                                    <span className="font-medium text-white/70">{item.label}</span>
+                                    <div className="text-muted-foreground grayscale">{item.icon}</div>
+                                    <span className="font-medium text-muted-foreground">{item.label}</span>
                                 </div>
                                 <button
                                     onClick={() => toggleSidebarItem(item.id)}
-                                    className="p-2 bg-white/10 text-white/40 hover:bg-white/20 hover:text-white rounded-lg transition-colors"
+                                    className="p-2 bg-muted text-muted-foreground hover:bg-muted hover:text-white rounded-lg transition-colors"
                                     title="Einblenden"
                                 >
                                     <EyeOff size={18} />

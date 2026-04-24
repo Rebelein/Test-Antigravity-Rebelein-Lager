@@ -64,17 +64,17 @@ export const InstallPrompt: React.FC = () => {
 
     return (
         <div className="fixed bottom-24 left-4 right-4 z-[200] md:left-auto md:right-4 md:w-96 animate-in slide-in-from-bottom-10 duration-500">
-            <div className="p-4 rounded-2xl bg-slate-900 border border-emerald-500/40 shadow-xl shadow-emerald-500/20 relative">
+            <div className="p-4 rounded-2xl bg-card border border-emerald-500/40 shadow-xl shadow-emerald-500/20 relative">
                 <button
                     onClick={handleClose}
-                    className="absolute top-3 right-3 p-2 text-gray-400 hover:text-white hover:bg-white/10 rounded-lg transition-colors"
+                    className="absolute top-3 right-3 p-2 text-muted-foreground hover:text-white hover:bg-muted rounded-lg transition-colors"
                     aria-label="Schließen"
                 >
                     <X size={20} />
                 </button>
 
                 <div className="flex items-start gap-4 pr-8">
-                    <div className="p-3 rounded-xl bg-emerald-500/20 text-emerald-400 shrink-0">
+                    <div className="p-3 rounded-xl bg-primary/20 text-emerald-400 shrink-0">
                         <Download size={24} />
                     </div>
                     <div>

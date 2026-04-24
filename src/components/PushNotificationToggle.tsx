@@ -29,7 +29,7 @@ export function PushNotificationToggle({ userId, compact = false }: PushNotifica
   if (!isSupported) {
     if (compact) return null;
     return (
-      <div className="flex items-center gap-2 text-sm text-slate-400">
+      <div className="flex items-center gap-2 text-sm text-muted-foreground">
         <BellOff className="h-4 w-4" />
         <span>Push nicht unterstützt</span>
       </div>
@@ -71,7 +71,7 @@ export function PushNotificationToggle({ userId, compact = false }: PushNotifica
           'relative flex items-center justify-center rounded-lg p-2 transition-all duration-200',
           subscribed
             ? 'text-blue-400 hover:bg-blue-500/10'
-            : 'text-slate-400 hover:bg-slate-700/50 hover:text-slate-200',
+            : 'text-muted-foreground hover:bg-slate-700/50 hover:text-slate-200',
           loading ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer',
         ].join(' ')}
       >
@@ -91,19 +91,19 @@ export function PushNotificationToggle({ userId, compact = false }: PushNotifica
   }
 
   return (
-    <div className="flex items-center justify-between rounded-xl border border-slate-700/50 bg-slate-800/50 p-4">
+    <div className="flex items-center justify-between rounded-xl border border-border bg-card p-4">
       <div className="flex items-center gap-3">
         <div
           className={[
             'flex h-10 w-10 items-center justify-center rounded-lg',
-            subscribed ? 'bg-blue-500/20 text-blue-400' : 'bg-slate-700/50 text-slate-400',
+            subscribed ? 'bg-blue-500/20 text-blue-400' : 'bg-slate-700/50 text-muted-foreground',
           ].join(' ')}
         >
           {subscribed ? <BellRing className="h-5 w-5" /> : <Bell className="h-5 w-5" />}
         </div>
         <div>
           <p className="text-sm font-medium text-slate-200">Push-Benachrichtigungen</p>
-          <p className="text-xs text-slate-500">
+          <p className="text-xs text-muted-foreground">
             {currentPermission === 'denied'
               ? 'In Browser-Einstellungen blockiert'
               : subscribed
@@ -131,7 +131,7 @@ export function PushNotificationToggle({ userId, compact = false }: PushNotifica
           ].join(' ')}
         >
           {loading && (
-            <Loader2 className="h-3 w-3 animate-spin absolute top-1 left-1 text-slate-400" />
+            <Loader2 className="h-3 w-3 animate-spin absolute top-1 left-1 text-muted-foreground" />
           )}
         </span>
       </button>

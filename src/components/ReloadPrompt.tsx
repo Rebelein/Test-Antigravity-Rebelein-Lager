@@ -40,7 +40,7 @@ export const ReloadPrompt: React.FC = () => {
     return (
         <div className="fixed bottom-4 right-4 z-[9999] animate-in slide-in-from-bottom-5 fade-in duration-300">
             <GlassCard className="!p-0 border-l-4 border-l-emerald-500 overflow-hidden shadow-2xl min-w-[320px]">
-                <div className="p-4 flex items-start gap-3 bg-white/90 dark:bg-gray-900/95 backdrop-blur-xl">
+                <div className="p-4 flex items-start gap-3 bg-muted dark:bg-background/95 backdrop-blur-sm">
                     <div className="mt-1 shrink-0">
                         {needRefresh ? (
                             <Download className="text-emerald-500 animate-bounce" size={24} />
@@ -53,7 +53,7 @@ export const ReloadPrompt: React.FC = () => {
                         <h3 className="font-bold text-gray-900 dark:text-white text-sm">
                             {needRefresh ? 'Update verfügbar!' : 'Bereit zur Offline-Nutzung'}
                         </h3>
-                        <p className="text-xs text-gray-500 dark:text-white/60 mt-1 leading-relaxed">
+                        <p className="text-xs text-muted-foreground dark:text-muted-foreground mt-1 leading-relaxed">
                             {needRefresh
                                 ? 'Eine neue Version der App ist verfügbar. Klicke auf "Aktualisieren", um die neuesten Funktionen zu laden.'
                                 : 'Die App wurde gecached und kann nun auch offline verwendet werden.'}
@@ -64,7 +64,7 @@ export const ReloadPrompt: React.FC = () => {
                                 <Button
                                     size="sm"
                                     onClick={() => updateServiceWorker(true)}
-                                    className="bg-emerald-600 hover:bg-emerald-500 text-white text-xs py-1.5 h-auto flex-1 justify-center"
+                                    className="bg-primary text-primary-foreground hover:bg-primary/90 focus-visible:ring-1 focus-visible:ring-ring text-xs py-1.5 h-auto flex-1 justify-center"
                                     icon={<RefreshCw size={12} />}
                                 >
                                     Aktualisieren
@@ -72,14 +72,14 @@ export const ReloadPrompt: React.FC = () => {
                             )}
                             <button
                                 onClick={close}
-                                className="px-3 py-1.5 text-xs font-medium text-gray-500 dark:text-white/40 hover:text-gray-900 dark:hover:text-white transition-colors"
+                                className="px-3 py-1.5 text-xs font-medium text-muted-foreground dark:text-muted-foreground hover:text-gray-900 dark:hover:text-white transition-colors"
                             >
                                 Schließen
                             </button>
                         </div>
                     </div>
 
-                    <button onClick={close} className="text-gray-400 hover:text-gray-600 dark:hover:text-white transition-colors">
+                    <button onClick={close} className="text-muted-foreground hover:text-muted-foreground dark:hover:text-white transition-colors">
                         <X size={16} />
                     </button>
                 </div>

@@ -76,7 +76,7 @@ const UnifiedScanner: React.FC<UnifiedScannerProps> = ({ onScan, onError, classN
 
             {/* Overlay if Error */}
             {errorState && (
-                <div className="absolute inset-0 flex items-center justify-center bg-black/80 z-50 p-4 text-center">
+                <div className="absolute inset-0 flex items-center justify-center bg-black/30 z-50 p-4 text-center">
                     <div className="text-red-400">
                         <p className="font-bold mb-2">Kamera Fehler</p>
                         <p className="text-sm">{errorState}</p>

@@ -273,7 +273,7 @@ const Workwear = () => {
                     <h1 className="text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-emerald-400 to-teal-200">
                         Arbeitskleidung
                     </h1>
-                    <p className="text-white/60 text-sm mt-1">
+                    <p className="text-muted-foreground text-sm mt-1">
                         Bestelle deine Ausrüstung oder verwalte das Budget.
                     </p>
                 </div>
@@ -282,18 +282,18 @@ const Workwear = () => {
                     {/* Cart Trigger */}
                     <button
                         onClick={() => setIsCartOpen(true)}
-                        className="relative p-3 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 transition-colors"
+                        className="relative p-3 rounded-xl bg-muted hover:bg-muted border border-border transition-colors"
                     >
                         <ShoppingCart size={20} className="text-white" />
                         {cart.reduce((a, b) => a + b.quantity, 0) > 0 && (
-                            <div className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-emerald-500 text-black text-xs font-bold flex items-center justify-center">
+                            <div className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-primary text-black text-xs font-bold flex items-center justify-center">
                                 {cart.reduce((a, b) => a + b.quantity, 0)}
                             </div>
                         )}
                     </button>
 
                     {/* Budget Flag */}
-                    <GlassCard className="px-4 py-2 flex items-center gap-4 bg-emerald-500/10 border-emerald-500/20">
+                    <GlassCard className="px-4 py-2 flex items-center gap-4 bg-primary/10 border-emerald-500/20">
                         <div className="text-xs text-emerald-400 font-bold uppercase tracking-wider">Mein Budget ({new Date().getFullYear()})</div>
                         <div className="text-lg font-mono font-bold text-white">
                             {myBudget ? `${(myBudget.limit - myBudget.used - myBudget.reserved).toFixed(2)} €` : 'Loading...'}
@@ -303,7 +303,7 @@ const Workwear = () => {
             </header>
 
             {/* TABS */}
-            <div className="flex p-1 gap-1 glass-panel rounded-xl w-full md:w-auto self-start overflow-x-auto">
+            <div className="flex p-1 gap-1 bg-card text-card-foreground shadow-sm rounded-xl border border-border rounded-xl w-full md:w-auto self-start overflow-x-auto">
                 {tabs.map((tab) => (
                     <button
                         key={tab.id}
@@ -311,8 +311,8 @@ const Workwear = () => {
                         className={clsx(
                             "flex-1 md:flex-none px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 flex items-center justify-center gap-2",
                             activeTab === tab.id
-                                ? "bg-emerald-500/20 text-emerald-300 shadow-sm"
-                                : "text-white/40 hover:text-white hover:bg-white/5"
+                                ? "bg-primary/20 text-emerald-300 shadow-sm"
+                                : "text-muted-foreground hover:text-white hover:bg-muted"
                         )}
                     >
                         {tab.icon}
@@ -335,9 +335,9 @@ const Workwear = () => {
                             {/* NEW: Custom Item Request Button (For everyone) */}
                             <button
                                 onClick={() => setIsCustomRequestModalOpen(true)}
-                                className="w-full py-4 mb-6 border border-dashed border-white/10 rounded-xl flex items-center justify-center gap-2 text-white/40 hover:text-emerald-400 hover:border-emerald-500/30 hover:bg-emerald-500/5 transition-all group"
+                                className="w-full py-4 mb-6 border border-dashed border-border rounded-xl flex items-center justify-center gap-2 text-muted-foreground hover:text-emerald-400 hover:border-emerald-500/30 hover:bg-primary/5 transition-all group"
                             >
-                                <div className="w-8 h-8 rounded-full bg-white/5 flex items-center justify-center group-hover:scale-110 transition-transform">
+                                <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center group-hover:scale-110 transition-transform">
                                     <Plus size={16} />
                                 </div>
                                 <span className="font-medium">Wunschartikel / Sonderbestellung anfragen</span>
@@ -355,14 +355,14 @@ const Workwear = () => {
                                 <div key={category} className="space-y-4">
                                     <button
                                         onClick={() => setCollapsedCategories(prev => prev.includes(category) ? prev.filter(c => c !== category) : [...prev, category])}
-                                        className="w-full flex items-center justify-between p-4 bg-white/5 hover:bg-white/10 border border-white/5 rounded-xl transition-all group"
+                                        className="w-full flex items-center justify-between p-4 bg-muted hover:bg-muted border border-white/5 rounded-xl transition-all group"
                                     >
                                         <div className="flex items-center gap-3">
-                                            {collapsedCategories.includes(category) ? <ChevronRight size={20} className="text-white/50" /> : <ChevronDown size={20} className="text-emerald-400" />}
+                                            {collapsedCategories.includes(category) ? <ChevronRight size={20} className="text-muted-foreground" /> : <ChevronDown size={20} className="text-emerald-400" />}
                                             <h3 className="text-lg font-bold text-white">{category}</h3>
-                                            <span className="bg-white/10 text-white/50 text-xs px-2 py-0.5 rounded-full">{items.length}</span>
+                                            <span className="bg-muted text-muted-foreground text-xs px-2 py-0.5 rounded-full">{items.length}</span>
                                         </div>
-                                        <div className="w-full h-px bg-white/5 flex-1 mx-4 group-hover:bg-white/10 transition-colors" />
+                                        <div className="w-full h-px bg-muted flex-1 mx-4 group-hover:bg-muted transition-colors" />
                                     </button>
 
                                     {!collapsedCategories.includes(category) && (
@@ -377,11 +377,11 @@ const Workwear = () => {
 
                             {templates.length === 0 && !loading && (
                                 <div className="flex flex-col items-center justify-center py-12 text-center">
-                                    <div className="w-20 h-20 rounded-full bg-white/5 flex items-center justify-center mb-4">
-                                        <Shirt size={40} className="text-white/20" />
+                                    <div className="w-20 h-20 rounded-full bg-muted flex items-center justify-center mb-4">
+                                        <Shirt size={40} className="text-muted-foreground" />
                                     </div>
                                     <h3 className="text-lg font-bold text-white mb-2">Keine Artikel gefunden</h3>
-                                    <p className="text-white/50 max-w-sm">
+                                    <p className="text-muted-foreground max-w-sm">
                                         Es wurden noch keine Arbeitskleidungs-Vorlagen erstellt.
                                     </p>
                                 </div>
@@ -421,7 +421,7 @@ const Workwear = () => {
                                     </div>
                                     <div>
                                         <h3 className="text-lg font-bold">Bestellungen</h3>
-                                        <p className="text-white/50 text-sm">Bestellungen prüfen und exportieren.</p>
+                                        <p className="text-muted-foreground text-sm">Bestellungen prüfen und exportieren.</p>
                                     </div>
                                 </div>
                                 <Button variant="secondary" className="w-full">Öffnen</Button>
@@ -429,12 +429,12 @@ const Workwear = () => {
 
                             <GlassCard onClick={() => setAdminView('budgets')} className="p-6 cursor-pointer hover:border-emerald-500/50 transition-colors group">
                                 <div className="flex items-center gap-4 mb-4">
-                                    <div className="w-12 h-12 rounded-full bg-emerald-500/20 flex items-center justify-center text-emerald-400 group-hover:scale-110 transition-transform">
+                                    <div className="w-12 h-12 rounded-full bg-primary/20 flex items-center justify-center text-emerald-400 group-hover:scale-110 transition-transform">
                                         <Settings size={24} />
                                     </div>
                                     <div>
                                         <h3 className="text-lg font-bold">Budget & Einstellungen</h3>
-                                        <p className="text-white/50 text-sm">Budgets pro Mitarbeiter verwalten.</p>
+                                        <p className="text-muted-foreground text-sm">Budgets pro Mitarbeiter verwalten.</p>
                                     </div>
                                 </div>
                                 <Button variant="secondary" className="w-full">Verwalten</Button>
@@ -447,7 +447,7 @@ const Workwear = () => {
                                     </div>
                                     <div>
                                         <h3 className="text-lg font-bold">Artikel Vorlagen</h3>
-                                        <p className="text-white/50 text-sm">Katalog bearbeiten und Preise anpassen.</p>
+                                        <p className="text-muted-foreground text-sm">Katalog bearbeiten und Preise anpassen.</p>
                                     </div>
                                 </div>
                                 <Button variant="secondary" className="w-full">Bearbeiten</Button>
@@ -461,23 +461,23 @@ const Workwear = () => {
             <GlassModal isOpen={isCartOpen} onClose={() => setIsCartOpen(false)} title="Warenkorb">
                 <div className="p-6">
                     {cart.length === 0 ? (
-                        <div className="text-center py-8 text-white/50">Der Warenkorb ist leer.</div>
+                        <div className="text-center py-8 text-muted-foreground">Der Warenkorb ist leer.</div>
                     ) : (
                         <div className="space-y-4">
                             {cart.map(item => (
-                                <div key={item.id} className="flex items-center gap-4 bg-white/5 p-3 rounded-lg border border-white/5">
+                                <div key={item.id} className="flex items-center gap-4 bg-muted p-3 rounded-lg border border-white/5">
                                     <div className="w-12 h-12 bg-black/30 rounded flex items-center justify-center shrink-0 overflow-hidden">
                                         {item.type === 'catalog' && item.template?.image_url ? (
                                             <img src={item.template.image_url} className="w-full h-full object-cover" />
                                         ) : (
-                                            <Shirt className="text-white/20" />
+                                            <Shirt className="text-muted-foreground" />
                                         )}
                                     </div>
                                     <div className="flex-1 min-w-0">
                                         <div className="font-bold text-white truncate">
                                             {item.type === 'catalog' ? item.template!.name : item.customData!.name}
                                         </div>
-                                        <div className="text-xs text-white/50">
+                                        <div className="text-xs text-muted-foreground">
                                             Größe: {item.size} | Menge: {item.quantity} |
                                             {item.type === 'catalog' && item.template!.has_logo ? ' Mit Logo' : ' Ohne Logo'}
                                         </div>
@@ -485,12 +485,12 @@ const Workwear = () => {
                                     <div className="font-mono text-emerald-300">
                                         {((item.type === 'catalog' ? item.template!.price : item.customData!.price) * item.quantity).toFixed(2)} €
                                     </div>
-                                    <button onClick={() => removeFromCart(item.id)} className="p-2 hover:bg-white/10 rounded-full text-white/40 hover:text-rose-400"><Trash2 size={16} /></button>
+                                    <button onClick={() => removeFromCart(item.id)} className="p-2 hover:bg-muted rounded-full text-muted-foreground hover:text-rose-400"><Trash2 size={16} /></button>
                                 </div>
                             ))}
 
-                            <div className="border-t border-white/10 pt-4 mt-4 flex justify-between items-center">
-                                <div className="text-white/60">Gesamtsumme</div>
+                            <div className="border-t border-border pt-4 mt-4 flex justify-between items-center">
+                                <div className="text-muted-foreground">Gesamtsumme</div>
                                 <div className="text-xl font-bold text-emerald-400 font-mono">{cartTotal.toFixed(2)} €</div>
                             </div>
 
@@ -522,13 +522,13 @@ const Workwear = () => {
             {/* CUSTOM REQUEST MODAL */}
             <GlassModal isOpen={isCustomRequestModalOpen} onClose={() => setIsCustomRequestModalOpen(false)} title="Wunschartikel Anfrage">
                 <div className="p-6 space-y-4">
-                    <div className="bg-white/5 p-4 rounded-lg border border-white/10 text-sm text-white/60 mb-4">
+                    <div className="bg-muted p-4 rounded-lg border border-border text-sm text-muted-foreground mb-4">
                         Hier kannst du Artikel anfragen, die nicht im Katalog sind. Bitte fülle so viele Informationen wie möglich aus.
                     </div>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div className="space-y-2">
-                            <label className="text-xs text-white/50">Kategorie (für Größenzuordnung)</label>
+                            <label className="text-xs text-muted-foreground">Kategorie (für Größenzuordnung)</label>
                             <GlassSelect
                                 value={customRequest.category}
                                 onChange={(e) => {
@@ -551,7 +551,7 @@ const Workwear = () => {
                             </GlassSelect>
                         </div>
                         <div className="space-y-2">
-                            <label className="text-xs text-white/50">Größe</label>
+                            <label className="text-xs text-muted-foreground">Größe</label>
                             <GlassInput
                                 value={customRequest.size}
                                 onChange={(e) => setCustomRequest(prev => ({ ...prev, size: e.target.value }))}
@@ -561,7 +561,7 @@ const Workwear = () => {
                     </div>
 
                     <div className="space-y-2">
-                        <label className="text-xs text-white/50">Artikelname / Beschreibung *</label>
+                        <label className="text-xs text-muted-foreground">Artikelname / Beschreibung *</label>
                         <GlassInput
                             value={customRequest.name}
                             onChange={(e) => setCustomRequest(prev => ({ ...prev, name: e.target.value }))}
@@ -571,7 +571,7 @@ const Workwear = () => {
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div className="space-y-2">
-                            <label className="text-xs text-white/50">Artikelnummer (Optional)</label>
+                            <label className="text-xs text-muted-foreground">Artikelnummer (Optional)</label>
                             <GlassInput
                                 value={customRequest.articleNumber}
                                 onChange={(e) => setCustomRequest(prev => ({ ...prev, articleNumber: e.target.value }))}
@@ -579,7 +579,7 @@ const Workwear = () => {
                             />
                         </div>
                         <div className="space-y-2">
-                            <label className="text-xs text-white/50">Preis (€) ca. *</label>
+                            <label className="text-xs text-muted-foreground">Preis (€) ca. *</label>
                             <GlassInput
                                 type="number"
                                 step="0.01"
@@ -591,7 +591,7 @@ const Workwear = () => {
                     </div>
 
                     <div className="space-y-2">
-                        <label className="text-xs text-white/50">Link zum Artikel (Optional)</label>
+                        <label className="text-xs text-muted-foreground">Link zum Artikel (Optional)</label>
                         <GlassInput
                             value={customRequest.url}
                             onChange={(e) => setCustomRequest(prev => ({ ...prev, url: e.target.value }))}

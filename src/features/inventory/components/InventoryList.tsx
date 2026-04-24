@@ -1,5 +1,6 @@
 import React, { useMemo } from 'react';
 import { Virtuoso, GroupedVirtuoso } from 'react-virtuoso';
+import { motion } from 'framer-motion';
 import {
     Plus, Minus, X, CheckSquare, Square, ChevronDown, MapPin, Loader2,
     Building2, ExternalLink, Hash, Check, Clock
@@ -97,36 +98,47 @@ export const InventoryList: React.FC<InventoryListProps> = ({
 
         if (isExpanded) {
             return (
-                <div className="pb-3 px-1">
+                <motion.div 
+                    className="pb-3 px-1"
+                    initial={{ opacity: 0, y: -10, scale: 0.98 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    transition={{ duration: 0.2 }}
+                >
                     <div
                         onClick={() => onCardClick(article)}
-                        className="flex flex-col gap-4 p-3 rounded-xl bg-white/5 border shadow-lg cursor-pointer border-emerald-500/20"
+                        className="flex flex-col gap-4 p-3 rounded-xl bg-muted border shadow-lg cursor-pointer border-emerald-500/20"
                     >
                         <div className="flex items-center justify-between gap-2">
                             <div className="flex items-center gap-2 flex-1">
-                                <button onClick={onDecrementStock} className="w-10 h-10 flex items-center justify-center rounded-lg bg-white/10 text-white"><Minus size={18} /></button>
-                                <input type="number" className="w-full h-10 text-center bg-white/5 rounded-lg text-white" value={quickStockAmount} onChange={(e) => onQuickStockChange(Number(e.target.value))} onClick={(e) => e.stopPropagation()} />
-                                <button onClick={onIncrementStock} className="w-10 h-10 flex items-center justify-center rounded-lg bg-white/10 text-white"><Plus size={18} /></button>
+                                <button onClick={onDecrementStock} className="w-10 h-10 flex items-center justify-center rounded-lg bg-muted text-white"><Minus size={18} /></button>
+                                <input type="number" className="w-full h-10 text-center bg-muted rounded-lg text-white" value={quickStockAmount} onChange={(e) => onQuickStockChange(Number(e.target.value))} onClick={(e) => e.stopPropagation()} />
+                                <button onClick={onIncrementStock} className="w-10 h-10 flex items-center justify-center rounded-lg bg-muted text-white"><Plus size={18} /></button>
                             </div>
-                            <div className="flex items-center gap-2 border-l border-white/10 pl-3">
-                                <button onClick={onCancelQuickBook} className="w-10 h-10 flex items-center justify-center text-white/40"><X size={20} /></button>
-                                <button onClick={(e) => onQuickSave(e, article.id)} className="px-4 h-10 rounded-lg bg-emerald-500 text-white text-sm">
+                            <div className="flex items-center gap-2 border-l border-border pl-3">
+                                <button onClick={onCancelQuickBook} className="w-10 h-10 flex items-center justify-center text-muted-foreground"><X size={20} /></button>
+                                <button onClick={(e) => onQuickSave(e, article.id)} className="px-4 h-10 rounded-lg bg-primary text-white text-sm">
                                     {isBooking ? <Loader2 className="animate-spin" /> : 'Buchen'}
                                 </button>
                             </div>
                         </div>
                     </div>
-                </div>
+                </motion.div>
             );
         }
 
         return (
-            <div className="pb-2 px-1">
-                <div
+            <motion.div 
+                className="pb-2 px-1"
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.2 }}
+            >
+                <motion.div
+                    whileTap={{ scale: 0.98 }}
                     onClick={() => onCardClick(article)}
-                    className={`group relative flex items-center gap-3 p-2 pr-4 rounded-xl transition-all border cursor-pointer ${isSelectionMode && isSelected ? 'bg-emerald-500/20 border-emerald-500/50' : isTargetReached ? 'bg-emerald-500/5 hover:bg-emerald-500/10 border-emerald-500/20' : 'bg-rose-500/5 hover:bg-rose-500/10 border-rose-500/20'}`}
+                    className={`group relative flex items-center gap-3 p-2 pr-4 rounded-xl transition-all border cursor-pointer ${isSelectionMode && isSelected ? 'bg-primary/20 border-emerald-500/50' : isTargetReached ? 'bg-primary/5 hover:bg-primary/10 border-emerald-500/20' : 'bg-rose-500/5 hover:bg-rose-500/10 border-rose-500/20'}`}
                 >
-                    {isSelectionMode && <div className={`shrink-0 mr-1 text-white/50 ${isSelected ? 'text-emerald-400' : ''}`}>{isSelected ? <CheckSquare size={24} /> : <Square size={24} />}</div>}
+                    {isSelectionMode && <div className={`shrink-0 mr-1 text-muted-foreground ${isSelected ? 'text-emerald-400' : ''}`}>{isSelected ? <CheckSquare size={24} /> : <Square size={24} />}</div>}
                     <div onClick={(e) => { e.stopPropagation(); onOpenDetail(article); }} className="w-12 h-12 shrink-0 rounded-lg bg-black/20 overflow-hidden relative border border-white/5 cursor-pointer hover:opacity-80 transition-opacity">
                         <CachedImage
                             src={article.image || `https://picsum.photos/seed/${article.id}/200/200`}
@@ -137,14 +149,14 @@ export const InventoryList: React.FC<InventoryListProps> = ({
                     </div>
                     <div className="flex-1 min-w-0 flex flex-col justify-center">
                         <h3 className="font-medium text-white text-sm truncate">{article.name}</h3>
-                        <div className="flex items-center gap-2 text-xs text-white/40 mt-0.5">
+                        <div className="flex items-center gap-2 text-xs text-muted-foreground mt-0.5">
                             <span className="font-mono tracking-tight">{article.sku}</span>
-                            <span className="truncate text-white/50 flex items-center gap-1"><MapPin size={10} /> {article.location}</span>
+                            <span className="truncate text-muted-foreground flex items-center gap-1"><MapPin size={10} /> {article.location}</span>
                         </div>
                         <div className="flex flex-wrap gap-1.5 mt-1.5">
                             {article.stock < article.targetStock && <span className="text-[10px] bg-rose-500/20 text-rose-300 px-1.5 py-0.5 rounded">Unter Soll</span>}
                             {!!article.onOrderDate && <span className="text-[10px] bg-blue-500/20 text-blue-300 px-1.5 py-0.5 rounded">Bestellt</span>}
-                            <span className="text-[10px] bg-white/5 text-white/40 px-1.5 py-0.5 rounded">Soll: {article.targetStock}</span>
+                            <span className="text-[10px] bg-muted text-muted-foreground px-1.5 py-0.5 rounded">Soll: {article.targetStock}</span>
 
                             {article.supplier && (
                                 <div
@@ -189,8 +201,8 @@ export const InventoryList: React.FC<InventoryListProps> = ({
                     <div className="text-right">
                         <div className={`text-lg font-bold ${article.stock < article.targetStock ? 'text-rose-400' : 'text-emerald-400'}`}>{article.stock}</div>
                     </div>
-                </div>
-            </div>
+                </motion.div>
+            </motion.div>
         );
     };
 
@@ -221,23 +233,23 @@ export const InventoryList: React.FC<InventoryListProps> = ({
                 const isCatSelected = isSelectionMode && grpArticles.length > 0 && grpArticles.every(a => selectedArticleIds.has(a.id));
 
                 return (
-                    <div className="flex items-center justify-between px-2 py-3 bg-gray-900/50 backdrop-blur-sm z-10 sticky top-[120px] rounded-lg transition-colors group mb-2 border-b border-white/5">
+                    <div className="flex items-center justify-between px-2 py-3 bg-background/50 backdrop-blur-sm z-10 sticky top-[120px] rounded-lg transition-colors group mb-2 border-b border-white/5">
                         <div className="flex items-center gap-3 w-full cursor-pointer select-none" onClick={() => toggleCategoryCollapse(category)}>
                             {isSelectionMode && (
-                                <div onClick={(e) => { e.stopPropagation(); toggleCategorySelection(grpArticles); }} className="text-white/50 hover:text-white">
+                                <div onClick={(e) => { e.stopPropagation(); toggleCategorySelection(grpArticles); }} className="text-muted-foreground hover:text-white">
                                     {isCatSelected ? <CheckSquare size={20} className="text-emerald-400" /> : <Square size={20} />}
                                 </div>
                             )}
                             <div className="flex items-center gap-2">
-                                <ChevronDown size={18} className={`transition-transform duration-300 ${isCollapsed ? '-rotate-90' : ''} text-white/50`} />
-                                <h2 className="text-base font-semibold text-white/90">{category}</h2>
-                                <span className="text-[10px] bg-white/10 text-white/50 px-1.5 py-0.5 rounded-md">{grpArticles.length}</span>
+                                <ChevronDown size={18} className={`transition-transform duration-300 ${isCollapsed ? '-rotate-90' : ''} text-muted-foreground`} />
+                                <h2 className="text-base font-semibold text-muted-foreground">{category}</h2>
+                                <span className="text-[10px] bg-muted text-muted-foreground px-1.5 py-0.5 rounded-md">{grpArticles.length}</span>
                             </div>
                         </div>
                         {!isSelectionMode && (
                             <button
                                 onClick={(e) => handleQuickAddToCategory(e, category)}
-                                className="p-2 text-emerald-400 hover:bg-emerald-500/20 hover:text-emerald-300 rounded-full transition-colors opacity-0 group-hover:opacity-100"
+                                className="p-2 text-emerald-400 hover:bg-primary/20 hover:text-emerald-300 rounded-full transition-colors opacity-0 group-hover:opacity-100"
                                 title={`Neu in ${category}`}
                             >
                                 <Plus size={20} />

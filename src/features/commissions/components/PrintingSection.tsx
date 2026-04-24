@@ -94,7 +94,7 @@ const PrintingSectionComponent: React.FC<PrintingSectionProps> = ({
                         if (mode === 'print') setShowPrintArea(!showPrintArea);
                         else { setMode('print'); setShowPrintArea(true); }
                     }}
-                    className={`flex-1 p-4 flex items-center justify-center gap-2 transition-colors ${mode === 'print' ? 'bg-blue-500/10 text-blue-300' : 'text-blue-300/50 hover:bg-white/5'}`}
+                    className={`flex-1 p-4 flex items-center justify-center gap-2 transition-colors ${mode === 'print' ? 'bg-blue-500/10 text-blue-300' : 'text-blue-300/50 hover:bg-muted'}`}
                 >
                     <Printer size={20} />
                     <span className="font-bold">Etikettendruck</span>
@@ -111,7 +111,7 @@ const PrintingSectionComponent: React.FC<PrintingSectionProps> = ({
                         if (mode === 'storno') setShowPrintArea(!showPrintArea);
                         else { setMode('storno'); setShowPrintArea(true); }
                     }}
-                    className={`flex-1 p-4 flex items-center justify-center gap-2 transition-colors ${mode === 'storno' ? 'bg-rose-500/10 text-rose-300' : 'text-rose-300/50 hover:bg-white/5'}`}
+                    className={`flex-1 p-4 flex items-center justify-center gap-2 transition-colors ${mode === 'storno' ? 'bg-rose-500/10 text-rose-300' : 'text-rose-300/50 hover:bg-muted'}`}
                 >
                     <Undo2 size={20} />
                     <span className="font-bold">Storno / Rückbau</span>
@@ -134,16 +134,16 @@ const PrintingSectionComponent: React.FC<PrintingSectionProps> = ({
                     {mode === 'print' ? (
                         <>
                             {/* Tabs */}
-                            <div className="flex gap-2 mb-4 border-b border-white/10 pb-1">
+                            <div className="flex gap-2 mb-4 border-b border-border pb-1">
                                 <button
                                     onClick={() => setPrintTab('queue')}
-                                    className={`text-xs font-medium px-3 py-2 rounded-t-lg transition-colors ${printTab === 'queue' ? 'bg-blue-600 text-white' : 'text-white/50 hover:text-white hover:bg-white/10'}`}
+                                    className={`text-xs font-medium px-3 py-2 rounded-t-lg transition-colors ${printTab === 'queue' ? 'bg-blue-600 text-white' : 'text-muted-foreground hover:text-white hover:bg-muted'}`}
                                 >
                                     Warteschlange ({queueItems.length})
                                 </button>
                                 <button
                                     onClick={() => setPrintTab('history')}
-                                    className={`text-xs font-medium px-3 py-2 rounded-t-lg transition-colors ${printTab === 'history' ? 'bg-blue-600 text-white' : 'text-white/50 hover:text-white hover:bg-white/10'}`}
+                                    className={`text-xs font-medium px-3 py-2 rounded-t-lg transition-colors ${printTab === 'history' ? 'bg-blue-600 text-white' : 'text-muted-foreground hover:text-white hover:bg-muted'}`}
                                 >
                                     Zuletzt gedruckt
                                 </button>
@@ -162,13 +162,13 @@ const PrintingSectionComponent: React.FC<PrintingSectionProps> = ({
                                                 >
                                                     {isSubmitting ? <Loader2 className="animate-spin" /> : `Ausgewählte Drucken (${selectedPrintIds.size})`}
                                                 </Button>
-                                                <button onClick={() => setSelectedPrintIds(new Set(queueItems.map(c => c.id)))} className="text-xs text-white/50 hover:text-white px-2">Alle wählen</button>
-                                                <button onClick={() => setSelectedPrintIds(new Set())} className="text-xs text-white/50 hover:text-white px-2">Keine</button>
+                                                <button onClick={() => setSelectedPrintIds(new Set(queueItems.map(c => c.id)))} className="text-xs text-muted-foreground hover:text-white px-2">Alle wählen</button>
+                                                <button onClick={() => setSelectedPrintIds(new Set())} className="text-xs text-muted-foreground hover:text-white px-2">Keine</button>
                                             </div>
                                             <div className="max-h-[200px] overflow-y-auto touch-pan-y border-t border-white/5 pt-2 grid grid-cols-1 sm:grid-cols-2 gap-2">
                                                 {queueItems.map(c => (
-                                                    <div key={c.id} className={`flex items-center gap-2 p-2 rounded-lg cursor-pointer border ${selectedPrintIds.has(c.id) ? 'bg-blue-500/20 border-blue-500/40' : 'bg-white/5 border-transparent hover:bg-white/10'}`} onClick={() => toggleQueueSelection(c.id)}>
-                                                        <div className={`w-4 h-4 rounded border flex items-center justify-center ${selectedPrintIds.has(c.id) ? 'bg-blue-500 border-blue-500 text-white' : 'border-white/30'}`}>
+                                                    <div key={c.id} className={`flex items-center gap-2 p-2 rounded-lg cursor-pointer border ${selectedPrintIds.has(c.id) ? 'bg-blue-500/20 border-blue-500/40' : 'bg-muted border-transparent hover:bg-muted'}`} onClick={() => toggleQueueSelection(c.id)}>
+                                                        <div className={`w-4 h-4 rounded border flex items-center justify-center ${selectedPrintIds.has(c.id) ? 'bg-blue-500 border-blue-500 text-white' : 'border-border'}`}>
                                                             {selectedPrintIds.has(c.id) && <Check size={10} />}
                                                         </div>
                                                         <span className="text-sm text-white truncate">{c.name}</span>
@@ -177,7 +177,7 @@ const PrintingSectionComponent: React.FC<PrintingSectionProps> = ({
                                             </div>
                                         </>
                                     ) : (
-                                        <div className="text-center py-4 text-white/40 text-xs">Keine ausstehenden Druckaufträge.</div>
+                                        <div className="text-center py-4 text-muted-foreground text-xs">Keine ausstehenden Druckaufträge.</div>
                                     )}
                                 </div>
                             ) : (
@@ -195,16 +195,16 @@ const PrintingSectionComponent: React.FC<PrintingSectionProps> = ({
                                         {loadingHistory ? (
                                             <div className="text-center py-4"><Loader2 className="animate-spin text-blue-400 mx-auto" /></div>
                                         ) : groupedLogs.length === 0 ? (
-                                            <div className="text-center py-4 text-white/40 text-xs">Keine Historie vorhanden.</div>
+                                            <div className="text-center py-4 text-muted-foreground text-xs">Keine Historie vorhanden.</div>
                                         ) : (
                                             groupedLogs.map(batch => (
-                                                <div key={batch.batchId} className="bg-white/5 border border-white/10 rounded-lg p-3">
-                                                    <div className="flex justify-between items-center mb-2 pb-2 border-b border-white/10">
-                                                        <div className="text-xs text-white/50">
-                                                            <span className="font-bold text-white/80">{batch.timestamp.toLocaleString('de-DE')}</span> • {batch.user}
+                                                <div key={batch.batchId} className="bg-muted border border-border rounded-lg p-3">
+                                                    <div className="flex justify-between items-center mb-2 pb-2 border-b border-border">
+                                                        <div className="text-xs text-muted-foreground">
+                                                            <span className="font-bold text-muted-foreground">{batch.timestamp.toLocaleString('de-DE')}</span> • {batch.user}
                                                         </div>
                                                         <button 
-                                                            className="text-[10px] bg-white/10 hover:bg-white/20 text-white/80 px-2 py-1 rounded"
+                                                            className="text-[10px] bg-muted hover:bg-muted text-muted-foreground px-2 py-1 rounded"
                                                             onClick={() => {
                                                                 const newSet = new Set(selectedHistoryPrintIds);
                                                                 const allInBatchSelected = batch.logs.every(log => newSet.has(log.commission_id));
@@ -225,10 +225,10 @@ const PrintingSectionComponent: React.FC<PrintingSectionProps> = ({
                                                             const commExists = !!log.commission;
                                                             return (
                                                                 <div key={log.id} 
-                                                                    className={`flex items-center gap-2 p-1.5 rounded-lg cursor-pointer ${!commExists ? 'opacity-50' : 'hover:bg-white/5'}`}
+                                                                    className={`flex items-center gap-2 p-1.5 rounded-lg cursor-pointer ${!commExists ? 'opacity-50' : 'hover:bg-muted'}`}
                                                                     onClick={() => commExists && toggleHistorySelection(log.commission_id)}
                                                                 >
-                                                                    <div className={`w-4 h-4 rounded border flex items-center justify-center shrink-0 ${selectedHistoryPrintIds.has(log.commission_id) ? 'bg-blue-500 border-blue-500 text-white' : 'border-white/30'}`}>
+                                                                    <div className={`w-4 h-4 rounded border flex items-center justify-center shrink-0 ${selectedHistoryPrintIds.has(log.commission_id) ? 'bg-blue-500 border-blue-500 text-white' : 'border-border'}`}>
                                                                         {selectedHistoryPrintIds.has(log.commission_id) && <Check size={10} />}
                                                                     </div>
                                                                     <div className="min-w-0 flex-1">
@@ -259,9 +259,9 @@ const PrintingSectionComponent: React.FC<PrintingSectionProps> = ({
                         <div className="animate-in fade-in space-y-4">
                             {/* 1. LIST OF PENDING STORNOS (Tasks) */}
                             <div className="space-y-2">
-                                <h4 className="text-xs font-bold text-white/50 uppercase">Offene Rückbau-Aufgaben</h4>
+                                <h4 className="text-xs font-bold text-muted-foreground uppercase">Offene Rückbau-Aufgaben</h4>
                                 {stornoCommissions.length === 0 ? (
-                                    <div className="text-center py-4 bg-white/5 rounded-lg border border-white/5 text-white/40 text-xs">
+                                    <div className="text-center py-4 bg-muted rounded-lg border border-white/5 text-muted-foreground text-xs">
                                         Keine offenen Stornos.
                                     </div>
                                 ) : (
@@ -290,7 +290,7 @@ const PrintingSectionComponent: React.FC<PrintingSectionProps> = ({
                                                                     e.stopPropagation();
                                                                     if (c.order_number) navigator.clipboard.writeText(c.order_number);
                                                                 }}
-                                                                className="text-[10px] text-white/40 bg-white/5 px-2 py-1 rounded h-fit hover:bg-white/10 hover:text-white transition-colors cursor-pointer border border-transparent"
+                                                                className="text-[10px] text-muted-foreground bg-muted px-2 py-1 rounded h-fit hover:bg-muted hover:text-white transition-colors cursor-pointer border border-transparent"
                                                                 title="Klicken zum Kopieren"
                                                             >
                                                                 {c.order_number || 'Keine Ref.'}
@@ -331,14 +331,14 @@ const PrintingSectionComponent: React.FC<PrintingSectionProps> = ({
                                                                                     // User Request: Copy Supplier Order Number when clicking badge
                                                                                     if (c.supplier_order_number) navigator.clipboard.writeText(c.supplier_order_number);
                                                                                 }}
-                                                                                className="flex items-center gap-1.5 bg-white/5 border border-white/10 hover:bg-white/10 hover:border-white/20 rounded-md px-2 py-1.5 transition-colors text-xs text-left group"
+                                                                                className="flex items-center gap-1.5 bg-muted border border-border hover:bg-muted hover:border-border rounded-md px-2 py-1.5 transition-colors text-xs text-left group"
                                                                                 title={c.supplier_order_number ? `Lieferantennummer kopieren: ${c.supplier_order_number}` : 'Keine Lieferantennummer'}
                                                                             >
                                                                                 <span className="font-bold text-purple-200">{item.amount}x</span>
-                                                                                <span className="text-white/80">{item.article?.name || item.custom_name}</span>
+                                                                                <span className="text-muted-foreground">{item.article?.name || item.custom_name}</span>
                                                                                 {item.external_reference && (
                                                                                     <>
-                                                                                        <span className="text-white/30">:</span>
+                                                                                        <span className="text-muted-foreground">:</span>
                                                                                         <span className="text-amber-200/70 font-mono">{item.external_reference}</span>
                                                                                     </>
                                                                                 )}

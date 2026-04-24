@@ -66,9 +66,9 @@ export const DashboardDetailPanel: React.FC<DashboardDetailPanelProps> = ({
         <div className="w-[40%] bg-transparent h-full animate-in slide-in-from-right-10 duration-300">
             {/* MACHINE DETAIL */}
             {selectedMachine && (
-                <div className="h-full bg-gray-900/50 backdrop-blur-2xl rounded-2xl border border-white/10 shadow-xl overflow-hidden flex flex-col relative">
+                <div className="h-full bg-background/50 backdrop-blur-2xl rounded-2xl border border-border shadow-xl overflow-hidden flex flex-col relative">
                     <div className="absolute top-4 right-4 z-50">
-                        <button onClick={onCloseMachine} className="p-2 bg-black/50 hover:bg-white/10 rounded-full text-white/50 hover:text-white transition-colors">
+                        <button onClick={onCloseMachine} className="p-2 bg-black/50 hover:bg-muted rounded-full text-muted-foreground hover:text-white transition-colors">
                             <X size={20} />
                         </button>
                     </div>
@@ -85,7 +85,7 @@ export const DashboardDetailPanel: React.FC<DashboardDetailPanelProps> = ({
 
             {/* KEY DETAIL */}
             {selectedKey && (
-                <div className="h-full bg-gray-900/50 backdrop-blur-2xl rounded-2xl border border-white/10 shadow-xl overflow-hidden flex flex-col relative">
+                <div className="h-full bg-background/50 backdrop-blur-2xl rounded-2xl border border-border shadow-xl overflow-hidden flex flex-col relative">
                     <KeyHandoverContent
                         selectedKeys={[selectedKey]}
                         type="return"
@@ -97,9 +97,9 @@ export const DashboardDetailPanel: React.FC<DashboardDetailPanelProps> = ({
 
             {/* TASK DETAIL */}
             {selectedDashboardTask && (
-                <div className="h-full bg-gray-900/50 backdrop-blur-2xl rounded-2xl border border-white/10 shadow-xl overflow-hidden flex flex-col relative">
+                <div className="h-full bg-background/50 backdrop-blur-2xl rounded-2xl border border-border shadow-xl overflow-hidden flex flex-col relative">
                     <div className="absolute top-4 right-4 z-[60]">
-                        <button onClick={onCloseTask} className="p-2 bg-black/50 hover:bg-white/10 rounded-full text-white/50 hover:text-white transition-colors">
+                        <button onClick={onCloseTask} className="p-2 bg-black/50 hover:bg-muted rounded-full text-muted-foreground hover:text-white transition-colors">
                             <X size={20} />
                         </button>
                     </div>
@@ -116,7 +116,7 @@ export const DashboardDetailPanel: React.FC<DashboardDetailPanelProps> = ({
 
             {/* COMMISSION DETAIL */}
             {viewingCommission && (
-                <div className="h-full bg-gray-900/50 backdrop-blur-2xl rounded-2xl border border-white/10 shadow-xl overflow-hidden flex flex-col relative">
+                <div className="h-full bg-background/50 backdrop-blur-2xl rounded-2xl border border-border shadow-xl overflow-hidden flex flex-col relative">
                     {['Draft', 'Preparing'].includes(viewingCommission.status) ? (
                         <CommissionDetailContent
                             commission={viewingCommission}
@@ -184,9 +184,9 @@ export const DashboardDetailPanel: React.FC<DashboardDetailPanelProps> = ({
 
             {/* CHANGELOG DETAIL */}
             {showChangelogHistory && (
-                <div className="h-full bg-gray-900/50 backdrop-blur-2xl rounded-2xl border border-white/10 shadow-xl overflow-hidden flex flex-col relative">
+                <div className="h-full bg-background/50 backdrop-blur-2xl rounded-2xl border border-border shadow-xl overflow-hidden flex flex-col relative">
                     <div className="absolute top-4 right-4 z-50">
-                        <button onClick={onCloseChangelog} className="p-2 bg-black/50 hover:bg-white/10 rounded-full text-white/50 hover:text-white transition-colors">
+                        <button onClick={onCloseChangelog} className="p-2 bg-black/50 hover:bg-muted rounded-full text-muted-foreground hover:text-white transition-colors">
                             <X size={20} />
                         </button>
                     </div>
@@ -219,34 +219,34 @@ export const TaskDetailContent: React.FC<TaskDetailContentProps> = ({ task, onUp
             <div>
                 <div className="flex justify-between items-start mb-4">
                     <h2 className="text-2xl font-bold text-white pr-4">{task.title}</h2>
-                    <div className="flex bg-white/5 border border-white/10 rounded-lg overflow-hidden shrink-0 mt-1">
-                        <button onClick={() => onUpdateStatus(task.id, 'todo')} className={`px-3 py-1.5 text-xs font-medium ${task.status === 'todo' ? 'bg-white/10 text-white' : 'text-white/40 hover:bg-white/5 hover:text-white/70'} transition-colors`}>Offen</button>
-                        <button onClick={() => onUpdateStatus(task.id, 'in_progress')} className={`px-3 py-1.5 text-xs font-medium border-l border-white/10 ${task.status === 'in_progress' ? 'bg-teal-500/20 text-teal-400' : 'text-white/40 hover:bg-white/5 hover:text-white/70'} transition-colors`}>In Arbeit</button>
-                        <button onClick={() => onUpdateStatus(task.id, 'done')} className={`px-3 py-1.5 text-xs font-medium border-l border-white/10 ${task.status === 'done' ? 'bg-emerald-500/20 text-emerald-400' : 'text-white/40 hover:bg-white/5 hover:text-white/70'} transition-colors`}>Erledigt</button>
+                    <div className="flex bg-muted border border-border rounded-lg overflow-hidden shrink-0 mt-1">
+                        <button onClick={() => onUpdateStatus(task.id, 'todo')} className={`px-3 py-1.5 text-xs font-medium ${task.status === 'todo' ? 'bg-muted text-white' : 'text-muted-foreground hover:bg-muted hover:text-muted-foreground'} transition-colors`}>Offen</button>
+                        <button onClick={() => onUpdateStatus(task.id, 'in_progress')} className={`px-3 py-1.5 text-xs font-medium border-l border-border ${task.status === 'in_progress' ? 'bg-teal-500/20 text-teal-400' : 'text-muted-foreground hover:bg-muted hover:text-muted-foreground'} transition-colors`}>In Arbeit</button>
+                        <button onClick={() => onUpdateStatus(task.id, 'done')} className={`px-3 py-1.5 text-xs font-medium border-l border-border ${task.status === 'done' ? 'bg-primary/20 text-emerald-400' : 'text-muted-foreground hover:bg-muted hover:text-muted-foreground'} transition-colors`}>Erledigt</button>
                     </div>
                 </div>
-                {desc && <p className="text-white/70 whitespace-pre-wrap mt-4 bg-white/5 p-4 rounded-xl border border-white/10 leading-relaxed text-sm">{desc}</p>}
+                {desc && <p className="text-muted-foreground whitespace-pre-wrap mt-4 bg-muted p-4 rounded-xl border border-border leading-relaxed text-sm">{desc}</p>}
             </div>
 
             {task.subtasks && task.subtasks.length > 0 && (
                 <div>
-                    <h3 className="text-sm font-bold text-white/50 mb-3 uppercase tracking-wider flex items-center gap-2">
+                    <h3 className="text-sm font-bold text-muted-foreground mb-3 uppercase tracking-wider flex items-center gap-2">
                         <CheckCircle2 size={16} /> Arbeitspunkte
                     </h3>
                     <div className="space-y-2">
                         {task.subtasks.map((st: any) => (
-                            <div key={st.id} onClick={() => onToggleSubtask(st.id, st.completed)} className="group flex items-center gap-3 p-4 bg-white/5 border border-white/10 rounded-xl cursor-pointer hover:bg-white/10 hover:border-teal-500/30 transition-all">
+                            <div key={st.id} onClick={() => onToggleSubtask(st.id, st.completed)} className="group flex items-center gap-3 p-4 bg-muted border border-border rounded-xl cursor-pointer hover:bg-muted hover:border-teal-500/30 transition-all">
                                 <div className="flex-shrink-0 mt-0.5">
-                                    {st.completed ? <CheckCircle2 className="text-teal-400" size={20} /> : <Circle className="text-white/30 group-hover:text-white/50 transition-colors" size={20} />}
+                                    {st.completed ? <CheckCircle2 className="text-teal-400" size={20} /> : <Circle className="text-muted-foreground group-hover:text-muted-foreground transition-colors" size={20} />}
                                 </div>
-                                <span className={`text-sm font-medium transition-colors ${st.completed ? 'text-white/40 line-through' : 'text-white/90 group-hover:text-teal-300'}`}>{st.title}</span>
+                                <span className={`text-sm font-medium transition-colors ${st.completed ? 'text-muted-foreground line-through' : 'text-muted-foreground group-hover:text-teal-300'}`}>{st.title}</span>
                             </div>
                         ))}
                     </div>
                 </div>
             )}
 
-            <div className="flex items-center justify-between border-t border-white/10 pt-4 text-xs text-white/40">
+            <div className="flex items-center justify-between border-t border-border pt-4 text-xs text-muted-foreground">
                 <div className="flex items-center gap-1.5"><User size={14} /> {task.user_email?.split('@')[0] || 'Unbekannt'}</div>
                 <div>{new Date(task.created_at).toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })} Uhr</div>
             </div>

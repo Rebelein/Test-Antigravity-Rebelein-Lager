@@ -130,7 +130,7 @@ export const KeyModal: React.FC<KeyModalProps> = ({ isOpen, onClose, onSave, edi
             {/* Header Action for Print */}
             <div className="absolute top-4 right-16">
                 <Button onClick={handlePrint} variant="ghost" className="!p-2">
-                    <Printer size={20} className="text-gray-400 hover:text-white" />
+                    <Printer size={20} className="text-muted-foreground hover:text-white" />
                 </Button>
             </div>
 
@@ -141,7 +141,7 @@ export const KeyModal: React.FC<KeyModalProps> = ({ isOpen, onClose, onSave, edi
                         <input
                             type="number"
                             required
-                            className="w-full bg-white/5 border border-white/10 rounded-lg p-2 text-white focus:outline-none focus:ring-2 focus:ring-emerald-500/50"
+                            className="w-full bg-muted border border-border rounded-lg p-2 text-white focus:outline-none focus:ring-2 focus:ring-emerald-500/50"
                             value={formData.slot_number}
                             onChange={(e) => setFormData({ ...formData, slot_number: parseInt(e.target.value) })}
                         />
@@ -151,11 +151,11 @@ export const KeyModal: React.FC<KeyModalProps> = ({ isOpen, onClose, onSave, edi
                             <div>
                                 <label className="block text-sm font-medium text-gray-300 mb-1">Bezeichnung / Name</label>
                                 <div className="relative">
-                                    <KeyIcon className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
+                                    <KeyIcon className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" size={18} />
                                     <input
                                         type="text"
                                         required
-                                        className="w-full bg-white/5 border border-white/10 rounded-lg p-2 pl-10 text-white focus:outline-none focus:ring-2 focus:ring-emerald-500/50"
+                                        className="w-full bg-muted border border-border rounded-lg p-2 pl-10 text-white focus:outline-none focus:ring-2 focus:ring-emerald-500/50"
                                         placeholder="z.B. Heizungsraum"
                                         value={formData.name}
                                         onChange={(e) => setFormData({ ...formData, name: e.target.value })}
@@ -166,16 +166,16 @@ export const KeyModal: React.FC<KeyModalProps> = ({ isOpen, onClose, onSave, edi
                                 <label className="block text-sm font-medium text-gray-300 mb-1">Kategorie</label>
                                 <div className="relative">
                                     <select
-                                        className="w-full bg-white/5 border border-white/10 rounded-lg p-2 text-white appearance-none focus:outline-none focus:border-emerald-500"
+                                        className="w-full bg-muted border border-border rounded-lg p-2 text-white appearance-none focus:outline-none focus:border-emerald-500"
                                         value={formData.category_id || ''}
                                         onChange={(e) => setFormData({ ...formData, category_id: e.target.value })}
                                     >
-                                        <option value="" className="bg-gray-900">Keine Kategorie</option>
+                                        <option value="" className="bg-background">Keine Kategorie</option>
                                         {categories.map((cat: any) => (
-                                            <option key={cat.id} value={cat.id} className="bg-gray-900">{cat.name}</option>
+                                            <option key={cat.id} value={cat.id} className="bg-background">{cat.name}</option>
                                         ))}
                                     </select>
-                                    <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" size={16} />
+                                    <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none" size={16} />
                                 </div>
                             </div>
                         </div>
@@ -185,10 +185,10 @@ export const KeyModal: React.FC<KeyModalProps> = ({ isOpen, onClose, onSave, edi
                 <div>
                     <label className="block text-sm font-medium text-gray-300 mb-1">Objektadresse</label>
                     <div className="relative">
-                        <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
+                        <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" size={18} />
                         <input
                             type="text"
-                            className="w-full bg-white/5 border border-white/10 rounded-lg p-2 pl-10 text-white focus:outline-none focus:ring-2 focus:ring-emerald-500/50"
+                            className="w-full bg-muted border border-border rounded-lg p-2 pl-10 text-white focus:outline-none focus:ring-2 focus:ring-emerald-500/50"
                             placeholder="Straße, PLZ, Ort"
                             value={formData.address || ''}
                             onChange={(e) => setFormData({ ...formData, address: e.target.value })}
@@ -199,10 +199,10 @@ export const KeyModal: React.FC<KeyModalProps> = ({ isOpen, onClose, onSave, edi
                 <div>
                     <label className="block text-sm font-medium text-gray-300 mb-1">Eigentümer / Kunde (Optional)</label>
                     <div className="relative">
-                        <User className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
+                        <User className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" size={18} />
                         <input
                             type="text"
-                            className="w-full bg-white/5 border border-white/10 rounded-lg p-2 pl-10 text-white focus:outline-none focus:ring-2 focus:ring-emerald-500/50"
+                            className="w-full bg-muted border border-border rounded-lg p-2 pl-10 text-white focus:outline-none focus:ring-2 focus:ring-emerald-500/50"
                             placeholder="Wem gehört der Schlüssel?"
                             value={formData.owner || ''}
                             onChange={(e) => setFormData({ ...formData, owner: e.target.value })}
@@ -213,7 +213,7 @@ export const KeyModal: React.FC<KeyModalProps> = ({ isOpen, onClose, onSave, edi
                 <div>
                     <label className="block text-sm font-medium text-gray-300 mb-1">Notizen</label>
                     <textarea
-                        className="w-full bg-white/5 border border-white/10 rounded-lg p-2 text-white focus:outline-none focus:ring-2 focus:ring-emerald-500/50 min-h-[80px]"
+                        className="w-full bg-muted border border-border rounded-lg p-2 text-white focus:outline-none focus:ring-2 focus:ring-emerald-500/50 min-h-[80px]"
                         value={formData.notes || ''}
                         onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
                     />
@@ -355,26 +355,26 @@ export const KeyHandoverContent: React.FC<KeyHandoverContentProps> = ({ onClose,
 
             <div className={`p-6 w-full mx-auto space-y-6 flex-1 overflow-y-auto ${type === 'issue' ? '' : ''}`}>
                 {/* Header for Split View context mostly */}
-                <div className="flex justify-between items-center pb-4 border-b border-gray-200 dark:border-white/10 mb-4">
+                <div className="flex justify-between items-center pb-4 border-b border-gray-200 dark:border-border mb-4">
                     <h2 className="text-xl font-bold text-gray-900 dark:text-white">
                         {type === 'issue' ? 'Schlüssel ausgeben' : 'Schlüssel zurücknehmen'}
                     </h2>
                     {/* Close button handled by parent usually, but good to have if needed inside */}
-                    <button onClick={onClose} className="p-2 hover:bg-gray-100 dark:hover:bg-white/10 rounded-full text-gray-500 dark:text-white/60"><X size={20} /></button>
+                    <button onClick={onClose} className="p-2 hover:bg-gray-100 dark:hover:bg-muted rounded-full text-muted-foreground dark:text-muted-foreground"><X size={20} /></button>
                 </div>
 
 
                 {/* Selected Keys List */}
-                <div className="bg-white dark:bg-white/5 rounded-lg p-4 border border-gray-200 dark:border-white/10 shadow-sm">
+                <div className="bg-white dark:bg-muted rounded-lg p-4 border border-gray-200 dark:border-border shadow-sm">
                     <h3 className="font-bold text-gray-900 dark:text-white mb-2">Gewählte Schlüssel</h3>
                     <ul className="space-y-3">
                         {selectedKeys.map(k => (
-                            <li key={k.id} className="text-sm bg-gray-50 dark:bg-white/5 p-3 rounded-md border border-gray-200 dark:border-white/5">
+                            <li key={k.id} className="text-sm bg-gray-50 dark:bg-muted p-3 rounded-md border border-gray-200 dark:border-white/5">
                                 <div className="flex justify-between items-start mb-1">
                                     <span className="font-bold text-gray-900 dark:text-white">{k.name}</span>
                                     <span className="text-emerald-600 dark:text-emerald-400 font-mono">#{k.slot_number}</span>
                                 </div>
-                                <div className="space-y-1 text-gray-500 dark:text-gray-400 text-xs">
+                                <div className="space-y-1 text-muted-foreground dark:text-muted-foreground text-xs">
                                     {k.address && (
                                         <div className="flex items-center gap-2">
                                             <MapPin size={12} />
@@ -388,7 +388,7 @@ export const KeyHandoverContent: React.FC<KeyHandoverContentProps> = ({ onClose,
                                         </div>
                                     )}
                                     {k.notes && (
-                                        <div className="mt-1 pt-1 border-t border-gray-200 dark:border-white/10 italic text-gray-400 dark:text-gray-500">
+                                        <div className="mt-1 pt-1 border-t border-gray-200 dark:border-border italic text-muted-foreground dark:text-muted-foreground">
                                             "{k.notes}"
                                         </div>
                                     )}
@@ -401,16 +401,16 @@ export const KeyHandoverContent: React.FC<KeyHandoverContentProps> = ({ onClose,
                 {/* Form Fields */}
                 <div className="space-y-4">
                     <div className="relative">
-                        <label className="block text-sm font-medium text-gray-600 dark:text-gray-300 mb-1">
+                        <label className="block text-sm font-medium text-muted-foreground dark:text-gray-300 mb-1">
                             {type === 'issue' ? 'Ausgegeben an' : 'Abgegeben von (Name)'}
                         </label>
                         <div className="relative group">
-                            <User className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 z-10" size={18} />
+                            <User className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground z-10" size={18} />
 
                             <input
                                 type="text"
                                 required
-                                className="w-full bg-white dark:bg-white/5 border border-gray-200 dark:border-white/10 rounded-lg p-2 pl-10 pr-10 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500/50"
+                                className="w-full bg-white dark:bg-muted border border-gray-200 dark:border-border rounded-lg p-2 pl-10 pr-10 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500/50"
                                 value={partnerName}
                                 onChange={(e) => handleNameChange(e.target.value)}
                                 onFocus={() => setShowSuggestions(true)}
@@ -423,30 +423,30 @@ export const KeyHandoverContent: React.FC<KeyHandoverContentProps> = ({ onClose,
                             {partnerName ? (
                                 <button
                                     onClick={() => { setPartnerName(''); setHolderId(null); }}
-                                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-900 dark:hover:text-white z-20 bg-transparent"
+                                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-gray-900 dark:hover:text-white z-20 bg-transparent"
                                 >
                                     <X size={16} />
                                 </button>
                             ) : (
-                                <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" size={16} />
+                                <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none" size={16} />
                             )}
 
                             {/* Suggestions Dropdown */}
                             {showSuggestions && (
-                                <div className="absolute z-10 w-full mt-1 bg-white dark:bg-gray-900 border border-gray-200 dark:border-white/10 rounded-lg shadow-xl max-h-48 overflow-y-auto">
+                                <div className="absolute z-10 w-full mt-1 bg-white dark:bg-background border border-gray-200 dark:border-border rounded-lg shadow-xl max-h-48 overflow-y-auto">
                                     {filteredProfiles.length > 0 ? (
                                         filteredProfiles.map(p => (
                                             <div
                                                 key={p.id}
-                                                className="px-4 py-2 hover:bg-gray-100 dark:hover:bg-white/10 cursor-pointer text-sm text-gray-900 dark:text-gray-200 flex items-center justify-between"
+                                                className="px-4 py-2 hover:bg-gray-100 dark:hover:bg-muted cursor-pointer text-sm text-gray-900 dark:text-gray-200 flex items-center justify-between"
                                                 onClick={() => selectUser(p)}
                                             >
                                                 <span>{p.full_name || p.email}</span>
-                                                <span className="text-xs text-gray-500">Intern</span>
+                                                <span className="text-xs text-muted-foreground">Intern</span>
                                             </div>
                                         ))
                                     ) : (
-                                        <div className="px-4 py-2 text-sm text-gray-500 italic">
+                                        <div className="px-4 py-2 text-sm text-muted-foreground italic">
                                             Kein interner Nutzer gefunden. <br />
                                             <span className="text-emerald-500 dark:text-emerald-400">"{partnerName}"</span> als externen Namen verwenden.
                                         </div>
@@ -457,9 +457,9 @@ export const KeyHandoverContent: React.FC<KeyHandoverContentProps> = ({ onClose,
                     </div>
 
                     <div>
-                        <label className="block text-sm font-medium text-gray-600 dark:text-gray-300 mb-1">Notiz</label>
+                        <label className="block text-sm font-medium text-muted-foreground dark:text-gray-300 mb-1">Notiz</label>
                         <textarea
-                            className="w-full bg-white dark:bg-white/5 border border-gray-200 dark:border-white/10 rounded-lg p-2 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500/50 h-20"
+                            className="w-full bg-white dark:bg-muted border border-gray-200 dark:border-border rounded-lg p-2 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500/50 h-20"
                             value={notes}
                             onChange={(e) => setNotes(e.target.value)}
                             placeholder="Zweck, Besonderheiten..."
@@ -468,7 +468,7 @@ export const KeyHandoverContent: React.FC<KeyHandoverContentProps> = ({ onClose,
                 </div>
 
                 {/* Footer Logic for Modal vs Panel */}
-                <div className="flex justify-end gap-3 pt-4 border-t border-gray-200 dark:border-white/10 mt-auto">
+                <div className="flex justify-end gap-3 pt-4 border-t border-gray-200 dark:border-border mt-auto">
                     {/* We can hide Cancel button in split view if we want, or keep it as "Close" */}
                     <Button onClick={onClose} variant="secondary">Abbrechen</Button>
                     <Button onClick={handleConfirm} variant="primary" disabled={loading}>
@@ -543,18 +543,18 @@ export const KeyDetailsModal: React.FC<KeyDetailsModalProps> = ({ isOpen, onClos
         <GlassModal isOpen={isOpen} onClose={onClose} title="Schlüssel-Details">
             <div className="p-6 max-w-2xl w-full mx-auto">
                 {/* Header Info */}
-                <div className="flex justify-between items-start mb-6 bg-white/5 p-4 rounded-xl border border-white/10">
+                <div className="flex justify-between items-start mb-6 bg-muted p-4 rounded-xl border border-border">
                     <div>
                         <div className="text-emerald-400 font-mono text-sm mb-1">Platz #{keyData.slot_number}</div>
                         <h2 className="text-2xl font-bold text-white mb-2">{keyData.name}</h2>
-                        <div className="flex flex-col gap-1 text-sm text-gray-400">
+                        <div className="flex flex-col gap-1 text-sm text-muted-foreground">
                             {keyData.address && <div className="flex items-center gap-2"><MapPin size={14} /> {keyData.address}</div>}
                             {keyData.owner && <div className="flex items-center gap-2"><User size={14} /> Eigentümer: {keyData.owner}</div>}
                         </div>
                     </div>
                     <div className={`px-3 py-1 rounded-full text-sm font-bold border ${keyData.status === 'InUse'
                         ? 'bg-amber-500/20 text-amber-500 border-amber-500/30'
-                        : 'bg-emerald-500/20 text-emerald-500 border-emerald-500/30'
+                        : 'bg-primary/20 text-emerald-500 border-emerald-500/30'
                         }`}>
                         {keyData.status === 'InUse' ? 'Ausgegeben' : 'Verfügbar'}
                     </div>
@@ -562,38 +562,38 @@ export const KeyDetailsModal: React.FC<KeyDetailsModalProps> = ({ isOpen, onClos
 
                 {/* History Timeline */}
                 <h3 className="font-bold text-white mb-4 flex items-center gap-2">
-                    <div className="w-1 h-4 bg-emerald-500 rounded-full"></div>
+                    <div className="w-1 h-4 bg-primary rounded-full"></div>
                     Verlauf
                 </h3>
 
                 <div className="space-y-4 max-h-[400px] overflow-y-auto pr-2 custom-scrollbar">
                     {loading ? (
-                        <div className="text-center py-8 text-gray-500">Lade Verlauf...</div>
+                        <div className="text-center py-8 text-muted-foreground">Lade Verlauf...</div>
                     ) : history.length > 0 ? (
                         history.map((event) => (
-                            <div key={event.id} className="relative pl-6 pb-4 border-l border-white/10 last:pb-0">
+                            <div key={event.id} className="relative pl-6 pb-4 border-l border-border last:pb-0">
                                 <div className={`absolute left-[-5px] top-0 w-2.5 h-2.5 rounded-full ${event.action === 'checkout' ? 'bg-amber-500' :
-                                    event.action === 'checkin' ? 'bg-emerald-500' :
+                                    event.action === 'checkin' ? 'bg-primary' :
                                         event.action === 'create' ? 'bg-blue-500' : 'bg-gray-500'
                                     }`}></div>
 
-                                <div className="bg-white/5 rounded-lg p-3 border border-white/5">
+                                <div className="bg-muted rounded-lg p-3 border border-white/5">
                                     <div className="flex justify-between items-start mb-1">
                                         <span className={`text-xs font-bold uppercase tracking-wider ${event.action === 'checkout' ? 'text-amber-400' :
                                             event.action === 'checkin' ? 'text-emerald-400' :
-                                                event.action === 'create' ? 'text-blue-400' : 'text-gray-400'
+                                                event.action === 'create' ? 'text-blue-400' : 'text-muted-foreground'
                                             }`}>
                                             {event.action === 'checkout' && 'Ausgabe'}
                                             {event.action === 'checkin' && 'Rücknahme'}
                                             {event.action === 'create' && 'Erstellt'}
                                             {event.action === 'update' && 'Bearbeitet'}
                                         </span>
-                                        <span className="text-xs text-gray-500 font-mono">
+                                        <span className="text-xs text-muted-foreground font-mono">
                                             {format(new Date(event.created_at), 'dd.MM.yyyy HH:mm')}
                                         </span>
                                     </div>
                                     <p className="text-sm text-gray-300 mb-1">{event.details}</p>
-                                    <div className="text-xs text-gray-600 flex items-center gap-1">
+                                    <div className="text-xs text-muted-foreground flex items-center gap-1">
                                         <User size={10} />
                                         {/* @ts-ignore */}
                                         {event.profiles?.full_name || event.profiles?.email || 'System'}
@@ -602,7 +602,7 @@ export const KeyDetailsModal: React.FC<KeyDetailsModalProps> = ({ isOpen, onClos
                             </div>
                         ))
                     ) : (
-                        <div className="text-center py-8 text-gray-500 bg-white/5 rounded-xl border border-white/5 border-dashed">
+                        <div className="text-center py-8 text-muted-foreground bg-muted rounded-xl border border-white/5 border-dashed">
                             Keine Einträge vorhanden
                         </div>
                     )}

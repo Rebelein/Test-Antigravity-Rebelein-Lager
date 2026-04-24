@@ -225,14 +225,14 @@ export const MachineDetailContent: React.FC<MachineDetailContentProps> = ({ mach
                 <div className="absolute bottom-4 left-4 right-4">
                     <h2 className="text-2xl font-bold text-white mb-1">{machine.name}</h2>
                     <div className="flex gap-2">
-                        <div className={`px-2 py-0.5 rounded text-xs font-bold uppercase ${machine.status === MachineStatus.AVAILABLE ? 'bg-emerald-500/20 text-emerald-400' :
+                        <div className={`px-2 py-0.5 rounded text-xs font-bold uppercase ${machine.status === MachineStatus.AVAILABLE ? 'bg-primary/20 text-emerald-400' :
                             machine.status === MachineStatus.RENTED ? 'bg-amber-500/20 text-amber-400' : 'bg-rose-500/20 text-rose-400'
                             }`}>
                             {machine.status === MachineStatus.AVAILABLE ? 'Verfügbar' :
                                 machine.status === MachineStatus.RENTED ? 'Verliehen' : 'In Reparatur'}
                         </div>
                         {machine.nextMaintenance && (
-                            <div className="px-2 py-0.5 rounded text-xs bg-white/10 text-white/50 flex items-center gap-1">
+                            <div className="px-2 py-0.5 rounded text-xs bg-muted text-muted-foreground flex items-center gap-1">
                                 <Wrench size={12} /> Wartung: {new Date(machine.nextMaintenance).toLocaleDateString()}
                             </div>
                         )}
@@ -244,14 +244,14 @@ export const MachineDetailContent: React.FC<MachineDetailContentProps> = ({ mach
             {mode === 'overview' && (
                 <div className="p-4 grid grid-cols-2 gap-2 shrink-0 border-b border-white/5">
                     {machine.status === MachineStatus.AVAILABLE ? (
-                        <Button onClick={() => setMode('borrow')} className="bg-emerald-600 hover:bg-emerald-500">Ausleihen</Button>
+                        <Button onClick={() => setMode('borrow')} className="bg-primary hover:bg-primary">Ausleihen</Button>
                     ) : machine.status === MachineStatus.RENTED ? (
                         <>
                             <Button onClick={() => setMode('return')} variant="secondary">Rückgabe</Button>
                             <Button onClick={() => setMode('borrow')} className="bg-amber-600 hover:bg-amber-500">Weitergeben</Button>
                         </>
                     ) : (
-                        <Button onClick={executeRepairFinish} className="bg-emerald-600 hover:bg-emerald-500 col-span-2">Reparatur Fertig</Button>
+                        <Button onClick={executeRepairFinish} className="bg-primary hover:bg-primary col-span-2">Reparatur Fertig</Button>
                     )}
                 </div>
             )}
@@ -259,10 +259,10 @@ export const MachineDetailContent: React.FC<MachineDetailContentProps> = ({ mach
             {/* TAB NAVIGATION */}
             {mode === 'overview' && (
                 <div className="flex border-b border-white/5 mx-4 overflow-x-auto gap-4 my-2">
-                    <button onClick={() => setMode('reservations')} className="pb-2 text-sm text-white/50 hover:text-white transition-colors flex items-center gap-2">
-                        <Calendar size={14} /> Reservierungen {reservations.length > 0 && <span className="bg-white/10 px-1 rounded text-[10px]">{reservations.length}</span>}
+                    <button onClick={() => setMode('reservations')} className="pb-2 text-sm text-muted-foreground hover:text-white transition-colors flex items-center gap-2">
+                        <Calendar size={14} /> Reservierungen {reservations.length > 0 && <span className="bg-muted px-1 rounded text-[10px]">{reservations.length}</span>}
                     </button>
-                    <button onClick={() => setMode('history')} className="pb-2 text-sm text-white/50 hover:text-white transition-colors flex items-center gap-2">
+                    <button onClick={() => setMode('history')} className="pb-2 text-sm text-muted-foreground hover:text-white transition-colors flex items-center gap-2">
                         <History size={14} /> Verlauf
                     </button>
                     {/* Add Edit button later or here */}
@@ -288,9 +288,9 @@ export const MachineDetailContent: React.FC<MachineDetailContentProps> = ({ mach
                             </GlassCard>
                         )}
 
-                        <div className="bg-white/5 rounded-xl p-4 border border-white/5">
-                            <h3 className="text-sm font-bold text-white/50 mb-4">Nächste Reservierungen</h3>
-                            {reservations.length === 0 ? <div className="text-white/30 text-sm">Keine anstehenden Reservierungen.</div> : (
+                        <div className="bg-muted rounded-xl p-4 border border-white/5">
+                            <h3 className="text-sm font-bold text-muted-foreground mb-4">Nächste Reservierungen</h3>
+                            {reservations.length === 0 ? <div className="text-muted-foreground text-sm">Keine anstehenden Reservierungen.</div> : (
                                 <div className="space-y-2">
                                     {reservations.slice(0, 3).map(r => (
                                         <div key={r.id} className="flex justify-between items-center text-sm bg-black/20 p-2 rounded">
@@ -308,7 +308,7 @@ export const MachineDetailContent: React.FC<MachineDetailContentProps> = ({ mach
                 {mode === 'borrow' && (
                     <div className="space-y-4 animate-in slide-in-from-right-4">
                         <div className="flex items-center gap-2 mb-4">
-                            <button onClick={() => setMode('overview')} className="p-2 hover:bg-white/10 rounded-full"><ArrowLeft size={20} className="text-white" /></button>
+                            <button onClick={() => setMode('overview')} className="p-2 hover:bg-muted rounded-full"><ArrowLeft size={20} className="text-white" /></button>
                             <h3 className="text-lg font-bold text-white">{machine.status === MachineStatus.RENTED ? 'Weitergeben / Transfer' : 'Ausleihen'}</h3>
                         </div>
 
@@ -318,27 +318,27 @@ export const MachineDetailContent: React.FC<MachineDetailContentProps> = ({ mach
                             </div>
                         )}
 
-                        <div className="flex gap-2 p-1 bg-white/5 rounded-lg mb-4">
-                            <button onClick={() => setIsExternalBorrow(false)} className={`flex-1 py-2 text-sm rounded transition-colors ${!isExternalBorrow ? 'bg-emerald-600 text-white shadow' : 'text-white/50 hover:bg-white/5'}`}>Intern (Mitarbeiter)</button>
-                            <button onClick={() => setIsExternalBorrow(true)} className={`flex-1 py-2 text-sm rounded transition-colors ${isExternalBorrow ? 'bg-blue-600 text-white shadow' : 'text-white/50 hover:bg-white/5'}`}>Extern / Kunde</button>
+                        <div className="flex gap-2 p-1 bg-muted rounded-lg mb-4">
+                            <button onClick={() => setIsExternalBorrow(false)} className={`flex-1 py-2 text-sm rounded transition-colors ${!isExternalBorrow ? 'bg-primary text-white shadow' : 'text-muted-foreground hover:bg-muted'}`}>Intern (Mitarbeiter)</button>
+                            <button onClick={() => setIsExternalBorrow(true)} className={`flex-1 py-2 text-sm rounded transition-colors ${isExternalBorrow ? 'bg-blue-600 text-white shadow' : 'text-muted-foreground hover:bg-muted'}`}>Extern / Kunde</button>
                         </div>
 
                         {!isExternalBorrow ? (
                             <div className="space-y-2">
-                                <label className="text-xs text-white/50">Mitarbeiter wählen</label>
+                                <label className="text-xs text-muted-foreground">Mitarbeiter wählen</label>
                                 <GlassSelect value={borrowTargetUser} onChange={(e) => setBorrowTargetUser(e.target.value)}>
                                     <option value="" disabled>Bitte wählen...</option>
-                                    {users.map(u => <option key={u.id} value={u.id} className="bg-gray-900">{u.full_name}</option>)}
+                                    {users.map(u => <option key={u.id} value={u.id} className="bg-background">{u.full_name}</option>)}
                                 </GlassSelect>
                             </div>
                         ) : (
                             <div className="space-y-2">
-                                <label className="text-xs text-white/50">Name des Kunden</label>
+                                <label className="text-xs text-muted-foreground">Name des Kunden</label>
                                 <GlassInput value={borrowExternalName} onChange={(e) => setBorrowExternalName(e.target.value)} placeholder="Max Mustermann" />
                             </div>
                         )}
 
-                        <Button onClick={executeBorrow} disabled={loading || (!isExternalBorrow && !borrowTargetUser) || (isExternalBorrow && !borrowExternalName)} className="w-full mt-4 bg-emerald-600 h-12">
+                        <Button onClick={executeBorrow} disabled={loading || (!isExternalBorrow && !borrowTargetUser) || (isExternalBorrow && !borrowExternalName)} className="w-full mt-4 bg-primary h-12">
                             {loading ? <Loader2 className="animate-spin" /> : 'Bestätigen'}
                         </Button>
                     </div>
@@ -348,24 +348,24 @@ export const MachineDetailContent: React.FC<MachineDetailContentProps> = ({ mach
                 {mode === 'return' && (
                     <div className="space-y-4 animate-in slide-in-from-right-4">
                         <div className="flex items-center gap-2 mb-4">
-                            <button onClick={() => setMode('overview')} className="p-2 hover:bg-white/10 rounded-full"><ArrowLeft size={20} className="text-white" /></button>
+                            <button onClick={() => setMode('overview')} className="p-2 hover:bg-muted rounded-full"><ArrowLeft size={20} className="text-white" /></button>
                             <h3 className="text-lg font-bold text-white">Rückgabe</h3>
                         </div>
 
                         <div className="grid grid-cols-2 gap-3">
-                            <button onClick={() => setReturnCondition('OK')} className={`p-4 rounded-xl border flex flex-col items-center gap-2 transition-all ${returnCondition === 'OK' ? 'bg-emerald-500/20 border-emerald-500 text-emerald-300' : 'bg-white/5 border-white/10 text-white/50'}`}>
+                            <button onClick={() => setReturnCondition('OK')} className={`p-4 rounded-xl border flex flex-col items-center gap-2 transition-all ${returnCondition === 'OK' ? 'bg-primary/20 border-emerald-500 text-emerald-300' : 'bg-muted border-border text-muted-foreground'}`}>
                                 <CheckCircle2 size={32} /> <span className="font-bold">Alles OK</span>
                             </button>
-                            <button onClick={() => setReturnCondition('Defect')} className={`p-4 rounded-xl border flex flex-col items-center gap-2 transition-all ${returnCondition === 'Defect' ? 'bg-rose-500/20 border-rose-500 text-rose-300' : 'bg-white/5 border-white/10 text-white/50'}`}>
+                            <button onClick={() => setReturnCondition('Defect')} className={`p-4 rounded-xl border flex flex-col items-center gap-2 transition-all ${returnCondition === 'Defect' ? 'bg-rose-500/20 border-rose-500 text-rose-300' : 'bg-muted border-border text-muted-foreground'}`}>
                                 <AlertTriangle size={32} /> <span className="font-bold">Defekt</span>
                             </button>
                         </div>
 
                         {returnCondition === 'Defect' && (
                             <div className="space-y-2 animate-in fade-in">
-                                <label className="text-xs text-white/50">Beschreibung des Defekts</label>
+                                <label className="text-xs text-muted-foreground">Beschreibung des Defekts</label>
                                 <textarea
-                                    className="w-full bg-black/30 border border-white/10 rounded-lg p-3 text-white focus:outline-none focus:border-rose-500"
+                                    className="w-full bg-black/30 border border-border rounded-lg p-3 text-white focus:outline-none focus:border-rose-500"
                                     rows={3}
                                     value={defectNote}
                                     onChange={e => setDefectNote(e.target.value)}
@@ -374,7 +374,7 @@ export const MachineDetailContent: React.FC<MachineDetailContentProps> = ({ mach
                             </div>
                         )}
 
-                        <Button onClick={executeReturn} disabled={loading} className="w-full mt-4 bg-emerald-600 h-12">
+                        <Button onClick={executeReturn} disabled={loading} className="w-full mt-4 bg-primary h-12">
                             {loading ? <Loader2 className="animate-spin" /> : 'Rücknahme Buchen'}
                         </Button>
                     </div>
@@ -384,16 +384,16 @@ export const MachineDetailContent: React.FC<MachineDetailContentProps> = ({ mach
                 {mode === 'history' && (
                     <div className="space-y-4 animate-in slide-in-from-right-4">
                         <div className="flex items-center gap-2 mb-4">
-                            <button onClick={() => setMode('overview')} className="p-2 hover:bg-white/10 rounded-full"><ArrowLeft size={20} className="text-white" /></button>
+                            <button onClick={() => setMode('overview')} className="p-2 hover:bg-muted rounded-full"><ArrowLeft size={20} className="text-white" /></button>
                             <h3 className="text-lg font-bold text-white">Verlauf</h3>
                         </div>
                         <div className="space-y-3">
                             {historyLogs.map(log => (
-                                <div key={log.id} className="relative pl-4 border-l border-white/10 text-sm pb-4 last:pb-0">
-                                    <div className="absolute -left-1 top-0 w-2 h-2 rounded-full bg-emerald-500"></div>
+                                <div key={log.id} className="relative pl-4 border-l border-border text-sm pb-4 last:pb-0">
+                                    <div className="absolute -left-1 top-0 w-2 h-2 rounded-full bg-primary"></div>
                                     <div className="font-bold text-white">{new Date(log.created_at).toLocaleString()}</div>
-                                    <div className="text-white/70">{log.details}</div>
-                                    <div className="text-xs text-white/30 mt-1">Durch: {log.profiles?.full_name}</div>
+                                    <div className="text-muted-foreground">{log.details}</div>
+                                    <div className="text-xs text-muted-foreground mt-1">Durch: {log.profiles?.full_name}</div>
                                 </div>
                             ))}
                         </div>
@@ -404,33 +404,33 @@ export const MachineDetailContent: React.FC<MachineDetailContentProps> = ({ mach
                 {mode === 'reservations' && (
                     <div className="space-y-4 animate-in slide-in-from-right-4">
                         <div className="flex items-center gap-2 mb-4">
-                            <button onClick={() => setMode('overview')} className="p-2 hover:bg-white/10 rounded-full"><ArrowLeft size={20} className="text-white" /></button>
+                            <button onClick={() => setMode('overview')} className="p-2 hover:bg-muted rounded-full"><ArrowLeft size={20} className="text-white" /></button>
                             <h3 className="text-lg font-bold text-white">Reservierungen</h3>
                         </div>
 
-                        <div className="bg-white/5 rounded-xl p-4 border border-white/5 mb-6">
+                        <div className="bg-muted rounded-xl p-4 border border-white/5 mb-6">
                             <h4 className="font-bold text-white mb-3 text-sm">Neue Reservierung</h4>
                             <div className="grid grid-cols-2 gap-2 mb-2">
-                                <div><label className="text-xs text-white/50">Von</label><input type="date" className="w-full bg-black/30 border border-white/10 rounded p-2 text-sm text-white" value={resStartDate} onChange={e => setResStartDate(e.target.value)} /></div>
-                                <div><label className="text-xs text-white/50">Bis</label><input type="date" className="w-full bg-black/30 border border-white/10 rounded p-2 text-sm text-white" value={resEndDate} onChange={e => setResEndDate(e.target.value)} /></div>
+                                <div><label className="text-xs text-muted-foreground">Von</label><input type="date" className="w-full bg-black/30 border border-border rounded p-2 text-sm text-white" value={resStartDate} onChange={e => setResStartDate(e.target.value)} /></div>
+                                <div><label className="text-xs text-muted-foreground">Bis</label><input type="date" className="w-full bg-black/30 border border-border rounded p-2 text-sm text-white" value={resEndDate} onChange={e => setResEndDate(e.target.value)} /></div>
                             </div>
-                            <input className="w-full bg-black/30 border border-white/10 rounded p-2 text-sm text-white mb-3" placeholder="Notiz (Optional)" value={resNote} onChange={e => setResNote(e.target.value)} />
+                            <input className="w-full bg-black/30 border border-border rounded p-2 text-sm text-white mb-3" placeholder="Notiz (Optional)" value={resNote} onChange={e => setResNote(e.target.value)} />
                             <Button onClick={executeReservation} disabled={loading} size="sm" className="w-full">Reservieren</Button>
                         </div>
 
                         <div className="space-y-2">
                             {reservations.map(r => (
-                                <div key={r.id} className="bg-white/5 p-3 rounded-lg flex justify-between items-center group">
+                                <div key={r.id} className="bg-muted p-3 rounded-lg flex justify-between items-center group">
                                     <div>
                                         <div className="font-bold text-white text-sm">{new Date(r.start_date).toLocaleDateString()} - {new Date(r.end_date).toLocaleDateString()}</div>
-                                        <div className="text-xs text-white/50">{r.profiles?.full_name} {r.note && `• ${r.note}`}</div>
+                                        <div className="text-xs text-muted-foreground">{r.profiles?.full_name} {r.note && `• ${r.note}`}</div>
                                     </div>
                                     {r.user_id === user?.id && (
                                         <button onClick={() => deleteReservation(r.id)} className="p-2 text-rose-400 opacity-0 group-hover:opacity-100 transition-opacity"><Trash2 size={16} /></button>
                                     )}
                                 </div>
                             ))}
-                            {reservations.length === 0 && <div className="text-center text-white/30 text-sm py-4">Keine Reservierungen.</div>}
+                            {reservations.length === 0 && <div className="text-center text-muted-foreground text-sm py-4">Keine Reservierungen.</div>}
                         </div>
                     </div>
                 )}

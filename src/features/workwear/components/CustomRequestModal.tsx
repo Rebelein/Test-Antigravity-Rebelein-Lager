@@ -50,13 +50,13 @@ export const CustomRequestModal: React.FC<CustomRequestModalProps> = ({
     return (
         <GlassModal isOpen={isOpen} onClose={onClose} title="Wunschartikel Anfrage">
             <div className="p-6 space-y-4">
-                <div className="bg-white/5 p-4 rounded-lg border border-white/10 text-sm text-white/60 mb-4">
+                <div className="bg-muted p-4 rounded-lg border border-border text-sm text-muted-foreground mb-4">
                     Hier kannst du Artikel anfragen, die nicht im Katalog sind. Bitte fülle so viele Informationen wie möglich aus.
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="space-y-2">
-                        <label className="text-xs text-white/50">Kategorie (für Größenzuordnung)</label>
+                        <label className="text-xs text-muted-foreground">Kategorie (für Größenzuordnung)</label>
                         <GlassSelect
                             value={customRequest.category}
                             onChange={(e) => {
@@ -79,7 +79,7 @@ export const CustomRequestModal: React.FC<CustomRequestModalProps> = ({
                         </GlassSelect>
                     </div>
                     <div className="space-y-2">
-                        <label className="text-xs text-white/50">Größe</label>
+                        <label className="text-xs text-muted-foreground">Größe</label>
                         <GlassInput
                             value={customRequest.size}
                             onChange={(e) => setCustomRequest(prev => ({ ...prev, size: e.target.value }))}
@@ -89,7 +89,7 @@ export const CustomRequestModal: React.FC<CustomRequestModalProps> = ({
                 </div>
 
                 <div className="space-y-2">
-                    <label className="text-xs text-white/50">Artikelname / Beschreibung *</label>
+                    <label className="text-xs text-muted-foreground">Artikelname / Beschreibung *</label>
                     <GlassInput
                         value={customRequest.name}
                         onChange={(e) => setCustomRequest(prev => ({ ...prev, name: e.target.value }))}
@@ -99,7 +99,7 @@ export const CustomRequestModal: React.FC<CustomRequestModalProps> = ({
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="space-y-2">
-                        <label className="text-xs text-white/50">Artikelnummer (Optional)</label>
+                        <label className="text-xs text-muted-foreground">Artikelnummer (Optional)</label>
                         <GlassInput
                             value={customRequest.articleNumber}
                             onChange={(e) => setCustomRequest(prev => ({ ...prev, articleNumber: e.target.value }))}
@@ -107,7 +107,7 @@ export const CustomRequestModal: React.FC<CustomRequestModalProps> = ({
                         />
                     </div>
                     <div className="space-y-2">
-                        <label className="text-xs text-white/50">Preis (€) ca. *</label>
+                        <label className="text-xs text-muted-foreground">Preis (€) ca. *</label>
                         <GlassInput
                             type="number"
                             step="0.01"
@@ -119,7 +119,7 @@ export const CustomRequestModal: React.FC<CustomRequestModalProps> = ({
                 </div>
 
                 <div className="space-y-2">
-                    <label className="text-xs text-white/50">Link zum Artikel (Optional)</label>
+                    <label className="text-xs text-muted-foreground">Link zum Artikel (Optional)</label>
                     <GlassInput
                         value={customRequest.url}
                         onChange={(e) => setCustomRequest(prev => ({ ...prev, url: e.target.value }))}

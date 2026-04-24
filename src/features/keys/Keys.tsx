@@ -24,7 +24,7 @@ const KeyCard: React.FC<{
         onClick={() => onClick(keyData)}
         className={`relative group rounded-xl border p-3 transition-all duration-300 cursor-pointer overflow-hidden flex flex-col h-full ${keyData.status === 'InUse'
             ? 'bg-amber-500/10 border-amber-500/20 hover:border-amber-500/40'
-            : 'bg-white/5 border-white/10 hover:border-emerald-500/30 hover:bg-white/10'
+            : 'bg-muted border-border hover:border-emerald-500/30 hover:bg-muted'
             }`}
     >
         {/* Category Strip */}
@@ -38,14 +38,14 @@ const KeyCard: React.FC<{
         )}
 
         <div className="flex justify-between items-start mb-2 pl-2">
-            <div className={`px-2 py-0.5 rounded text-[10px] font-bold ${keyData.status === 'InUse' ? 'bg-amber-500/20 text-amber-500' : 'bg-emerald-500/20 text-emerald-500'}`}>
+            <div className={`px-2 py-0.5 rounded text-[10px] font-bold ${keyData.status === 'InUse' ? 'bg-amber-500/20 text-amber-500' : 'bg-primary/20 text-emerald-500'}`}>
                 #{keyData.slot_number}
             </div>
             <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                <button onClick={(e) => { e.stopPropagation(); onEdit(keyData); }} className="p-1 hover:bg-white/10 rounded">
-                    <Edit size={12} className="text-gray-400" />
+                <button onClick={(e) => { e.stopPropagation(); onEdit(keyData); }} className="p-1 hover:bg-muted rounded">
+                    <Edit size={12} className="text-muted-foreground" />
                 </button>
-                <button onClick={(e) => { e.stopPropagation(); onDelete(keyData); }} className="p-1 hover:bg-white/10 rounded">
+                <button onClick={(e) => { e.stopPropagation(); onDelete(keyData); }} className="p-1 hover:bg-muted rounded">
                     <Trash2 size={12} className="text-red-400" />
                 </button>
             </div>
@@ -55,13 +55,13 @@ const KeyCard: React.FC<{
 
         <div className="flex flex-col gap-1 pl-2 mb-3 mt-1 flex-1">
             {keyData.owner && (
-                <div className="text-[11px] text-white/60 truncate flex items-center gap-1.5" title={`Eigentümer: ${keyData.owner}`}>
-                    <User size={10} className="shrink-0 text-white/40" /> {keyData.owner}
+                <div className="text-[11px] text-muted-foreground truncate flex items-center gap-1.5" title={`Eigentümer: ${keyData.owner}`}>
+                    <User size={10} className="shrink-0 text-muted-foreground" /> {keyData.owner}
                 </div>
             )}
             {keyData.address && (
-                <div className="text-[11px] text-white/60 truncate flex items-center gap-1.5" title={`Adresse: ${keyData.address}`}>
-                    <MapPin size={10} className="shrink-0 text-white/40" /> {keyData.address}
+                <div className="text-[11px] text-muted-foreground truncate flex items-center gap-1.5" title={`Adresse: ${keyData.address}`}>
+                    <MapPin size={10} className="shrink-0 text-muted-foreground" /> {keyData.address}
                 </div>
             )}
         </div>
@@ -71,9 +71,9 @@ const KeyCard: React.FC<{
                 <User size={12} className="shrink-0" /> <span className="font-medium">{keyData.holder_name || 'Unbekannt'}</span>
             </div>
         ) : (
-            <div className="text-xs text-emerald-400/60 pl-2 truncate mt-auto bg-emerald-500/5 -mx-3 -mb-3 p-2 pt-2.5 mt-2 flex items-center gap-1">
-                 <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0"></span> Verfügbar
-                 {keyData.holder_name && <span className="text-[10px] text-white/40 ml-1 truncate">(Zuletzt: {keyData.holder_name})</span>}
+            <div className="text-xs text-emerald-400/60 pl-2 truncate mt-auto bg-primary/5 -mx-3 -mb-3 p-2 pt-2.5 mt-2 flex items-center gap-1">
+                 <span className="w-1.5 h-1.5 rounded-full bg-primary shrink-0"></span> Verfügbar
+                 {keyData.holder_name && <span className="text-[10px] text-muted-foreground ml-1 truncate">(Zuletzt: {keyData.holder_name})</span>}
             </div>
         )}
     </div>
@@ -167,16 +167,16 @@ const Keys: React.FC = () => {
                 onClick={() => { setSelectedCategory(null); setIsMobileCategoryOpen(false); }}
                 className={clsx(
                     "flex items-center justify-between px-4 py-3 rounded-xl transition-all duration-200 text-left",
-                    !selectedCategory ? "bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 shadow-lg shadow-emerald-500/10" : "text-white/60 hover:text-white hover:bg-white/5"
+                    !selectedCategory ? "bg-primary/20 text-emerald-400 border border-emerald-500/30 shadow-lg shadow-emerald-500/10" : "text-muted-foreground hover:text-white hover:bg-muted"
                 )}
             >
                 <div className="flex items-center gap-3">
                     <Layers size={18} />
                     <span className="font-medium text-sm">Alle Kategorien</span>
                 </div>
-                {!selectedCategory && <div className="w-1.5 h-1.5 rounded-full bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.8)]" />}
+                {!selectedCategory && <div className="w-1.5 h-1.5 rounded-full bg-primary shadow-[0_0_8px_rgba(52,211,153,0.8)]" />}
             </button>
-            <div className="h-px bg-white/5 my-2 mx-4" />
+            <div className="h-px bg-muted my-2 mx-4" />
             {categories.map(cat => {
                 const count = keys.filter(k => k.category_id === cat.id).length;
                 if (count === 0) return null;
@@ -186,13 +186,13 @@ const Keys: React.FC = () => {
                     onClick={() => { setSelectedCategory(cat.id); setIsMobileCategoryOpen(false); }}
                     className={clsx(
                         "flex items-start px-4 py-2.5 rounded-xl transition-all duration-200 text-left group w-full gap-3",
-                        selectedCategory === cat.id ? "bg-emerald-500/20 text-emerald-400 border border-emerald-500/30" : "text-white/50 hover:text-white hover:bg-white/5"
+                        selectedCategory === cat.id ? "bg-primary/20 text-emerald-400 border border-emerald-500/30" : "text-muted-foreground hover:text-white hover:bg-muted"
                     )}
                 >
-                    <ChevronRight size={14} className={clsx("transition-transform shrink-0 mt-1", selectedCategory === cat.id ? "rotate-90 text-emerald-400" : "text-white/20 group-hover:text-white/40")} />
+                    <ChevronRight size={14} className={clsx("transition-transform shrink-0 mt-1", selectedCategory === cat.id ? "rotate-90 text-emerald-400" : "text-muted-foreground group-hover:text-muted-foreground")} />
                     <div className="w-3 h-3 rounded-full shrink-0 mt-1.5" style={{ backgroundColor: cat.color, boxShadow: `0 0 10px ${cat.color}` }}></div>
                     <span className="text-sm font-medium flex-1 break-words leading-tight mt-0.5">{cat.name}</span>
-                    <span className="bg-white/10 text-white/50 text-[10px] px-1.5 py-0.5 rounded-full shrink-0 mt-0.5">{count}</span>
+                    <span className="bg-muted text-muted-foreground text-[10px] px-1.5 py-0.5 rounded-full shrink-0 mt-0.5">{count}</span>
                 </button>
             )})}
             
@@ -205,13 +205,13 @@ const Keys: React.FC = () => {
                     onClick={() => { setSelectedCategory('uncategorized'); setIsMobileCategoryOpen(false); }}
                     className={clsx(
                         "flex items-start px-4 py-2.5 mt-2 rounded-xl transition-all duration-200 text-left group w-full gap-3",
-                        selectedCategory === 'uncategorized' ? "bg-emerald-500/20 text-emerald-400 border border-emerald-500/30" : "text-white/50 hover:text-white hover:bg-white/5"
+                        selectedCategory === 'uncategorized' ? "bg-primary/20 text-emerald-400 border border-emerald-500/30" : "text-muted-foreground hover:text-white hover:bg-muted"
                     )}
                 >
-                    <ChevronRight size={14} className={clsx("transition-transform shrink-0 mt-1", selectedCategory === 'uncategorized' ? "rotate-90 text-emerald-400" : "text-white/20 group-hover:text-white/40")} />
-                    <div className="w-3 h-3 rounded-full border-2 border-white/20 shrink-0 mt-1.5"></div>
-                    <span className="text-sm font-medium text-white/70 flex-1 break-words leading-tight mt-0.5">Ohne Kategorie</span>
-                    <span className="bg-white/10 text-white/50 text-[10px] px-1.5 py-0.5 rounded-full shrink-0 mt-0.5">{count}</span>
+                    <ChevronRight size={14} className={clsx("transition-transform shrink-0 mt-1", selectedCategory === 'uncategorized' ? "rotate-90 text-emerald-400" : "text-muted-foreground group-hover:text-muted-foreground")} />
+                    <div className="w-3 h-3 rounded-full border-2 border-border shrink-0 mt-1.5"></div>
+                    <span className="text-sm font-medium text-muted-foreground flex-1 break-words leading-tight mt-0.5">Ohne Kategorie</span>
+                    <span className="bg-muted text-muted-foreground text-[10px] px-1.5 py-0.5 rounded-full shrink-0 mt-0.5">{count}</span>
                 </button>
             )})()}
         </div>
@@ -224,7 +224,7 @@ const Keys: React.FC = () => {
                     {isMobile && (
                         <button 
                             onClick={() => setIsMobileCategoryOpen(true)}
-                            className="p-2.5 rounded-xl bg-white/5 text-emerald-400 border border-white/10 active:scale-95 transition-transform"
+                            className="p-2.5 rounded-xl bg-muted text-emerald-400 border border-border active:scale-95 transition-transform"
                         >
                             <Menu size={20} />
                         </button>
@@ -244,7 +244,7 @@ const Keys: React.FC = () => {
                 {/* Desktop Sidebar */}
                 {!isMobile && (
                     <aside className="w-64 flex-shrink-0 border-r border-white/5 flex flex-col pr-4 animate-in slide-in-from-left duration-500">
-                        <div className="px-4 py-2 flex items-center gap-2 text-white/30 uppercase tracking-widest text-[10px] font-bold">
+                        <div className="px-4 py-2 flex items-center gap-2 text-muted-foreground uppercase tracking-widest text-[10px] font-bold">
                             <Filter size={10} />
                             Kategorien
                         </div>
@@ -261,20 +261,20 @@ const Keys: React.FC = () => {
                                 animate={{ opacity: 1 }}
                                 exit={{ opacity: 0 }}
                                 onClick={() => setIsMobileCategoryOpen(false)}
-                                className="fixed inset-0 bg-black/60 backdrop-blur-sm z-40"
+                                className="fixed inset-0 bg-black/30 backdrop-blur-sm z-40"
                             />
                             <motion.aside
                                 initial={{ x: '-100%' }}
                                 animate={{ x: 0 }}
                                 exit={{ x: '-100%' }}
                                 transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-                                className="fixed inset-y-0 left-0 w-[80%] max-w-sm bg-gray-900 border-r border-white/10 shadow-2xl z-50 flex flex-col"
+                                className="fixed inset-y-0 left-0 w-[80%] max-w-sm bg-background border-r border-border shadow-2xl z-50 flex flex-col"
                             >
-                                <div className="p-4 border-b border-white/10 flex items-center justify-between">
+                                <div className="p-4 border-b border-border flex items-center justify-between">
                                     <div className="flex items-center gap-2 text-emerald-400 font-bold uppercase tracking-wider text-sm">
                                         <Filter size={16} /> Kategorien
                                     </div>
-                                    <button onClick={() => setIsMobileCategoryOpen(false)} className="p-2 rounded-xl bg-white/5 text-white/50 hover:text-white">
+                                    <button onClick={() => setIsMobileCategoryOpen(false)} className="p-2 rounded-xl bg-muted text-muted-foreground hover:text-white">
                                         <X size={20} />
                                     </button>
                                 </div>
@@ -289,20 +289,20 @@ const Keys: React.FC = () => {
                 <div className="flex-1 h-full overflow-hidden flex flex-col lg:pl-4">
                     {/* Stats / Tabs */}
                     <div className="flex gap-2 p-1 bg-black/20 rounded-xl border border-white/5 mb-4 shrink-0">
-                        <button onClick={() => { setActiveTab('all'); setSelectedCategory(null); }} className={`flex-1 py-2 rounded-lg text-sm font-medium ${activeTab === 'all' ? 'bg-white/10 text-white' : 'text-white/50'}`}>Gesamt <span className="text-[10px] bg-white/10 px-1 rounded">{keys.length}</span></button>
-                        <button onClick={() => { setActiveTab('available'); setSelectedCategory(null); }} className={`flex-1 py-2 rounded-lg text-sm font-medium ${activeTab === 'available' ? 'bg-emerald-500/20 text-emerald-300' : 'text-white/50'}`}>Verfügbar <span className="text-[10px] bg-white/10 px-1 rounded">{keys.filter(k => k.status === 'Available').length}</span></button>
-                        <button onClick={() => { setActiveTab('inUse'); setSelectedCategory(null); }} className={`flex-1 py-2 rounded-lg text-sm font-medium ${activeTab === 'inUse' ? 'bg-amber-500/20 text-amber-300' : 'text-white/50'}`}>Ausgegeben <span className="text-[10px] bg-white/10 px-1 rounded">{keys.filter(k => k.status === 'InUse').length}</span></button>
+                        <button onClick={() => { setActiveTab('all'); setSelectedCategory(null); }} className={`flex-1 py-2 rounded-lg text-sm font-medium ${activeTab === 'all' ? 'bg-muted text-white' : 'text-muted-foreground'}`}>Gesamt <span className="text-[10px] bg-muted px-1 rounded">{keys.length}</span></button>
+                        <button onClick={() => { setActiveTab('available'); setSelectedCategory(null); }} className={`flex-1 py-2 rounded-lg text-sm font-medium ${activeTab === 'available' ? 'bg-primary/20 text-emerald-300' : 'text-muted-foreground'}`}>Verfügbar <span className="text-[10px] bg-muted px-1 rounded">{keys.filter(k => k.status === 'Available').length}</span></button>
+                        <button onClick={() => { setActiveTab('inUse'); setSelectedCategory(null); }} className={`flex-1 py-2 rounded-lg text-sm font-medium ${activeTab === 'inUse' ? 'bg-amber-500/20 text-amber-300' : 'text-muted-foreground'}`}>Ausgegeben <span className="text-[10px] bg-muted px-1 rounded">{keys.filter(k => k.status === 'InUse').length}</span></button>
                     </div>
 
                     {/* Search */}
                     <div className="relative mb-4 shrink-0">
-                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-white/30" size={18} />
-                        <input className="w-full bg-white/5 border border-white/10 rounded-xl py-3 pl-10 pr-4 text-white focus:outline-none focus:border-emerald-500 transition-colors" placeholder="Suche..." value={searchTerm} onChange={e => setSearchTerm(e.target.value)} />
+                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" size={18} />
+                        <input className="w-full bg-muted border border-border rounded-xl py-3 pl-10 pr-4 text-white focus:outline-none focus:border-emerald-500 transition-colors" placeholder="Suche..." value={searchTerm} onChange={e => setSearchTerm(e.target.value)} />
                     </div>
 
                     <div className="flex-1 overflow-y-auto custom-scrollbar pb-24 pr-2">
                         {filteredKeys.length === 0 ? (
-                            <div className="text-center py-10 text-white/30 flex flex-col items-center justify-center h-full gap-4">
+                            <div className="text-center py-10 text-muted-foreground flex flex-col items-center justify-center h-full gap-4">
                                 <KeyIcon size={48} className="opacity-20" />
                                 Keine Schlüssel in dieser Ansicht gefunden.
                             </div>
