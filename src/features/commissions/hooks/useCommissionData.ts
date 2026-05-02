@@ -75,7 +75,7 @@ export const useCommissionData = (activeTab: CommissionTab) => {
         },
         enabled: !!primaryWarehouseId,
         placeholderData: keepPreviousData, // Keep old data while fetching new tab
-        staleTime: 1000 * 60 * 5, // 5 minutes
+        staleTime: 0, // ALWAYS fetch in background on mount because realtime subscription is inactive while unmounted
     });
 
     // --- 2. Suppliers Query ---
@@ -132,7 +132,7 @@ export const useCommissionData = (activeTab: CommissionTab) => {
             };
         },
         enabled: !!primaryWarehouseId,
-        staleTime: 1000 * 30, // 30 seconds
+        staleTime: 0, // ALWAYS fetch in background on mount because realtime subscription is inactive while unmounted
     });
 
     // --- 4. Articles (Lazy Loaded via Query but exposed similarly) ---

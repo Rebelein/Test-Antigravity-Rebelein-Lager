@@ -141,6 +141,7 @@ export interface Commission {
   order_number: string; // Reference to project/Baustelle
   name: string; // Human readable name e.g. "Bad Müller OG"
   notes?: string;
+  warehouse_notes?: string; // NEW: Information ans Lager
   status: CommissionStatus;
   warehouse_id: string;
   created_at: string;

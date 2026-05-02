@@ -81,7 +81,7 @@ export const useInventoryData = (viewMode: 'primary' | 'secondary') => {
             return data.map(mapArticleFromDB);
         },
         enabled: !!activeWarehouseId && !authLoading,
-        staleTime: 1000 * 60 * 5, // 5 minutes fresh
+        staleTime: 0, // ALWAYS fetch in background on mount because realtime subscription is inactive while unmounted
     });
 
     const fetchHistory = async (articleId: string) => {

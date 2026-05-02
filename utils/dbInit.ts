@@ -162,6 +162,7 @@ CREATE TABLE IF NOT EXISTS public.commissions (
   order_number TEXT, 
   name TEXT, 
   notes TEXT,
+  warehouse_notes TEXT,
   -- Constraint updated dynamically in block 2
   status TEXT, 
   warehouse_id UUID REFERENCES public.warehouses(id) ON DELETE SET NULL,
@@ -287,6 +288,9 @@ BEGIN
     END IF;
     IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='commissions' AND column_name='office_notes') THEN
         ALTER TABLE public.commissions ADD COLUMN office_notes TEXT;
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='commissions' AND column_name='warehouse_notes') THEN
+        ALTER TABLE public.commissions ADD COLUMN warehouse_notes TEXT;
     END IF;
     
     -- Add Attachment Column to Commission Items

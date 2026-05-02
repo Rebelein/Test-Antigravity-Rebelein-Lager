@@ -570,6 +570,7 @@ const Commissions: React.FC = () => {
 
             const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(`COMM:${comm.id}`)}`;
             const notesHtml = comm.notes ? `<div class="notes" style="font-size: 10pt; margin-top: 2mm; font-style: italic; color: #000; border-top: 1px dotted #aaa; padding-top: 1mm; line-height: 1.2;">${comm.notes}</div>` : '';
+            const warehouseNotesHtml = comm.warehouse_notes ? `<div style="background-color: #fff3cd; border: 1px solid #ffe69c; padding: 3mm; margin-top: 3mm; margin-bottom: 3mm; border-radius: 2mm;"><strong style="color: #856404; font-size: 10pt;">⚠️ Info ans Lager:</strong><div style="margin-top: 1mm; font-size: 10pt; color: #000; font-weight: bold; white-space: pre-wrap;">${comm.warehouse_notes}</div></div>` : '';
             const renderLocation = (article: Article) => (!article.category && !article.location) ? '-' : `${article.category || ''} / ${article.location || ''}`;
 
             return chunks.map((chunk, index) => {
@@ -590,6 +591,7 @@ const Commissions: React.FC = () => {
                 </div>
                 <div class="fold-line"><span class="fold-text">Hier falten / knicken</span></div>
                 <div class="list-area">
+                    ${index === 0 ? warehouseNotesHtml : ''}
                     ${extItems.length > 0 ? `<div class="list-title">Erwartete externe Bestellungen:</div><ul>${extItems.map(i => `<li><div class="checkbox"></div><div class="item-text"><strong>${i.amount}x</strong> Externe Bestellung: ${i.custom_name}${i.is_backorder ? ' <b>[RÜCKSTAND]</b>' : ''}<br><span style="font-size: 8pt; color: #555;">(Vorgang: ${i.external_reference || 'N/A'})</span>${i.notes ? `<br><span style="font-style: italic; font-size: 8pt;">Note: ${i.notes}</span>` : ''}</div></li>`).join('')}</ul><br>` : ''}
                     ${stockItems.length > 0 ? `<div class="list-title">Material aus Lager:</div><ul>${stockItems.map(i => {
                 return `<li><div class="checkbox"></div><div class="item-text"><strong>${i.amount}x</strong> ${i.article?.name}${i.is_backorder ? ' <b>[RÜCKSTAND]</b>' : ''}<br><span style="font-size: 8pt; color: #555;">Lagerort: ${i.article ? renderLocation(i.article) : '-'}</span>${i.notes ? `<br><span style="font-style: italic; font-size: 8pt;">Note: ${i.notes}</span>` : ''}</div></li>`;

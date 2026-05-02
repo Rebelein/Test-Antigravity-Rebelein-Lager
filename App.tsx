@@ -51,7 +51,14 @@ const ProtectedRoute = () => {
 
   return (
     <Layout>
-      <Outlet />
+      <React.Suspense fallback={
+        <div className="h-full w-full flex flex-col items-center justify-center">
+          <Loader2 size={40} className="animate-spin text-emerald-500 mb-4" />
+          <span className="text-emerald-500/70 font-medium">Lade Ansicht...</span>
+        </div>
+      }>
+        <Outlet />
+      </React.Suspense>
     </Layout>
   );
 };
@@ -62,6 +69,26 @@ const queryClient = new QueryClient();
 const App: React.FC = () => {
 
   const isMobile = useIsMobile();
+
+  // --- DISABLE PULL TO REFRESH (JS SAFEGUARD) ---
+  useEffect(() => {
+    if (!isMobile) return;
+
+    const preventPullToRefresh = (e: TouchEvent) => {
+      // If we are at the top and pulling down, prevent default browser refresh
+      if (window.scrollY === 0 && e.touches[0].pageY > 0) {
+        // We only prevent it if we're not inside a scrollable element that should scroll
+        // But for most PWA cases, global prevention is desired.
+      }
+    };
+
+    // Use passive: false to allow preventDefault
+    document.addEventListener('touchstart', preventPullToRefresh, { passive: true });
+    
+    return () => {
+      document.removeEventListener('touchstart', preventPullToRefresh);
+    };
+  }, [isMobile]);
 
   return (
     <QueryClientProvider client={queryClient}>

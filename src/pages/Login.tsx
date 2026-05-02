@@ -2,10 +2,11 @@ import React, { useState, useEffect } from 'react';
 import { supabase } from '../../supabaseClient';
 import { GlassCard, Button, GlassInput } from '../components/UIComponents';
 import { useNavigate } from 'react-router-dom';
-import { Lock, Mail, User, LogIn, UserPlus, AlertCircle, Database, Copy, Check } from 'lucide-react';
+import { Lock, Mail, User, LogIn, UserPlus, AlertCircle, Database, Copy, Check, Package } from 'lucide-react';
 import { toast } from 'sonner';
 import { MANUAL_SETUP_SQL } from '../../utils/dbInit';
 import { useAuth } from '../../contexts/AuthContext';
+import { motion } from 'framer-motion';
 
 const Login: React.FC = () => {
   const navigate = useNavigate();
@@ -80,150 +81,245 @@ const Login: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen w-full flex flex-col items-center justify-center bg-background p-6 relative overflow-hidden">
-      {/* Background Blobs */}
-      <div className="fixed top-[-20%] left-[-10%] w-[600px] h-[600px] bg-primary/10 rounded-full blur-[120px] animate-pulse-slow pointer-events-none" />
-      <div className="fixed bottom-[-10%] right-[-20%] w-[500px] h-[500px] bg-teal-600/10 rounded-full blur-[100px] pointer-events-none" />
+    <div className="bg-[#0A0D14] relative min-h-screen overflow-hidden text-white font-sans">
+      {/* Background Gradients (Teal/Emerald Theme instead of Rose) */}
+      <div className="absolute -top-10 left-0 h-1/2 w-full rounded-b-full bg-gradient-to-b from-[#0A0D14] to-transparent blur z-0"></div>
+      <div className="absolute -top-64 left-0 h-1/2 w-full rounded-full bg-gradient-to-b from-teal-500/20 via-emerald-500/10 to-transparent blur-3xl z-0 pointer-events-none"></div>
+      <div className="absolute bottom-[-20%] right-[-10%] w-[600px] h-[600px] rounded-full bg-gradient-to-tl from-teal-900/40 to-transparent blur-[120px] z-0 pointer-events-none"></div>
 
-      <div className="text-center mb-8 relative z-10">
-        <h1 className="text-4xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-emerald-300 to-teal-200">
-          Rebelein LagerApp
-        </h1>
-        <p className="text-muted-foreground mt-2">
-          {showSql ? 'Datenbank Setup Code' : (isLogin ? 'Willkommen zurück!' : 'Neuen Benutzerzugang erstellen.')}
-        </p>
-      </div>
-
-      <GlassCard className="w-full max-w-md relative z-10 p-0 overflow-hidden border border-border shadow-2xl backdrop-blur-sm">
-        {!showSql ? (
-          <>
-            <div className="flex justify-center mb-6 border-b border-border pb-4 pt-6">
-              <button
-                type="button"
-                onClick={() => { setIsLogin(true); setError(null); setMsg(null); }}
-                className={`mx-4 pb-1 text-sm font-medium transition-colors ${
-                  isLogin ? 'text-teal-400 border-b-2 border-teal-400' : 'text-muted-foreground hover:text-muted-foreground'
-                }`}
-              >
-                Anmelden
-              </button>
-              <button
-                type="button"
-                onClick={() => { setIsLogin(false); setError(null); setMsg(null); }}
-                className={`mx-4 pb-1 text-sm font-medium transition-colors ${
-                  !isLogin ? 'text-teal-400 border-b-2 border-teal-400' : 'text-muted-foreground hover:text-muted-foreground'
-                }`}
-              >
-                Registrieren
-              </button>
-            </div>
-
-            <form onSubmit={handleAuth} className="space-y-4 px-6 pb-6">
-              
-              {!isLogin && (
-                 <div className="animate-in fade-in slide-in-from-top-2 duration-300">
-                    <div className="flex items-center gap-2 text-teal-200 mb-2 text-xs uppercase tracking-wider font-bold">
-                      <User size={14} /> Anzeigename
-                    </div>
-                    <GlassInput
-                      type="text"
-                      name="fullName"
-                      placeholder="Max Mustermann"
-                      value={fullName}
-                      onChange={(e) => setFullName(e.target.value)}
-                      required={!isLogin}
-                    />
-                 </div>
-              )}
-
-              <div>
-                <div className="flex items-center gap-2 text-teal-200 mb-2 text-xs uppercase tracking-wider font-bold">
-                  <Mail size={14} /> Email
-                </div>
-                <GlassInput
-                  type="email"
-                  name="email"
-                  autoComplete="email"
-                  placeholder="name@beispiel.de"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  required
-                />
-              </div>
-
-              <div>
-                 <div className="flex items-center gap-2 text-teal-200 mb-2 text-xs uppercase tracking-wider font-bold">
-                  <Lock size={14} /> Passwort
-                </div>
-                <GlassInput
-                  type="password"
-                  name="password"
-                  autoComplete={isLogin ? "current-password" : "new-password"}
-                  placeholder="••••••••"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  required
-                  minLength={6}
-                />
-              </div>
-
-              {error && (
-                <div className="bg-red-500/20 border border-red-500/50 p-3 rounded-lg text-red-200 text-sm flex items-start gap-2">
-                  <AlertCircle size={16} className="mt-0.5 shrink-0" />
-                  <span>{error}</span>
-                </div>
-              )}
-
-              {msg && (
-                <div className="bg-primary/20 border border-emerald-500/50 p-3 rounded-lg text-emerald-200 text-sm flex items-start gap-2">
-                  <Check size={16} className="mt-0.5 shrink-0" />
-                  <span>{msg}</span>
-                </div>
-              )}
-
-              <Button type="submit" disabled={loading} className="w-full mt-4 flex items-center justify-center gap-2">
-                {loading ? 'Lade...' : isLogin ? <><LogIn size={18}/> Einloggen</> : <><UserPlus size={18}/> Account erstellen</>}
-              </Button>
-            </form>
-          </>
-        ) : (
-          <div className="p-6 animate-in fade-in zoom-in duration-200">
-            <div className="bg-black/40 rounded-xl border border-border p-4 mb-4">
-              <h3 className="text-emerald-400 font-bold mb-2 flex items-center gap-2">
-                <Database size={16} /> Initial SQL Setup
-              </h3>
-              <p className="text-xs text-muted-foreground mb-3">
-                Kopiere diesen Code in den Supabase SQL Editor, um die Datenbank zu reparieren/erstellen.
-              </p>
-              <div className="relative">
-                <textarea
-                  readOnly
-                  className="w-full h-48 bg-black/50 rounded-lg border border-border p-3 text-[10px] font-mono text-emerald-300/80 focus:outline-none resize-none"
-                  value={MANUAL_SETUP_SQL}
-                />
-                <button
-                  type="button"
-                  onClick={copySqlToClipboard}
-                  className="absolute top-2 right-2 p-1.5 bg-muted hover:bg-muted rounded-md text-white transition-colors"
-                >
-                  {sqlCopied ? <Check size={14} /> : <Copy size={14} />}
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
-      </GlassCard>
-
-      <div className="mt-6 text-center z-10 w-full max-w-md">
-        {/* Emergency DB Init Toggle */}
-        <button
-          type="button"
-          onClick={() => setShowSql(!showSql)}
-          className="text-xs text-muted-foreground hover:text-emerald-400/80 flex items-center justify-center gap-1 w-full transition-colors pt-4 border-t border-white/5"
+      <div className="relative z-10 grid min-h-screen grid-cols-1 md:grid-cols-2">
+        {/* Left Side - Illustration / Branding */}
+        <motion.div
+          className="hidden flex-1 items-center justify-center space-y-8 p-8 text-center md:flex flex-col"
+          initial={{ opacity: 0, x: -50 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ duration: 0.8, ease: 'easeOut' }}
         >
-          <Database size={12} />
-          <span>{showSql ? 'Zurück zum Login' : 'Datenbank Setup Code anzeigen'}</span>
-        </button>
+          <div className="space-y-6 w-full max-w-md">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.8 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ duration: 0.8, delay: 0.2, ease: 'easeOut' }}
+              className="flex justify-center"
+            >
+                {/* Fallback Icon if no illustration is available */}
+                <div className="w-48 h-48 bg-gradient-to-br from-teal-500/20 to-emerald-500/20 rounded-[3rem] border border-white/10 flex items-center justify-center shadow-2xl shadow-teal-500/10">
+                   <Package size={80} className="text-teal-400 drop-shadow-lg" />
+                </div>
+            </motion.div>
+            <motion.h1
+              className="text-3xl md:text-5xl font-extrabold leading-tight tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-emerald-300 to-teal-300"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6, delay: 0.4, ease: "easeOut" }}
+            >
+              Rebelein LagerApp
+            </motion.h1>
+            <motion.p
+              className="text-muted-foreground text-lg"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6, delay: 0.5, ease: "easeOut" }}
+            >
+              Die moderne Lösung für Kommissionen, Maschinenverleih und Materialwirtschaft.
+            </motion.p>
+          </div>
+        </motion.div>
+
+        {/* Right Side - Login Form */}
+        <motion.div
+          className="flex flex-1 flex-col items-center justify-center p-6 sm:p-8"
+          initial={{ opacity: 0, x: 50 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ duration: 0.8, ease: 'easeOut' }}
+        >
+          <motion.div
+            initial={{ opacity: 0, y: 30, scale: 0.95 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            transition={{ duration: 0.6, delay: 0.2, ease: 'easeOut' }}
+            className="w-full max-w-md"
+          >
+            <GlassCard className="border-border/50 bg-card/40 w-full shadow-[0_10px_40px_-10px_rgba(20,184,166,0.15)] backdrop-blur-xl p-0 overflow-hidden">
+                {!showSql ? (
+                    <>
+                        {/* Tabs (Login / Register) */}
+                        <div className="flex justify-center mb-2 border-b border-border/50 pb-0 pt-2 bg-black/20">
+                            <button
+                                type="button"
+                                onClick={() => { setIsLogin(true); setError(null); setMsg(null); }}
+                                className={`flex-1 py-4 text-sm font-bold transition-all relative ${
+                                isLogin ? 'text-teal-400' : 'text-muted-foreground hover:text-white'
+                                }`}
+                            >
+                                Anmelden
+                                {isLogin && <motion.div layoutId="tab-indicator" className="absolute bottom-0 left-0 right-0 h-0.5 bg-teal-400" />}
+                            </button>
+                            <button
+                                type="button"
+                                onClick={() => { setIsLogin(false); setError(null); setMsg(null); }}
+                                className={`flex-1 py-4 text-sm font-bold transition-all relative ${
+                                !isLogin ? 'text-teal-400' : 'text-muted-foreground hover:text-white'
+                                }`}
+                            >
+                                Registrieren
+                                {!isLogin && <motion.div layoutId="tab-indicator" className="absolute bottom-0 left-0 right-0 h-0.5 bg-teal-400" />}
+                            </button>
+                        </div>
+
+                        <div className="space-y-6 p-8 pt-6">
+                            {/* Header */}
+                            <motion.div
+                                className="space-y-2 text-center mb-6"
+                                initial={{ opacity: 0, y: 10 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                transition={{ duration: 0.4, delay: 0.3 }}
+                            >
+                                <h2 className="text-2xl font-bold tracking-tight text-white">
+                                    {isLogin ? 'Willkommen zurück' : 'Account erstellen'}
+                                </h2>
+                                <p className="text-muted-foreground text-sm">
+                                    {isLogin ? 'Bitte logge dich mit deinen Daten ein.' : 'Registriere dich für den Zugang zur LagerApp.'}
+                                </p>
+                            </motion.div>
+
+                            <form onSubmit={handleAuth} className="space-y-4">
+                                {!isLogin && (
+                                    <motion.div
+                                        className="space-y-1.5"
+                                        initial={{ opacity: 0, height: 0 }}
+                                        animate={{ opacity: 1, height: 'auto' }}
+                                        exit={{ opacity: 0, height: 0 }}
+                                    >
+                                        <label className="text-xs font-bold text-teal-200/70 uppercase tracking-wider flex items-center gap-1.5 ml-1">
+                                            <User size={12} /> Anzeigename
+                                        </label>
+                                        <GlassInput
+                                            type="text"
+                                            name="fullName"
+                                            placeholder="Max Mustermann"
+                                            value={fullName}
+                                            onChange={(e) => setFullName(e.target.value)}
+                                            required={!isLogin}
+                                        />
+                                    </motion.div>
+                                )}
+
+                                <motion.div
+                                    className="space-y-1.5"
+                                    initial={{ opacity: 0, y: 10 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    transition={{ duration: 0.4, delay: 0.4 }}
+                                >
+                                    <label className="text-xs font-bold text-teal-200/70 uppercase tracking-wider flex items-center gap-1.5 ml-1">
+                                        <Mail size={12} /> E-Mail
+                                    </label>
+                                    <GlassInput
+                                        type="email"
+                                        name="email"
+                                        autoComplete="email"
+                                        placeholder="name@beispiel.de"
+                                        value={email}
+                                        onChange={(e) => setEmail(e.target.value)}
+                                        required
+                                    />
+                                </motion.div>
+
+                                <motion.div
+                                    className="space-y-1.5"
+                                    initial={{ opacity: 0, y: 10 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    transition={{ duration: 0.4, delay: 0.5 }}
+                                >
+                                    <label className="text-xs font-bold text-teal-200/70 uppercase tracking-wider flex items-center gap-1.5 ml-1">
+                                        <Lock size={12} /> Passwort
+                                    </label>
+                                    <GlassInput
+                                        type="password"
+                                        name="password"
+                                        autoComplete={isLogin ? "current-password" : "new-password"}
+                                        placeholder="••••••••"
+                                        value={password}
+                                        onChange={(e) => setPassword(e.target.value)}
+                                        required
+                                        minLength={6}
+                                    />
+                                </motion.div>
+
+                                {error && (
+                                    <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="bg-red-500/10 border border-red-500/30 p-3 rounded-xl text-red-300 text-sm flex items-start gap-2 shadow-inner">
+                                        <AlertCircle size={16} className="mt-0.5 shrink-0" />
+                                        <span>{error}</span>
+                                    </motion.div>
+                                )}
+
+                                {msg && (
+                                    <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="bg-teal-500/10 border border-teal-500/30 p-3 rounded-xl text-teal-300 text-sm flex items-start gap-2 shadow-inner">
+                                        <Check size={16} className="mt-0.5 shrink-0" />
+                                        <span>{msg}</span>
+                                    </motion.div>
+                                )}
+
+                                {/* Continue Button */}
+                                <motion.div
+                                    initial={{ opacity: 0, y: 10 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    transition={{ duration: 0.4, delay: 0.6 }}
+                                    className="pt-2"
+                                >
+                                    <Button type="submit" disabled={loading} className="w-full h-12 bg-gradient-to-r from-teal-600 to-emerald-600 hover:from-teal-500 hover:to-emerald-500 text-white font-bold text-base shadow-lg shadow-teal-500/20 border-none transition-all active:scale-[0.98]">
+                                        {loading ? <span className="animate-pulse">Lade...</span> : (isLogin ? 'Einloggen' : 'Account erstellen')}
+                                    </Button>
+                                </motion.div>
+                            </form>
+                        </div>
+                    </>
+                ) : (
+                    <div className="p-8 animate-in fade-in zoom-in duration-200">
+                        <div className="bg-black/60 rounded-2xl border border-white/10 p-5 mb-2 shadow-inner">
+                            <h3 className="text-teal-400 font-bold mb-2 flex items-center gap-2 text-lg">
+                                <Database size={18} /> Initial SQL Setup
+                            </h3>
+                            <p className="text-sm text-muted-foreground mb-4">
+                                Kopiere diesen Code in den Supabase SQL Editor, um die Datenbank zu reparieren oder neu zu erstellen.
+                            </p>
+                            <div className="relative">
+                                <textarea
+                                    readOnly
+                                    className="w-full h-64 bg-black/80 rounded-xl border border-white/5 p-4 text-[11px] font-mono text-teal-200/80 focus:outline-none resize-none custom-scrollbar"
+                                    value={MANUAL_SETUP_SQL}
+                                />
+                                <button
+                                    type="button"
+                                    onClick={copySqlToClipboard}
+                                    className="absolute top-3 right-3 p-2 bg-white/10 hover:bg-white/20 backdrop-blur-md rounded-lg text-white transition-colors border border-white/10 shadow-lg"
+                                >
+                                    {sqlCopied ? <Check size={16} className="text-teal-400" /> : <Copy size={16} />}
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                )}
+            </GlassCard>
+
+            {/* Terms / Setup Footer */}
+            <motion.div
+               className="mt-6 text-center w-full"
+               initial={{ opacity: 0 }}
+               animate={{ opacity: 1 }}
+               transition={{ duration: 0.5, delay: 0.8 }}
+            >
+                <button
+                    type="button"
+                    onClick={() => setShowSql(!showSql)}
+                    className="text-xs font-medium text-muted-foreground hover:text-teal-400 flex items-center justify-center gap-1.5 w-full transition-colors mx-auto"
+                >
+                    <Database size={12} />
+                    <span>{showSql ? 'Zurück zum Login' : 'Datenbank Setup (Entwickler)'}</span>
+                </button>
+            </motion.div>
+
+          </motion.div>
+        </motion.div>
       </div>
     </div>
   );

@@ -164,8 +164,17 @@ export const CommissionDetailContent: React.FC<CommissionDetailContentProps> = (
                             <StatusBadge status={translateStatus(commission.status)} />
                         </div>
                     </div>
+                    {commission.warehouse_notes && (
+                        <div className="text-sm font-medium text-amber-200 bg-amber-500/20 p-4 rounded-xl border border-amber-500/40 mb-2 mt-4 shadow-inner flex items-start gap-3">
+                            <AlertTriangle size={20} className="text-amber-400 mt-0.5 shrink-0" />
+                            <div className="flex-1">
+                                <div className="text-amber-400 font-bold mb-1 uppercase tracking-wider text-xs">Information ans Lager</div>
+                                <div className="whitespace-pre-wrap leading-relaxed">{commission.warehouse_notes}</div>
+                            </div>
+                        </div>
+                    )}
                     {commission.notes && (
-                        <div className="text-sm text-muted-foreground bg-muted/50 p-3 rounded-xl border border-border/50 whitespace-pre-wrap mt-4 inline-block max-w-full">
+                        <div className={`text-sm text-muted-foreground bg-muted/50 p-3 rounded-xl border border-border/50 whitespace-pre-wrap inline-block max-w-full ${commission.warehouse_notes ? 'mt-2' : 'mt-4'}`}>
                             {commission.notes}
                         </div>
                     )}

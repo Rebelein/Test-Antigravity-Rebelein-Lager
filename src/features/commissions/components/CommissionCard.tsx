@@ -158,6 +158,13 @@ export const CommissionCard: React.FC<CommissionCardProps> = memo(({
             </div>
 
             {/* Notes */}
+            {commission.warehouse_notes && (
+                <div className="text-sm font-medium text-amber-200 bg-amber-500/20 p-3 rounded-lg border border-amber-500/40 mb-3 shadow-inner flex items-start gap-2">
+                    <AlertTriangle size={16} className="text-amber-400 mt-0.5 shrink-0" />
+                    <div className="flex-1 whitespace-pre-wrap leading-tight">{commission.warehouse_notes}</div>
+                </div>
+            )}
+            
             {commission.notes && (
                 <div className="text-sm text-yellow-100/90 italic bg-yellow-500/10 p-2.5 rounded-lg border border-yellow-500/20 line-clamp-2 mb-3 shadow-inner">
                     "{commission.notes}"

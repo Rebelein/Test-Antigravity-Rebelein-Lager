@@ -1,4 +1,5 @@
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useState, useRef, useMemo, useCallback } from 'react';
+import { motion } from 'framer-motion';
 import { GlassCard, StatusBadge, Button, GlassInput } from '../../components/UIComponents';
 import { MachineStatus, Machine, UserProfile } from '../../../types';
 import { Wrench, Plus, MoreVertical, Edit2, Trash2, Printer, Search, Lock, Drill, User } from 'lucide-react';
@@ -10,6 +11,16 @@ import { MachineDetailContent } from '../../features/machines/components/Machine
 import { MachineEditForm } from '../../features/machines/components/MachineEditForm';
 import { toast } from 'sonner';
 import { PageWrapper } from '../../components/ui/PageWrapper';
+
+const containerVariants = {
+    hidden: { opacity: 0 },
+    show: { opacity: 1, transition: { staggerChildren: 0.05 } }
+};
+
+const itemVariants = {
+    hidden: { opacity: 0, y: 10 },
+    show: { opacity: 1, y: 0 }
+};
 
 const Machines: React.FC = () => {
     const { user } = useAuth();
@@ -53,13 +64,18 @@ const Machines: React.FC = () => {
     const fetchMachines = async () => {
         try {
             setLoading(true);
+            console.log("Fetching machines...");
             const { data, error } = await supabase
                 .from('machines')
                 .select('*, profiles:assigned_to(full_name)')
                 .order('name', { ascending: true });
 
-            if (error) throw error;
+            if (error) {
+                console.error("Supabase Error:", error);
+                throw error;
+            }
             if (data) {
+                console.log("Machines data received:", data);
                 const mapped: Machine[] = data.map((m: any) => ({
                     id: m.id,
                     name: m.name,
@@ -71,7 +87,6 @@ const Machines: React.FC = () => {
                     notes: m.notes,
                     profiles: m.profiles
                 }));
-                // Update selected machine if it exists (to refresh view)
                 setMachines(mapped);
                 if (selectedMachine) {
                     const updated = mapped.find(m => m.id === selectedMachine.id);
@@ -79,7 +94,7 @@ const Machines: React.FC = () => {
                 }
             }
         } catch (err) {
-            console.error(err);
+            console.error("Fetch machines failed:", err);
             toast.error("Fehler beim Laden der Maschinen");
         } finally {
             setLoading(false);
@@ -176,21 +191,20 @@ const Machines: React.FC = () => {
 
 
     // --- FILTERING ---
-    const getFilteredMachines = (tab: 'available' | 'unavailable') => {
+    const visibleMachines = useMemo(() => {
         return machines.filter(m => {
             const matchesSearch = m.name.toLowerCase().includes(searchTerm.toLowerCase());
-            const matchesTab = tab === 'available' ? m.status === MachineStatus.AVAILABLE : m.status !== MachineStatus.AVAILABLE;
+            const matchesTab = activeTab === 'available' ? m.status === MachineStatus.AVAILABLE : m.status !== MachineStatus.AVAILABLE;
             return matchesSearch && matchesTab;
         }).sort((a, b) => a.name.localeCompare(b.name));
-    };
+    }, [machines, searchTerm, activeTab]);
 
-    const visibleMachines = getFilteredMachines(activeTab);
-    const availableCount = machines.filter(m => m.status === MachineStatus.AVAILABLE).length;
-    const unavailableCount = machines.filter(m => m.status !== MachineStatus.AVAILABLE).length;
+    const availableCount = useMemo(() => machines.filter(m => m.status === MachineStatus.AVAILABLE).length, [machines]);
+    const unavailableCount = useMemo(() => machines.filter(m => m.status !== MachineStatus.AVAILABLE).length, [machines]);
 
     // --- RENDER CONTENT ---
 
-    const renderListContent = () => (
+    const renderListContent = useCallback(() => (
         <div className="space-y-6 pb-24 h-full overflow-y-auto pr-2">
             <header className="flex justify-between items-start">
                 <div>
@@ -230,42 +244,51 @@ const Machines: React.FC = () => {
             </div>
 
             {/* List */}
-            <motion.div className="flex flex-col gap-3" variants={containerVariants} initial="hidden" animate="show">
-                {visibleMachines.map((machine) => (
-                    <motion.div
-                        variants={itemVariants}
-                        key={machine.id}
-                        onClick={() => { setSelectedMachine(machine); setIsCreating(false); setIsEditing(false); }}
-                        className={`bg-muted backdrop-blur-sm border border-border rounded-xl p-2.5 flex items-center gap-3 hover:bg-muted transition-all cursor-pointer ${selectedMachine?.id === machine.id && !isCreating ? 'border-emerald-500/50 bg-primary/5' : ''}`}
-                    >
-                        <div className="w-14 h-14 shrink-0 rounded-lg bg-black/30 overflow-hidden relative border border-white/5">
-                            <img src={machine.image || `https://picsum.photos/seed/${machine.id}/200`} className="w-full h-full object-cover opacity-90" />
-                            {machine.status !== MachineStatus.AVAILABLE && (
-                                <div className="absolute inset-0 bg-black/30 flex items-center justify-center">
-                                    {machine.status === MachineStatus.REPAIR ? <Wrench size={16} className="text-rose-400" /> : <User size={16} className="text-white" />}
-                                </div>
-                            )}
-                        </div>
-                        <div className="flex-1 min-w-0">
-                            <h3 className="text-base font-bold text-white truncate">{machine.name}</h3>
-                            <div className="flex items-center gap-2 mt-0.5">
-                                <StatusBadge status={machine.status} />
-                                {machine.status === MachineStatus.RENTED && <span className="text-xs text-amber-300 truncate">{machine.profiles?.full_name || machine.externalBorrower}</span>}
+            {loading ? (
+                <div className="flex flex-col items-center justify-center py-20 gap-4">
+                    <div className="w-10 h-10 border-4 border-emerald-500/20 border-t-emerald-500 rounded-full animate-spin" />
+                    <p className="text-muted-foreground animate-pulse">Maschinen werden geladen...</p>
+                </div>
+            ) : (
+                <motion.div key={activeTab} className="flex flex-col gap-3" variants={containerVariants} initial="hidden" animate="show">
+                    {visibleMachines.map((machine) => (
+                        <motion.div
+                            variants={itemVariants}
+                            initial="hidden"
+                            animate="show"
+                            key={machine.id}
+                            onClick={() => { setSelectedMachine(machine); setIsCreating(false); setIsEditing(false); }}
+                            className={`bg-muted backdrop-blur-sm border border-border rounded-xl p-2.5 flex items-center gap-3 hover:bg-muted transition-all cursor-pointer ${selectedMachine?.id === machine.id && !isCreating ? 'border-emerald-500/50 bg-primary/5' : ''}`}
+                        >
+                            <div className="w-14 h-14 shrink-0 rounded-lg bg-black/30 overflow-hidden relative border border-white/5">
+                                <img src={machine.image || `https://picsum.photos/seed/${machine.id}/200`} className="w-full h-full object-cover opacity-90" />
+                                {machine.status !== MachineStatus.AVAILABLE && (
+                                    <div className="absolute inset-0 bg-black/30 flex items-center justify-center">
+                                        {machine.status === MachineStatus.REPAIR ? <Wrench size={16} className="text-rose-400" /> : <User size={16} className="text-white" />}
+                                    </div>
+                                )}
                             </div>
-                        </div>
-                        <div className="flex gap-2">
-                            <button onClick={(e) => handleContextMenuClick(e, machine.id)} className="p-2 text-muted-foreground hover:text-white hover:bg-muted rounded-lg transition-colors">
-                                <MoreVertical size={20} />
-                            </button>
-                        </div>
-                    </motion.div>
-                ))}
-                {visibleMachines.length === 0 && <div className="text-center py-8 text-muted-foreground">Keine Maschinen gefunden.</div>}
-            </motion.div>
+                            <div className="flex-1 min-w-0">
+                                <h3 className="text-base font-bold text-white truncate">{machine.name}</h3>
+                                <div className="flex items-center gap-2 mt-0.5">
+                                    <StatusBadge status={machine.status} />
+                                    {machine.status === MachineStatus.RENTED && <span className="text-xs text-amber-300 truncate">{machine.profiles?.full_name || machine.externalBorrower}</span>}
+                                </div>
+                            </div>
+                            <div className="flex gap-2">
+                                <button onClick={(e) => handleContextMenuClick(e, machine.id)} className="p-2 text-muted-foreground hover:text-white hover:bg-muted rounded-lg transition-colors">
+                                    <MoreVertical size={20} />
+                                </button>
+                            </div>
+                        </motion.div>
+                    ))}
+                    {visibleMachines.length === 0 && <div className="text-center py-8 text-muted-foreground">Keine Maschinen gefunden.</div>}
+                </motion.div>
+            )}
         </div>
-    );
+    ), [loading, visibleMachines, selectedMachine, isCreating, availableCount, unavailableCount, searchTerm, activeTab]);
 
-    const renderDetailContent = () => {
+    const renderDetailContent = useCallback(() => {
         if (isCreating) {
             return <MachineEditForm isEditMode={false} onSave={handleSaveMachine} onCancel={handleClose} />;
         }
@@ -290,7 +313,7 @@ const Machines: React.FC = () => {
             );
         }
         return null;
-    };
+    }, [isCreating, selectedMachine, isEditing, users, handleSaveMachine, handleClose, fetchMachines]);
 
     return (
         <PageWrapper>

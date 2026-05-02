@@ -1,11 +1,33 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, Component, ErrorInfo } from 'react';
 import { supabase } from '../../../supabaseClient';
 import { Button, GlassCard } from '../../components/UIComponents';
 import { compressImage } from '../../../utils/imageCompression';
 import { Loader2, CheckCircle, AlertTriangle, Play, ArrowRight, ArrowLeft } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
-const ImageOptimizer: React.FC = () => {
+class ErrorBoundary extends Component<{ children: React.ReactNode }, { hasError: boolean, error: Error | null }> {
+  constructor(props: { children: React.ReactNode }) {
+    super(props);
+    this.state = { hasError: false, error: null };
+  }
+
+  static getDerivedStateFromError(error: Error) {
+    return { hasError: true, error };
+  }
+
+  componentDidCatch(error: Error, errorInfo: ErrorInfo) {
+    console.error("ErrorBoundary caught an error", error, errorInfo);
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return <div className="p-8 bg-red-900 text-white rounded-xl break-words whitespace-pre-wrap"><h1 className="text-2xl font-bold mb-4">React Error</h1><pre>{this.state.error?.message}</pre><pre className="mt-4 text-sm opacity-70">{this.state.error?.stack}</pre></div>;
+    }
+    return this.props.children;
+  }
+}
+
+const ImageOptimizerContent: React.FC = () => {
     const navigate = useNavigate();
     const [loading, setLoading] = useState(true);
 
@@ -274,5 +296,11 @@ const ImageOptimizer: React.FC = () => {
         </div>
     );
 };
+
+const ImageOptimizer: React.FC = () => (
+  <ErrorBoundary>
+    <ImageOptimizerContent />
+  </ErrorBoundary>
+);
 
 export default ImageOptimizer;

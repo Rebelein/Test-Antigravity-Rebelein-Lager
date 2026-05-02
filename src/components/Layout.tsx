@@ -33,12 +33,12 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
     const { signOut, profile } = useAuth();
     const { isConnected, checkConnection } = useConnection();
     const { markTourSeen } = useUserPreferences();
+    const { theme, isLowPerfMode } = useTheme();
 
     // Sidebar State for Desktop
     const [isSidebarPinned, setIsSidebarPinned] = usePersistentState('sidebar-pinned', false);
 
     // Theme
-    const { theme } = useTheme();
     const [showThemeSelector, setShowThemeSelector] = useState(false);
 
     // --- NEW FEATURES STATE ---
@@ -162,7 +162,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
 
     return (
         <GlassLayout>
-            <AnimatedBackground />
+            {!isLowPerfMode && <AnimatedBackground />}
             {/* --- THEME SELECTOR MODAL --- */}
             <ThemeSelector isOpen={showThemeSelector} onClose={() => setShowThemeSelector(false)} />
 
@@ -173,9 +173,9 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
             <AnimatePresence>
                 {updateAvailable && (
                     <motion.div
-                        initial={{ y: -100, opacity: 0 }}
-                        animate={{ y: 0, opacity: 1 }}
-                        exit={{ y: -100, opacity: 0 }}
+                        initial={isLowPerfMode ? { opacity: 0 } : { y: -100, opacity: 0 }}
+                        animate={isLowPerfMode ? { opacity: 1 } : { y: 0, opacity: 1 }}
+                        exit={isLowPerfMode ? { opacity: 0 } : { y: -100, opacity: 0 }}
                         className="fixed top-4 left-1/2 -translate-x-1/2 z-[100] bg-card text-card-foreground shadow-sm rounded-xl border border-border px-6 py-3 rounded-full flex items-center gap-4 shadow-2xl border-emerald-500/30 mt-[env(safe-area-inset-top)]"
                     >
                         <div className="flex items-center gap-2 text-sm font-medium text-emerald-400">
@@ -202,9 +202,9 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
           DESKTOP SIDEBAR (Floating Glass)
          ============================================================================ */}
             <motion.aside
-                initial={{ x: -100, opacity: 0 }}
-                animate={{ x: 0, opacity: 1 }}
-                transition={{ duration: 0.5, delay: 0.2 }}
+                initial={isLowPerfMode ? { opacity: 0 } : { x: -100, opacity: 0 }}
+                animate={isLowPerfMode ? { opacity: 1 } : { x: 0, opacity: 1 }}
+                transition={{ duration: isLowPerfMode ? 0.2 : 0.5, delay: isLowPerfMode ? 0 : 0.2 }}
                 className={clsx(
                     "hidden lg:flex flex-col justify-between fixed left-4 top-4 bottom-4 z-50",
                     "bg-card text-card-foreground shadow-sm rounded-xl border border-border rounded-3xl border-border shadow-2xl backdrop-blur-sm", // Enhanced blur
@@ -336,19 +336,9 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
                 )}
             >
                 <div className="w-full h-full flex flex-col overflow-hidden">
-                    <AnimatePresence mode="popLayout">
-
-                        <motion.div
-                            key={location.pathname}
-                            initial={{ opacity: 0, y: 20, scale: 0.98 }}
-                            animate={{ opacity: 1, y: 0, scale: 1 }}
-                            exit={{ opacity: 0, y: -20, scale: 0.98 }}
-                            transition={{ duration: 0.3, ease: "easeOut" }}
-                            className="w-full h-full flex flex-col overflow-hidden px-4 pt-[calc(env(safe-area-inset-top)+4rem)] lg:pt-0 lg:px-0"
-                        >
-                            {children}
-                        </motion.div>
-                    </AnimatePresence>
+                    <div className="w-full h-full flex flex-col overflow-hidden px-4 pt-[calc(env(safe-area-inset-top)+4rem)] lg:pt-0 lg:px-0">
+                        {children}
+                    </div>
                 </div>
             </main>
 
@@ -356,9 +346,9 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
           MOBILE BOTTOM NAVIGATION (iOS Dock Style)
          ============================================================================ */}
             <motion.div
-                initial={{ y: 100, opacity: 0 }}
-                animate={{ y: 0, opacity: 1 }}
-                transition={{ duration: 0.5, delay: 0.3 }}
+                initial={isLowPerfMode ? { opacity: 0 } : { y: 100, opacity: 0 }}
+                animate={isLowPerfMode ? { opacity: 1 } : { y: 0, opacity: 1 }}
+                transition={{ duration: isLowPerfMode ? 0.2 : 0.5, delay: isLowPerfMode ? 0 : 0.3 }}
                 className="lg:hidden fixed bottom-0 left-0 right-0 z-[160] w-full"
             >
                 <div className="w-full bg-black/30 backdrop-blur-sm border-t border-border shadow-[0_-4px_24px_rgba(0,0,0,0.5)]">

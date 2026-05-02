@@ -51,6 +51,7 @@ export const CommissionEditContent: React.FC<CommissionEditContentProps> = ({
         order_number: '', 
         name: '', 
         notes: '',
+        warehouse_notes: '',
         is_price_inquiry: false,
         delivery_date_unknown: false
     });
@@ -65,7 +66,7 @@ export const CommissionEditContent: React.FC<CommissionEditContentProps> = ({
     const [isStockPickerOpen, setIsStockPickerOpen] = useState(false);
     const [expandSupplierList, setExpandSupplierList] = useState(false);
     const [supplierSearchTerm, setSupplierSearchTerm] = useState('');
-    const [activeTab, setActiveTab] = useState<'stock' | 'supplier'>('stock');
+    const [activeTab, setActiveTab] = useState<'stock' | 'supplier'>('supplier');
 
     // --- INITIALIZATION ---
     useEffect(() => {
@@ -74,6 +75,7 @@ export const CommissionEditContent: React.FC<CommissionEditContentProps> = ({
                 order_number: initialCommission.order_number || '',
                 name: initialCommission.name,
                 notes: initialCommission.notes || '',
+                warehouse_notes: initialCommission.warehouse_notes || '',
                 is_price_inquiry: !!initialCommission.is_price_inquiry,
                 delivery_date_unknown: !!initialCommission.delivery_date_unknown
             });
@@ -101,6 +103,7 @@ export const CommissionEditContent: React.FC<CommissionEditContentProps> = ({
                 order_number: '', 
                 name: '', 
                 notes: '',
+                warehouse_notes: '',
                 is_price_inquiry: false,
                 delivery_date_unknown: false
             });
@@ -110,6 +113,7 @@ export const CommissionEditContent: React.FC<CommissionEditContentProps> = ({
         setIsStockPickerOpen(false);
         setExpandSupplierList(false);
         setSupplierSearchTerm('');
+        setActiveTab('supplier');
     }, [isEditMode, initialCommission?.id]);
 
     // --- LOGIC ---
@@ -284,6 +288,7 @@ export const CommissionEditContent: React.FC<CommissionEditContentProps> = ({
                 order_number: newComm.order_number,
                 name: newComm.name,
                 notes: newComm.notes,
+                warehouse_notes: newComm.warehouse_notes,
                 warehouse_id: primaryWarehouseId,
                 is_price_inquiry: newComm.is_price_inquiry,
                 delivery_date_unknown: newComm.delivery_date_unknown
@@ -384,12 +389,23 @@ export const CommissionEditContent: React.FC<CommissionEditContentProps> = ({
                             />
                         </div>
                         <div className="md:col-span-2 space-y-1.5">
-                            <label className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Notizen</label>
+                            <label className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Allgemeine Notizen / Baustellen-Infos</label>
                             <textarea
                                 className="w-full bg-background border border-border rounded-xl px-4 py-3 text-foreground focus:outline-none focus:border-primary/50 focus:ring-2 focus:ring-primary/20 transition-all text-sm min-h-[80px] resize-none shadow-sm"
                                 placeholder="Allgemeine Hinweise zur Kommission..."
                                 value={newComm.notes}
                                 onChange={e => setNewComm({ ...newComm, notes: e.target.value })}
+                            />
+                        </div>
+                        <div className="md:col-span-2 space-y-1.5">
+                            <label className="text-xs font-bold text-amber-500/80 uppercase tracking-wider flex items-center gap-1.5">
+                                ⚠️ Informationen ans Lager
+                            </label>
+                            <textarea
+                                className="w-full bg-amber-500/5 border border-amber-500/30 rounded-xl px-4 py-3 text-foreground focus:outline-none focus:border-amber-500/50 focus:ring-2 focus:ring-amber-500/20 transition-all text-sm min-h-[80px] resize-none shadow-sm"
+                                placeholder="Spezielle Hinweise für den Packer (wird groß auf dem Label gedruckt)..."
+                                value={newComm.warehouse_notes}
+                                onChange={e => setNewComm({ ...newComm, warehouse_notes: e.target.value })}
                             />
                         </div>
 
