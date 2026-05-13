@@ -303,15 +303,20 @@ const Login: React.FC = () => {
 
             {/* Terms / Setup Footer */}
             <motion.div
-               className="mt-6 text-center w-full"
+               className="mt-6 text-center w-full space-y-4"
                initial={{ opacity: 0 }}
                animate={{ opacity: 1 }}
                transition={{ duration: 0.5, delay: 0.8 }}
             >
+                <div className="flex items-center justify-center gap-6 text-xs font-medium text-muted-foreground">
+                    <a href="https://badpartner.net/impressum/" target="_blank" rel="noopener noreferrer" className="hover:text-teal-400 transition-colors">Impressum</a>
+                    <a href="https://badpartner.net/datenschutz/" target="_blank" rel="noopener noreferrer" className="hover:text-teal-400 transition-colors">Datenschutz</a>
+                </div>
+
                 <button
                     type="button"
                     onClick={() => setShowSql(!showSql)}
-                    className="text-xs font-medium text-muted-foreground hover:text-teal-400 flex items-center justify-center gap-1.5 w-full transition-colors mx-auto"
+                    className="text-xs font-medium text-muted-foreground/60 hover:text-teal-400 flex items-center justify-center gap-1.5 w-full transition-colors mx-auto"
                 >
                     <Database size={12} />
                     <span>{showSql ? 'Zurück zum Login' : 'Datenbank Setup (Entwickler)'}</span>

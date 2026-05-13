@@ -2,7 +2,7 @@ import React, { useState, useMemo } from 'react';
 import { Button, StatusBadge, GlassModal } from '../../../components/UIComponents';
 import { ExtendedCommission, CommissionItem } from '../../../../types';
 import { supabase } from '../../../../supabaseClient';
-import { X, CheckCircle2, Truck, RotateCcw, Edit2, Printer, Check, Undo2, Package, ExternalLink, MessageSquare, Eye, AlertTriangle, FileText, History, PackageX, ScanLine } from 'lucide-react';
+import { X, CheckCircle2, Truck, RotateCcw, Edit2, Printer, Check, Undo2, Package, ExternalLink, MessageSquare, Eye, AlertTriangle, FileText, History, PackageX, ScanLine, Copy } from 'lucide-react';
 import { toast } from 'sonner';
 import { motion } from 'framer-motion';
 
@@ -110,13 +110,25 @@ export const CommissionDetailContent: React.FC<CommissionDetailContentProps> = (
                 <Check size={14} strokeWidth={3} />
             </button>
 
-            <div className="flex-1 min-w-0 cursor-pointer" onClick={() => onTogglePicked(item.id, item.is_picked)}>
+            <div className="flex-1 min-w-0">
                 <div className="font-semibold text-foreground text-sm leading-tight mb-1">{item.type === 'Stock' ? item.article?.name : item.custom_name}</div>
                 <div className="text-[11px] text-muted-foreground flex flex-wrap items-center gap-2">
                     {item.type === 'Stock' ? (
                         <span className="flex items-center gap-1"><Package size={10} className="opacity-70" /> {item.article?.location}</span>
                     ) : (
-                        <span className="flex items-center gap-1"><ExternalLink size={10} className="opacity-70" /> Ref: {item.external_reference || '-'}</span>
+                        <button 
+                            onClick={(e) => { 
+                                e.stopPropagation(); 
+                                if (item.external_reference) {
+                                    navigator.clipboard.writeText(item.external_reference);
+                                    toast.success('Referenz kopiert: ' + item.external_reference);
+                                }
+                            }}
+                            className="flex items-center gap-1 hover:text-primary transition-colors cursor-copy"
+                            title="Kopieren"
+                        >
+                            <ExternalLink size={10} className="opacity-70" /> Ref: {item.external_reference || '-'}
+                        </button>
                     )}
                 </div>
                 {item.notes && (
@@ -144,6 +156,14 @@ export const CommissionDetailContent: React.FC<CommissionDetailContentProps> = (
 
     if (!commission) return null;
 
+    const handleCopyOrderNumber = (e: React.MouseEvent) => {
+        e.stopPropagation();
+        if (commission.order_number) {
+            navigator.clipboard.writeText(commission.order_number);
+            toast.success('Vorgangsnummer kopiert: ' + commission.order_number);
+        }
+    };
+
     return (
         <div className="flex flex-col h-full overflow-hidden">
             {/* SCROLL CONTAINER */}
@@ -158,9 +178,14 @@ export const CommissionDetailContent: React.FC<CommissionDetailContentProps> = (
                     <div className="flex flex-wrap justify-between items-start gap-4 mb-2">
                         <h2 className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-white to-white/70">{commission.name}</h2>
                         <div className="flex flex-wrap items-center gap-2">
-                            <span className="px-3 py-1 rounded-full text-xs font-bold border bg-blue-500/10 text-blue-400 border-blue-500/20 shadow-[inset_0_0_10px_rgba(59,130,246,0.1)]">
+                            <button 
+                                onClick={handleCopyOrderNumber}
+                                className="px-3 py-1 rounded-full text-xs font-bold border bg-blue-500/10 text-blue-400 border-blue-500/20 shadow-[inset_0_0_10px_rgba(59,130,246,0.1)] hover:bg-blue-500/20 transition-colors flex items-center gap-1.5 group/copy"
+                                title="Kopieren"
+                            >
                                 {commission.order_number}
-                            </span>
+                                <Copy size={12} className="opacity-0 group-hover/copy:opacity-100 transition-opacity" />
+                            </button>
                             <StatusBadge status={translateStatus(commission.status)} />
                         </div>
                     </div>
