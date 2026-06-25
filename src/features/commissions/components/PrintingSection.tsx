@@ -1,17 +1,34 @@
+'use client';
 import React, { useState, useMemo } from 'react';
-import { Printer, ChevronDown, Check, Loader2, Undo2, ArrowRight, PackageX, Truck } from 'lucide-react';
-import { Button, GlassInput } from '../../../components/UIComponents';
+import {
+    Printer, ChevronUp, Check, Loader2, Undo2,
+    PackageX, Truck, ListChecks, History, Copy, AlertCircle,
+    X, Minus
+} from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Button } from '../../../components/UIComponents';
 import { Commission } from '../../../../types';
+import { useTheme } from '../../../../contexts/ThemeContext';
+import { clsx } from 'clsx';
+import { twMerge } from 'tailwind-merge';
+import { toast } from 'sonner';
+import { copyTextToClipboard } from '../../../../utils/clipboard';
+
+function cn(...inputs: any[]) {
+    return twMerge(clsx(inputs));
+}
 
 interface PrintingSectionProps {
     showPrintArea: boolean;
     setShowPrintArea: (show: boolean) => void;
+    minimized: boolean;
+    setMinimized: (minimized: boolean) => void;
     printTab: 'queue' | 'history';
     setPrintTab: (tab: 'queue' | 'history') => void;
     queueItems: { id: string; name: string }[];
     selectedPrintIds: Set<string>;
     setSelectedPrintIds: (ids: Set<string>) => void;
-    onMarkAsPrinted: () => void;
+    onMarkAsPrinted: (specificIds?: Set<string>) => void;
     isSubmitting: boolean;
     loadingHistory: boolean;
     printLogs: any[];
@@ -19,13 +36,13 @@ interface PrintingSectionProps {
     selectedHistoryPrintIds: Set<string>;
     setSelectedHistoryPrintIds: (ids: Set<string>) => void;
     onReprintBatch: (ids: string[]) => void;
-    // New Props for Storno
     activeCommissions: Commission[];
 }
 
 const PrintingSectionComponent: React.FC<PrintingSectionProps> = ({
-    showPrintArea,
     setShowPrintArea,
+    minimized,
+    setMinimized,
     printTab,
     setPrintTab,
     queueItems,
@@ -41,29 +58,31 @@ const PrintingSectionComponent: React.FC<PrintingSectionProps> = ({
     onReprintBatch,
     activeCommissions = []
 }) => {
+    const { theme } = useTheme();
+    const isGlass = theme === 'glass';
     const [mode, setMode] = useState<'print' | 'storno'>('print');
 
-    const toggleQueueSelection = (id: string) => {
+    const toggleQueueSelection = (id: string, e?: React.MouseEvent) => {
+        if (e) e.stopPropagation();
         const newSet = new Set(selectedPrintIds);
         if (newSet.has(id)) newSet.delete(id);
         else newSet.add(id);
         setSelectedPrintIds(newSet);
     };
 
-    const toggleHistorySelection = (id: string) => {
+    const toggleHistorySelection = (id: string, e?: React.MouseEvent) => {
+        if (e) e.stopPropagation();
         const newSet = new Set(selectedHistoryPrintIds);
         if (newSet.has(id)) newSet.delete(id);
         else newSet.add(id);
         setSelectedHistoryPrintIds(newSet);
     };
 
-    // Memoize printed log grouping by Batch ID
     const groupedLogs = useMemo(() => {
         const groups: { [key: string]: { batchId: string; timestamp: Date; user: string; logs: any[] } } = {};
         printLogs.forEach(log => {
             const match = log.details?.match(/\[Batch:([^\]]+)\]/);
-            const batchId = match ? match[1] : `legacy-${log.id}`; // legacy jobs don't cluster
-            
+            const batchId = match ? match[1] : `legacy-${log.id}`;
             if (!groups[batchId]) {
                 groups[batchId] = {
                     batchId,
@@ -74,294 +93,498 @@ const PrintingSectionComponent: React.FC<PrintingSectionProps> = ({
             }
             groups[batchId].logs.push(log);
         });
-        
         return Object.values(groups).sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime());
     }, [printLogs]);
 
-    // Memoize storno calculations
-    const stornoCommissions = useMemo(() => {
-        return activeCommissions.filter(c => c.status === 'ReturnPending');
-    }, [activeCommissions]);
-
+    const stornoCommissions = useMemo(
+        () => activeCommissions.filter(c => c.status === 'ReturnPending'),
+        [activeCommissions]
+    );
     const stornoCount = stornoCommissions.length;
+    const totalBadge = queueItems.length + stornoCount;
 
-    return (
-        <div className="bg-blue-500/10 border border-blue-500/20 rounded-xl p-0 mb-6 animate-in fade-in overflow-hidden">
-            {/* Header / Mode Switch */}
-            <div className="flex border-b border-blue-500/20">
+    // Wenn nichts zu drucken ist – nichts anzeigen
+    if (totalBadge === 0) return null;
+
+    const handlePrintAll = () => {
+        if (queueItems.length === 0) return;
+        onMarkAsPrinted(new Set(queueItems.map(c => c.id)));
+    };
+
+    const panelBg = isGlass
+        ? 'bg-background/70 backdrop-blur-xl border border-border/50 shadow-2xl shadow-black/30'
+        : 'bg-card border border-border shadow-2xl shadow-black/20';
+
+    /* ── MINIMIZED pill ── */
+    if (minimized) {
+        return (
+            <motion.div
+                key="pill"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: 20 }}
+                className="fixed bottom-24 lg:bottom-6 right-6 z-[var(--z-top)]"
+            >
                 <button
-                    onClick={() => {
-                        if (mode === 'print') setShowPrintArea(!showPrintArea);
-                        else { setMode('print'); setShowPrintArea(true); }
-                    }}
-                    className={`flex-1 p-4 flex items-center justify-center gap-2 transition-colors ${mode === 'print' ? 'bg-blue-500/10 text-blue-300' : 'text-blue-300/50 hover:bg-muted'}`}
+                    onClick={() => setMinimized(false)}
+                    className={cn(
+                        'flex items-center gap-2.5 px-4 py-2.5 rounded-full text-sm font-bold shadow-lg transition-all hover:scale-105 active:scale-95 cursor-pointer',
+                        queueItems.length > 0
+                            ? 'bg-blue-600 text-white hover:bg-blue-500'
+                            : 'bg-rose-600 text-white hover:bg-rose-500'
+                    )}
                 >
-                    <Printer size={20} />
-                    <span className="font-bold">Etikettendruck</span>
+                    <Printer size={16} />
                     {queueItems.length > 0 && (
-                        <span className="bg-blue-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full min-w-[1.25rem] text-center">
-                            {queueItems.length}
-                        </span>
+                        <span>{queueItems.length} Etiketten</span>
                     )}
-                    {mode === 'print' && <ChevronDown size={16} className={`transition-transform ${showPrintArea ? 'rotate-180' : ''}`} />}
-                </button>
-                <div className="w-px bg-blue-500/20" />
-                <button
-                    onClick={() => {
-                        if (mode === 'storno') setShowPrintArea(!showPrintArea);
-                        else { setMode('storno'); setShowPrintArea(true); }
-                    }}
-                    className={`flex-1 p-4 flex items-center justify-center gap-2 transition-colors ${mode === 'storno' ? 'bg-rose-500/10 text-rose-300' : 'text-rose-300/50 hover:bg-muted'}`}
-                >
-                    <Undo2 size={20} />
-                    <span className="font-bold">Storno / Rückbau</span>
-                    {stornoCount > 0 && (
-                        <span className="bg-rose-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full min-w-[1.25rem] text-center">
-                            {stornoCount}
-                        </span>
+                    {stornoCount > 0 && queueItems.length === 0 && (
+                        <span>{stornoCount} Stornos</span>
                     )}
-                    {mode === 'storno' && <ChevronDown size={16} className={`transition-transform ${showPrintArea ? 'rotate-180' : ''}`} />}
+                    {queueItems.length > 0 && stornoCount > 0 && (
+                        <span className="opacity-70 text-xs">+{stornoCount} Storno</span>
+                    )}
+                    <ChevronUp size={14} />
                 </button>
+            </motion.div>
+        );
+    }
+
+    /* ── EXPANDED floating panel ── */
+    return (
+        <motion.div
+            key="panel"
+            initial={{ opacity: 0, y: 40, scale: 0.97, x: '-50%' }}
+            animate={{ opacity: 1, y: 0, scale: 1, x: '-50%' }}
+            exit={{ opacity: 0, y: 40, scale: 0.97, x: '-50%' }}
+            transition={{ type: 'spring', damping: 28, stiffness: 300 }}
+            className={cn(
+                'fixed bottom-24 lg:bottom-6 left-1/2 z-[var(--z-top)] w-[min(96vw,720px)] rounded-2xl overflow-hidden',
+                panelBg
+            )}
+        >
+            {/* ── Header bar ── */}
+            <div className="flex items-center gap-3 px-5 py-3 border-b border-border/50 bg-muted/40">
+                {/* Mode pills */}
+                <div className="flex items-center gap-1 flex-1 min-w-0">
+                    <button
+                        onClick={() => { setMode('print'); setShowPrintArea(true); }}
+                        className={cn(
+                            'flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer shrink-0',
+                            mode === 'print'
+                                ? 'bg-blue-600 text-white shadow-sm'
+                                : 'text-muted-foreground hover:text-foreground hover:bg-default-100'
+                        )}
+                    >
+                        <Printer size={13} />
+                        Etikettendruck
+                        {queueItems.length > 0 && (
+                            <span className={cn(
+                                'text-[10px] font-bold px-1.5 py-0.5 rounded-full min-w-[1.2rem] text-center',
+                                mode === 'print' ? 'bg-white/20' : 'bg-blue-600/20 text-blue-400'
+                            )}>
+                                {queueItems.length}
+                            </span>
+                        )}
+                    </button>
+
+                    <button
+                        onClick={() => { setMode('storno'); setShowPrintArea(true); }}
+                        className={cn(
+                            'flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer shrink-0',
+                            mode === 'storno'
+                                ? 'bg-rose-600 text-white shadow-sm'
+                                : 'text-muted-foreground hover:text-foreground hover:bg-default-100'
+                        )}
+                    >
+                        <Undo2 size={13} />
+                        Storno / Rückbau
+                        {stornoCount > 0 && (
+                            <span className={cn(
+                                'text-[10px] font-bold px-1.5 py-0.5 rounded-full min-w-[1.2rem] text-center',
+                                mode === 'storno' ? 'bg-white/20' : 'bg-rose-600/20 text-rose-400'
+                            )}>
+                                {stornoCount}
+                            </span>
+                        )}
+                    </button>
+                </div>
+
+                {/* Window controls */}
+                <div className="flex items-center gap-1 shrink-0">
+                    <button
+                        onClick={() => setMinimized(true)}
+                        title="Minimieren"
+                        aria-label="Minimieren"
+                        className="p-1.5 min-w-[44px] min-h-[44px] rounded-lg text-muted-foreground hover:text-foreground hover:bg-default-100 transition-colors cursor-pointer"
+                    >
+                        <Minus size={14} />
+                    </button>
+                </div>
             </div>
 
-            {/* Toggle Arrow (only if we want to collapse, but tabs imply open. keeping toggle for overall section) */}
-            {/* We remove the old toggle header and rely on the tabs, or keep collapse? 
-                Let's keep the content showing if showPrintArea is true.
-            */}
-
-            {showPrintArea && (
-                <div className="p-4 bg-transparent">
-                    {mode === 'print' ? (
-                        <>
-                            {/* Tabs */}
-                            <div className="flex gap-2 mb-4 border-b border-border pb-1">
-                                <button
-                                    onClick={() => setPrintTab('queue')}
-                                    className={`text-xs font-medium px-3 py-2 rounded-t-lg transition-colors ${printTab === 'queue' ? 'bg-blue-600 text-white' : 'text-muted-foreground hover:text-white hover:bg-muted'}`}
-                                >
-                                    Warteschlange ({queueItems.length})
-                                </button>
-                                <button
-                                    onClick={() => setPrintTab('history')}
-                                    className={`text-xs font-medium px-3 py-2 rounded-t-lg transition-colors ${printTab === 'history' ? 'bg-blue-600 text-white' : 'text-muted-foreground hover:text-white hover:bg-muted'}`}
-                                >
-                                    Zuletzt gedruckt
-                                </button>
-                            </div>
-
-                            {/* Content */}
-                            {printTab === 'queue' ? (
-                                <div className="space-y-3 animate-in fade-in">
-                                    {queueItems.length > 0 ? (
-                                        <>
-                                            <div className="flex gap-2">
-                                                <Button
-                                                    className="text-xs h-8 bg-blue-600 hover:bg-blue-500 border-none"
-                                                    onClick={onMarkAsPrinted}
-                                                    disabled={selectedPrintIds.size === 0 || isSubmitting}
-                                                >
-                                                    {isSubmitting ? <Loader2 className="animate-spin" /> : `Ausgewählte Drucken (${selectedPrintIds.size})`}
-                                                </Button>
-                                                <button onClick={() => setSelectedPrintIds(new Set(queueItems.map(c => c.id)))} className="text-xs text-muted-foreground hover:text-white px-2">Alle wählen</button>
-                                                <button onClick={() => setSelectedPrintIds(new Set())} className="text-xs text-muted-foreground hover:text-white px-2">Keine</button>
-                                            </div>
-                                            <div className="max-h-[200px] overflow-y-auto touch-pan-y border-t border-white/5 pt-2 grid grid-cols-1 sm:grid-cols-2 gap-2">
-                                                {queueItems.map(c => (
-                                                    <div key={c.id} className={`flex items-center gap-2 p-2 rounded-lg cursor-pointer border ${selectedPrintIds.has(c.id) ? 'bg-blue-500/20 border-blue-500/40' : 'bg-muted border-transparent hover:bg-muted'}`} onClick={() => toggleQueueSelection(c.id)}>
-                                                        <div className={`w-4 h-4 rounded border flex items-center justify-center ${selectedPrintIds.has(c.id) ? 'bg-blue-500 border-blue-500 text-white' : 'border-border'}`}>
-                                                            {selectedPrintIds.has(c.id) && <Check size={10} />}
-                                                        </div>
-                                                        <span className="text-sm text-white truncate">{c.name}</span>
-                                                    </div>
-                                                ))}
-                                            </div>
-                                        </>
-                                    ) : (
-                                        <div className="text-center py-4 text-muted-foreground text-xs">Keine ausstehenden Druckaufträge.</div>
-                                    )}
-                                </div>
-                            ) : (
-                                <div className="space-y-3 animate-in fade-in">
-                                    <div className="flex gap-2">
-                                        <Button
-                                            className="text-xs h-8 bg-blue-600 hover:bg-blue-500 border-none"
-                                            onClick={() => onReprintBatch(Array.from(selectedHistoryPrintIds))}
-                                            disabled={selectedHistoryPrintIds.size === 0 || isSubmitting}
+            {/* ── Collapsible body ── */}
+            <AnimatePresence initial={false}>
+                    <motion.div
+                        key="body"
+                        initial={{ height: 0, opacity: 0 }}
+                        animate={{ height: 'auto', opacity: 1 }}
+                        exit={{ height: 0, opacity: 0 }}
+                        transition={{ duration: 0.22, ease: 'easeInOut' }}
+                        className="overflow-hidden"
+                    >
+                        <div className="p-5 max-h-[55vh] overflow-y-auto custom-scrollbar">
+                            {/* ─── PRINT MODE ─── */}
+                            {mode === 'print' && (
+                                <div className="space-y-4">
+                                    {/* Sub-tabs */}
+                                    <div className="flex gap-2 border-b border-border/50 pb-2">
+                                        <button
+                                            onClick={() => setPrintTab('queue')}
+                                            className={cn(
+                                                'text-xs font-semibold px-3 py-1.5 rounded-lg transition-all flex items-center gap-1.5 cursor-pointer',
+                                                printTab === 'queue'
+                                                    ? 'bg-default-200 dark:bg-default-100 text-foreground'
+                                                    : 'text-muted-foreground hover:text-foreground hover:bg-default-100/50'
+                                            )}
                                         >
-                                            {isSubmitting ? <Loader2 className="animate-spin" /> : `Ausgewählte Nachdrucken (${selectedHistoryPrintIds.size})`}
-                                        </Button>
+                                            <ListChecks size={13} />
+                                            Warteschlange ({queueItems.length})
+                                        </button>
+                                        <button
+                                            onClick={() => setPrintTab('history')}
+                                            className={cn(
+                                                'text-xs font-semibold px-3 py-1.5 rounded-lg transition-all flex items-center gap-1.5 cursor-pointer',
+                                                printTab === 'history'
+                                                    ? 'bg-default-200 dark:bg-default-100 text-foreground'
+                                                    : 'text-muted-foreground hover:text-foreground hover:bg-default-100/50'
+                                            )}
+                                        >
+                                            <History size={13} />
+                                            Zuletzt gedruckt
+                                        </button>
                                     </div>
-                                    <div className="max-h-[300px] overflow-y-auto touch-pan-y space-y-3 border-t border-white/5 pt-2 custom-scrollbar pr-1">
-                                        {loadingHistory ? (
-                                            <div className="text-center py-4"><Loader2 className="animate-spin text-blue-400 mx-auto" /></div>
-                                        ) : groupedLogs.length === 0 ? (
-                                            <div className="text-center py-4 text-muted-foreground text-xs">Keine Historie vorhanden.</div>
-                                        ) : (
-                                            groupedLogs.map(batch => (
-                                                <div key={batch.batchId} className="bg-muted border border-border rounded-lg p-3">
-                                                    <div className="flex justify-between items-center mb-2 pb-2 border-b border-border">
-                                                        <div className="text-xs text-muted-foreground">
-                                                            <span className="font-bold text-muted-foreground">{batch.timestamp.toLocaleString('de-DE')}</span> • {batch.user}
-                                                        </div>
-                                                        <button 
-                                                            className="text-[10px] bg-muted hover:bg-muted text-muted-foreground px-2 py-1 rounded"
-                                                            onClick={() => {
-                                                                const newSet = new Set(selectedHistoryPrintIds);
-                                                                const allInBatchSelected = batch.logs.every(log => newSet.has(log.commission_id));
-                                                                batch.logs.forEach(log => {
-                                                                    if (log.commission) {
-                                                                        if (allInBatchSelected) newSet.delete(log.commission_id);
-                                                                        else newSet.add(log.commission_id);
-                                                                    }
-                                                                });
-                                                                setSelectedHistoryPrintIds(newSet);
-                                                            }}
+
+                                    {/* Queue content */}
+                                    {printTab === 'queue' ? (
+                                        queueItems.length > 0 ? (
+                                            <div className="space-y-3">
+                                                {/* Action bar */}
+                                                <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2 bg-blue-500/8 dark:bg-blue-500/10 border border-blue-500/20 rounded-xl p-3">
+                                                    <div className="flex flex-wrap items-center gap-2">
+                                                        <Button
+                                                            className="text-xs h-9 bg-blue-600 hover:bg-blue-500 text-white font-bold shadow-md cursor-pointer border-none"
+                                                            onClick={handlePrintAll}
+                                                            disabled={isSubmitting}
+                                                            icon={isSubmitting
+                                                                ? <Loader2 size={14} className="animate-spin" />
+                                                                : <Printer size={14} />
+                                                            }
                                                         >
-                                                            {batch.logs.every(log => selectedHistoryPrintIds.has(log.commission_id) && !!log.commission) ? 'Alle abwählen' : 'Alle auswählen'}
-                                                        </button>
+                                                            Alle drucken ({queueItems.length})
+                                                        </Button>
+                                                        <Button
+                                                            variant="ghost"
+                                                            className="text-xs h-9 font-semibold cursor-pointer border border-border"
+                                                            onClick={() => onMarkAsPrinted()}
+                                                            disabled={selectedPrintIds.size === 0 || isSubmitting}
+                                                        >
+                                                            Auswahl drucken ({selectedPrintIds.size})
+                                                        </Button>
                                                     </div>
-                                                    <div className="space-y-1">
-                                                        {batch.logs.map(log => {
-                                                            const commExists = !!log.commission;
-                                                            return (
-                                                                <div key={log.id} 
-                                                                    className={`flex items-center gap-2 p-1.5 rounded-lg cursor-pointer ${!commExists ? 'opacity-50' : 'hover:bg-muted'}`}
-                                                                    onClick={() => commExists && toggleHistorySelection(log.commission_id)}
-                                                                >
-                                                                    <div className={`w-4 h-4 rounded border flex items-center justify-center shrink-0 ${selectedHistoryPrintIds.has(log.commission_id) ? 'bg-blue-500 border-blue-500 text-white' : 'border-border'}`}>
-                                                                        {selectedHistoryPrintIds.has(log.commission_id) && <Check size={10} />}
-                                                                    </div>
-                                                                    <div className="min-w-0 flex-1">
-                                                                        <div className="text-sm font-semibold text-white truncate">{log.commission_name}</div>
-                                                                    </div>
-                                                                    {!commExists && <span className="text-[10px] text-rose-400 italic">Gelöscht</span>}
-                                                                    {commExists && (
-                                                                         <button
-                                                                            onClick={(e) => { e.stopPropagation(); onReprint(log.commission_id); }}
-                                                                            className="p-1.5 bg-blue-500/20 text-blue-300 hover:bg-blue-500 hover:text-white rounded-lg transition-colors ml-2"
-                                                                            title="Einzeln drucken"
-                                                                        >
-                                                                            <Printer size={14} />
-                                                                        </button>
-                                                                    )}
-                                                                </div>
-                                                            );
-                                                        })}
+                                                    <div className="flex items-center gap-2">
+                                                        <button
+                                                            onClick={() => setSelectedPrintIds(new Set(queueItems.map(c => c.id)))}
+                                                            className="text-xs text-blue-500 hover:underline cursor-pointer px-2"
+                                                        >Alle wählen</button>
+                                                        <div className="w-px h-3 bg-border" />
+                                                        <button
+                                                            onClick={() => setSelectedPrintIds(new Set())}
+                                                            className="text-xs text-muted-foreground hover:text-foreground cursor-pointer px-2"
+                                                        >Keine</button>
                                                     </div>
                                                 </div>
-                                            ))
-                                        )}
-                                    </div>
+
+                                                {/* Grid of queue items */}
+                                                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-1.5">
+                                                    {queueItems.map(c => {
+                                                        const isSel = selectedPrintIds.has(c.id);
+                                                        return (
+                                                            <div
+                                                                key={c.id}
+                                                                className={cn(
+                                                                    'flex items-center justify-between gap-2 px-3 py-2 rounded-xl border transition-all cursor-pointer select-none group',
+                                                                    isSel
+                                                                        ? 'bg-blue-600/10 border-blue-500/40'
+                                                                        : 'bg-default-100 hover:bg-default-200 border-transparent'
+                                                                )}
+                                                                onClick={e => toggleQueueSelection(c.id, e)}
+                                                            >
+                                                                <div className="flex items-center gap-2 min-w-0">
+                                                                    <div className={cn(
+                                                                        'w-4 h-4 rounded border flex items-center justify-center shrink-0 transition-all',
+                                                                        isSel
+                                                                            ? 'bg-blue-600 border-blue-600 text-white'
+                                                                            : 'border-default-400 bg-background'
+                                                                    )}>
+                                                                        {isSel && <Check size={9} strokeWidth={3} />}
+                                                                    </div>
+                                                                    <span className="text-xs font-medium text-foreground truncate" title={c.name}>
+                                                                        {c.name}
+                                                                    </span>
+                                                                </div>
+                                                                <button
+                                                                    onClick={e => { e.stopPropagation(); onMarkAsPrinted(new Set([c.id])); }}
+                                                                    title="Einzeln drucken"
+                                                                    aria-label="Einzeln drucken"
+                                                                    className="p-1 min-w-[44px] min-h-[44px] bg-blue-500/10 hover:bg-blue-600 text-blue-400 hover:text-white rounded-md opacity-0 group-hover:opacity-100 transition-all cursor-pointer shrink-0"
+                                                                >
+                                                                    <Printer size={11} />
+                                                                </button>
+                                                            </div>
+                                                        );
+                                                    })}
+                                                </div>
+                                            </div>
+                                        ) : (
+                                            <div className="flex flex-col items-center justify-center py-8 text-muted-foreground text-xs gap-2">
+                                                <div className="p-3 rounded-full bg-default-100">
+                                                    <Printer size={20} className="opacity-40" />
+                                                </div>
+                                                <span>Keine ausstehenden Druckaufträge.</span>
+                                            </div>
+                                        )
+                                    ) : (
+                                        /* History content */
+                                        <div className="space-y-3">
+                                            <div className="flex gap-2">
+                                                <Button
+                                                    className="text-xs h-9 bg-blue-600 hover:bg-blue-500 text-white font-bold cursor-pointer border-none"
+                                                    onClick={() => onReprintBatch(Array.from(selectedHistoryPrintIds))}
+                                                    disabled={selectedHistoryPrintIds.size === 0 || isSubmitting}
+                                                    icon={<Printer size={13} />}
+                                                >
+                                                    {isSubmitting
+                                                        ? <Loader2 size={14} className="animate-spin" />
+                                                        : `Ausgewählte nachdrucken (${selectedHistoryPrintIds.size})`
+                                                    }
+                                                </Button>
+                                            </div>
+                                            {loadingHistory ? (
+                                                <div className="text-center py-6">
+                                                    <Loader2 className="animate-spin text-blue-500 mx-auto" size={22} />
+                                                </div>
+                                            ) : groupedLogs.length === 0 ? (
+                                                <div className="text-center py-6 text-muted-foreground text-xs">Keine Historie vorhanden.</div>
+                                            ) : (
+                                                groupedLogs.map(batch => {
+                                                    const allSel = batch.logs.every(l => selectedHistoryPrintIds.has(l.commission_id) && !!l.commission);
+                                                    return (
+                                                        <div key={batch.batchId} className="bg-default-50 border border-border/70 rounded-xl p-3">
+                                                            <div className="flex justify-between items-center mb-2 pb-2 border-b border-border/50">
+                                                                <div className="text-[11px] text-muted-foreground flex items-center gap-1">
+                                                                    <span className="font-bold text-foreground">{batch.timestamp.toLocaleString('de-DE')}</span>
+                                                                    <span>•</span>
+                                                                    <span>{batch.user}</span>
+                                                                </div>
+                                                                <button
+                                                                    className="text-[10px] text-blue-500 hover:text-blue-400 font-semibold cursor-pointer px-2 py-0.5 rounded hover:bg-default-100"
+                                                                    onClick={() => {
+                                                                        const s = new Set(selectedHistoryPrintIds);
+                                                                        batch.logs.forEach(l => {
+                                                                            if (l.commission) {
+                                                                                if (allSel) s.delete(l.commission_id);
+                                                                                else s.add(l.commission_id);
+                                                                            }
+                                                                        });
+                                                                        setSelectedHistoryPrintIds(s);
+                                                                    }}
+                                                                >
+                                                                    {allSel ? 'Abwählen' : 'Auswählen'}
+                                                                </button>
+                                                            </div>
+                                                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
+                                                                {batch.logs.map(log => {
+                                                                    const exists = !!log.commission;
+                                                                    const isSel = selectedHistoryPrintIds.has(log.commission_id);
+                                                                    return (
+                                                                        <div
+                                                                            key={log.id}
+                                                                            className={cn(
+                                                                                'flex items-center justify-between gap-2 px-3 py-2 rounded-lg border transition-all select-none group',
+                                                                                !exists
+                                                                                    ? 'opacity-50 border-transparent bg-default-100/50 cursor-not-allowed'
+                                                                                    : isSel
+                                                                                        ? 'bg-blue-600/10 border-blue-500/30 cursor-pointer'
+                                                                                        : 'bg-default-100 hover:bg-default-200 border-transparent cursor-pointer'
+                                                                            )}
+                                                                            onClick={() => exists && toggleHistorySelection(log.commission_id)}
+                                                                        >
+                                                                            <div className="flex items-center gap-2 min-w-0">
+                                                                                {exists && (
+                                                                                    <div className={cn(
+                                                                                        'w-4 h-4 rounded border flex items-center justify-center shrink-0 transition-all',
+                                                                                        isSel ? 'bg-blue-600 border-blue-600 text-white' : 'border-default-400 bg-background'
+                                                                                    )}>
+                                                                                        {isSel && <Check size={9} strokeWidth={3} />}
+                                                                                    </div>
+                                                                                )}
+                                                                                <span className="text-xs font-medium text-foreground truncate">{log.commission_name}</span>
+                                                                            </div>
+                                                                            {!exists
+                                                                                ? <span className="text-[10px] text-rose-500 italic bg-rose-500/10 px-1.5 py-0.5 rounded shrink-0">Gelöscht</span>
+                                                                                : (
+                                                                                    <button
+                                                                                        onClick={e => { e.stopPropagation(); onReprint(log.commission_id); }}
+                                                                                        title="Einzeln nachdrucken"
+                                                                                        aria-label="Einzeln nachdrucken"
+                                                                                        className="p-1 min-w-[44px] min-h-[44px] bg-blue-500/10 hover:bg-blue-600 text-blue-400 hover:text-white rounded-md opacity-0 group-hover:opacity-100 transition-all cursor-pointer shrink-0"
+                                                                                    >
+                                                                                        <Printer size={11} />
+                                                                                    </button>
+                                                                                )
+                                                                            }
+                                                                        </div>
+                                                                    );
+                                                                })}
+                                                            </div>
+                                                        </div>
+                                                    );
+                                                })
+                                            )}
+                                        </div>
+                                    )}
                                 </div>
                             )}
-                        </>
-                    ) : (
-                        <div className="animate-in fade-in space-y-4">
-                            {/* 1. LIST OF PENDING STORNOS (Tasks) */}
-                            <div className="space-y-2">
-                                <h4 className="text-xs font-bold text-muted-foreground uppercase">Offene Rückbau-Aufgaben</h4>
-                                {stornoCommissions.length === 0 ? (
-                                    <div className="text-center py-4 bg-muted rounded-lg border border-white/5 text-muted-foreground text-xs">
-                                        Keine offenen Stornos.
-                                    </div>
-                                ) : (
-                                    <div className="space-y-2 max-h-[200px] overflow-y-auto touch-pan-y">
-                                        {stornoCommissions.map(c => {
-                                            const isRestock = c.notes?.includes('Einlagern') || c.notes?.includes('ZURÜCK INS LAGER');
-                                            // Cast to any to access commission_items which are fetched but not in base type
-                                            const items = (c as any).commission_items || [];
 
-                                            return (
-                                                <div key={c.id} className={`p-3 rounded-lg border flex flex-col gap-2 ${isRestock ? 'bg-rose-500/10 border-rose-500/20' : 'bg-purple-500/10 border-purple-500/20'}`}>
-                                                    <div className="flex items-center justify-between gap-3">
-                                                        <div className="min-w-0">
-                                                            <div className="font-bold text-white text-sm truncate">{c.name}</div>
-                                                            <div className={`text-xs flex items-center gap-1 ${isRestock ? 'text-rose-300' : 'text-purple-300'}`}>
-                                                                {isRestock ? <PackageX size={12} /> : <Truck size={12} />}
-                                                                {isRestock ? 'Einlagern' : 'An Lieferant senden'}
-                                                                {!isRestock && (c as any).suppliers?.name && (
-                                                                    <span className="opacity-70 truncate max-w-[100px]">• {(c as any).suppliers.name}</span>
+                            {/* ─── STORNO MODE ─── */}
+                            {mode === 'storno' && (
+                                <div className="space-y-4">
+                                    <div className="flex items-center gap-2">
+                                        <AlertCircle size={15} className="text-rose-500" />
+                                        <h4 className="text-xs font-bold text-rose-500 uppercase tracking-wider">
+                                            Offene Rückbau-Aufgaben ({stornoCount})
+                                        </h4>
+                                    </div>
+                                    {stornoCommissions.length === 0 ? (
+                                        <div className="flex flex-col items-center justify-center py-8 text-muted-foreground text-xs gap-2">
+                                            <div className="p-3 rounded-full bg-default-100">
+                                                <Undo2 size={20} className="opacity-40" />
+                                            </div>
+                                            <span>Keine offenen Stornos.</span>
+                                        </div>
+                                    ) : (
+                                        <div className="space-y-2">
+                                            {stornoCommissions.map(c => {
+                                                const isRestock = c.notes?.includes('Einlagern') || c.notes?.includes('ZURÜCK INS LAGER');
+                                                const items = (c as any).commission_items || [];
+                                                return (
+                                                    <div
+                                                        key={c.id}
+                                                        className={cn(
+                                                            'p-3 rounded-xl border flex flex-col gap-2',
+                                                            isRestock
+                                                                ? 'bg-rose-500/5 border-rose-500/20'
+                                                                : 'bg-purple-500/5 border-purple-500/20'
+                                                        )}
+                                                    >
+                                                        <div className="flex items-start justify-between gap-3">
+                                                            <div className="min-w-0">
+                                                                <div className="font-bold text-foreground text-sm truncate">{c.name}</div>
+                                                                <div className={cn(
+                                                                    'text-xs flex items-center gap-1 mt-0.5 font-semibold',
+                                                                    isRestock ? 'text-rose-400' : 'text-purple-400'
+                                                                )}>
+                                                                    {isRestock ? <PackageX size={11} /> : <Truck size={11} />}
+                                                                    <span>{isRestock ? 'Einlagern' : 'An Lieferant senden'}</span>
+                                                                    {!isRestock && (c as any).suppliers?.name && (
+                                                                        <span className="opacity-70 truncate max-w-[100px]">• {(c as any).suppliers.name}</span>
+                                                                    )}
+                                                                </div>
+                                                            </div>
+                                                            <div className="flex flex-wrap gap-1.5 justify-end shrink-0">
+                                                                <button
+                                                                    onClick={async () => {
+                                                                        if (c.order_number) {
+                                                                            const success = await copyTextToClipboard(c.order_number);
+                                                                            if (success) toast.success("Auftragsnummer kopiert");
+                                                                        }
+                                                                    }}
+                                                                    className="text-[10px] text-muted-foreground hover:text-foreground bg-default-100 hover:bg-default-200 px-2 py-1 rounded-md flex items-center gap-1 cursor-pointer font-medium"
+                                                                    title="Referenz kopieren"
+                                                                >
+                                                                    <Copy size={9} />
+                                                                    {c.order_number || 'Keine Ref.'}
+                                                                </button>
+                                                                {c.supplier_order_number && (
+                                                                    <button
+                                                                        onClick={async () => {
+                                                                            const success = await copyTextToClipboard(c.supplier_order_number!);
+                                                                            if (success) toast.success("Lieferantennummer kopiert");
+                                                                        }}
+                                                                        className="text-[10px] text-amber-500 dark:text-amber-400 bg-amber-500/10 border border-amber-500/20 px-2 py-1 rounded-md flex items-center gap-1 cursor-pointer hover:bg-amber-500/20 font-medium"
+                                                                        title="Lieferantennummer kopieren"
+                                                                    >
+                                                                        <Copy size={9} />
+                                                                        <span className="opacity-60 text-[11px]">Lief:</span>
+                                                                        {c.supplier_order_number}
+                                                                    </button>
                                                                 )}
                                                             </div>
                                                         </div>
-                                                        <div className="flex flex-col gap-1 items-end">
-                                                            <button
-                                                                onClick={(e) => {
-                                                                    e.stopPropagation();
-                                                                    if (c.order_number) navigator.clipboard.writeText(c.order_number);
-                                                                }}
-                                                                className="text-[10px] text-muted-foreground bg-muted px-2 py-1 rounded h-fit hover:bg-muted hover:text-white transition-colors cursor-pointer border border-transparent"
-                                                                title="Klicken zum Kopieren"
-                                                            >
-                                                                {c.order_number || 'Keine Ref.'}
-                                                            </button>
-                                                            {c.supplier_order_number && (
-                                                                <button
-                                                                    onClick={(e) => {
-                                                                        e.stopPropagation();
-                                                                        navigator.clipboard.writeText(c.supplier_order_number!);
-                                                                    }}
-                                                                    className="text-[10px] text-amber-200/70 bg-amber-500/10 border border-amber-500/20 px-2 py-1 rounded h-fit hover:bg-amber-500/20 hover:text-amber-100 transition-colors cursor-pointer flex items-center gap-1"
-                                                                    title="Lieferant Vorgangsnr. kopieren"
-                                                                >
-                                                                    <span className="opacity-50 text-[8px]">Lief:</span>
-                                                                    {c.supplier_order_number}
-                                                                </button>
-                                                            )}
-                                                        </div>
-                                                    </div>
 
-                                                    {!isRestock && (
-                                                        <div className="mt-1 pt-2 border-t border-purple-500/20 text-xs text-purple-100/80 space-y-2">
-                                                            {c.notes && (
-                                                                <div className="bg-purple-500/20 p-2 rounded italic flex gap-2 items-start">
-                                                                    <div className="shrink-0 mt-0.5"><Undo2 size={12} /></div>
-                                                                    <span>{c.notes}</span>
-                                                                </div>
-                                                            )}
-                                                            {items.length > 0 && (
-                                                                <div className="space-y-1">
-                                                                    <div className="font-semibold opacity-50 uppercase text-[10px]">Positionen ({items.length}):</div>
-                                                                    <div className="flex flex-wrap gap-2">
-                                                                        {items.map((item: any) => (
-                                                                            <button
-                                                                                key={item.id}
-                                                                                onClick={(e) => {
-                                                                                    e.stopPropagation();
-                                                                                    // User Request: Copy Supplier Order Number when clicking badge
-                                                                                    if (c.supplier_order_number) navigator.clipboard.writeText(c.supplier_order_number);
-                                                                                }}
-                                                                                className="flex items-center gap-1.5 bg-muted border border-border hover:bg-muted hover:border-border rounded-md px-2 py-1.5 transition-colors text-xs text-left group"
-                                                                                title={c.supplier_order_number ? `Lieferantennummer kopieren: ${c.supplier_order_number}` : 'Keine Lieferantennummer'}
-                                                                            >
-                                                                                <span className="font-bold text-purple-200">{item.amount}x</span>
-                                                                                <span className="text-muted-foreground">{item.article?.name || item.custom_name}</span>
-                                                                                {item.external_reference && (
-                                                                                    <>
-                                                                                        <span className="text-muted-foreground">:</span>
-                                                                                        <span className="text-amber-200/70 font-mono">{item.external_reference}</span>
-                                                                                    </>
-                                                                                )}
-                                                                            </button>
-                                                                        ))}
+                                                        {!isRestock && (
+                                                            <div className="pt-2 border-t border-border/30 text-xs space-y-2">
+                                                                {c.notes && (
+                                                                    <div className="bg-default-100/50 p-2 rounded-lg italic flex gap-2 items-start text-muted-foreground">
+                                                                        <Undo2 size={11} className="shrink-0 mt-0.5 text-purple-400" />
+                                                                        <span>{c.notes}</span>
                                                                     </div>
-                                                                </div>
-                                                            )}
-                                                        </div>
-                                                    )}
-                                                </div>
-                                            );
-                                        })}
-                                    </div>
-                                )}
-                            </div>
-
-                            {/* 2. CREATE NEW STORNO FORM - REMOVED AS REQUESTED */}
+                                                                )}
+                                                                {items.length > 0 && (
+                                                                    <div className="space-y-1">
+                                                                        <div className="font-bold text-muted-foreground uppercase text-[10px] tracking-wider">
+                                                                            Positionen ({items.length}):
+                                                                        </div>
+                                                                        <div className="flex flex-wrap gap-1">
+                                                                            {items.map((item: any) => (
+                                                                                <button
+                                                                                    key={item.id}
+                                                                                    onClick={async () => {
+                                                                                        if (c.supplier_order_number) {
+                                                                                            const success = await copyTextToClipboard(c.supplier_order_number);
+                                                                                            if (success) toast.success("Lieferantennummer kopiert");
+                                                                                        }
+                                                                                    }}
+                                                                                    className="flex items-center gap-1 bg-default-100 hover:bg-default-200 border border-border/50 rounded-lg px-2 py-1 text-xs cursor-pointer font-medium"
+                                                                                    title={c.supplier_order_number ? `Lieferantennummer kopieren: ${c.supplier_order_number}` : 'Keine Lieferantennummer'}
+                                                                                >
+                                                                                    <span className="font-bold text-purple-500">{item.amount}x</span>
+                                                                                    <span className="text-foreground">{item.article?.name || item.custom_name}</span>
+                                                                                    {item.external_reference && (
+                                                                                        <>
+                                                                                            <span className="text-muted-foreground">:</span>
+                                                                                            <span className="text-amber-500 dark:text-amber-400 font-mono text-[10px]">{item.external_reference}</span>
+                                                                                        </>
+                                                                                    )}
+                                                                                </button>
+                                                                            ))}
+                                                                        </div>
+                                                                    </div>
+                                                                )}
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                );
+                                            })}
+                                        </div>
+                                    )}
+                                </div>
+                            )}
                         </div>
-                    )}
-                </div>
-            )}
-        </div>
+                    </motion.div>
+            </AnimatePresence>
+        </motion.div>
     );
 };
 

@@ -173,7 +173,8 @@ CREATE TABLE IF NOT EXISTS public.commissions (
   created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()),
   withdrawn_at TIMESTAMP WITH TIME ZONE,
   deleted_at TIMESTAMP WITH TIME ZONE,
-  needs_label BOOLEAN DEFAULT false
+  needs_label BOOLEAN DEFAULT false,
+  staging_locations JSONB DEFAULT '["Regal"]'::jsonb
 );
 
 CREATE TABLE IF NOT EXISTS public.commission_items (
@@ -291,6 +292,9 @@ BEGIN
     END IF;
     IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='commissions' AND column_name='warehouse_notes') THEN
         ALTER TABLE public.commissions ADD COLUMN warehouse_notes TEXT;
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='commissions' AND column_name='staging_locations') THEN
+        ALTER TABLE public.commissions ADD COLUMN staging_locations JSONB DEFAULT '["Regal"]'::jsonb;
     END IF;
     
     -- Add Attachment Column to Commission Items

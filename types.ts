@@ -156,6 +156,7 @@ export interface Commission {
   last_scanned_at?: string; // New: For "Missing" tab verification
   is_price_inquiry?: boolean; // NEW: Preisanfrage
   delivery_date_unknown?: boolean; // NEW: Liefertermin unbekannt
+  staging_locations?: string[];
 }
 
 export type CommissionItemType = 'Stock' | 'External';

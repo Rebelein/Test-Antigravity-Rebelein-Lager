@@ -106,6 +106,7 @@ export const InventoryList: React.FC<InventoryListProps> = ({
                 >
                     <div
                         onClick={() => onCardClick(article)}
+                        data-article-card="true"
                         className="flex flex-col gap-4 p-3 rounded-xl bg-muted border shadow-lg cursor-pointer border-emerald-500/20"
                     >
                         <div className="flex items-center justify-between gap-2">
@@ -136,6 +137,7 @@ export const InventoryList: React.FC<InventoryListProps> = ({
                 <motion.div
                     whileTap={{ scale: 0.98 }}
                     onClick={() => onCardClick(article)}
+                    data-article-card="true"
                     className={`group relative flex items-center gap-3 p-2 pr-4 rounded-xl transition-all border cursor-pointer ${isSelectionMode && isSelected ? 'bg-primary/20 border-emerald-500/50' : isTargetReached ? 'bg-primary/5 hover:bg-primary/10 border-emerald-500/20' : 'bg-rose-500/5 hover:bg-rose-500/10 border-rose-500/20'}`}
                 >
                     {isSelectionMode && <div className={`shrink-0 mr-1 text-muted-foreground ${isSelected ? 'text-emerald-400' : ''}`}>{isSelected ? <CheckSquare size={24} /> : <Square size={24} />}</div>}

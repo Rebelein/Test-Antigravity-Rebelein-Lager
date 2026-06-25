@@ -17,6 +17,7 @@ import { CommissionDetailContent } from './components/CommissionDetailContent';
 import { ExtendedCommission } from '../../../types';
 import { CommissionEditContent } from './components/CommissionEditContent';
 import { useIsMobile } from '../../../hooks/useIsMobile';
+import { usePersistentState } from '../../../hooks/usePersistentState';
 import { toast } from 'sonner';
 import UnifiedScanner from '../../components/UnifiedScanner';
 import { LagerPush } from '../../../utils/sendPush';
@@ -84,6 +85,7 @@ const Commissions: React.FC = () => {
 
     // Printing
     const [showPrintArea, setShowPrintArea] = useState(false);
+    const [printMinimized, setPrintMinimized] = usePersistentState<boolean>('commission-print-minimized', false);
     const [printTab, setPrintTab] = useState<PrintTab>('queue');
     const [selectedPrintIds, setSelectedPrintIds] = useState<Set<string>>(new Set());
     const [selectedHistoryPrintIds, setSelectedHistoryPrintIds] = useState<Set<string>>(new Set()); // NEU
@@ -458,6 +460,22 @@ const Commissions: React.FC = () => {
                         onSaveNote={saveItemNote}
                         onDelete={(e) => handleDelete(activeCommission.id, activeCommission.name, 'trash', e)}
                         onStartScan={() => setShowScanner(true)}
+                        onClose={handleCloseSidePanel}
+                        onUpdateStagingLocations={async (locations) => {
+                            if (!activeCommission) return;
+                            try {
+                                const { error } = await supabase
+                                    .from('commissions')
+                                    .update({ staging_locations: locations })
+                                    .eq('id', activeCommission.id);
+                                if (error) throw error;
+                                setActiveCommission(prev => prev ? { ...prev, staging_locations: locations } : null);
+                                refreshCommissions();
+                                toast.success("Bereitstellungsort aktualisiert");
+                            } catch (err: any) {
+                                toast.error("Speichern fehlgeschlagen: " + err.message);
+                            }
+                        }}
                     />
                 ) : null;
             default:
@@ -491,7 +509,6 @@ const Commissions: React.FC = () => {
                 await logCommissionEvent(comm.id, comm.name, 'labels_reprinted', `Etikett nachgedruckt`);
             }
         }
-        setShowLabelOptionsModal(null);
         setShowLabelUpdateModal(false);
         if (printTab === 'history') fetchPrintHistory();
         if (returnPath) { navigate(returnPath); setReturnPath(null); }
@@ -557,48 +574,63 @@ const Commissions: React.FC = () => {
         }
 
         const pagesHtml = data.flatMap(({ comm, items }) => {
-            const ITEMS_PER_PAGE = 8; // Maximal 8 Positionen pro DIN A6 Seite (sicherer Puffer für Notizen)
-            const chunks = [];
-            
-            if (!items || items.length === 0) {
-                chunks.push([]);
-            } else {
-                for (let i = 0; i < items.length; i += ITEMS_PER_PAGE) {
-                    chunks.push(items.slice(i, i + ITEMS_PER_PAGE));
+            const locations = comm.staging_locations && comm.staging_locations.length > 0
+                ? comm.staging_locations
+                : ['Regal'];
+
+            return locations.flatMap((currentLocation, locIndex) => {
+                const otherLocations = locations.filter(l => l !== currentLocation);
+                const otherText = otherLocations.length > 0 ? `+ ${otherLocations.join(', ')}` : '';
+
+                const ITEMS_PER_PAGE = 8; // Maximal 8 Positionen pro DIN A6 Seite (sicherer Puffer für Notizen)
+                const chunks = [];
+                
+                if (!items || items.length === 0) {
+                    chunks.push([]);
+                } else {
+                    for (let i = 0; i < items.length; i += ITEMS_PER_PAGE) {
+                        chunks.push(items.slice(i, i + ITEMS_PER_PAGE));
+                    }
                 }
-            }
 
-            const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(`COMM:${comm.id}`)}`;
-            const notesHtml = comm.notes ? `<div class="notes" style="font-size: 10pt; margin-top: 2mm; font-style: italic; color: #000; border-top: 1px dotted #aaa; padding-top: 1mm; line-height: 1.2;">${comm.notes}</div>` : '';
-            const warehouseNotesHtml = comm.warehouse_notes ? `<div style="background-color: #fff3cd; border: 1px solid #ffe69c; padding: 3mm; margin-top: 3mm; margin-bottom: 3mm; border-radius: 2mm;"><strong style="color: #856404; font-size: 10pt;">⚠️ Info ans Lager:</strong><div style="margin-top: 1mm; font-size: 10pt; color: #000; font-weight: bold; white-space: pre-wrap;">${comm.warehouse_notes}</div></div>` : '';
-            const renderLocation = (article: Article) => (!article.category && !article.location) ? '-' : `${article.category || ''} / ${article.location || ''}`;
+                const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(`COMM:${comm.id}`)}`;
+                const notesHtml = comm.notes ? `<div class="notes" style="font-size: 10pt; margin-top: 2mm; font-style: italic; color: #000; border-top: 1px dotted #aaa; padding-top: 1mm; line-height: 1.2;">${comm.notes}</div>` : '';
+                const warehouseNotesHtml = comm.warehouse_notes ? `<div style="background-color: #fff3cd; border: 1px solid #ffe69c; padding: 3mm; margin-top: 3mm; margin-bottom: 3mm; border-radius: 2mm;"><strong style="color: #856404; font-size: 10pt;">⚠️ Info ans Lager:</strong><div style="margin-top: 1mm; font-size: 10pt; color: #000; font-weight: bold; white-space: pre-wrap;">${comm.warehouse_notes}</div></div>` : '';
+                const renderLocation = (article: Article) => (!article.category && !article.location) ? '-' : `${article.category || ''} / ${article.location || ''}`;
 
-            return chunks.map((chunk, index) => {
-                const stockItems = chunk.filter(i => i.type === 'Stock');
-                const extItems = chunk.filter(i => i.type === 'External');
-                const pageIndicator = chunks.length > 1 ? `<div style="font-size: 9pt; font-weight: bold; margin-top: 2mm; color: #d97706;">Seite ${index + 1} von ${chunks.length}</div>` : '';
+                return chunks.map((chunk, index) => {
+                    const stockItems = chunk.filter(i => i.type === 'Stock');
+                    const extItems = chunk.filter(i => i.type === 'External');
+                    const pageIndicator = chunks.length > 1 ? `<div style="font-size: 9pt; font-weight: bold; margin-top: 2mm; color: #d97706;">Seite ${index + 1} von ${chunks.length}</div>` : '';
 
-                return `
-            <div class="page">
-                <div class="label-area">
-                    <div class="header-text">
-                        <div class="commission-title">${comm.name}</div>
-                        <div class="order-id">Auftrag: ${comm.order_number || '-'}</div>
-                        ${pageIndicator}
-                        ${index === 0 ? notesHtml : ''}
+                    return `
+                <div class="page">
+                    <div class="label-area">
+                        <div class="header-text">
+                            <div class="commission-title">${comm.name}</div>
+                            <div class="order-id" style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; margin-top: 1mm;">
+                                <span>Auftrag: ${comm.order_number || '-'}</span>
+                                <span style="font-weight: 900; border: 2px solid #000; color: #000; padding: 2px 6px; border-radius: 4px; font-size: 8pt; font-family: monospace; text-transform: uppercase;">
+                                    ${currentLocation} ${locations.length > 1 ? `(${locIndex + 1}/${locations.length})` : ''}
+                                </span>
+                            </div>
+                            ${otherText ? `<div style="font-size: 8pt; font-weight: bold; color: #555; margin-top: 1.5mm;">${otherText}</div>` : ''}
+                            ${pageIndicator}
+                            ${index === 0 ? notesHtml : ''}
+                        </div>
+                        <div class="qr-container"><img src="${qrUrl}" class="qr-code" /></div>
                     </div>
-                    <div class="qr-container"><img src="${qrUrl}" class="qr-code" /></div>
+                    <div class="fold-line"><span class="fold-text">Hier falten / knicken</span></div>
+                    <div class="list-area">
+                        ${index === 0 ? warehouseNotesHtml : ''}
+                        ${extItems.length > 0 ? `<div class="list-title">Erwartete externe Bestellungen:</div><ul>${extItems.map(i => `<li><div class="checkbox"></div><div class="item-text"><strong>${i.amount}x</strong> Externe Bestellung: ${i.custom_name}${i.is_backorder ? ' <b>[RÜCKSTAND]</b>' : ''}<br><span style="font-size: 8pt; color: #555;">(Vorgang: ${i.external_reference || 'N/A'})</span>${i.notes ? `<br><span style="font-style: italic; font-size: 8pt;">Note: ${i.notes}</span>` : ''}</div></li>`).join('')}</ul><br>` : ''}
+                        ${stockItems.length > 0 ? `<div class="list-title">Material aus Lager:</div><ul>${stockItems.map(i => {
+                        return `<li><div class="checkbox"></div><div class="item-text"><strong>${i.amount}x</strong> ${i.article?.name}${i.is_backorder ? ' <b>[RÜCKSTAND]</b>' : ''}<br><span style="font-size: 8pt; color: #555;">Lagerort: ${i.article ? renderLocation(i.article) : '-'}</span>${i.notes ? `<br><span style="font-style: italic; font-size: 8pt;">Note: ${i.notes}</span>` : ''}</div></li>`;
+                    }).join('')}</ul>` : ''}
+                    </div>
                 </div>
-                <div class="fold-line"><span class="fold-text">Hier falten / knicken</span></div>
-                <div class="list-area">
-                    ${index === 0 ? warehouseNotesHtml : ''}
-                    ${extItems.length > 0 ? `<div class="list-title">Erwartete externe Bestellungen:</div><ul>${extItems.map(i => `<li><div class="checkbox"></div><div class="item-text"><strong>${i.amount}x</strong> Externe Bestellung: ${i.custom_name}${i.is_backorder ? ' <b>[RÜCKSTAND]</b>' : ''}<br><span style="font-size: 8pt; color: #555;">(Vorgang: ${i.external_reference || 'N/A'})</span>${i.notes ? `<br><span style="font-style: italic; font-size: 8pt;">Note: ${i.notes}</span>` : ''}</div></li>`).join('')}</ul><br>` : ''}
-                    ${stockItems.length > 0 ? `<div class="list-title">Material aus Lager:</div><ul>${stockItems.map(i => {
-                return `<li><div class="checkbox"></div><div class="item-text"><strong>${i.amount}x</strong> ${i.article?.name}${i.is_backorder ? ' <b>[RÜCKSTAND]</b>' : ''}<br><span style="font-size: 8pt; color: #555;">Lagerort: ${i.article ? renderLocation(i.article) : '-'}</span>${i.notes ? `<br><span style="font-style: italic; font-size: 8pt;">Note: ${i.notes}</span>` : ''}</div></li>`;
-            }).join('')}</ul>` : ''}
-                </div>
-            </div>
-          `;
+              `;
+                });
             });
         }).join('');
 
@@ -1068,8 +1100,8 @@ const Commissions: React.FC = () => {
 
     const listContent = (
         <div className="relative h-full flex flex-col overflow-hidden">
-            <header className="flex flex-col md:flex-row md:items-center justify-between gap-4 px-1 pt-4 pb-4 border-b border-white/5 shrink-0">
-                <div className="flex items-center gap-3">
+            <header className="flex items-center justify-between gap-3 px-1 pt-4 pb-4 border-b border-white/5 shrink-0">
+                <div className="flex items-center gap-3 min-w-0">
                     {isMobile && (
                         <button 
                             onClick={() => setIsMobileCategoryOpen(true)}
@@ -1078,14 +1110,10 @@ const Commissions: React.FC = () => {
                             <Menu size={20} />
                         </button>
                     )}
-                    <div>
-                        <h1 className="text-2xl sm:text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-emerald-300 to-teal-200">Komm.</h1>
-                    </div>
+                    <h1 className="text-xl sm:text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-emerald-300 to-teal-200 truncate">Komm.</h1>
                 </div>
-                <div className={`flex gap-2 ${isMobile ? 'w-full overflow-x-auto pb-1 no-scrollbar' : ''}`}>
+                <div className="flex gap-2 shrink-0 items-center">
                     <Button icon={<Search size={18} />} variant="secondary" onClick={() => setSidePanelMode('search')} />
-                    <Button icon={<History size={18} />} variant="secondary" onClick={() => { setSidePanelMode('history'); fetchHistory(); }} />
-                    <Button icon={<BoxSelect size={18} />} variant="secondary" onClick={() => { setActiveTab('missing'); setShowCleanupModal(true); }} className="bg-orange-500/10 text-orange-400 hover:bg-orange-500 hover:text-white" />
                     <Button icon={<Plus size={18} />} onClick={handleOpenCreate}>Neu</Button>
                 </div>
             </header>
@@ -1139,26 +1167,7 @@ const Commissions: React.FC = () => {
                 {/* Content Area */}
                 <div className="flex-1 h-full overflow-hidden flex flex-col lg:pl-4">
                     <div className="flex-1 overflow-y-auto custom-scrollbar pb-24 pr-2 flex flex-col space-y-4">
-                        {activeTab === 'active' && (
-                            <PrintingSection
-                                showPrintArea={showPrintArea}
-                                setShowPrintArea={setShowPrintArea}
-                                printTab={printTab}
-                                setPrintTab={setPrintTab}
-                                queueItems={queueItems}
-                                selectedPrintIds={selectedPrintIds}
-                                setSelectedPrintIds={setSelectedPrintIds}
-                                selectedHistoryPrintIds={selectedHistoryPrintIds}
-                                setSelectedHistoryPrintIds={setSelectedHistoryPrintIds}
-                                onMarkAsPrinted={markLabelsAsPrinted}
-                                isSubmitting={isSubmitting}
-                                loadingHistory={loadingPrintHistory}
-                                printLogs={recentPrintLogs}
-                                onReprint={(id) => handleSinglePrint(id, true)}
-                                onReprintBatch={handleReprintBatch}
-                                activeCommissions={activeCommissionsForPrint}
-                            />
-                        )}
+
 
                         {loading ? (
                             <div className="flex-1 flex items-center justify-center">
@@ -1532,6 +1541,32 @@ const Commissions: React.FC = () => {
                     </div>
                 </div>
             </GlassModal>
+
+            {/* Floating Print Dock */}
+            <AnimatePresence>
+                {activeTab === 'active' && sidePanelMode === 'none' && (
+                    <PrintingSection
+                        showPrintArea={showPrintArea}
+                        setShowPrintArea={setShowPrintArea}
+                        minimized={printMinimized}
+                        setMinimized={setPrintMinimized}
+                        printTab={printTab}
+                        setPrintTab={setPrintTab}
+                        queueItems={queueItems}
+                        selectedPrintIds={selectedPrintIds}
+                        setSelectedPrintIds={setSelectedPrintIds}
+                        selectedHistoryPrintIds={selectedHistoryPrintIds}
+                        setSelectedHistoryPrintIds={setSelectedHistoryPrintIds}
+                        onMarkAsPrinted={markLabelsAsPrinted}
+                        isSubmitting={isSubmitting}
+                        loadingHistory={loadingPrintHistory}
+                        printLogs={recentPrintLogs}
+                        onReprint={(id) => handleSinglePrint(id, true)}
+                        onReprintBatch={handleReprintBatch}
+                        activeCommissions={activeCommissionsForPrint}
+                    />
+                )}
+            </AnimatePresence>
 
         </MasterDetailLayout>
     );

@@ -146,6 +146,17 @@
   .safe-padding-bottom {
     padding-bottom: env(safe-area-inset-bottom);
   }
+
+  /* Semantisches Z-Index-System */
+  --z-content: 0;
+  --z-rail: 50;
+  --z-sticky: 90;
+  --z-dropdown: 1000;
+  --z-dock: 160;
+  --z-modal: 170;
+  --z-sheet: 180;
+  --z-toast: 200;
+  --z-top: 220;
 }
 
 /* Custom Scrollbar */

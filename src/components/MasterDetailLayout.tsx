@@ -153,20 +153,11 @@ export const MasterDetailLayout: React.FC<MasterDetailLayoutProps> = ({
                                 animate={{ y: 0 }}
                                 exit={{ y: "100%" }}
                                 transition={{ type: "spring", damping: 25, stiffness: 300, mass: 0.8 }}
-                                // We use drag="y" to allow swiping down to close
-                                drag="y"
-                                dragConstraints={{ top: 0 }}
-                                dragElastic={0.2}
-                                onDragEnd={(e, info) => {
-                                    if (info.offset.y > 100 || info.velocity.y > 500) {
-                                        onClose();
-                                    }
-                                }}
                                 className="fixed inset-x-0 bottom-0 z-[180] bg-card text-card-foreground shadow-[0_-10px_40px_rgba(0,0,0,0.3)] rounded-t-[2rem] flex flex-col h-[90vh] ring-1 ring-white/10"
                             >
-                                {/* Drag Handle */}
-                                <div className="w-full flex justify-center py-3 shrink-0 cursor-grab active:cursor-grabbing">
-                                    <div className="w-12 h-1.5 bg-muted-foreground/30 rounded-full" />
+                                {/* Decorative Handle Indicator */}
+                                <div className="w-full flex justify-center py-3 shrink-0">
+                                    <div className="w-12 h-1.5 bg-muted-foreground/20 rounded-full" />
                                 </div>
 
                                 {/* Sheet Header */}

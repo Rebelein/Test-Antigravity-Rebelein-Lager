@@ -297,30 +297,32 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
             {/* ============================================================================
           MOBILE TOP BAR (Floating Glass)
          ============================================================================ */}
-            <motion.div
-                initial={{ y: -50, opacity: 0 }}
-                animate={{ y: 0, opacity: 1 }}
-                transition={{ duration: 0.5 }}
-                className={clsx("lg:hidden fixed left-0 right-0 z-40 px-4 py-2 flex justify-end pointer-events-none max-w-4xl mx-auto mt-[env(safe-area-inset-top)]", updateAvailable ? 'top-12' : 'top-0')}
-            >
-                <div className="pointer-events-auto flex items-center gap-2">
-                    <div className="bg-card text-card-foreground shadow-sm rounded-xl border border-border rounded-full px-3 py-1.5 flex items-center gap-3 shadow-lg">
-                        <div className="flex items-center gap-2">
-                            <div className="w-6 h-6 rounded-full bg-primary/30 flex items-center justify-center text-emerald-300 text-xs font-bold">
-                                {profile?.full_name ? profile.full_name.charAt(0) : <UserCircle size={14} />}
+            {currentPath === 'dashboard' && (
+                <motion.div
+                    initial={{ y: -50, opacity: 0 }}
+                    animate={{ y: 0, opacity: 1 }}
+                    transition={{ duration: 0.5 }}
+                    className={clsx("lg:hidden fixed left-0 right-0 z-40 px-4 py-2 flex justify-end pointer-events-none max-w-4xl mx-auto mt-[env(safe-area-inset-top)]", updateAvailable ? 'top-12' : 'top-0')}
+                >
+                    <div className="pointer-events-auto flex items-center gap-2">
+                        <div className="bg-card text-card-foreground shadow-sm rounded-xl border border-border rounded-full px-3 py-1.5 flex items-center gap-3 shadow-lg">
+                            <div className="flex items-center gap-2">
+                                <div className="w-6 h-6 rounded-full bg-primary/30 flex items-center justify-center text-emerald-300 text-xs font-bold">
+                                    {profile?.full_name ? profile.full_name.charAt(0) : <UserCircle size={14} />}
+                                </div>
+                                <span className="text-xs text-muted-foreground hidden sm:inline">{profile?.full_name?.split(' ')[0] || 'User'}</span>
                             </div>
-                            <span className="text-xs text-muted-foreground hidden sm:inline">{profile?.full_name?.split(' ')[0] || 'User'}</span>
+                            <div className="w-px h-4 bg-muted"></div>
+                            {/* Push Toggle Mobile */}
+                            <PushNotificationToggle userId={profile?.id ?? null} compact={true} />
+                            <div className="w-px h-4 bg-muted"></div>
+                            <button onClick={handleLogout} className="text-muted-foreground hover:text-rose-400 transition-colors" title="Abmelden">
+                                <LogOut size={14} />
+                            </button>
                         </div>
-                        <div className="w-px h-4 bg-muted"></div>
-                        {/* Push Toggle Mobile */}
-                        <PushNotificationToggle userId={profile?.id ?? null} compact={true} />
-                        <div className="w-px h-4 bg-muted"></div>
-                        <button onClick={handleLogout} className="text-muted-foreground hover:text-rose-400 transition-colors" title="Abmelden">
-                            <LogOut size={14} />
-                        </button>
                     </div>
-                </div>
-            </motion.div>
+                </motion.div>
+            )}
 
             {/* --- Main Content Area --- */}
             <main
@@ -336,7 +338,10 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
                 )}
             >
                 <div className="w-full h-full flex flex-col overflow-hidden">
-                    <div className="w-full h-full flex flex-col overflow-hidden px-4 pt-[calc(env(safe-area-inset-top)+4rem)] lg:pt-0 lg:px-0">
+                    <div className={clsx(
+                        "w-full h-full flex flex-col overflow-hidden px-4 lg:pt-0 lg:px-0",
+                        currentPath === 'dashboard' ? "pt-[calc(env(safe-area-inset-top)+4rem)]" : "pt-[calc(env(safe-area-inset-top)+1rem)]"
+                    )}>
                         {children}
                     </div>
                 </div>

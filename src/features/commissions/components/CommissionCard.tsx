@@ -110,6 +110,7 @@ export const CommissionCard: React.FC<CommissionCardProps> = memo(({
     const isWithdrawn = statusKey === 'withdrawn';
     const itemCount = commission.commission_items?.length || 0;
     const statusColors = getStatusColors(statusKey);
+    const hasBackorders = commission.commission_items?.some(i => i.is_backorder);
 
     return (
         <motion.div
@@ -120,14 +121,17 @@ export const CommissionCard: React.FC<CommissionCardProps> = memo(({
             whileHover={{ scale: 1.01, y: -2 }}
             className={`
                 group relative p-4 pl-5 rounded-xl cursor-pointer transition-all duration-300 overflow-hidden
-                bg-card backdrop-blur-sm border ${statusColors.border} shadow-lg shadow-black/40 hover:bg-card hover:shadow-xl
+                backdrop-blur-sm border shadow-lg shadow-black/40 hover:shadow-xl
+                ${hasBackorders 
+                    ? 'bg-gradient-to-br from-red-500/15 to-red-950/5 border-red-500/50 hover:from-red-500/20 hover:border-red-500/70 shadow-[0_0_15px_rgba(239,68,68,0.1)] hover:shadow-[0_0_20px_rgba(239,68,68,0.2)]' 
+                    : `bg-card ${statusColors.border} hover:bg-card hover:border-primary/40`}
                 ${isTrash || isWithdrawn ? 'opacity-70 hover:opacity-100' : ''}
                 ${className || ''}
             `}
             onClick={() => onClick(commission)}
         >
             {/* Left Color Indicator Bar */}
-            <div className={`absolute left-0 top-0 bottom-0 w-1.5 rounded-l-xl opacity-80 group-hover:opacity-100 transition-opacity ${statusColors.leftBar}`} />
+            <div className={`absolute left-0 top-0 bottom-0 w-1.5 rounded-l-xl opacity-80 group-hover:opacity-100 transition-opacity ${hasBackorders ? 'bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.5)]' : statusColors.leftBar}`} />
 
             {/* Header: Name + Meta + StatusBadge */}
             <div className="flex justify-between items-start gap-3 mb-3">
@@ -152,8 +156,8 @@ export const CommissionCard: React.FC<CommissionCardProps> = memo(({
                 </div>
 
                 {/* Colored StatusBadge */}
-                <span className={`px-2.5 py-1 rounded-lg text-xs font-semibold border shadow-sm ${statusColors.badge}`}>
-                    {statusColors.badgeText}
+                <span className={`px-2.5 py-1 rounded-lg text-xs font-semibold border shadow-sm ${hasBackorders ? 'bg-red-500/20 text-red-300 border-red-500/40 animate-pulse' : statusColors.badge}`}>
+                    {hasBackorders ? `${statusColors.badgeText} (Rückstand)` : statusColors.badgeText}
                 </span>
             </div>
 
