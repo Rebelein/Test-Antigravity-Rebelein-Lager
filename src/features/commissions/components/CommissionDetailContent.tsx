@@ -149,7 +149,7 @@ export const CommissionDetailContent: React.FC<CommissionDetailContentProps> = (
                     <Button 
                         onClick={onSetReady} 
                         disabled={isSubmitting} 
-                        className="w-full md:w-auto bg-emerald-500 hover:bg-emerald-600 text-white font-bold h-10 px-4 rounded-xl flex items-center justify-center gap-1.5 shadow-md shadow-emerald-500/10 active:scale-95 transition-all duration-200 cursor-pointer text-xs sm:text-sm border-none"
+                        className="w-full bg-emerald-500 hover:bg-emerald-600 text-white font-bold h-10 px-4 rounded-xl flex items-center justify-center gap-1.5 shadow-md shadow-emerald-500/10 active:scale-95 transition-all duration-200 cursor-pointer text-xs sm:text-sm border-none"
                     >
                         <CheckCircle2 size={16} /> Bereitstellen
                     </Button>
@@ -157,19 +157,19 @@ export const CommissionDetailContent: React.FC<CommissionDetailContentProps> = (
             }
         } else if (status === 'Ready') {
             return (
-                <div className="flex gap-2 w-full md:w-auto">
+                <div className="flex gap-2 w-full">
                     <Button 
                         onClick={onResetStatus} 
                         disabled={isSubmitting} 
                         variant="secondary"
-                        className="flex-1 md:flex-initial text-amber-600 dark:text-amber-400 border-amber-200 dark:border-amber-900/50 bg-amber-500/5 hover:bg-amber-500/10 font-bold h-10 px-4 rounded-xl flex items-center justify-center gap-1.5 active:scale-95 transition-all duration-200 cursor-pointer text-xs sm:text-sm"
+                        className="flex-1 text-amber-600 dark:text-amber-400 border-amber-200 dark:border-amber-900/50 bg-amber-500/5 hover:bg-amber-500/10 font-bold h-10 px-4 rounded-xl flex items-center justify-center gap-1.5 active:scale-95 transition-all duration-200 cursor-pointer text-xs sm:text-sm"
                     >
                         <RotateCcw size={16} /> Zurückstellen
                     </Button>
                     <Button 
                         onClick={onWithdraw} 
                         disabled={isSubmitting} 
-                        className="flex-1 md:flex-initial bg-purple-600 hover:bg-purple-700 text-white font-bold h-10 px-4 rounded-xl flex items-center justify-center gap-1.5 shadow-md shadow-purple-500/10 active:scale-95 transition-all duration-200 cursor-pointer text-xs sm:text-sm border-none"
+                        className="flex-1 bg-purple-600 hover:bg-purple-700 text-white font-bold h-10 px-4 rounded-xl flex items-center justify-center gap-1.5 shadow-md shadow-purple-500/10 active:scale-95 transition-all duration-200 cursor-pointer text-xs sm:text-sm border-none"
                     >
                         <Truck size={16} /> Entnehmen
                     </Button>
@@ -181,7 +181,7 @@ export const CommissionDetailContent: React.FC<CommissionDetailContentProps> = (
                 <Button 
                     onClick={isRestock ? onCompleteReturn : onReturnToReady} 
                     disabled={isSubmitting} 
-                    className="w-full md:w-auto bg-emerald-500 hover:bg-emerald-600 text-white font-bold h-10 px-4 rounded-xl flex items-center justify-center gap-1.5 shadow-md shadow-emerald-500/10 active:scale-95 transition-all duration-200 cursor-pointer text-xs sm:text-sm border-none"
+                    className="w-full bg-emerald-500 hover:bg-emerald-600 text-white font-bold h-10 px-4 rounded-xl flex items-center justify-center gap-1.5 shadow-md shadow-emerald-500/10 active:scale-95 transition-all duration-200 cursor-pointer text-xs sm:text-sm border-none"
                 >
                     <CheckCircle2 size={16} /> {isRestock ? 'Eingelagert' : 'Ins Abholregal'}
                 </Button>
@@ -191,26 +191,26 @@ export const CommissionDetailContent: React.FC<CommissionDetailContentProps> = (
                 <Button 
                     onClick={onCompleteReturn} 
                     disabled={isSubmitting} 
-                    className="w-full md:w-auto bg-emerald-500 hover:bg-emerald-600 text-white font-bold h-10 px-4 rounded-xl flex items-center justify-center gap-1.5 shadow-md shadow-emerald-500/10 active:scale-95 transition-all duration-200 cursor-pointer text-xs sm:text-sm border-none"
+                    className="w-full bg-emerald-500 hover:bg-emerald-600 text-white font-bold h-10 px-4 rounded-xl flex items-center justify-center gap-1.5 shadow-md shadow-emerald-500/10 active:scale-95 transition-all duration-200 cursor-pointer text-xs sm:text-sm border-none"
                 >
                     <CheckCircle2 size={16} /> Erledigt
                 </Button>
             );
         } else if (status === 'Withdrawn') {
             return (
-                <div className="flex gap-2 w-full md:w-auto">
+                <div className="flex gap-2 w-full">
                     <Button 
                         onClick={onRevertWithdraw} 
                         disabled={isSubmitting} 
                         variant="secondary"
-                        className="flex-1 md:flex-initial text-amber-600 dark:text-amber-400 border-amber-200 dark:border-amber-900/50 bg-amber-500/5 hover:bg-amber-500/10 font-bold h-10 px-4 rounded-xl flex items-center justify-center gap-1.5 active:scale-95 transition-all duration-200 cursor-pointer text-xs sm:text-sm"
+                        className="flex-1 text-amber-600 dark:text-amber-400 border-amber-200 dark:border-amber-900/50 bg-amber-500/5 hover:bg-amber-500/10 font-bold h-10 px-4 rounded-xl flex items-center justify-center gap-1.5 active:scale-95 transition-all duration-200 cursor-pointer text-xs sm:text-sm"
                     >
                         <RotateCcw size={16} /> Zurückstellen
                     </Button>
                     <Button 
                         onClick={onInitReturn} 
                         disabled={isSubmitting} 
-                        className="flex-1 md:flex-initial bg-orange-500 hover:bg-orange-600 text-white font-bold h-10 px-4 rounded-xl flex items-center justify-center gap-1.5 shadow-md shadow-orange-500/10 active:scale-95 transition-all duration-200 cursor-pointer text-xs sm:text-sm border-none"
+                        className="flex-1 bg-orange-500 hover:bg-orange-600 text-white font-bold h-10 px-4 rounded-xl flex items-center justify-center gap-1.5 shadow-md shadow-orange-500/10 active:scale-95 transition-all duration-200 cursor-pointer text-xs sm:text-sm border-none"
                     >
                         <Undo2 size={16} /> Retoure anmelden
                     </Button>
@@ -848,9 +848,9 @@ export const CommissionDetailContent: React.FC<CommissionDetailContentProps> = (
     return (
         <div className="flex flex-col h-full bg-slate-50/50 dark:bg-background overflow-y-auto relative font-sans custom-scrollbar">
             {/* HEADER */}
-            <div className="bg-white dark:bg-card border-b border-slate-200 dark:border-border px-4 md:px-8 py-3 md:py-4 flex flex-col md:flex-row md:items-center justify-between gap-3 shadow-sm shrink-0 relative z-30">
+            <div className="bg-white dark:bg-card border-b border-slate-200 dark:border-border px-4 py-3 md:py-4 flex flex-col gap-3 shadow-sm shrink-0 relative z-30">
                 {/* Main Content Area: Progress and Title Group */}
-                <div className="flex items-start justify-between gap-3 w-full md:w-auto md:flex-1 min-w-0">
+                <div className="flex items-start justify-between gap-3 w-full min-w-0">
                     <div className="flex items-start gap-3 min-w-0 flex-1">
                         {/* Progress Ring */}
                         <div className="relative w-11 h-11 flex items-center justify-center shrink-0 mt-0.5">
@@ -865,8 +865,8 @@ export const CommissionDetailContent: React.FC<CommissionDetailContentProps> = (
                             <span className={`absolute text-[9px] font-bold ${hasBackorders ? "text-rose-600 dark:text-rose-400" : "text-slate-700 dark:text-slate-300"}`}>{progressPercent}%</span>
                         </div>
                         <div className="min-w-0 flex-1">
-                            {/* Mini Stepper Breadcrumb */}
-                            <div className="hidden sm:flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500 mb-0.5 flex-wrap">
+                            {/* Mini Stepper Breadcrumb (Hidden on narrow viewports/containers) */}
+                            <div className="hidden items-center gap-1 text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500 mb-0.5 flex-wrap">
                                 <span className={cn(activeStep === 0 ? "text-primary font-extrabold" : activeStep > 0 ? "text-slate-600 dark:text-slate-400" : "")}>Erstellt</span>
                                 <ChevronRight size={10} className="opacity-50 shrink-0" />
                                 <span className={cn(activeStep === 1 ? "text-primary font-extrabold" : activeStep > 1 ? "text-slate-600 dark:text-slate-400" : "")}>In Arbeit</span>
@@ -876,7 +876,7 @@ export const CommissionDetailContent: React.FC<CommissionDetailContentProps> = (
                                 <span className={cn(activeStep === 3 ? "text-emerald-600 dark:text-emerald-400 font-extrabold" : "")}>Abgeschlossen</span>
                             </div>
                             <div className="flex flex-col gap-1">
-                                <h1 className="text-base md:text-xl font-black tracking-tight text-slate-900 dark:text-white leading-tight break-words">
+                                <h1 className="text-base md:text-lg font-black tracking-tight text-slate-900 dark:text-white leading-tight break-words">
                                     {commission.name}
                                 </h1>
                                 <div className="flex flex-wrap items-center gap-1.5 mt-0.5">
@@ -958,27 +958,40 @@ export const CommissionDetailContent: React.FC<CommissionDetailContentProps> = (
                 
                 {/* Actions container (Desktop: inline. Mobile: block below title with top border) */}
                 <div className={cn(
-                    "flex items-center justify-end gap-2 w-full md:w-auto shrink-0 md:border-t-0 border-slate-100 dark:border-slate-800/55 md:pt-0 mt-1 md:mt-0 animate-fade-in",
-                    headerPrimaryAction ? "border-t pt-2.5" : "border-t-0 pt-0"
+                    "flex items-center justify-between gap-2.5 w-full shrink-0 border-t border-slate-100 dark:border-slate-850 pt-2.5 mt-0.5 animate-fade-in"
                 )}>
                     {/* Header Primary Action Button */}
-                    <div className="flex-1 md:flex-initial flex justify-end w-full md:w-auto">
+                    <div className="flex-1 flex justify-start w-full">
                         {headerPrimaryAction}
                     </div>
 
                     {/* Desktop actions (hidden on mobile) */}
-                    <div className="hidden md:flex items-center gap-2">
-                        <Button variant="secondary" onClick={(e) => onEdit(e)} icon={<Edit2 size={16} />} className="bg-white dark:bg-slate-800 shadow-sm border-slate-200 dark:border-slate-700 hover:border-primary/50 text-slate-700 dark:text-slate-200">Bearbeiten</Button>
-                        <Button variant="secondary" onClick={onPrint} icon={<Printer size={16} />} className="bg-white dark:bg-slate-800 shadow-sm border-slate-200 dark:border-slate-700 hover:border-primary/50 text-slate-700 dark:text-slate-200">Drucken</Button>
+                    <div className="hidden md:flex items-center gap-2 shrink-0">
+                        <Button 
+                            variant="secondary" 
+                            onClick={(e) => onEdit(e)} 
+                            icon={<Edit2 size={16} />} 
+                            className="p-2.5 h-10 w-10 flex items-center justify-center bg-white dark:bg-slate-800 shadow-sm border-slate-200 dark:border-slate-700 hover:border-primary/50 text-slate-700 dark:text-slate-200" 
+                            title="Bearbeiten"
+                            aria-label="Bearbeiten"
+                        />
+                        <Button 
+                            variant="secondary" 
+                            onClick={onPrint} 
+                            icon={<Printer size={16} />} 
+                            className="p-2.5 h-10 w-10 flex items-center justify-center bg-white dark:bg-slate-800 shadow-sm border-slate-200 dark:border-slate-700 hover:border-primary/50 text-slate-700 dark:text-slate-200" 
+                            title="Drucken"
+                            aria-label="Drucken"
+                        />
                         {onRequestCancellation && !commission.status.startsWith('Return') && commission.status !== 'Withdrawn' && (
                             <Button 
                                 variant="secondary" 
                                 onClick={() => setShowStornoModal(true)} 
                                 icon={<Undo2 size={16} />} 
-                                className="bg-rose-50 hover:bg-rose-100 dark:bg-rose-950/20 dark:hover:bg-rose-950/45 text-rose-600 dark:text-rose-400 border-rose-200 dark:border-rose-900/50 shadow-sm font-semibold"
-                            >
-                                Storno
-                            </Button>
+                                className="p-2.5 h-10 w-10 flex items-center justify-center bg-rose-50 hover:bg-rose-100 dark:bg-rose-950/20 dark:hover:bg-rose-950/45 text-rose-600 dark:text-rose-400 border-rose-200 dark:border-rose-900/50 shadow-sm font-semibold"
+                                title="Storno"
+                                aria-label="Storno"
+                            />
                         )}
                     </div>
                 </div>
