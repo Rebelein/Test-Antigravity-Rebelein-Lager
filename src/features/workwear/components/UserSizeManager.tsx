@@ -77,10 +77,10 @@ export const UserSizeManager = () => {
     return (
         <div className="max-w-2xl mx-auto space-y-6">
             <div className="text-center mb-8">
-                <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4 text-emerald-400">
+                <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4 dark:text-emerald-400 text-emerald-800">
                     <Ruler size={32} />
                 </div>
-                <h2 className="text-2xl font-bold text-white">Meine Größen</h2>
+                <h2 className="text-2xl font-bold text-foreground">Meine Größen</h2>
                 <p className="text-muted-foreground">Hinterlege hier deine Konfektionsgrößen, damit sie bei Bestellungen automatisch vorgeschlagen werden.</p>
             </div>
 
@@ -89,7 +89,7 @@ export const UserSizeManager = () => {
                     <div key={cat} className="space-y-2">
                         <label className="text-sm font-medium text-muted-foreground block ml-1">{cat}</label>
                         <select
-                            className="w-full bg-muted border border-border rounded-xl px-4 py-3 text-white outline-none focus:border-emerald-500/50 appearance-none transition-colors hover:bg-muted"
+                            className="w-full bg-muted border border-border rounded-xl px-4 py-3 text-foreground outline-none focus:border-emerald-500/50 appearance-none transition-colors hover:bg-muted"
                             value={sizes[cat] || ''}
                             onChange={(e) => setSizes(prev => ({ ...prev, [cat]: e.target.value }))}
                         >

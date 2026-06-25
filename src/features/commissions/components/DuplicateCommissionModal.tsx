@@ -30,9 +30,9 @@ export const DuplicateCommissionModal: React.FC<DuplicateCommissionModalProps> =
                     <AlertTriangle size={32} className="text-amber-500" />
                 </div>
                 
-                <h3 className="text-xl font-bold text-white mb-2">Auftragsnummer bereits vergeben</h3>
+                <h3 className="text-xl font-bold text-foreground mb-2">Auftragsnummer bereits vergeben</h3>
                 <p className="text-muted-foreground mb-6 text-sm">
-                    Es existiert bereits eine aktive Kommission mit der Auftragsnummer <span className="text-white font-mono font-bold px-1.5 py-0.5 bg-muted rounded">{existingCommission.order_number}</span>.
+                    Es existiert bereits eine aktive Kommission mit der Auftragsnummer <span className="text-foreground font-mono font-bold px-1.5 py-0.5 bg-muted rounded">{existingCommission.order_number}</span>.
                 </p>
 
                 <div className="w-full bg-muted border border-border rounded-2xl p-4 mb-8 text-left">
@@ -40,7 +40,7 @@ export const DuplicateCommissionModal: React.FC<DuplicateCommissionModalProps> =
                         <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Vorhandene Kommission</span>
                         <StatusBadge status={existingCommission.status} size="sm" />
                     </div>
-                    <div className="text-lg font-bold text-white truncate mb-1">{existingCommission.name}</div>
+                    <div className="text-lg font-bold text-foreground truncate mb-1">{existingCommission.name}</div>
                     <div className="text-xs text-muted-foreground">Erstellt am {new Date(existingCommission.created_at).toLocaleDateString('de-DE')}</div>
                 </div>
 

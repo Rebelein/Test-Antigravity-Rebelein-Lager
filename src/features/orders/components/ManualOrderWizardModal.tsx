@@ -312,10 +312,10 @@ export const ManualOrderWizardModal: React.FC<ManualOrderWizardModalProps> = ({
                             <div className="flex gap-2">
                                 {/* Primary / Secondary Switch */}
                                 {profile?.primary_warehouse_id && (
-                                    <div className="flex bg-black/30 p-1 rounded-lg border border-border shrink-0">
+                                    <div className="flex dark:bg-black/30 bg-muted/70 p-1 rounded-lg border border-border shrink-0">
                                         <button
                                             onClick={() => handleManualWarehouseSelect(profile.primary_warehouse_id!, 'primary')}
-                                            className={`p-2 rounded-md transition-all ${manualSourceType === 'primary' ? 'bg-primary text-white shadow-lg' : 'text-muted-foreground hover:text-white'}`}
+                                            className={`p-2 rounded-md transition-all ${manualSourceType === 'primary' ? 'bg-primary text-white shadow-lg' : 'text-muted-foreground hover:text-foreground'}`}
                                             title={warehouses.find(w => w.id === profile.primary_warehouse_id)?.name}
                                         >
                                             <WarehouseIcon size={20} />
@@ -323,7 +323,7 @@ export const ManualOrderWizardModal: React.FC<ManualOrderWizardModalProps> = ({
                                         {profile.secondary_warehouse_id && (
                                             <button
                                                 onClick={() => handleManualWarehouseSelect(profile.secondary_warehouse_id!, 'secondary')}
-                                                className={`p-2 rounded-md transition-all ${manualSourceType === 'secondary' ? 'bg-blue-600 text-white shadow-lg' : 'text-muted-foreground hover:text-white'}`}
+                                                className={`p-2 rounded-md transition-all ${manualSourceType === 'secondary' ? 'bg-blue-600 text-white shadow-lg' : 'text-muted-foreground hover:text-foreground'}`}
                                                 title={warehouses.find(w => w.id === profile.secondary_warehouse_id)?.name}
                                             >
                                                 <Truck size={20} />
@@ -357,10 +357,10 @@ export const ManualOrderWizardModal: React.FC<ManualOrderWizardModalProps> = ({
                                 onClick={() => { navigator.clipboard.writeText(manualCommissionNumber); alert("Kopiert!"); }}
                             >
                                 <div>
-                                    <div className="text-[10px] text-emerald-300 uppercase font-bold mb-0.5">Kommission</div>
-                                    <div className="text-lg font-mono text-white font-bold">{manualCommissionNumber}</div>
+                                    <div className="text-[10px] dark:text-emerald-300 text-emerald-800 uppercase font-bold mb-0.5">Kommission</div>
+                                    <div className="text-lg font-mono text-foreground font-bold">{manualCommissionNumber}</div>
                                 </div>
-                                <Copy size={18} className="text-emerald-400 opacity-50 group-hover:opacity-100 transition-opacity" />
+                                <Copy size={18} className="dark:text-emerald-400 text-emerald-800 opacity-50 group-hover:opacity-100 transition-opacity" />
                             </div>
                         )}
 
@@ -378,7 +378,7 @@ export const ManualOrderWizardModal: React.FC<ManualOrderWizardModalProps> = ({
                                     onDrop={handleDrop}
                                     className={`border-2 border-dashed rounded-2xl h-40 flex flex-col items-center justify-center cursor-pointer transition-all ${isDragging
                                         ? 'border-emerald-500 bg-primary/10 scale-[1.02]'
-                                        : 'border-border hover:border-emerald-500/50 hover:bg-muted bg-black/20'
+                                        : 'border-border hover:border-emerald-500/50 hover:bg-muted dark:bg-black/20 bg-muted/60'
                                         }`}
                                 >
                                     {manualAiFile ? (
@@ -425,7 +425,7 @@ export const ManualOrderWizardModal: React.FC<ManualOrderWizardModalProps> = ({
                             // STATE C: ADD ITEM FORM
                             <div className="space-y-4 animate-in fade-in slide-in-from-bottom-4">
                                 <div className="text-center mb-4">
-                                    <h3 className="text-lg font-bold text-white">Position hinzufügen</h3>
+                                    <h3 className="text-lg font-bold text-foreground">Position hinzufügen</h3>
                                     <p className="text-xs text-muted-foreground">Artikel wird als Freiposition (ohne Lagerbestand) erfasst.</p>
                                 </div>
 
@@ -448,7 +448,7 @@ export const ManualOrderWizardModal: React.FC<ManualOrderWizardModalProps> = ({
                                             </GlassSelect>
 
                                             <input
-                                                className="w-full bg-black/20 border-b border-border p-2 text-white text-sm focus:outline-none focus:border-emerald-500 placeholder-white/30"
+                                                className="w-full dark:bg-black/20 bg-muted/60 border-b border-border p-2 text-foreground text-sm focus:outline-none focus:border-emerald-500 dark:placeholder-white/30 placeholder-muted-foreground/80"
                                                 value={manualSupplierName}
                                                 onChange={e => setManualSupplierName(e.target.value)}
                                                 placeholder="Oder externer Lieferant Name"
@@ -509,10 +509,10 @@ export const ManualOrderWizardModal: React.FC<ManualOrderWizardModalProps> = ({
                                 <div className="flex justify-between items-center">
                                     <div className="text-sm text-muted-foreground">Gefunden: {manualScannedItems.length} Pos.</div>
                                     <div className="flex gap-3">
-                                        <button onClick={() => setShowAddItemForm(true)} className="text-xs text-emerald-400 hover:text-white flex items-center gap-1 transition-colors">
+                                        <button onClick={() => setShowAddItemForm(true)} className="text-xs dark:text-emerald-400 text-emerald-800 hover:text-foreground flex items-center gap-1 transition-colors">
                                             <Plus size={12} /> Position hinzufügen
                                         </button>
-                                        <button onClick={handleResetManualScan} className="text-xs text-blue-400 hover:text-white flex items-center gap-1 transition-colors">
+                                        <button onClick={handleResetManualScan} className="text-xs dark:text-blue-400 text-blue-800 hover:text-foreground flex items-center gap-1 transition-colors">
                                             <RefreshCw size={12} /> Neu scannen
                                         </button>
                                     </div>
@@ -521,7 +521,7 @@ export const ManualOrderWizardModal: React.FC<ManualOrderWizardModalProps> = ({
                                 {manualSupplierName && (
                                     <div className="bg-muted px-3 py-2 rounded-lg border border-border flex justify-between items-center">
                                         <span className="text-xs text-muted-foreground">Lieferant:</span>
-                                        <span className="font-bold text-white text-sm">{manualSupplierName}</span>
+                                        <span className="font-bold text-foreground text-sm">{manualSupplierName}</span>
                                     </div>
                                 )}
 
@@ -529,14 +529,14 @@ export const ManualOrderWizardModal: React.FC<ManualOrderWizardModalProps> = ({
                                     {manualScannedItems.map((item, idx) => (
                                         <div key={idx} className={`p-3 rounded-xl border flex justify-between items-center ${item.isFound ? 'bg-primary/10 border-emerald-500/30' : 'bg-amber-500/10 border-amber-500/30'}`}>
                                             <div className="flex-1 min-w-0 pr-2">
-                                                <div className="text-sm font-bold text-white truncate">{item.isFound ? item.foundArticle?.name : item.name}</div>
+                                                <div className="text-sm font-bold text-foreground truncate">{item.isFound ? item.foundArticle?.name : item.name}</div>
                                                 <div className="text-xs text-muted-foreground flex gap-2">
                                                     <span className="font-mono">{item.sku}</span>
-                                                    {!item.isFound && <span className="text-amber-400 font-bold text-[9px] uppercase border border-amber-500/30 px-1 rounded">Manuell</span>}
+                                                    {!item.isFound && <span className="dark:text-amber-400 text-amber-800 font-bold text-[9px] uppercase border border-amber-500/30 px-1 rounded">Manuell</span>}
                                                 </div>
                                             </div>
                                             <div className="flex items-center gap-3">
-                                                <div className="font-bold text-white text-lg">x{item.quantity}</div>
+                                                <div className="font-bold text-foreground text-lg">x{item.quantity}</div>
                                                 <button
                                                     onClick={() => handleRemoveManualItem(idx)}
                                                     className="p-2 text-muted-foreground hover:text-red-400 hover:bg-muted rounded-lg transition-colors"
@@ -568,7 +568,7 @@ export const ManualOrderWizardModal: React.FC<ManualOrderWizardModalProps> = ({
                 >
                     <div className="p-6 space-y-6 flex flex-col items-center">
                         <div className="w-16 h-16 rounded-full bg-primary/20 flex items-center justify-center mb-2">
-                            <Check size={32} className="text-emerald-400" />
+                            <Check size={32} className="dark:text-emerald-400 text-emerald-800" />
                         </div>
 
                         <div className="text-center w-full">
@@ -577,8 +577,8 @@ export const ManualOrderWizardModal: React.FC<ManualOrderWizardModalProps> = ({
                                 className="bg-muted border border-border rounded-xl p-4 flex items-center justify-center gap-3 cursor-pointer hover:bg-muted transition-colors group"
                                 onClick={() => { if (createdOrderCommission) { navigator.clipboard.writeText(createdOrderCommission); alert("Kopiert!"); } }}
                             >
-                                <span className="text-2xl font-mono font-bold text-white tracking-wider">{createdOrderCommission}</span>
-                                <Copy size={18} className="text-emerald-400 opacity-50 group-hover:opacity-100" />
+                                <span className="text-2xl font-mono font-bold text-foreground tracking-wider">{createdOrderCommission}</span>
+                                <Copy size={18} className="dark:text-emerald-400 text-emerald-800 opacity-50 group-hover:opacity-100" />
                             </div>
                         </div>
 
@@ -586,7 +586,7 @@ export const ManualOrderWizardModal: React.FC<ManualOrderWizardModalProps> = ({
                             <label className="text-xs text-muted-foreground block mb-2">Bestellnummer vom Lieferanten (falls zur Hand)</label>
                             <div className="flex gap-2">
                                 <input
-                                    className={`flex-1 bg-black/20 border-b border-border p-2 text-white font-mono focus:outline-none focus:border-emerald-500 ${supplierNumberSaved ? 'border-emerald-500 text-emerald-400' : ''}`}
+                                    className={`flex-1 dark:bg-black/20 bg-muted/60 border-b border-border p-2 text-foreground font-mono focus:outline-none focus:border-emerald-500 ${supplierNumberSaved ? 'border-emerald-500 dark:text-emerald-400 text-emerald-800' : ''}`}
                                     onChange={e => setCreatedOrderSupplierNumber(e.target.value)}
                                     value={createdOrderSupplierNumber}
                                     placeholder="Nr. eintragen..."

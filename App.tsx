@@ -39,7 +39,7 @@ const ProtectedRoute = () => {
   if (loading) {
     return (
       <div className="min-h-screen w-full flex items-center justify-center bg-transparent">
-        <Loader2 size={40} className="animate-spin text-emerald-500" />
+        <Loader2 size={40} className="animate-spin text-primary" />
       </div>
     );
   }
@@ -53,8 +53,8 @@ const ProtectedRoute = () => {
     <Layout>
       <React.Suspense fallback={
         <div className="h-full w-full flex flex-col items-center justify-center">
-          <Loader2 size={40} className="animate-spin text-emerald-500 mb-4" />
-          <span className="text-emerald-500/70 font-medium">Lade Ansicht...</span>
+          <Loader2 size={40} className="animate-spin text-primary mb-4" />
+          <span className="text-primary/70 font-medium">Lade Ansicht...</span>
         </div>
       }>
         <Outlet />
@@ -101,8 +101,8 @@ const App: React.FC = () => {
                   <HashRouter>
                     <React.Suspense fallback={
                       <div className="min-h-screen w-full flex items-center justify-center bg-transparent">
-                        <Loader2 size={40} className="animate-spin text-emerald-500" />
-                        <span className="ml-3 text-emerald-500 font-medium">Lade Anwendung...</span>
+                        <Loader2 size={40} className="animate-spin text-primary" />
+                        <span className="ml-3 text-primary font-medium">Lade Anwendung...</span>
                       </div>
                     }>
                       <Routes>

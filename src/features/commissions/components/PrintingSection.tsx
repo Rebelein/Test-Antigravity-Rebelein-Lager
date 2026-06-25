@@ -181,7 +181,7 @@ const PrintingSectionComponent: React.FC<PrintingSectionProps> = ({
                         {queueItems.length > 0 && (
                             <span className={cn(
                                 'text-[10px] font-bold px-1.5 py-0.5 rounded-full min-w-[1.2rem] text-center',
-                                mode === 'print' ? 'bg-white/20' : 'bg-blue-600/20 text-blue-400'
+                                mode === 'print' ? 'bg-white/20' : 'bg-blue-600/20 dark:text-blue-400 text-blue-800'
                             )}>
                                 {queueItems.length}
                             </span>
@@ -202,7 +202,7 @@ const PrintingSectionComponent: React.FC<PrintingSectionProps> = ({
                         {stornoCount > 0 && (
                             <span className={cn(
                                 'text-[10px] font-bold px-1.5 py-0.5 rounded-full min-w-[1.2rem] text-center',
-                                mode === 'storno' ? 'bg-white/20' : 'bg-rose-600/20 text-rose-400'
+                                mode === 'storno' ? 'bg-white/20' : 'bg-rose-600/20 dark:text-rose-400 text-rose-800'
                             )}>
                                 {stornoCount}
                             </span>
@@ -337,7 +337,7 @@ const PrintingSectionComponent: React.FC<PrintingSectionProps> = ({
                                                                     onClick={e => { e.stopPropagation(); onMarkAsPrinted(new Set([c.id])); }}
                                                                     title="Einzeln drucken"
                                                                     aria-label="Einzeln drucken"
-                                                                    className="p-1 min-w-[44px] min-h-[44px] bg-blue-500/10 hover:bg-blue-600 text-blue-400 hover:text-white rounded-md opacity-0 group-hover:opacity-100 transition-all cursor-pointer shrink-0"
+                                                                    className="p-1 min-w-[44px] min-h-[44px] bg-blue-500/10 hover:bg-blue-600 dark:text-blue-400 text-blue-800 hover:text-foreground rounded-md opacity-0 group-hover:opacity-100 transition-all cursor-pointer shrink-0"
                                                                 >
                                                                     <Printer size={11} />
                                                                 </button>
@@ -388,7 +388,7 @@ const PrintingSectionComponent: React.FC<PrintingSectionProps> = ({
                                                                     <span>{batch.user}</span>
                                                                 </div>
                                                                 <button
-                                                                    className="text-[10px] text-blue-500 hover:text-blue-400 font-semibold cursor-pointer px-2 py-0.5 rounded hover:bg-default-100"
+                                                                    className="text-[10px] text-blue-500 hover:dark:text-blue-400 text-blue-800 font-semibold cursor-pointer px-2 py-0.5 rounded hover:bg-default-100"
                                                                     onClick={() => {
                                                                         const s = new Set(selectedHistoryPrintIds);
                                                                         batch.logs.forEach(l => {
@@ -438,7 +438,7 @@ const PrintingSectionComponent: React.FC<PrintingSectionProps> = ({
                                                                                         onClick={e => { e.stopPropagation(); onReprint(log.commission_id); }}
                                                                                         title="Einzeln nachdrucken"
                                                                                         aria-label="Einzeln nachdrucken"
-                                                                                        className="p-1 min-w-[44px] min-h-[44px] bg-blue-500/10 hover:bg-blue-600 text-blue-400 hover:text-white rounded-md opacity-0 group-hover:opacity-100 transition-all cursor-pointer shrink-0"
+                                                                                        className="p-1 min-w-[44px] min-h-[44px] bg-blue-500/10 hover:bg-blue-600 dark:text-blue-400 text-blue-800 hover:text-foreground rounded-md opacity-0 group-hover:opacity-100 transition-all cursor-pointer shrink-0"
                                                                                     >
                                                                                         <Printer size={11} />
                                                                                     </button>
@@ -493,7 +493,7 @@ const PrintingSectionComponent: React.FC<PrintingSectionProps> = ({
                                                                 <div className="font-bold text-foreground text-sm truncate">{c.name}</div>
                                                                 <div className={cn(
                                                                     'text-xs flex items-center gap-1 mt-0.5 font-semibold',
-                                                                    isRestock ? 'text-rose-400' : 'text-purple-400'
+                                                                    isRestock ? 'dark:text-rose-400 text-rose-800' : 'text-purple-400'
                                                                 )}>
                                                                     {isRestock ? <PackageX size={11} /> : <Truck size={11} />}
                                                                     <span>{isRestock ? 'Einlagern' : 'An Lieferant senden'}</span>

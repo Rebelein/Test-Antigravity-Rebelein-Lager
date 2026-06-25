@@ -80,7 +80,7 @@ export const InventoryToolbar: React.FC<InventoryToolbarProps> = ({
                         <span className="flex h-2 w-2 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.8)]" />
                     )}
                     
-                    <ChevronUp size={13} className="text-foreground/40 dark:text-white/40 group-hover:text-foreground dark:group-hover:text-white transition-colors" />
+                    <ChevronUp size={13} className="text-foreground/40 dark:text-white/40 group-hover:text-foreground dark:group-hover:text-foreground transition-colors" />
                 </button>
             </motion.div>
         );
@@ -112,7 +112,7 @@ export const InventoryToolbar: React.FC<InventoryToolbarProps> = ({
                 </div>
                 <button
                     onClick={onToggle}
-                    className="p-1 rounded-lg hover:bg-black/5 dark:hover:bg-white/5 text-foreground/40 dark:text-white/40 hover:text-foreground dark:hover:text-white transition-all cursor-pointer min-w-[44px] min-h-[44px]"
+                    className="p-1 rounded-lg hover:bg-black/5 dark:hover:bg-white/5 text-foreground/40 dark:text-white/40 hover:text-foreground dark:hover:text-foreground transition-all cursor-pointer min-w-[44px] min-h-[44px]"
                     title="Minimieren"
                     aria-label="Minimieren"
                 >
@@ -130,7 +130,7 @@ export const InventoryToolbar: React.FC<InventoryToolbarProps> = ({
                             "px-3 py-1.5 rounded-lg text-[10px] font-extrabold uppercase tracking-wider transition-all select-none cursor-pointer",
                             viewMode === 'primary'
                                 ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 dark:border-emerald-500/30 shadow-sm'
-                                : 'text-foreground/40 dark:text-white/40 hover:text-foreground/70 dark:hover:text-white/70'
+                                : 'text-foreground/40 dark:text-white/40 hover:text-foreground/70 dark:hover:text-foreground/70'
                         )}
                     >
                         Lager
@@ -140,8 +140,8 @@ export const InventoryToolbar: React.FC<InventoryToolbarProps> = ({
                         className={clsx(
                             "px-3 py-1.5 rounded-lg text-[10px] font-extrabold uppercase tracking-wider transition-all select-none cursor-pointer",
                             viewMode === 'secondary'
-                                ? 'bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20 dark:border-blue-500/30 shadow-sm'
-                                : 'text-foreground/40 dark:text-white/40 hover:text-foreground/70 dark:hover:text-white/70'
+                                ? 'bg-blue-500/10 dark:text-blue-400 text-blue-800 dark:text-blue-400 border border-blue-500/20 dark:border-blue-500/30 shadow-sm'
+                                : 'text-foreground/40 dark:text-white/40 hover:text-foreground/70 dark:hover:text-foreground/70'
                         )}
                     >
                         Favorit
@@ -152,7 +152,7 @@ export const InventoryToolbar: React.FC<InventoryToolbarProps> = ({
                 <div className="relative flex-1" ref={dropdownRef}>
                     <button
                         onClick={() => setIsWarehouseDropdownOpen(!isWarehouseDropdownOpen)}
-                        className="w-full flex items-center justify-between gap-2 px-3 py-2 rounded-xl bg-zinc-100 dark:bg-black/20 border border-zinc-200 dark:border-white/5 text-xs text-foreground dark:text-white hover:bg-zinc-200/50 dark:hover:bg-black/35 hover:border-zinc-300 dark:hover:border-white/10 transition-colors select-none cursor-pointer"
+                        className="w-full flex items-center justify-between gap-2 px-3 py-2 rounded-xl bg-zinc-100 dark:bg-black/20 border border-zinc-200 dark:border-white/5 text-xs text-foreground dark:text-white hover:bg-zinc-200/50 dark:hover:bg-black/35 hover:border-zinc-300 dark:hover:dark:border-white/10 border-border transition-colors select-none cursor-pointer"
                     >
                         <span className="truncate font-bold flex items-center gap-2">
                             <Building2 size={12} className="text-foreground/40 dark:text-white/40" />
@@ -199,9 +199,9 @@ export const InventoryToolbar: React.FC<InventoryToolbarProps> = ({
                                         ? filter.color === 'rose'
                                             ? 'bg-rose-500/10 border-rose-500/20 dark:border-rose-500/30 text-rose-600 dark:text-rose-400 shadow-md shadow-rose-500/5'
                                             : filter.color === 'blue'
-                                            ? 'bg-blue-500/10 border-blue-500/20 dark:border-blue-500/30 text-blue-600 dark:text-blue-400 shadow-md shadow-blue-500/5'
+                                            ? 'bg-blue-500/10 border-blue-500/20 dark:border-blue-500/30 dark:text-blue-400 text-blue-800 dark:text-blue-400 shadow-md shadow-blue-500/5'
                                             : 'bg-emerald-500/10 border-emerald-500/20 dark:border-emerald-500/30 text-emerald-600 dark:text-emerald-400 shadow-md shadow-emerald-500/5'
-                                        : 'bg-transparent border-transparent text-foreground/40 dark:text-white/40 hover:text-foreground/70 dark:hover:text-white/70 hover:bg-muted dark:hover:bg-white/5'
+                                        : 'bg-transparent border-transparent text-foreground/40 dark:text-white/40 hover:text-foreground/70 dark:hover:text-foreground/70 hover:bg-muted dark:hover:bg-white/5'
                                 }`}
                             >
                                 {filter.label}
@@ -218,7 +218,7 @@ export const InventoryToolbar: React.FC<InventoryToolbarProps> = ({
                         const [key, direction] = e.target.value.split('-');
                         setSortConfig({ key: key as any, direction: direction as any });
                     }}
-                    className="text-[10px] py-1.5 pl-8 pr-7 bg-zinc-100 dark:bg-black/20 border border-zinc-200 dark:border-white/5 hover:border-zinc-300 dark:hover:border-white/10 hover:bg-zinc-200/50 dark:hover:bg-black/35 text-foreground dark:text-white transition-colors min-w-[130px]"
+                    className="text-[10px] py-1.5 pl-8 pr-7 bg-zinc-100 dark:bg-black/20 border border-zinc-200 dark:border-white/5 hover:border-zinc-300 dark:hover:dark:border-white/10 border-border hover:bg-zinc-200/50 dark:hover:bg-black/35 text-foreground dark:text-white transition-colors min-w-[130px]"
                 >
                     <option value="location-asc" className="bg-card dark:bg-[#18181b] text-foreground dark:text-white">Fach (Auf)</option>
                     <option value="location-desc" className="bg-card dark:bg-[#18181b] text-foreground dark:text-white">Fach (Ab)</option>

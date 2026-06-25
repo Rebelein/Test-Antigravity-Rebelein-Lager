@@ -87,7 +87,7 @@ export const StockPickerModal: React.FC<StockPickerModalProps> = ({
                 onClick={() => { setSelectedCategory(null); setIsMobileCategoryOpen(false); }}
                 className={clsx(
                     "flex items-center justify-between px-4 py-3 rounded-xl transition-all duration-200 text-left",
-                    !selectedCategory ? "bg-primary/20 text-emerald-400 border border-emerald-500/30 shadow-lg shadow-emerald-500/10" : "text-muted-foreground hover:text-white hover:bg-muted"
+                    !selectedCategory ? "bg-primary/20 dark:text-emerald-400 text-emerald-800 border border-emerald-500/30 shadow-lg shadow-emerald-500/10" : "text-muted-foreground hover:text-foreground hover:bg-muted"
                 )}
             >
                 <div className="flex items-center gap-3">
@@ -109,11 +109,11 @@ export const StockPickerModal: React.FC<StockPickerModalProps> = ({
                         onClick={() => { setSelectedCategory(cat); setIsMobileCategoryOpen(false); }}
                         className={clsx(
                             "flex items-center justify-between px-4 py-2.5 rounded-xl transition-all duration-200 text-left group",
-                            selectedCategory === cat ? "bg-primary/20 text-emerald-400 border border-emerald-500/30" : "text-muted-foreground hover:text-white hover:bg-muted"
+                            selectedCategory === cat ? "bg-primary/20 dark:text-emerald-400 text-emerald-800 border border-emerald-500/30" : "text-muted-foreground hover:text-foreground hover:bg-muted"
                         )}
                     >
                         <div className="flex items-center gap-3">
-                            <ChevronRight size={14} className={clsx("transition-transform", selectedCategory === cat ? "rotate-90 text-emerald-400" : "text-muted-foreground group-hover:text-muted-foreground")} />
+                            <ChevronRight size={14} className={clsx("transition-transform", selectedCategory === cat ? "rotate-90 dark:text-emerald-400 text-emerald-800" : "text-muted-foreground group-hover:text-muted-foreground")} />
                             <span className="text-sm truncate">{cat}</span>
                         </div>
                         <div className="flex items-center gap-2">
@@ -131,7 +131,7 @@ export const StockPickerModal: React.FC<StockPickerModalProps> = ({
             <motion.div 
                 initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
                 onClick={onClose}
-                className="absolute inset-0 bg-black/30 backdrop-blur-sm"
+                className="absolute inset-0 dark:bg-black/30 bg-muted/70 backdrop-blur-sm"
             />
             
             <motion.div 
@@ -141,13 +141,13 @@ export const StockPickerModal: React.FC<StockPickerModalProps> = ({
                 className="relative w-full max-w-6xl h-[90vh] bg-[#121212] border border-border rounded-3xl shadow-2xl flex flex-col overflow-hidden"
             >
                 {/* Header */}
-                <div className="p-6 border-b border-white/5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white/[0.02]">
+                <div className="p-6 border-b dark:border-white/5 border-border flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white/[0.02]">
                     <div className="flex items-center gap-4">
-                        <div className="w-12 h-12 rounded-2xl bg-primary/20 flex items-center justify-center text-emerald-400 border border-emerald-500/20 shadow-inner">
+                        <div className="w-12 h-12 rounded-2xl bg-primary/20 flex items-center justify-center dark:text-emerald-400 text-emerald-800 border border-emerald-500/20 shadow-inner">
                             <Package size={24} />
                         </div>
                         <div>
-                            <h2 className="text-2xl font-bold text-white tracking-tight">Material aus Hauptlager</h2>
+                            <h2 className="text-2xl font-bold text-foreground tracking-tight">Material aus Hauptlager</h2>
                             <p className="text-sm text-muted-foreground">Artikel auswählen und Menge festlegen.</p>
                         </div>
                     </div>
@@ -156,13 +156,13 @@ export const StockPickerModal: React.FC<StockPickerModalProps> = ({
                         <div className="relative flex-1 sm:w-64">
                             <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" size={18} />
                             <input 
-                                className="w-full bg-muted border border-border rounded-xl py-2.5 pl-10 pr-4 text-white focus:outline-none focus:border-emerald-500/50 transition-all text-sm"
+                                className="w-full bg-muted border border-border rounded-xl py-2.5 pl-10 pr-4 text-foreground focus:outline-none focus:border-emerald-500/50 transition-all text-sm"
                                 placeholder="Artikel oder SKU suchen..."
                                 value={searchTerm}
                                 onChange={e => setSearchTerm(e.target.value)}
                             />
                         </div>
-                        <button onClick={onClose} className="p-2.5 rounded-xl bg-muted text-muted-foreground hover:text-white hover:bg-muted transition-all border border-white/5"><X size={20} /></button>
+                        <button onClick={onClose} className="p-2.5 rounded-xl bg-muted text-muted-foreground hover:text-foreground hover:bg-muted transition-all border dark:border-white/5 border-border"><X size={20} /></button>
                     </div>
                 </div>
 
@@ -170,7 +170,7 @@ export const StockPickerModal: React.FC<StockPickerModalProps> = ({
                 <div className="flex-1 flex overflow-hidden">
                     {/* Sidebar Desktop */}
                     {!isMobile && (
-                        <aside className="w-72 flex-shrink-0 border-r border-white/5 flex flex-col p-4 bg-white/[0.01]">
+                        <aside className="w-72 flex-shrink-0 border-r dark:border-white/5 border-border flex flex-col p-4 bg-white/[0.01]">
                             <div className="px-4 py-2 flex items-center gap-2 text-muted-foreground uppercase tracking-widest text-[10px] font-bold mb-2">
                                 <Filter size={10} />
                                 Kategorien
@@ -182,12 +182,12 @@ export const StockPickerModal: React.FC<StockPickerModalProps> = ({
                     {/* Main List */}
                     <main className="flex-1 flex flex-col min-w-0 bg-transparent">
                         {isMobile && (
-                            <div className="p-4 border-b border-white/5 flex items-center gap-2">
+                            <div className="p-4 border-b dark:border-white/5 border-border flex items-center gap-2">
                                 <button 
                                     onClick={() => setIsMobileCategoryOpen(true)}
                                     className="flex-1 flex items-center gap-3 px-4 py-2 rounded-xl bg-muted border border-border text-muted-foreground"
                                 >
-                                    <Menu size={18} className="text-emerald-400" />
+                                    <Menu size={18} className="dark:text-emerald-400 text-emerald-800" />
                                     <span className="text-sm font-medium">{selectedCategory || 'Alle Kategorien'}</span>
                                 </button>
                             </div>
@@ -210,12 +210,12 @@ export const StockPickerModal: React.FC<StockPickerModalProps> = ({
                                                     "group p-4 rounded-2xl border transition-all duration-300",
                                                     quantity > 0 
                                                         ? "bg-primary/10 border-emerald-500/40 shadow-lg shadow-emerald-500/5" 
-                                                        : "bg-white/[0.03] border-white/5 hover:border-border"
+                                                        : "bg-white/[0.03] dark:border-white/5 border-border hover:border-border"
                                                 )}
                                             >
                                                 <div className="flex justify-between items-start gap-3 mb-3">
                                                     <div className="flex items-start gap-3 min-w-0 flex-1">
-                                                        <div className="w-12 h-12 shrink-0 rounded-lg bg-black/20 overflow-hidden relative border border-white/5">
+                                                        <div className="w-12 h-12 shrink-0 rounded-lg dark:bg-black/20 bg-muted/60 overflow-hidden relative border dark:border-white/5 border-border">
                                                             <CachedImage
                                                                 src={article.image || `https://picsum.photos/seed/${article.id}/200/200`}
                                                                 articleId={article.id}
@@ -224,33 +224,33 @@ export const StockPickerModal: React.FC<StockPickerModalProps> = ({
                                                             />
                                                         </div>
                                                         <div className="min-w-0 flex-1 py-0.5">
-                                                            <h3 className={clsx("font-bold text-sm", quantity > 0 ? "text-emerald-300" : "text-white")}>{article.name}</h3>
+                                                            <h3 className={clsx("font-bold text-sm", quantity > 0 ? "dark:text-emerald-300 text-emerald-800" : "text-foreground")}>{article.name}</h3>
                                                             <p className="text-[10px] text-muted-foreground mt-0.5">{article.sku} • {article.location}</p>
                                                         </div>
                                                     </div>
-                                                    <div className={clsx("text-xs font-bold px-2 py-0.5 rounded-full shrink-0 mt-0.5", article.stock > 0 ? "bg-primary/10 text-emerald-400" : "bg-rose-500/10 text-rose-400")}>
+                                                    <div className={clsx("text-xs font-bold px-2 py-0.5 rounded-full shrink-0 mt-0.5", article.stock > 0 ? "bg-primary/10 dark:text-emerald-400 text-emerald-800" : "bg-rose-500/10 dark:text-rose-400 text-rose-800")}>
                                                         {article.stock} Stk
                                                     </div>
                                                 </div>
 
                                                 <div className="flex items-center gap-2">
-                                                    <div className="flex items-center bg-black/40 rounded-xl border border-white/5 overflow-hidden flex-1">
+                                                    <div className="flex items-center dark:bg-black/40 bg-muted/80 rounded-xl border dark:border-white/5 border-border overflow-hidden flex-1">
                                                         <button 
                                                             onClick={() => handleQuantityChange(article.id, -1)}
-                                                            className="w-10 h-10 flex items-center justify-center text-muted-foreground hover:text-white hover:bg-muted transition-colors"
+                                                            className="w-10 h-10 flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
                                                         >
                                                             <Minus size={16} />
                                                         </button>
                                                         <input 
                                                             type="number"
-                                                            className="w-full h-10 bg-transparent text-center text-sm font-bold text-white focus:outline-none"
+                                                            className="w-full h-10 bg-transparent text-center text-sm font-bold text-foreground focus:outline-none"
                                                             value={quantity === 0 ? '' : quantity}
                                                             onChange={e => handleSetQuantity(article.id, e.target.value)}
                                                             placeholder="0"
                                                         />
                                                         <button 
                                                             onClick={() => handleQuantityChange(article.id, 1)}
-                                                            className="w-10 h-10 flex items-center justify-center text-muted-foreground hover:text-white hover:bg-muted transition-colors"
+                                                            className="w-10 h-10 flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
                                                         >
                                                             <Plus size={16} />
                                                         </button>
@@ -271,7 +271,7 @@ export const StockPickerModal: React.FC<StockPickerModalProps> = ({
                 </div>
 
                 {/* Footer Actions */}
-                <div className="p-6 border-t border-white/5 flex items-center justify-between bg-white/[0.02]">
+                <div className="p-6 border-t dark:border-white/5 border-border flex items-center justify-between bg-white/[0.02]">
                     <div className="hidden sm:flex items-center gap-4 text-sm">
                         <div className="flex items-center gap-2 text-muted-foreground">
                             <ShoppingCart size={18} />
@@ -300,7 +300,7 @@ export const StockPickerModal: React.FC<StockPickerModalProps> = ({
                             <motion.div 
                                 initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
                                 onClick={() => setIsMobileCategoryOpen(false)}
-                                className="fixed inset-0 bg-black/30 backdrop-blur-sm z-[310] lg:hidden"
+                                className="fixed inset-0 dark:bg-black/30 bg-muted/70 backdrop-blur-sm z-[310] lg:hidden"
                             />
                             <motion.div 
                                 initial={{ x: '-100%' }} animate={{ x: 0 }} exit={{ x: '-100%' }}
@@ -308,8 +308,8 @@ export const StockPickerModal: React.FC<StockPickerModalProps> = ({
                                 className="fixed left-0 top-0 bottom-0 w-[80%] max-w-sm bg-[#121212] z-[311] border-r border-border p-6 flex flex-col lg:hidden"
                             >
                                 <div className="flex items-center justify-between mb-8">
-                                    <h2 className="text-2xl font-bold text-white">Kategorien</h2>
-                                    <button onClick={() => setIsMobileCategoryOpen(false)} className="p-2 text-muted-foreground hover:text-white"><X size={24} /></button>
+                                    <h2 className="text-2xl font-bold text-foreground">Kategorien</h2>
+                                    <button onClick={() => setIsMobileCategoryOpen(false)} className="p-2 text-muted-foreground hover:text-foreground"><X size={24} /></button>
                                 </div>
                                 <div className="flex-1 overflow-hidden">
                                     <CategoryList />

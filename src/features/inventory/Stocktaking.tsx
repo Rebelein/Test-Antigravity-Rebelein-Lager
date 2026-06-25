@@ -149,10 +149,10 @@ const Stocktaking: React.FC = () => {
             {/* HEADER */}
             <div className="absolute top-0 left-0 right-0 p-4 z-20 flex justify-between items-center bg-gradient-to-b from-black/80 to-transparent">
                 <div className="flex items-center gap-2">
-                    <ScanLine className="text-emerald-400" size={24} />
-                    <h1 className="text-xl font-bold text-white">Scanner</h1>
+                    <ScanLine className="dark:text-emerald-400 text-emerald-800" size={24} />
+                    <h1 className="text-xl font-bold text-foreground">Scanner</h1>
                 </div>
-                <button onClick={() => navigate('/dashboard')} className="p-2 bg-muted rounded-full text-muted-foreground hover:text-white backdrop-blur-sm">
+                <button onClick={() => navigate('/dashboard')} className="p-2 bg-muted rounded-full text-muted-foreground hover:text-foreground backdrop-blur-sm">
                     <X size={24} />
                 </button>
             </div>
@@ -187,7 +187,7 @@ const Stocktaking: React.FC = () => {
                         <input
                             type="text"
                             placeholder="Code manuell eingeben..."
-                            className="w-full bg-muted border border-border rounded-xl py-4 pl-12 pr-4 text-white placeholder-white/30 focus:outline-none focus:ring-2 focus:ring-emerald-500/50"
+                            className="w-full bg-muted border border-border rounded-xl py-4 pl-12 pr-4 text-foreground dark:placeholder-white/30 placeholder-muted-foreground/80 focus:outline-none focus:ring-2 focus:ring-emerald-500/50"
                             onKeyDown={(e) => {
                                 if (e.key === 'Enter') handleScanSuccess((e.target as HTMLInputElement).value);
                             }}
@@ -204,16 +204,16 @@ const Stocktaking: React.FC = () => {
 
             {/* RESULT MODAL */}
             {scannedResult && scannedResult.type === 'article' && (
-                <div className="absolute inset-0 z-30 bg-black/30 backdrop-blur-sm flex items-end sm:items-center justify-center sm:p-4">
+                <div className="absolute inset-0 z-30 dark:bg-black/30 bg-muted/70 backdrop-blur-sm flex items-end sm:items-center justify-center sm:p-4">
                     <GlassCard className="w-full sm:max-w-sm rounded-t-3xl sm:rounded-3xl animate-in slide-in-from-bottom-full sm:slide-in-from-bottom-10 flex flex-col max-h-[90vh]">
 
                         {/* Title & Close */}
                         <div className="flex justify-between items-start mb-4 shrink-0">
-                            <div className="flex items-center gap-2 text-emerald-400">
+                            <div className="flex items-center gap-2 dark:text-emerald-400 text-emerald-800">
                                 <CheckCircle2 size={24} />
                                 <span className="font-bold">Artikel gefunden</span>
                             </div>
-                            <button onClick={handleCloseResult} className="text-muted-foreground hover:text-white"><X size={24} /></button>
+                            <button onClick={handleCloseResult} className="text-muted-foreground hover:text-foreground"><X size={24} /></button>
                         </div>
 
                         {/* Article Info */}
@@ -222,11 +222,11 @@ const Stocktaking: React.FC = () => {
                                 <img src={scannedResult.data.image_url || `https://picsum.photos/seed/${scannedResult.data.id}/200`} className="w-full h-full object-cover" />
                             </div>
                             <div>
-                                <h3 className="font-bold text-white line-clamp-2">{scannedResult.data.name}</h3>
+                                <h3 className="font-bold text-foreground line-clamp-2">{scannedResult.data.name}</h3>
                                 <div className="text-sm text-muted-foreground mt-1">{scannedResult.data.sku}</div>
                                 <div className="mt-2 flex items-center gap-2">
                                     <span className="text-xs px-2 py-0.5 bg-muted rounded text-muted-foreground">{scannedResult.data.location || 'Kein Ort'}</span>
-                                    <span className={`text-sm font-bold ${scannedResult.data.stock < scannedResult.data.target_stock ? 'text-rose-400' : 'text-emerald-400'}`}>
+                                    <span className={`text-sm font-bold ${scannedResult.data.stock < scannedResult.data.target_stock ? 'dark:text-rose-400 text-rose-800' : 'dark:text-emerald-400 text-emerald-800'}`}>
                                         Bestand: {scannedResult.data.stock}
                                     </span>
                                 </div>
@@ -238,15 +238,15 @@ const Stocktaking: React.FC = () => {
                             <div className="flex items-center justify-between gap-4 mb-4">
                                 <button
                                     onClick={() => setBookingAmount(prev => prev - 1)}
-                                    className="w-12 h-12 flex items-center justify-center rounded-xl bg-muted hover:bg-muted text-white transition-colors"
+                                    className="w-12 h-12 flex items-center justify-center rounded-xl bg-muted hover:bg-muted text-foreground transition-colors"
                                 >
                                     <Minus size={24} />
                                 </button>
 
                                 <div className="flex flex-col items-center">
                                     <span className="text-xs text-muted-foreground uppercase tracking-wider font-medium mb-1">Menge</span>
-                                    <span className={`text-3xl font-bold font-mono ${bookingAmount > 0 ? 'text-emerald-400' :
-                                        bookingAmount < 0 ? 'text-rose-400' : 'text-white'
+                                    <span className={`text-3xl font-bold font-mono ${bookingAmount > 0 ? 'dark:text-emerald-400 text-emerald-800' :
+                                        bookingAmount < 0 ? 'dark:text-rose-400 text-rose-800' : 'text-foreground'
                                         }`}>
                                         {bookingAmount > 0 ? '+' : ''}{bookingAmount}
                                     </span>
@@ -254,7 +254,7 @@ const Stocktaking: React.FC = () => {
 
                                 <button
                                     onClick={() => setBookingAmount(prev => prev + 1)}
-                                    className="w-12 h-12 flex items-center justify-center rounded-xl bg-muted hover:bg-muted text-white transition-colors"
+                                    className="w-12 h-12 flex items-center justify-center rounded-xl bg-muted hover:bg-muted text-foreground transition-colors"
                                 >
                                     <Plus size={24} />
                                 </button>
@@ -281,7 +281,7 @@ const Stocktaking: React.FC = () => {
 
                         <div className="flex gap-3 shrink-0">
                             <Button variant="secondary" onClick={handleCloseResult} className="flex-1">Scan weiter</Button>
-                            <Button onClick={handleGoToArticle} className="flex-1 bg-blue-600/20 text-blue-200 hover:bg-blue-600/30 border border-blue-500/30">Details</Button>
+                            <Button onClick={handleGoToArticle} className="flex-1 bg-blue-600/20 dark:text-blue-200 text-blue-900 hover:bg-blue-600/30 border border-blue-500/30">Details</Button>
                         </div>
                     </GlassCard>
                 </div>

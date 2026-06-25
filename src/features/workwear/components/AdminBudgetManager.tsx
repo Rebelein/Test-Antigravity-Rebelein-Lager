@@ -164,7 +164,7 @@ export const AdminBudgetManager: React.FC<AdminBudgetManagerProps> = ({ onBack }
                     <ArrowLeft size={20} />
                 </Button>
                 <div>
-                    <h2 className="text-2xl font-bold text-white">Einstellungen & Budget</h2>
+                    <h2 className="text-2xl font-bold text-foreground">Einstellungen & Budget</h2>
                     <p className="text-muted-foreground">Verwaltung für Jahr {currentYear}</p>
                 </div>
             </div>
@@ -175,9 +175,9 @@ export const AdminBudgetManager: React.FC<AdminBudgetManagerProps> = ({ onBack }
                     {logoUrl ? <img src={logoUrl} className="w-full h-full object-contain p-2" /> : <div className="text-xs text-muted-foreground text-center">Kein Logo</div>}
                 </div>
                 <div className="flex-1 text-center md:text-left">
-                    <h3 className="text-lg font-bold text-white">Firmenlogo</h3>
+                    <h3 className="text-lg font-bold text-foreground">Firmenlogo</h3>
                     <p className="text-muted-foreground text-sm mb-4">Dieses Logo wird für Artikel verwendet, bei denen "Mit Firmenlogo" aktiviert ist.</p>
-                    <label className="inline-flex items-center gap-2 px-4 py-2 bg-primary/10 hover:bg-primary/20 text-emerald-400 rounded-lg cursor-pointer transition-colors text-sm font-medium border border-emerald-500/20">
+                    <label className="inline-flex items-center gap-2 px-4 py-2 bg-primary/10 hover:bg-primary/20 dark:text-emerald-400 text-emerald-800 rounded-lg cursor-pointer transition-colors text-sm font-medium border border-emerald-500/20">
                         {uploadingLogo ? 'Lade hoch...' : 'Logo hochladen / ändern'}
                         <input type="file" accept="image/*" className="hidden" onChange={handleLogoUpload} disabled={uploadingLogo} />
                     </label>
@@ -185,8 +185,8 @@ export const AdminBudgetManager: React.FC<AdminBudgetManagerProps> = ({ onBack }
             </GlassCard>
 
             <div className="flex items-center gap-2 mt-8 mb-4">
-                <UserCircle className="text-emerald-400" size={20} />
-                <h3 className="text-lg font-bold text-white">Mitarbeiter Übersicht ({users.length})</h3>
+                <UserCircle className="dark:text-emerald-400 text-emerald-800" size={20} />
+                <h3 className="text-lg font-bold text-foreground">Mitarbeiter Übersicht ({users.length})</h3>
             </div>
 
             <GlassCard className="p-4 flex gap-2">
@@ -194,7 +194,7 @@ export const AdminBudgetManager: React.FC<AdminBudgetManagerProps> = ({ onBack }
                 <input
                     type="text"
                     placeholder="Benutzer suchen..."
-                    className="bg-transparent outline-none text-white w-full"
+                    className="bg-transparent outline-none text-foreground w-full"
                     value={searchTerm}
                     onChange={e => setSearchTerm(e.target.value)}
                 />
@@ -207,7 +207,7 @@ export const AdminBudgetManager: React.FC<AdminBudgetManagerProps> = ({ onBack }
                             {user.avatar_url ? <img src={user.avatar_url} className="w-full h-full rounded-full" /> : <UserCircle />}
                         </div>
                         <div className="flex-1 text-center md:text-left">
-                            <div className="font-bold text-white">{user.full_name || 'Unbekannt'}</div>
+                            <div className="font-bold text-foreground">{user.full_name || 'Unbekannt'}</div>
                             <div className="text-xs text-muted-foreground">{user.email}</div>
                         </div>
 
@@ -215,7 +215,7 @@ export const AdminBudgetManager: React.FC<AdminBudgetManagerProps> = ({ onBack }
                         <div className="w-full md:w-40">
                             <label className="text-[10px] uppercase text-muted-foreground font-bold ml-1">Rolle</label>
                             <select
-                                className="w-full bg-black/20 border border-border rounded-lg px-2 py-2 text-sm text-white outline-none focus:border-emerald-500/50"
+                                className="w-full dark:bg-black/20 bg-muted/60 border border-border rounded-lg px-2 py-2 text-sm text-foreground outline-none focus:border-emerald-500/50"
                                 value={user.workwear_role || 'monteur'}
                                 onChange={(e) => handleRoleChange(user.id, e.target.value as WorkwearRole)}
                             >
@@ -231,12 +231,12 @@ export const AdminBudgetManager: React.FC<AdminBudgetManagerProps> = ({ onBack }
                                 <label className="text-[10px] uppercase text-muted-foreground font-bold ml-1">Budget {currentYear} (€)</label>
                                 <input
                                     type="number"
-                                    className="w-full bg-black/20 border border-border rounded-lg px-2 py-2 text-sm text-white outline-none focus:border-emerald-500/50"
+                                    className="w-full dark:bg-black/20 bg-muted/60 border border-border rounded-lg px-2 py-2 text-sm text-foreground outline-none focus:border-emerald-500/50"
                                     value={user.budget_limit}
                                     onChange={(e) => handleBudgetChange(user.id, parseFloat(e.target.value))}
                                 />
                             </div>
-                            <Button onClick={() => saveBudget(user)} variant="ghost" className="h-[38px] w-[38px] p-0 flex items-center justify-center bg-primary/10 text-emerald-400 hover:bg-primary/20">
+                            <Button onClick={() => saveBudget(user)} variant="ghost" className="h-[38px] w-[38px] p-0 flex items-center justify-center bg-primary/10 dark:text-emerald-400 text-emerald-800 hover:bg-primary/20">
                                 <Save size={18} />
                             </Button>
                         </div>

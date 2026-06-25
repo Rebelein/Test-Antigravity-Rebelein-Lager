@@ -130,18 +130,18 @@ export const KeyModal: React.FC<KeyModalProps> = ({ isOpen, onClose, onSave, edi
             {/* Header Action for Print */}
             <div className="absolute top-4 right-16">
                 <Button onClick={handlePrint} variant="ghost" className="!p-2">
-                    <Printer size={20} className="text-muted-foreground hover:text-white" />
+                    <Printer size={20} className="text-muted-foreground hover:text-foreground" />
                 </Button>
             </div>
 
             <form onSubmit={handleSubmit} className="space-y-4 p-4">
                 <div className="grid grid-cols-4 gap-4">
                     <div className="col-span-1">
-                        <label className="block text-sm font-medium text-gray-300 mb-1">Platz-Nr.</label>
+                        <label className="block text-sm font-medium dark:text-gray-300 text-gray-800 mb-1">Platz-Nr.</label>
                         <input
                             type="number"
                             required
-                            className="w-full bg-muted border border-border rounded-lg p-2 text-white focus:outline-none focus:ring-2 focus:ring-emerald-500/50"
+                            className="w-full bg-muted border border-border rounded-lg p-2 text-foreground focus:outline-none focus:ring-2 focus:ring-emerald-500/50"
                             value={formData.slot_number}
                             onChange={(e) => setFormData({ ...formData, slot_number: parseInt(e.target.value) })}
                         />
@@ -149,13 +149,13 @@ export const KeyModal: React.FC<KeyModalProps> = ({ isOpen, onClose, onSave, edi
                     <div className="col-span-3">
                         <div className="grid grid-cols-2 gap-2">
                             <div>
-                                <label className="block text-sm font-medium text-gray-300 mb-1">Bezeichnung / Name</label>
+                                <label className="block text-sm font-medium dark:text-gray-300 text-gray-800 mb-1">Bezeichnung / Name</label>
                                 <div className="relative">
                                     <KeyIcon className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" size={18} />
                                     <input
                                         type="text"
                                         required
-                                        className="w-full bg-muted border border-border rounded-lg p-2 pl-10 text-white focus:outline-none focus:ring-2 focus:ring-emerald-500/50"
+                                        className="w-full bg-muted border border-border rounded-lg p-2 pl-10 text-foreground focus:outline-none focus:ring-2 focus:ring-emerald-500/50"
                                         placeholder="z.B. Heizungsraum"
                                         value={formData.name}
                                         onChange={(e) => setFormData({ ...formData, name: e.target.value })}
@@ -163,10 +163,10 @@ export const KeyModal: React.FC<KeyModalProps> = ({ isOpen, onClose, onSave, edi
                                 </div>
                             </div>
                             <div>
-                                <label className="block text-sm font-medium text-gray-300 mb-1">Kategorie</label>
+                                <label className="block text-sm font-medium dark:text-gray-300 text-gray-800 mb-1">Kategorie</label>
                                 <div className="relative">
                                     <select
-                                        className="w-full bg-muted border border-border rounded-lg p-2 text-white appearance-none focus:outline-none focus:border-emerald-500"
+                                        className="w-full bg-muted border border-border rounded-lg p-2 text-foreground appearance-none focus:outline-none focus:border-emerald-500"
                                         value={formData.category_id || ''}
                                         onChange={(e) => setFormData({ ...formData, category_id: e.target.value })}
                                     >
@@ -183,12 +183,12 @@ export const KeyModal: React.FC<KeyModalProps> = ({ isOpen, onClose, onSave, edi
                 </div>
 
                 <div>
-                    <label className="block text-sm font-medium text-gray-300 mb-1">Objektadresse</label>
+                    <label className="block text-sm font-medium dark:text-gray-300 text-gray-800 mb-1">Objektadresse</label>
                     <div className="relative">
                         <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" size={18} />
                         <input
                             type="text"
-                            className="w-full bg-muted border border-border rounded-lg p-2 pl-10 text-white focus:outline-none focus:ring-2 focus:ring-emerald-500/50"
+                            className="w-full bg-muted border border-border rounded-lg p-2 pl-10 text-foreground focus:outline-none focus:ring-2 focus:ring-emerald-500/50"
                             placeholder="Straße, PLZ, Ort"
                             value={formData.address || ''}
                             onChange={(e) => setFormData({ ...formData, address: e.target.value })}
@@ -197,12 +197,12 @@ export const KeyModal: React.FC<KeyModalProps> = ({ isOpen, onClose, onSave, edi
                 </div>
 
                 <div>
-                    <label className="block text-sm font-medium text-gray-300 mb-1">Eigentümer / Kunde (Optional)</label>
+                    <label className="block text-sm font-medium dark:text-gray-300 text-gray-800 mb-1">Eigentümer / Kunde (Optional)</label>
                     <div className="relative">
                         <User className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" size={18} />
                         <input
                             type="text"
-                            className="w-full bg-muted border border-border rounded-lg p-2 pl-10 text-white focus:outline-none focus:ring-2 focus:ring-emerald-500/50"
+                            className="w-full bg-muted border border-border rounded-lg p-2 pl-10 text-foreground focus:outline-none focus:ring-2 focus:ring-emerald-500/50"
                             placeholder="Wem gehört der Schlüssel?"
                             value={formData.owner || ''}
                             onChange={(e) => setFormData({ ...formData, owner: e.target.value })}
@@ -211,9 +211,9 @@ export const KeyModal: React.FC<KeyModalProps> = ({ isOpen, onClose, onSave, edi
                 </div>
 
                 <div>
-                    <label className="block text-sm font-medium text-gray-300 mb-1">Notizen</label>
+                    <label className="block text-sm font-medium dark:text-gray-300 text-gray-800 mb-1">Notizen</label>
                     <textarea
-                        className="w-full bg-muted border border-border rounded-lg p-2 text-white focus:outline-none focus:ring-2 focus:ring-emerald-500/50 min-h-[80px]"
+                        className="w-full bg-muted border border-border rounded-lg p-2 text-foreground focus:outline-none focus:ring-2 focus:ring-emerald-500/50 min-h-[80px]"
                         value={formData.notes || ''}
                         onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
                     />
@@ -423,7 +423,7 @@ export const KeyHandoverContent: React.FC<KeyHandoverContentProps> = ({ onClose,
                             {partnerName ? (
                                 <button
                                     onClick={() => { setPartnerName(''); setHolderId(null); }}
-                                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-gray-900 dark:hover:text-white z-20 bg-transparent"
+                                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-gray-900 dark:hover:text-foreground z-20 bg-transparent"
                                 >
                                     <X size={16} />
                                 </button>
@@ -545,8 +545,8 @@ export const KeyDetailsModal: React.FC<KeyDetailsModalProps> = ({ isOpen, onClos
                 {/* Header Info */}
                 <div className="flex justify-between items-start mb-6 bg-muted p-4 rounded-xl border border-border">
                     <div>
-                        <div className="text-emerald-400 font-mono text-sm mb-1">Platz #{keyData.slot_number}</div>
-                        <h2 className="text-2xl font-bold text-white mb-2">{keyData.name}</h2>
+                        <div className="dark:text-emerald-400 text-emerald-800 font-mono text-sm mb-1">Platz #{keyData.slot_number}</div>
+                        <h2 className="text-2xl font-bold text-foreground mb-2">{keyData.name}</h2>
                         <div className="flex flex-col gap-1 text-sm text-muted-foreground">
                             {keyData.address && <div className="flex items-center gap-2"><MapPin size={14} /> {keyData.address}</div>}
                             {keyData.owner && <div className="flex items-center gap-2"><User size={14} /> Eigentümer: {keyData.owner}</div>}
@@ -561,7 +561,7 @@ export const KeyDetailsModal: React.FC<KeyDetailsModalProps> = ({ isOpen, onClos
                 </div>
 
                 {/* History Timeline */}
-                <h3 className="font-bold text-white mb-4 flex items-center gap-2">
+                <h3 className="font-bold text-foreground mb-4 flex items-center gap-2">
                     <div className="w-1 h-4 bg-primary rounded-full"></div>
                     Verlauf
                 </h3>
@@ -577,11 +577,11 @@ export const KeyDetailsModal: React.FC<KeyDetailsModalProps> = ({ isOpen, onClos
                                         event.action === 'create' ? 'bg-blue-500' : 'bg-gray-500'
                                     }`}></div>
 
-                                <div className="bg-muted rounded-lg p-3 border border-white/5">
+                                <div className="bg-muted rounded-lg p-3 border dark:border-white/5 border-border">
                                     <div className="flex justify-between items-start mb-1">
-                                        <span className={`text-xs font-bold uppercase tracking-wider ${event.action === 'checkout' ? 'text-amber-400' :
-                                            event.action === 'checkin' ? 'text-emerald-400' :
-                                                event.action === 'create' ? 'text-blue-400' : 'text-muted-foreground'
+                                        <span className={`text-xs font-bold uppercase tracking-wider ${event.action === 'checkout' ? 'dark:text-amber-400 text-amber-800' :
+                                            event.action === 'checkin' ? 'dark:text-emerald-400 text-emerald-800' :
+                                                event.action === 'create' ? 'dark:text-blue-400 text-blue-800' : 'text-muted-foreground'
                                             }`}>
                                             {event.action === 'checkout' && 'Ausgabe'}
                                             {event.action === 'checkin' && 'Rücknahme'}
@@ -592,7 +592,7 @@ export const KeyDetailsModal: React.FC<KeyDetailsModalProps> = ({ isOpen, onClos
                                             {format(new Date(event.created_at), 'dd.MM.yyyy HH:mm')}
                                         </span>
                                     </div>
-                                    <p className="text-sm text-gray-300 mb-1">{event.details}</p>
+                                    <p className="text-sm dark:text-gray-300 text-gray-800 mb-1">{event.details}</p>
                                     <div className="text-xs text-muted-foreground flex items-center gap-1">
                                         <User size={10} />
                                         {/* @ts-ignore */}
@@ -602,7 +602,7 @@ export const KeyDetailsModal: React.FC<KeyDetailsModalProps> = ({ isOpen, onClos
                             </div>
                         ))
                     ) : (
-                        <div className="text-center py-8 text-muted-foreground bg-muted rounded-xl border border-white/5 border-dashed">
+                        <div className="text-center py-8 text-muted-foreground bg-muted rounded-xl border dark:border-white/5 border-border border-dashed">
                             Keine Einträge vorhanden
                         </div>
                     )}

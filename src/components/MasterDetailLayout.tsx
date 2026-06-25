@@ -144,7 +144,7 @@ export const MasterDetailLayout: React.FC<MasterDetailLayoutProps> = ({
                                 animate={{ opacity: 1 }}
                                 exit={{ opacity: 0 }}
                                 onClick={onClose}
-                                className="fixed inset-0 z-[170] bg-black/40 backdrop-blur-[2px]"
+                                className="fixed inset-0 z-[170] dark:bg-black/40 bg-muted/80 backdrop-blur-[2px]"
                             />
                             
                             {/* Mobile Bottom Sheet */}
@@ -153,7 +153,7 @@ export const MasterDetailLayout: React.FC<MasterDetailLayoutProps> = ({
                                 animate={{ y: 0 }}
                                 exit={{ y: "100%" }}
                                 transition={{ type: "spring", damping: 25, stiffness: 300, mass: 0.8 }}
-                                className="fixed inset-x-0 bottom-0 z-[180] bg-card text-card-foreground shadow-[0_-10px_40px_rgba(0,0,0,0.3)] rounded-t-[2rem] flex flex-col h-[90vh] ring-1 ring-white/10"
+                                className="fixed inset-x-0 bottom-0 z-[180] bg-card text-card-foreground shadow-[0_-10px_40px_rgba(0,0,0,0.3)] rounded-t-[2rem] flex flex-col h-[90vh] ring-1 dark:ring-white/10 ring-black/5"
                             >
                                 {/* Decorative Handle Indicator */}
                                 <div className="w-full flex justify-center py-3 shrink-0">
@@ -163,12 +163,12 @@ export const MasterDetailLayout: React.FC<MasterDetailLayoutProps> = ({
                                 {/* Sheet Header */}
                                 {!hideHeader && title && (
                                     <div className="flex items-center justify-between px-6 pb-4 border-b border-border/50 shrink-0">
-                                        <h2 className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-white to-white/70 truncate pr-4">
+                                        <h2 className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r dark:from-white dark:to-white/70 from-foreground to-foreground/70 truncate pr-4">
                                             {title}
                                         </h2>
                                         <button
                                             onClick={onClose}
-                                            className="p-2 -mr-2 rounded-full hover:bg-white/10 text-muted-foreground hover:text-white transition-all focus:outline-none"
+                                            className="p-2 -mr-2 rounded-full hover:bg-white/10 text-muted-foreground hover:text-foreground transition-all focus:outline-none"
                                         >
                                             <X size={20} />
                                         </button>
@@ -229,12 +229,12 @@ export const MasterDetailLayout: React.FC<MasterDetailLayoutProps> = ({
                         {/* Drawer Header */}
                         {!hideHeader && (
                             <div className="flex items-center justify-between px-6 py-5 border-b border-border/50 shrink-0 bg-transparent z-10 relative">
-                                <h2 className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-white to-white/70 truncate pr-4">
+                                <h2 className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r dark:from-white dark:to-white/70 from-foreground to-foreground/70 truncate pr-4">
                                     {title || 'Details'}
                                 </h2>
                                 <button
                                     onClick={onClose}
-                                    className="p-2 -mr-2 rounded-full hover:bg-white/10 text-muted-foreground hover:text-white transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-primary/50"
+                                    className="p-2 -mr-2 rounded-full hover:bg-white/10 text-muted-foreground hover:text-foreground transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-primary/50"
                                 >
                                     <X size={20} />
                                 </button>

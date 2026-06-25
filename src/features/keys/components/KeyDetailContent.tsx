@@ -116,12 +116,12 @@ export const KeyDetailContent: React.FC<KeyDetailContentProps> = ({ keyData, onC
     // --- RENDER ---
 
     return (
-        <div className="flex flex-col h-full bg-transparent text-slate-100">
+        <div className="flex flex-col h-full bg-transparent text-foreground">
             {/* HEADER */}
-            <div className="p-6 border-b border-white/5 bg-white/[0.02]">
+            <div className="p-6 border-b dark:border-white/5 border-border bg-white/[0.02]">
                 <div className="flex justify-between items-start mb-2">
-                    <div className="text-emerald-400 font-mono text-sm">Platz #{keyData.slot_number}</div>
-                    <div className={`px-2 py-0.5 rounded text-xs font-bold uppercase ${keyData.status === 'InUse' ? 'bg-amber-500/20 text-amber-400' : 'bg-primary/20 text-emerald-400'}`}>
+                    <div className="dark:text-emerald-400 text-emerald-800 font-mono text-sm">Platz #{keyData.slot_number}</div>
+                    <div className={`px-2 py-0.5 rounded text-xs font-bold uppercase ${keyData.status === 'InUse' ? 'bg-amber-500/20 dark:text-amber-400 text-amber-800' : 'bg-primary/20 dark:text-emerald-400 text-emerald-800'}`}>
                         {keyData.status === 'InUse' ? 'Ausgegeben' : 'Verfügbar'}
                     </div>
                 </div>
@@ -134,7 +134,7 @@ export const KeyDetailContent: React.FC<KeyDetailContentProps> = ({ keyData, onC
 
             {/* TAB BAR */}
             {mode === 'overview' ? (
-                <div className="p-4 border-b border-white/5 flex gap-2">
+                <div className="p-4 border-b dark:border-white/5 border-border flex gap-2">
                     {keyData.status === 'Available' ? (
                         <Button onClick={() => prepareHandover('issue')} className="flex-1 bg-primary hover:bg-primary">Ausgeben</Button>
                     ) : (
@@ -143,7 +143,7 @@ export const KeyDetailContent: React.FC<KeyDetailContentProps> = ({ keyData, onC
                     <Button onClick={() => setMode('history')} variant="ghost" icon={<History size={18} />}>Verlauf</Button>
                 </div>
             ) : (
-                <div className="p-4 border-b border-white/5 flex items-center gap-2">
+                <div className="p-4 border-b dark:border-white/5 border-border flex items-center gap-2">
                     <button onClick={() => setMode('overview')} className="p-2 hover:bg-muted rounded-full"><ArrowLeft size={20} /></button>
                     <h3 className="font-bold">
                         {mode === 'issue' ? 'Schlüssel ausgeben' : mode === 'return' ? 'Schlüssel zurücknehmen' : 'Verlauf'}
@@ -159,12 +159,12 @@ export const KeyDetailContent: React.FC<KeyDetailContentProps> = ({ keyData, onC
                     <div className="space-y-4">
                         {keyData.status === 'InUse' && (
                             <GlassCard className="bg-amber-500/10 border-amber-500/20">
-                                <h3 className="text-sm font-bold text-amber-200 mb-2 flex items-center gap-2"><User size={16} /> Aktuell bei</h3>
-                                <div className="text-xl font-bold text-white">{keyData.holder_name || 'Unbekannt'}</div>
+                                <h3 className="text-sm font-bold dark:text-amber-200 text-amber-900 mb-2 flex items-center gap-2"><User size={16} /> Aktuell bei</h3>
+                                <div className="text-xl font-bold text-foreground">{keyData.holder_name || 'Unbekannt'}</div>
                             </GlassCard>
                         )}
                         {keyData.notes && (
-                            <div className="bg-muted p-4 rounded-xl border border-white/5 italic text-muted-foreground">
+                            <div className="bg-muted p-4 rounded-xl border dark:border-white/5 border-border italic text-muted-foreground">
                                 "{keyData.notes}"
                             </div>
                         )}
@@ -192,19 +192,19 @@ export const KeyDetailContent: React.FC<KeyDetailContentProps> = ({ keyData, onC
                             </label>
                             <User className="absolute left-3 top-8 text-muted-foreground" size={16} />
                             <input
-                                className="w-full bg-black/30 border border-border rounded-lg py-2 pl-10 pr-10 text-white focus:border-emerald-500 outline-none"
+                                className="w-full dark:bg-black/30 bg-muted/70 border border-border rounded-lg py-2 pl-10 pr-10 text-foreground focus:border-emerald-500 outline-none"
                                 value={partnerName}
                                 onChange={e => handleNameChange(e.target.value)}
                                 onFocus={() => setShowSuggestions(true)}
                                 onBlur={() => setTimeout(() => setShowSuggestions(false), 200)}
                                 placeholder="Name..."
                             />
-                            {partnerName && <button onClick={() => setPartnerName('')} className="absolute right-3 top-8 text-muted-foreground hover:text-white"><X size={16} /></button>}
+                            {partnerName && <button onClick={() => setPartnerName('')} className="absolute right-3 top-8 text-muted-foreground hover:text-foreground"><X size={16} /></button>}
 
                             {showSuggestions && (
                                 <div className="absolute z-50 w-full mt-1 bg-background border border-border rounded-lg shadow-xl max-h-48 overflow-y-auto">
                                     {profiles.filter(p => (p.full_name || '').toLowerCase().includes(partnerName.toLowerCase())).map(p => (
-                                        <div key={p.id} onClick={() => selectUser(p)} className="px-4 py-2 hover:bg-muted cursor-pointer text-white text-sm">
+                                        <div key={p.id} onClick={() => selectUser(p)} className="px-4 py-2 hover:bg-muted cursor-pointer text-foreground text-sm">
                                             {p.full_name} <span className="text-muted-foreground text-xs ml-2">Intern</span>
                                         </div>
                                     ))}
@@ -215,7 +215,7 @@ export const KeyDetailContent: React.FC<KeyDetailContentProps> = ({ keyData, onC
                         <div>
                             <label className="text-xs text-muted-foreground block mb-1">Notiz</label>
                             <textarea
-                                className="w-full bg-black/30 border border-border rounded-lg p-3 text-white focus:border-emerald-500 outline-none h-24"
+                                className="w-full dark:bg-black/30 bg-muted/70 border border-border rounded-lg p-3 text-foreground focus:border-emerald-500 outline-none h-24"
                                 value={notes}
                                 onChange={e => setNotes(e.target.value)}
                                 placeholder="Optional..."
@@ -238,10 +238,10 @@ export const KeyDetailContent: React.FC<KeyDetailContentProps> = ({ keyData, onC
                                         event.action === 'create' ? 'bg-blue-500' : 'bg-gray-500'
                                     }`}></div>
 
-                                <div className="bg-muted rounded-lg p-3 border border-white/5">
+                                <div className="bg-muted rounded-lg p-3 border dark:border-white/5 border-border">
                                     <div className="flex justify-between items-start mb-1">
-                                        <span className={`text-xs font-bold uppercase tracking-wider ${event.action === 'checkout' ? 'text-amber-400' :
-                                            event.action === 'checkin' ? 'text-emerald-400' : 'text-muted-foreground'
+                                        <span className={`text-xs font-bold uppercase tracking-wider ${event.action === 'checkout' ? 'dark:text-amber-400 text-amber-800' :
+                                            event.action === 'checkin' ? 'dark:text-emerald-400 text-emerald-800' : 'text-muted-foreground'
                                             }`}>
                                             {event.action}
                                         </span>
@@ -249,7 +249,7 @@ export const KeyDetailContent: React.FC<KeyDetailContentProps> = ({ keyData, onC
                                             {format(new Date(event.created_at), 'dd.MM.yyyy HH:mm')}
                                         </span>
                                     </div>
-                                    <p className="text-sm text-gray-300 mb-1">{event.details}</p>
+                                    <p className="text-sm dark:text-gray-300 text-gray-800 mb-1">{event.details}</p>
                                     <div className="text-xs text-muted-foreground flex items-center gap-1">
                                         <User size={10} />
                                         {/* @ts-ignore */}

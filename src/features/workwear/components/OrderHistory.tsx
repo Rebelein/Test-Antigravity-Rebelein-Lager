@@ -123,11 +123,11 @@ export const OrderHistory: React.FC<OrderHistoryProps> = ({ role }) => {
 
     const getStatusInfo = (status: string) => {
         switch (status) {
-            case 'REQUESTED': return { label: 'Angefragt', color: 'text-amber-400', bg: 'bg-amber-500/10', icon: <Clock size={16} /> };
-            case 'ORDERED': return { label: 'Bestellt', color: 'text-blue-400', bg: 'bg-blue-500/10', icon: <Package size={16} /> };
-            case 'COMPLETED': return { label: 'Abgeschlossen', color: 'text-emerald-400', bg: 'bg-primary/10', icon: <CheckCircle size={16} /> };
-            case 'RETURNED': return { label: 'Retourniert', color: 'text-rose-400', bg: 'bg-rose-500/10', icon: <AlertCircle size={16} /> };
-            default: return { label: status, color: 'text-white', bg: 'bg-muted', icon: <Clock size={16} /> };
+            case 'REQUESTED': return { label: 'Angefragt', color: 'dark:text-amber-400 text-amber-800', bg: 'bg-amber-500/10', icon: <Clock size={16} /> };
+            case 'ORDERED': return { label: 'Bestellt', color: 'dark:text-blue-400 text-blue-800', bg: 'bg-blue-500/10', icon: <Package size={16} /> };
+            case 'COMPLETED': return { label: 'Abgeschlossen', color: 'dark:text-emerald-400 text-emerald-800', bg: 'bg-primary/10', icon: <CheckCircle size={16} /> };
+            case 'RETURNED': return { label: 'Retourniert', color: 'dark:text-rose-400 text-rose-800', bg: 'bg-rose-500/10', icon: <AlertCircle size={16} /> };
+            default: return { label: status, color: 'text-foreground', bg: 'bg-muted', icon: <Clock size={16} /> };
         }
     };
 
@@ -146,20 +146,20 @@ export const OrderHistory: React.FC<OrderHistoryProps> = ({ role }) => {
                             {status.icon}
                         </div>
                         <div>
-                            <div className="font-bold text-white">Bestellung vom {format(new Date(order.created_at), 'dd.MM.yyyy', { locale: de })}</div>
+                            <div className="font-bold text-foreground">Bestellung vom {format(new Date(order.created_at), 'dd.MM.yyyy', { locale: de })}</div>
                             <div className={clsx("text-xs font-medium", status.color)}>{status.label} • {order.items.length} Artikel</div>
                         </div>
                     </div>
                     <div className="flex items-center gap-4">
                         <div className="text-right hidden sm:block">
-                            <div className="font-mono font-bold text-emerald-400">{order.total_amount.toFixed(2)} €</div>
+                            <div className="font-mono font-bold dark:text-emerald-400 text-emerald-800">{order.total_amount.toFixed(2)} €</div>
                             {isAdmin && <div className="text-xs text-muted-foreground">{order.profile?.full_name}</div>}
                         </div>
 
                         {(isAdmin || order.status === 'REQUESTED') && (
                             <button
                                 onClick={(e) => { e.stopPropagation(); deleteOrder(order.id); }}
-                                className="w-8 h-8 flex items-center justify-center text-muted-foreground hover:text-rose-400 hover:bg-rose-500/10 rounded-full transition-colors"
+                                className="w-8 h-8 flex items-center justify-center text-muted-foreground hover:dark:text-rose-400 text-rose-800 hover:bg-rose-500/10 rounded-full transition-colors"
                                 title="Bestellung löschen"
                             >
                                 <Trash2 size={16} />
@@ -172,17 +172,17 @@ export const OrderHistory: React.FC<OrderHistoryProps> = ({ role }) => {
 
                 {/* Details */}
                 {isExpanded && (
-                    <div className="bg-black/20 border-t border-white/5 p-4 space-y-3">
+                    <div className="dark:bg-black/20 bg-muted/60 border-t dark:border-white/5 border-border p-4 space-y-3">
                         {order.items.map(item => (
                             <div key={item.id} className="flex items-center gap-4">
                                 <div className="w-12 h-12 bg-muted rounded overflow-hidden flex items-center justify-center shrink-0">
                                     {item.template_image ? <img src={item.template_image} className="w-full h-full object-cover" /> : <Shirt size={20} className="text-muted-foreground" />}
                                 </div>
                                 <div className="flex-1">
-                                    <div className="text-sm font-medium text-white">{item.template_name}</div>
+                                    <div className="text-sm font-medium text-foreground">{item.template_name}</div>
                                     <div className="text-xs text-muted-foreground">Größe: {item.size} • Menge: {item.quantity} {item.use_logo && '• Mit Logo'}</div>
                                 </div>
-                                <div className="text-emerald-400 font-mono text-sm">
+                                <div className="dark:text-emerald-400 text-emerald-800 font-mono text-sm">
                                     {(item.price_at_order || 0).toFixed(2)} €
                                 </div>
                             </div>
@@ -222,7 +222,7 @@ export const OrderHistory: React.FC<OrderHistoryProps> = ({ role }) => {
 
         return (
             <div className="space-y-4 max-w-3xl mx-auto">
-                <div className="bg-amber-500/10 text-amber-300 p-4 rounded-lg mb-6 flex items-start gap-3 border border-amber-500/20">
+                <div className="bg-amber-500/10 dark:text-amber-300 text-amber-800 p-4 rounded-lg mb-6 flex items-start gap-3 border border-amber-500/20">
                     <Clock className="shrink-0 mt-1" size={18} />
                     <div className="text-sm">
                         <span className="font-bold">Admin-Ansicht:</span> Hier siehst du alle Bestellungen deiner Mitarbeiter.
@@ -237,11 +237,11 @@ export const OrderHistory: React.FC<OrderHistoryProps> = ({ role }) => {
                             className="w-full flex items-center justify-between p-4 bg-muted hover:bg-muted rounded-xl transition-colors text-left"
                         >
                             <div className="flex items-center gap-3">
-                                <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center text-emerald-400">
+                                <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center dark:text-emerald-400 text-emerald-800">
                                     <User size={16} />
                                 </div>
                                 <div>
-                                    <div className="font-bold text-white">{name}</div>
+                                    <div className="font-bold text-foreground">{name}</div>
                                     <div className="text-xs text-muted-foreground">{orders.length} Bestellungen</div>
                                 </div>
                             </div>

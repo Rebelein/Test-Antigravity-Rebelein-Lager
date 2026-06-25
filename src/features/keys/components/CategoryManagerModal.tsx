@@ -82,7 +82,7 @@ export const CategoryManagerModal: React.FC<CategoryManagerModalProps> = ({ isOp
 
                 {/* Create New */}
                 <div className="bg-muted p-4 rounded-xl border border-border space-y-4">
-                    <h3 className="text-sm font-bold text-white uppercase tracking-wider">Neue Kategorie</h3>
+                    <h3 className="text-sm font-bold text-foreground uppercase tracking-wider">Neue Kategorie</h3>
                     <div className="flex gap-2">
                         <div className="flex-1">
                             <GlassInput
@@ -121,10 +121,10 @@ export const CategoryManagerModal: React.FC<CategoryManagerModalProps> = ({ isOp
                     <h3 className="text-sm font-bold text-muted-foreground uppercase tracking-wider mb-2">Vorhandene Kategorien</h3>
                     {categories.length === 0 && <p className="text-center text-muted-foreground py-4">Keine Kategorien vorhanden.</p>}
                     {categories.map(cat => (
-                        <div key={cat.id} className="flex justify-between items-center p-3 bg-black/20 rounded-lg border border-white/5">
+                        <div key={cat.id} className="flex justify-between items-center p-3 dark:bg-black/20 bg-muted/60 rounded-lg border dark:border-white/5 border-border">
                             <div className="flex items-center gap-3">
                                 <div className="w-4 h-4 rounded-full" style={{ backgroundColor: cat.color }}></div>
-                                <span className="font-bold text-white">{cat.name}</span>
+                                <span className="font-bold text-foreground">{cat.name}</span>
                             </div>
                             <button onClick={() => handleDelete(cat.id)} className="text-muted-foreground hover:text-red-400 p-2">
                                 <Trash2 size={16} />

@@ -34,8 +34,8 @@ export const CartModal: React.FC<CartModalProps> = ({
                 ) : (
                     <div className="space-y-4">
                         {cart.map(item => (
-                            <div key={item.id} className="flex items-center gap-4 bg-muted p-3 rounded-lg border border-white/5">
-                                <div className="w-12 h-12 bg-black/30 rounded flex items-center justify-center shrink-0 overflow-hidden">
+                            <div key={item.id} className="flex items-center gap-4 bg-muted p-3 rounded-lg border dark:border-white/5 border-border">
+                                <div className="w-12 h-12 dark:bg-black/30 bg-muted/70 rounded flex items-center justify-center shrink-0 overflow-hidden">
                                     {item.type === 'catalog' && item.template?.image_url ? (
                                         <img src={item.template.image_url} className="w-full h-full object-cover" alt="" />
                                     ) : (
@@ -43,7 +43,7 @@ export const CartModal: React.FC<CartModalProps> = ({
                                     )}
                                 </div>
                                 <div className="flex-1 min-w-0">
-                                    <div className="font-bold text-white truncate">
+                                    <div className="font-bold text-foreground truncate">
                                         {item.type === 'catalog' ? item.template!.name : item.customData!.name}
                                     </div>
                                     <div className="text-xs text-muted-foreground">
@@ -51,10 +51,10 @@ export const CartModal: React.FC<CartModalProps> = ({
                                         {item.type === 'catalog' && item.template!.has_logo ? ' Mit Logo' : ' Ohne Logo'}
                                     </div>
                                 </div>
-                                <div className="font-mono text-emerald-300">
+                                <div className="font-mono dark:text-emerald-300 text-emerald-800">
                                     {((item.type === 'catalog' ? item.template!.price : item.customData!.price) * item.quantity).toFixed(2)} €
                                 </div>
-                                <button onClick={() => onRemove(item.id)} className="p-2 hover:bg-muted rounded-full text-muted-foreground hover:text-rose-400">
+                                <button onClick={() => onRemove(item.id)} className="p-2 hover:bg-muted rounded-full text-muted-foreground hover:dark:text-rose-400 text-rose-800">
                                     <Trash2 size={16} />
                                 </button>
                             </div>
@@ -62,11 +62,11 @@ export const CartModal: React.FC<CartModalProps> = ({
 
                         <div className="border-t border-border pt-4 mt-4 flex justify-between items-center">
                             <div className="text-muted-foreground">Gesamtsumme</div>
-                            <div className="text-xl font-bold text-emerald-400 font-mono">{cartTotal.toFixed(2)} €</div>
+                            <div className="text-xl font-bold dark:text-emerald-400 text-emerald-800 font-mono">{cartTotal.toFixed(2)} €</div>
                         </div>
 
                         {cartTotal > availableBudget && role !== 'chef' && (
-                            <div className="bg-rose-500/10 border border-rose-500/20 p-3 rounded-lg text-rose-300 text-sm flex items-center gap-2">
+                            <div className="bg-rose-500/10 border border-rose-500/20 p-3 rounded-lg dark:text-rose-300 text-rose-800 text-sm flex items-center gap-2">
                                 <AlertTriangle size={16} />
                                 <div>
                                     Budget überschritten! (Verfügbar: {availableBudget.toFixed(2)} €)

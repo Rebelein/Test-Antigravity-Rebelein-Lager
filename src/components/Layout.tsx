@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { NavRoute } from '../../types';
-import { LayoutDashboard, Package, Drill, ShoppingCart, ScanLine, LogOut, UserCircle, WifiOff, RefreshCw, ClipboardList, ClipboardCheck, PanelLeftClose, PanelLeftOpen, Pin, PinOff, ChevronRight, Download, Share, Check, X, Key as KeyIcon, Shirt, Palette } from 'lucide-react';
+import { LayoutDashboard, Package, Drill, ShoppingCart, ScanLine, LogOut, UserCircle, WifiOff, RefreshCw, ClipboardList, ClipboardCheck, PanelLeftClose, PanelLeftOpen, Pin, PinOff, ChevronRight, Download, Share, Check, X, Key as KeyIcon, Shirt, Palette, Sun, Moon } from 'lucide-react';
 import { PushNotificationToggle } from './PushNotificationToggle';
 import { useNavigate, useLocation, Outlet } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
@@ -33,7 +33,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
     const { signOut, profile } = useAuth();
     const { isConnected, checkConnection } = useConnection();
     const { markTourSeen } = useUserPreferences();
-    const { theme, isLowPerfMode } = useTheme();
+    const { theme, isLowPerfMode, colorMode, toggleColorMode } = useTheme();
 
     // Sidebar State for Desktop
     const [isSidebarPinned, setIsSidebarPinned] = usePersistentState('sidebar-pinned', false);
@@ -147,7 +147,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
                 <div className="w-24 h-24 rounded-full bg-red-500/10 flex items-center justify-center mb-6 animate-pulse">
                     <WifiOff size={48} className="text-red-500" />
                 </div>
-                <h1 className="text-2xl font-bold text-white mb-2">Keine Verbindung</h1>
+                <h1 className="text-2xl font-bold text-foreground mb-2">Keine Verbindung</h1>
                 <p className="text-muted-foreground mb-8 max-w-xs">
                     Um sicherzustellen, dass du immer mit aktuellen Lagerbeständen arbeitest, ist die Nutzung offline deaktiviert.
                 </p>
@@ -178,7 +178,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
                         exit={isLowPerfMode ? { opacity: 0 } : { y: -100, opacity: 0 }}
                         className="fixed top-4 left-1/2 -translate-x-1/2 z-[100] bg-card text-card-foreground shadow-sm rounded-xl border border-border px-6 py-3 rounded-full flex items-center gap-4 shadow-2xl border-emerald-500/30 mt-[env(safe-area-inset-top)]"
                     >
-                        <div className="flex items-center gap-2 text-sm font-medium text-emerald-400">
+                        <div className="flex items-center gap-2 text-sm font-medium dark:text-emerald-400 text-emerald-800">
                             <RefreshCw className="animate-spin" size={18} />
                             <span>Neue Version verfügbar!</span>
                         </div>
@@ -234,8 +234,8 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
                                         isScanner
                                             ? 'bg-gradient-to-r from-emerald-500 to-teal-600 text-white shadow-lg shadow-emerald-500/20 hover:shadow-emerald-500/40 mt-4 mb-4'
                                             : isActive
-                                                ? 'bg-muted text-emerald-400 shadow-inner'
-                                                : 'text-muted-foreground hover:text-white hover:bg-muted'
+                                                ? 'bg-muted dark:text-emerald-400 text-emerald-800 shadow-inner'
+                                                : 'text-muted-foreground hover:text-foreground hover:bg-muted'
                                     )}
                                 >
                                     <div className={clsx("transition-transform duration-200", isScanner && !isSidebarPinned && 'scale-110')}>{item.icon}</div>
@@ -243,7 +243,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
 
                                     {/* Tooltip for collapsed state */}
                                     {!isSidebarPinned && (
-                                        <div className="absolute left-full ml-4 px-3 py-1.5 bg-background/90 backdrop-blur-sm border border-border text-white text-xs font-medium rounded-lg opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity whitespace-nowrap z-50 shadow-xl flex items-center">
+                                        <div className="absolute left-full ml-4 px-3 py-1.5 bg-background/90 backdrop-blur-sm border border-border text-foreground text-xs font-medium rounded-lg opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity whitespace-nowrap z-50 shadow-xl flex items-center">
                                             {item.label}
                                             <div className="absolute left-0 top-1/2 -translate-x-1/2 -translate-y-1/2 w-2 h-2 bg-background/90 border-l border-b border-border rotate-45"></div>
                                         </div>
@@ -255,26 +255,26 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
                     })()}
                 </nav>
 
-                <div className="p-3 border-t border-white/5 flex flex-col gap-2">
-                    <div className={clsx("flex items-center rounded-xl bg-black/20 border border-white/5", isSidebarPinned ? 'p-3 gap-3' : 'justify-center p-2')}>
-                        <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center text-emerald-400 text-xs font-bold shrink-0">
+                <div className="p-3 border-t dark:border-white/5 border-border flex flex-col gap-2">
+                    <div className={clsx("flex items-center rounded-xl dark:bg-black/20 bg-muted/60 border dark:border-white/5 border-border", isSidebarPinned ? 'p-3 gap-3' : 'justify-center p-2')}>
+                        <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center dark:text-emerald-400 text-emerald-800 text-xs font-bold shrink-0">
                             {profile?.full_name ? profile.full_name.charAt(0) : <UserCircle size={18} />}
                         </div>
                         {isSidebarPinned && (
                             <div className="flex-1 min-w-0 overflow-hidden">
-                                <div className="text-xs font-bold text-white truncate">{profile?.full_name?.split(' ')[0] || 'User'}</div>
+                                <div className="text-xs font-bold text-foreground truncate">{profile?.full_name?.split(' ')[0] || 'User'}</div>
                                 <div className="text-[10px] text-muted-foreground truncate">Angemeldet</div>
                             </div>
                         )}
-                        {isSidebarPinned && <button onClick={handleLogout} className="text-muted-foreground hover:text-rose-400 transition-colors p-1"><LogOut size={16} /></button>}
+                        {isSidebarPinned && <button onClick={handleLogout} className="text-muted-foreground hover:dark:text-rose-400 text-rose-800 transition-colors p-1"><LogOut size={16} /></button>}
                     </div>
-                    {!isSidebarPinned && <button onClick={handleLogout} className="flex justify-center p-3 rounded-xl text-muted-foreground hover:text-rose-400 hover:bg-muted transition-colors"><LogOut size={20} /></button>}
+                    {!isSidebarPinned && <button onClick={handleLogout} className="flex justify-center p-3 rounded-xl text-muted-foreground hover:dark:text-rose-400 text-rose-800 hover:bg-muted transition-colors"><LogOut size={20} /></button>}
                     {/* Theme Selector Button */}
                     <button
                         onClick={() => setShowThemeSelector(true)}
                         className={clsx(
                             "flex items-center rounded-xl transition-colors hover:bg-muted",
-                            theme === 'glass' ? 'text-amber-400/70 hover:text-amber-400' : 'text-muted-foreground hover:text-white',
+                            theme === 'glass' ? 'dark:text-amber-400 text-amber-800/70 hover:dark:text-amber-400 text-amber-800' : 'text-muted-foreground hover:text-foreground',
                             isSidebarPinned ? 'px-4 py-3 gap-3' : 'justify-center p-3'
                         )}
                         title="Design ändern"
@@ -282,12 +282,19 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
                         <Palette size={20} />
                         {isSidebarPinned && <span className="text-xs font-medium">Design</span>}
                     </button>
-                    {/* Push Benachrichtigungen */}
-                    <div className={clsx("flex items-center rounded-xl", isSidebarPinned ? 'px-1 py-1 gap-3' : 'justify-center')}>
-                        <PushNotificationToggle userId={profile?.id ?? null} compact={true} />
-                        {isSidebarPinned && <span className="text-xs font-medium text-muted-foreground">Benachrichtigungen</span>}
-                    </div>
-                    <button onClick={() => setIsSidebarPinned(!isSidebarPinned)} className={clsx("flex items-center rounded-xl transition-colors text-muted-foreground hover:text-white hover:bg-muted", isSidebarPinned ? 'px-4 py-3 gap-3' : 'justify-center p-3')} title={isSidebarPinned ? "Einklappen" : "Menü fixieren"}>
+                    {/* Light/Dark Mode Toggle */}
+                    <button
+                        onClick={toggleColorMode}
+                        className={clsx(
+                            "flex items-center rounded-xl transition-colors hover:bg-muted text-muted-foreground hover:text-foreground cursor-pointer",
+                            isSidebarPinned ? 'px-4 py-3 gap-3' : 'justify-center p-3'
+                        )}
+                        title={colorMode === 'dark' ? "Helles Design" : "Dunkles Design"}
+                    >
+                        {colorMode === 'dark' ? <Sun size={20} /> : <Moon size={20} />}
+                        {isSidebarPinned && <span className="text-xs font-medium">Design wechseln</span>}
+                    </button>
+                    <button onClick={() => setIsSidebarPinned(!isSidebarPinned)} className={clsx("flex items-center rounded-xl transition-colors text-muted-foreground hover:text-foreground hover:bg-muted", isSidebarPinned ? 'px-4 py-3 gap-3' : 'justify-center p-3')} title={isSidebarPinned ? "Einklappen" : "Menü fixieren"}>
                         {isSidebarPinned ? <PanelLeftClose size={20} /> : <PanelLeftOpen size={20} />}
                         {isSidebarPinned && <span className="text-xs font-medium">Menü einklappen</span>}
                     </button>
@@ -307,16 +314,22 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
                     <div className="pointer-events-auto flex items-center gap-2">
                         <div className="bg-card text-card-foreground shadow-sm rounded-xl border border-border rounded-full px-3 py-1.5 flex items-center gap-3 shadow-lg">
                             <div className="flex items-center gap-2">
-                                <div className="w-6 h-6 rounded-full bg-primary/30 flex items-center justify-center text-emerald-300 text-xs font-bold">
+                                <div className="w-6 h-6 rounded-full bg-primary/30 flex items-center justify-center dark:text-emerald-300 text-emerald-800 text-xs font-bold">
                                     {profile?.full_name ? profile.full_name.charAt(0) : <UserCircle size={14} />}
                                 </div>
                                 <span className="text-xs text-muted-foreground hidden sm:inline">{profile?.full_name?.split(' ')[0] || 'User'}</span>
                             </div>
                             <div className="w-px h-4 bg-muted"></div>
-                            {/* Push Toggle Mobile */}
-                            <PushNotificationToggle userId={profile?.id ?? null} compact={true} />
+                            {/* Light/Dark Mode Toggle Mobile */}
+                            <button
+                                onClick={toggleColorMode}
+                                className="text-muted-foreground hover:dark:text-amber-400 text-amber-800 transition-colors cursor-pointer"
+                                title={colorMode === 'dark' ? "Helles Design" : "Dunkles Design"}
+                            >
+                                {colorMode === 'dark' ? <Sun size={14} /> : <Moon size={14} />}
+                            </button>
                             <div className="w-px h-4 bg-muted"></div>
-                            <button onClick={handleLogout} className="text-muted-foreground hover:text-rose-400 transition-colors" title="Abmelden">
+                            <button onClick={handleLogout} className="text-muted-foreground hover:dark:text-rose-400 text-rose-800 transition-colors" title="Abmelden">
                                 <LogOut size={14} />
                             </button>
                         </div>
@@ -356,7 +369,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
                 transition={{ duration: isLowPerfMode ? 0.2 : 0.5, delay: isLowPerfMode ? 0 : 0.3 }}
                 className="lg:hidden fixed bottom-0 left-0 right-0 z-[160] w-full"
             >
-                <div className="w-full bg-black/30 backdrop-blur-sm border-t border-border shadow-[0_-4px_24px_rgba(0,0,0,0.5)]">
+                <div className="w-full dark:bg-black/30 bg-muted/70 backdrop-blur-sm border-t border-border shadow-[0_-4px_24px_rgba(0,0,0,0.5)]">
                     <nav className="h-16 flex items-center relative overflow-hidden">
                         <div className="flex items-center justify-between overflow-x-auto w-full h-full px-2 sm:px-6 gap-2 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:'none'] [scrollbar-width:'none']">
                             {(() => {
@@ -377,7 +390,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
                                                 if (!item) return null;
                                                 const isActive = currentPath === item.id;
                                                 return (
-                                                    <button key={item.id} onClick={() => navigate(`/${item.id}`)} className={clsx("relative flex flex-col items-center justify-center w-12 h-16 transition-all duration-300 shrink-0", isActive ? 'text-emerald-400' : 'text-muted-foreground hover:text-muted-foreground')}>
+                                                    <button key={item.id} onClick={() => navigate(`/${item.id}`)} className={clsx("relative flex flex-col items-center justify-center w-12 h-16 transition-all duration-300 shrink-0", isActive ? 'dark:text-emerald-400 text-emerald-800' : 'text-muted-foreground hover:text-muted-foreground')}>
                                                         <div className={clsx("p-1.5 rounded-xl transition-all", isActive ? "bg-muted" : "")}>
                                                             {item.icon}
                                                         </div>
@@ -396,7 +409,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
                                                 if (!item) return null;
                                                 const isActive = currentPath === item.id;
                                                 return (
-                                                    <button key={item.id} onClick={() => navigate(`/${item.id}`)} className={clsx("relative flex flex-col items-center justify-center w-12 h-16 transition-all duration-300 shrink-0", isActive ? 'text-emerald-400' : 'text-muted-foreground hover:text-muted-foreground')}>
+                                                    <button key={item.id} onClick={() => navigate(`/${item.id}`)} className={clsx("relative flex flex-col items-center justify-center w-12 h-16 transition-all duration-300 shrink-0", isActive ? 'dark:text-emerald-400 text-emerald-800' : 'text-muted-foreground hover:text-muted-foreground')}>
                                                         <div className={clsx("p-1.5 rounded-xl transition-all", isActive ? "bg-muted" : "")}>
                                                             {item.icon}
                                                         </div>

@@ -162,14 +162,14 @@ export const OrderProposalContent: React.FC<OrderProposalContentProps> = ({ prop
     };
 
     return (
-        <div className="flex flex-col h-full bg-transparent text-slate-100">
+        <div className="flex flex-col h-full bg-transparent text-foreground">
             {/* Header */}
             <div className="p-4 sm:p-6 border-b border-border flex justify-between items-center bg-white/[0.02] shrink-0">
                 <div>
-                    <h2 className="text-xl font-bold text-white">Bestellvorschlag</h2>
+                    <h2 className="text-xl font-bold text-foreground">Bestellvorschlag</h2>
                     <p className="text-sm text-muted-foreground">{proposal.supplier}</p>
                 </div>
-                <button onClick={onClose} className="p-2 rounded-full hover:bg-muted text-muted-foreground hover:text-white"><X size={20} /></button>
+                <button onClick={onClose} className="p-2 rounded-full hover:bg-muted text-muted-foreground hover:text-foreground"><X size={20} /></button>
             </div>
 
             {/* Content List */}
@@ -177,14 +177,14 @@ export const OrderProposalContent: React.FC<OrderProposalContentProps> = ({ prop
                 {proposal.articles.map((item) => (
                     <div
                         key={item.article.id}
-                        className={`flex flex-col p-3 rounded-xl border transition-colors ${selectedItemIds.has(item.article.id) ? 'bg-primary/5 border-emerald-500/30' : 'bg-muted border-white/5'}`}
+                        className={`flex flex-col p-3 rounded-xl border transition-colors ${selectedItemIds.has(item.article.id) ? 'bg-primary/5 border-emerald-500/30' : 'bg-muted dark:border-white/5 border-border'}`}
                     >
                         <div className="flex items-start gap-3 mb-2" onClick={() => toggleProposalItem(item.article.id)}>
                             <div className={`mt-0.5 w-5 h-5 rounded border flex items-center justify-center cursor-pointer ${selectedItemIds.has(item.article.id) ? 'bg-primary border-emerald-500 text-white' : 'border-border'}`}>
                                 {selectedItemIds.has(item.article.id) && <Check size={12} />}
                             </div>
                             <div className="flex-1 cursor-pointer">
-                                <div className="text-sm font-bold text-white line-clamp-2">{item.article.name}</div>
+                                <div className="text-sm font-bold text-foreground line-clamp-2">{item.article.name}</div>
                                 <div className="text-xs text-muted-foreground flex gap-2">
                                     <span>Lager: {item.article.stock} / Soll: {item.article.targetStock}</span>
                                     <span className="font-mono text-muted-foreground">{item.article.supplierSku}</span>
@@ -194,12 +194,12 @@ export const OrderProposalContent: React.FC<OrderProposalContentProps> = ({ prop
                         {selectedItemIds.has(item.article.id) && (
                             <div className="flex items-center gap-3 pl-8">
                                 <div className="text-xs text-muted-foreground">Menge:</div>
-                                <div className="flex items-center bg-black/30 rounded-lg border border-border">
-                                    <button onClick={() => updateProposalQuantity(item.article.id, -1)} className="p-2 hover:bg-muted rounded-l-lg text-white"><Minus size={14} /></button>
-                                    <div className="w-12 text-center font-bold text-white text-sm">
+                                <div className="flex items-center dark:bg-black/30 bg-muted/70 rounded-lg border border-border">
+                                    <button onClick={() => updateProposalQuantity(item.article.id, -1)} className="p-2 hover:bg-muted rounded-l-lg text-foreground"><Minus size={14} /></button>
+                                    <div className="w-12 text-center font-bold text-foreground text-sm">
                                         {proposalQuantities[item.article.id] || item.missingAmount}
                                     </div>
-                                    <button onClick={() => updateProposalQuantity(item.article.id, 1)} className="p-2 hover:bg-muted rounded-r-lg text-white"><Plus size={14} /></button>
+                                    <button onClick={() => updateProposalQuantity(item.article.id, 1)} className="p-2 hover:bg-muted rounded-r-lg text-foreground"><Plus size={14} /></button>
                                 </div>
                             </div>
                         )}
@@ -213,7 +213,7 @@ export const OrderProposalContent: React.FC<OrderProposalContentProps> = ({ prop
                     <div>
                         <label className="text-xs text-muted-foreground mb-1 block">Auftrags-Nr. (Lieferant)</label>
                         <input
-                            className="w-full bg-black/20 border border-border rounded-lg p-2 text-sm text-white focus:outline-none focus:border-emerald-500/50"
+                            className="w-full dark:bg-black/20 bg-muted/60 border border-border rounded-lg p-2 text-sm text-foreground focus:outline-none focus:border-emerald-500/50"
                             placeholder="z.B. 2024-9988"
                             value={newOrderNumber}
                             onChange={e => setNewOrderNumber(e.target.value)}
@@ -222,23 +222,23 @@ export const OrderProposalContent: React.FC<OrderProposalContentProps> = ({ prop
                     <div>
                         <label className="text-xs text-muted-foreground mb-1 block flex justify-between">
                             <span>Kommission (Intern)</span>
-                            {commissionCopied && <span className="text-emerald-400 font-bold">Kopiert!</span>}
+                            {commissionCopied && <span className="dark:text-emerald-400 text-emerald-800 font-bold">Kopiert!</span>}
                         </label>
                         <div className="relative group cursor-pointer" onClick={handleCopyCommission}>
                             <input
-                                className="w-full bg-black/20 border border-border rounded-lg p-2 pr-8 text-sm text-white focus:outline-none focus:border-emerald-500/50 cursor-pointer"
+                                className="w-full dark:bg-black/20 bg-muted/60 border border-border rounded-lg p-2 pr-8 text-sm text-foreground focus:outline-none focus:border-emerald-500/50 cursor-pointer"
                                 placeholder="Automatisch..."
                                 value={newCommissionNumber}
                                 readOnly
                             />
-                            <div className="absolute right-2 top-2 text-muted-foreground group-hover:text-white">
-                                {commissionCopied ? <Check size={16} className="text-emerald-400" /> : <Copy size={16} />}
+                            <div className="absolute right-2 top-2 text-muted-foreground group-hover:text-foreground">
+                                {commissionCopied ? <Check size={16} className="dark:text-emerald-400 text-emerald-800" /> : <Copy size={16} />}
                             </div>
                         </div>
                     </div>
                 </div>
 
-                <button onClick={() => setShowSkuCopyModal(true)} className="w-full py-2.5 rounded-xl border border-border bg-black/20 hover:bg-muted text-white text-xs font-bold flex items-center justify-center gap-2 transition-colors">
+                <button onClick={() => setShowSkuCopyModal(true)} className="w-full py-2.5 rounded-xl border border-border dark:bg-black/20 bg-muted/60 hover:bg-muted text-foreground text-xs font-bold flex items-center justify-center gap-2 transition-colors">
                     <Copy size={14} /> Artikel-Nrn. kopieren
                 </button>
 
@@ -250,11 +250,11 @@ export const OrderProposalContent: React.FC<OrderProposalContentProps> = ({ prop
 
             {/* INLINE MODAL: Copy SKU List */}
             {showSkuCopyModal && (
-                <div className="absolute inset-0 z-50 bg-black/30 backdrop-blur-sm flex items-center justify-center p-4">
+                <div className="absolute inset-0 z-50 dark:bg-black/30 bg-muted/70 backdrop-blur-sm flex items-center justify-center p-4">
                     <div className="w-full max-w-sm bg-[#1a1d24] border border-border rounded-2xl shadow-xl flex flex-col max-h-[80%]">
                         <div className="p-4 border-b border-border flex justify-between items-center bg-muted">
-                            <h3 className="font-bold text-white">Artikel kopieren</h3>
-                            <button onClick={() => setShowSkuCopyModal(false)}><X size={18} className="text-muted-foreground hover:text-white" /></button>
+                            <h3 className="font-bold text-foreground">Artikel kopieren</h3>
+                            <button onClick={() => setShowSkuCopyModal(false)}><X size={18} className="text-muted-foreground hover:text-foreground" /></button>
                         </div>
                         <div className="flex-1 overflow-y-auto p-4 space-y-2">
                             {proposal.articles
@@ -267,18 +267,18 @@ export const OrderProposalContent: React.FC<OrderProposalContentProps> = ({ prop
                                             onClick={() => handleCopySku(item.article.supplierSku || item.article.sku || '', item.article.id)}
                                             className={`p-3 rounded-xl border cursor-pointer transition-all flex justify-between items-center group ${isCopied
                                                 ? 'bg-primary/20 border-emerald-500/50'
-                                                : 'bg-muted border-white/5 hover:bg-muted'
+                                                : 'bg-muted dark:border-white/5 border-border hover:bg-muted'
                                                 }`}
                                         >
                                             <div className="flex-1 min-w-0 pr-3">
-                                                <div className={`text-sm font-bold truncate ${isCopied ? 'text-emerald-400' : 'text-white'}`}>
+                                                <div className={`text-sm font-bold truncate ${isCopied ? 'dark:text-emerald-400 text-emerald-800' : 'text-foreground'}`}>
                                                     {item.article.name}
                                                 </div>
                                                 <div className="text-xs font-mono text-muted-foreground flex items-center gap-2">
                                                     {item.article.supplierSku || 'Keine Art-Nr.'}
                                                 </div>
                                             </div>
-                                            <div className={`p-2 rounded-lg ${isCopied ? 'bg-primary text-white' : 'bg-black/20 text-muted-foreground group-hover:text-white'}`}>
+                                            <div className={`p-2 rounded-lg ${isCopied ? 'bg-primary text-white' : 'dark:bg-black/20 bg-muted/60 text-muted-foreground group-hover:text-foreground'}`}>
                                                 {isCopied ? <Check size={16} /> : <Copy size={16} />}
                                             </div>
                                         </div>

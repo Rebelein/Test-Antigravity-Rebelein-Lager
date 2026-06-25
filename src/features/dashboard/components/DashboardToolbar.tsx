@@ -28,24 +28,24 @@ export const DashboardToolbar: React.FC<DashboardToolbarProps> = ({
             <div className="flex gap-2">
                 <button
                     onClick={onShowHistory}
-                    className="relative p-3 rounded-xl bg-muted border border-border text-muted-foreground hover:text-white hover:bg-muted transition-all duration-300 shadow-lg group"
+                    className="relative p-3 rounded-xl bg-muted border border-border text-muted-foreground hover:text-foreground hover:bg-muted transition-all duration-300 shadow-lg group"
                     title="Versionsverlauf anzeigen"
                 >
                     <History size={20} />
-                    <span className="absolute -top-2 -right-2 bg-primary text-white text-[9px] font-bold px-1.5 py-0.5 rounded-full shadow-lg border border-black/50">
+                    <span className="absolute -top-2 -right-2 bg-primary text-white text-[9px] font-bold px-1.5 py-0.5 rounded-full shadow-lg border dark:border-black/50 border-border">
                         v0.0.70
                     </span>
                 </button>
                 <button
                     onClick={onRefresh}
-                    className="p-3 rounded-xl bg-muted border border-border text-muted-foreground hover:text-white hover:bg-muted transition-all duration-300 shadow-lg"
+                    className="p-3 rounded-xl bg-muted border border-border text-muted-foreground hover:text-foreground hover:bg-muted transition-all duration-300 shadow-lg"
                     title="Aktualisieren"
                 >
                     <RefreshCw size={20} className={isLoading ? "animate-spin" : ""} />
                 </button>
                 <button
                     onClick={onShowDrawer}
-                    className="p-3 rounded-xl bg-muted border border-border text-muted-foreground hover:text-white hover:bg-muted transition-all duration-300 shadow-lg"
+                    className="p-3 rounded-xl bg-muted border border-border text-muted-foreground hover:text-foreground hover:bg-muted transition-all duration-300 shadow-lg"
                 >
                     <Grid size={24} />
                 </button>

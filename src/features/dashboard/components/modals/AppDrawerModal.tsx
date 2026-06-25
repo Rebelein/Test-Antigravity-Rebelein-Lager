@@ -33,17 +33,17 @@ export const AppDrawerModal: React.FC<AppDrawerModalProps> = ({
             <div className="p-6 space-y-8">
 
                 {/* --- DESIGN & ANSICHT SECTION --- */}
-                <div className="mb-8 p-4 rounded-2xl bg-muted border border-white/5">
+                <div className="mb-8 p-4 rounded-2xl bg-muted border dark:border-white/5 border-border">
                     <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-4">Design & Ansicht</h3>
                     <div className="space-y-4">
                         {/* View Mode Toggle */}
                         <div className="flex items-center justify-between">
                             <div className="flex items-center gap-3">
-                                <div className={`p-2 rounded-lg ${viewMode === 'desktop' ? 'bg-blue-100 text-blue-600' : 'bg-muted text-muted-foreground'}`}>
+                                <div className={`p-2 rounded-lg ${viewMode === 'desktop' ? 'bg-blue-100 dark:text-blue-400 text-blue-800' : 'bg-muted text-muted-foreground'}`}>
                                     <Monitor size={18} />
                                 </div>
                                 <div>
-                                    <div className="text-sm font-medium text-white">Desktop Modus</div>
+                                    <div className="text-sm font-medium text-foreground">Desktop Modus</div>
                                     <div className="text-xs text-muted-foreground">{viewMode === 'desktop' ? 'Aktiviert (Full HD)' : 'Standard (Tablet)'}</div>
                                 </div>
                             </div>
@@ -62,7 +62,7 @@ export const AppDrawerModal: React.FC<AppDrawerModalProps> = ({
                                     <LayoutTemplate size={18} />
                                 </div>
                                 <div>
-                                    <div className="text-sm font-medium text-white">Layout zurücksetzen</div>
+                                    <div className="text-sm font-medium text-foreground">Layout zurücksetzen</div>
                                     <div className="text-xs text-muted-foreground">Standard wiederherstellen</div>
                                 </div>
                             </div>
@@ -72,13 +72,13 @@ export const AppDrawerModal: React.FC<AppDrawerModalProps> = ({
                         </div>
 
                         {/* iOS Performance Mode Toggle */}
-                        <div className="flex items-center justify-between pt-2 border-t border-white/5">
+                        <div className="flex items-center justify-between pt-2 border-t dark:border-white/5 border-border">
                             <div className="flex items-center gap-3">
-                                <div className={`p-2 rounded-lg ${isLowPerfMode ? 'bg-amber-500/20 text-amber-400' : 'bg-muted text-muted-foreground'}`}>
+                                <div className={`p-2 rounded-lg ${isLowPerfMode ? 'bg-amber-500/20 dark:text-amber-400 text-amber-800' : 'bg-muted text-muted-foreground'}`}>
                                     <Zap size={18} />
                                 </div>
                                 <div>
-                                    <div className="text-sm font-medium text-white">iOS Performance</div>
+                                    <div className="text-sm font-medium text-foreground">iOS Performance</div>
                                     <div className="text-xs text-muted-foreground">{isLowPerfMode ? 'Aktiviert (schneller)' : 'Deaktiviert (Blur aktiv)'}</div>
                                 </div>
                             </div>
@@ -96,9 +96,9 @@ export const AppDrawerModal: React.FC<AppDrawerModalProps> = ({
                     {/* App: Warehouses */}
                     <button onClick={() => { onClose(); navigate('/warehouses'); }} className="flex flex-col items-center gap-2 group">
                         <div className="w-16 h-16 rounded-2xl bg-primary/10 border border-emerald-500/20 flex items-center justify-center group-hover:bg-primary/20 transition-colors">
-                            <Warehouse size={28} className="text-emerald-400" />
+                            <Warehouse size={28} className="dark:text-emerald-400 text-emerald-800" />
                         </div>
-                        <span className="text-xs text-muted-foreground group-hover:text-white text-center">Lagerorte</span>
+                        <span className="text-xs text-muted-foreground group-hover:text-foreground text-center">Lagerorte</span>
                     </button>
 
                     {/* App: Suppliers */}
@@ -106,31 +106,31 @@ export const AppDrawerModal: React.FC<AppDrawerModalProps> = ({
                         <div className="w-16 h-16 rounded-2xl bg-purple-500/10 border border-purple-500/20 flex items-center justify-center group-hover:bg-purple-500/20 transition-colors">
                             <Factory size={28} className="text-purple-400" />
                         </div>
-                        <span className="text-xs text-muted-foreground group-hover:text-white text-center">Lieferanten</span>
+                        <span className="text-xs text-muted-foreground group-hover:text-foreground text-center">Lieferanten</span>
                     </button>
 
                     {/* App: Labels */}
                     <button onClick={() => { onClose(); navigate('/labels'); }} className="flex flex-col items-center gap-2 group">
                         <div className="w-16 h-16 rounded-2xl bg-blue-500/10 border border-blue-500/20 flex items-center justify-center group-hover:bg-blue-500/20 transition-colors">
-                            <Tag size={28} className="text-blue-400" />
+                            <Tag size={28} className="dark:text-blue-400 text-blue-800" />
                         </div>
-                        <span className="text-xs text-muted-foreground group-hover:text-white text-center">Etiketten</span>
+                        <span className="text-xs text-muted-foreground group-hover:text-foreground text-center">Etiketten</span>
                     </button>
 
                     {/* App: Shelf Editor (NEW) */}
                     <button onClick={() => { onClose(); navigate('/shelf-editor'); }} className="flex flex-col items-center gap-2 group">
                         <div className="w-16 h-16 rounded-2xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center group-hover:bg-amber-500/20 transition-colors">
-                            <Library size={28} className="text-amber-400" />
+                            <Library size={28} className="dark:text-amber-400 text-amber-800" />
                         </div>
-                        <span className="text-xs text-muted-foreground group-hover:text-white text-center">Regal-Editor</span>
+                        <span className="text-xs text-muted-foreground group-hover:text-foreground text-center">Regal-Editor</span>
                     </button>
 
                     {/* App: Database */}
                     <button onClick={() => { onClose(); onOpenSqlModal(); }} className="flex flex-col items-center gap-2 group">
                         <div className="w-16 h-16 rounded-2xl bg-card/30 border border-border flex items-center justify-center group-hover:bg-card transition-colors">
-                            <Database size={28} className="text-gray-300" />
+                            <Database size={28} className="dark:text-gray-300 text-gray-800" />
                         </div>
-                        <span className="text-xs text-muted-foreground group-hover:text-white text-center">System</span>
+                        <span className="text-xs text-muted-foreground group-hover:text-foreground text-center">System</span>
                     </button>
 
                     {/* App: Image Optimizer */}
@@ -138,15 +138,15 @@ export const AppDrawerModal: React.FC<AppDrawerModalProps> = ({
                         <div className="w-16 h-16 rounded-2xl bg-fuchsia-500/10 border border-fuchsia-500/20 flex items-center justify-center group-hover:bg-fuchsia-500/20 transition-colors">
                             <Wand2 size={28} className="text-fuchsia-400" />
                         </div>
-                        <span className="text-xs text-muted-foreground group-hover:text-white text-center">Optimierer</span>
+                        <span className="text-xs text-muted-foreground group-hover:text-foreground text-center">Optimierer</span>
                     </button>
 
                     {/* App: Page Manager (NEW) */}
                     <button onClick={() => { onClose(); onOpenPageManager(); }} className="flex flex-col items-center gap-2 group">
                         <div className="w-16 h-16 rounded-2xl bg-teal-500/10 border border-teal-500/20 flex items-center justify-center group-hover:bg-teal-500/20 transition-colors">
-                            <LayoutDashboard size={28} className="text-teal-400" />
+                            <LayoutDashboard size={28} className="dark:text-teal-400 text-teal-800" />
                         </div>
-                        <span className="text-xs text-muted-foreground group-hover:text-white text-center">Seiten</span>
+                        <span className="text-xs text-muted-foreground group-hover:text-foreground text-center">Seiten</span>
                     </button>
                 </div>
             </div>

@@ -66,20 +66,20 @@ export const ArticleDetailContent: React.FC<ArticleDetailContentProps> = ({
     };
 
     return (
-        <div className="flex flex-col h-full bg-transparent text-slate-100">
+        <div className="flex flex-col h-full bg-transparent text-foreground">
             {/* Navigation Arrows for Side Panel */}
             {hasNavigation && onNavigate && (
                 <>
                     <button
                         onClick={(e) => { e.stopPropagation(); onNavigate('prev'); }}
-                        className="absolute left-4 top-1/2 -translate-y-1/2 z-20 p-2 rounded-full bg-black/30 text-muted-foreground hover:bg-primary/20 hover:text-emerald-400 transition-all backdrop-blur-sm hidden xl:block -ml-12"
+                        className="absolute left-4 top-1/2 -translate-y-1/2 z-20 p-2 rounded-full dark:bg-black/30 bg-muted/70 text-muted-foreground hover:bg-primary/20 hover:dark:text-emerald-400 text-emerald-800 transition-all backdrop-blur-sm hidden xl:block -ml-12"
                         title="Vorheriger (Pfeil Links)"
                     >
                         <ChevronDown size={24} className="rotate-90" />
                     </button>
                     <button
                         onClick={(e) => { e.stopPropagation(); onNavigate('next'); }}
-                        className="absolute right-4 top-1/2 -translate-y-1/2 z-20 p-2 rounded-full bg-black/30 text-muted-foreground hover:bg-primary/20 hover:text-emerald-400 transition-all backdrop-blur-sm hidden xl:block -mr-12"
+                        className="absolute right-4 top-1/2 -translate-y-1/2 z-20 p-2 rounded-full dark:bg-black/30 bg-muted/70 text-muted-foreground hover:bg-primary/20 hover:dark:text-emerald-400 text-emerald-800 transition-all backdrop-blur-sm hidden xl:block -mr-12"
                         title="Nächster (Pfeil Rechts)"
                     >
                         <ChevronDown size={24} className="-rotate-90" />
@@ -93,14 +93,14 @@ export const ArticleDetailContent: React.FC<ArticleDetailContentProps> = ({
                 {/* Header Info */}
                 <div>
                     <div className="flex items-start justify-between gap-4">
-                        <h2 className="text-xl font-bold text-white leading-snug break-words">{article.name}</h2>
+                        <h2 className="text-xl font-bold text-foreground leading-snug break-words">{article.name}</h2>
                     </div>
                     <div className="flex items-center gap-2 mt-2 flex-wrap">
-                        <span className={`px-2 py-0.5 rounded text-xs font-bold border ${article.stock >= article.targetStock ? 'bg-primary/20 text-emerald-300 border-emerald-500/30' : 'bg-rose-500/20 text-rose-300 border-rose-500/30'}`}>
+                        <span className={`px-2 py-0.5 rounded text-xs font-bold border ${article.stock >= article.targetStock ? 'bg-primary/20 dark:text-emerald-300 text-emerald-800 border-emerald-500/30' : 'bg-rose-500/20 dark:text-rose-300 text-rose-800 border-rose-500/30'}`}>
                             {article.stock >= article.targetStock ? 'Bestand OK' : 'Unterbestand'}
                         </span>
                         {article.onOrderDate && (
-                            <span className="flex items-center gap-1 px-2 py-0.5 rounded text-xs font-bold bg-amber-500/10 text-amber-200 border border-amber-500/20">
+                            <span className="flex items-center gap-1 px-2 py-0.5 rounded text-xs font-bold bg-amber-500/10 dark:text-amber-200 text-amber-900 border border-amber-500/20">
                                 <Clock size={12} />
                                 <span>
                                     Bestellt: {new Date(article.onOrderDate).toLocaleDateString()}
@@ -111,7 +111,7 @@ export const ArticleDetailContent: React.FC<ArticleDetailContentProps> = ({
                 </div>
 
                 {/* Image Section */}
-                <div className="w-full aspect-[4/3] rounded-2xl bg-black/40 border border-border overflow-hidden relative group">
+                <div className="w-full aspect-[4/3] rounded-2xl dark:bg-black/40 bg-muted/80 border border-border overflow-hidden relative group">
                     <img
                         src={article.image || `https://picsum.photos/seed/${article.id}/400/300`}
                         className="w-full h-full object-contain p-4 group-hover:scale-105 transition-transform duration-500"
@@ -121,19 +121,19 @@ export const ArticleDetailContent: React.FC<ArticleDetailContentProps> = ({
 
                 {/* Stats Grid */}
                 <div className="grid grid-cols-2 gap-3">
-                    <div className="bg-muted rounded-xl p-3 border border-white/5">
+                    <div className="bg-muted rounded-xl p-3 border dark:border-white/5 border-border">
                         <div className="text-muted-foreground text-xs font-medium mb-1">Lagerbestand</div>
                         <div className="flex items-baseline gap-1">
-                            <span className={`text-2xl font-bold ${article.stock < article.targetStock ? 'text-rose-400' : 'text-emerald-400'}`}>{article.stock}</span>
+                            <span className={`text-2xl font-bold ${article.stock < article.targetStock ? 'dark:text-rose-400 text-rose-800' : 'dark:text-emerald-400 text-emerald-800'}`}>{article.stock}</span>
                             <span className="text-muted-foreground text-xs">/ {article.targetStock} Soll</span>
                         </div>
                         <div className="w-full h-1.5 bg-muted rounded-full mt-2 overflow-hidden">
                             <div className={`h-full rounded-full ${article.stock < article.targetStock ? 'bg-rose-500' : 'bg-primary'}`} style={{ width: `${Math.min((article.stock / (article.targetStock || 1)) * 100, 100)}%` }}></div>
                         </div>
                     </div>
-                    <div className="bg-muted rounded-xl p-3 border border-white/5">
+                    <div className="bg-muted rounded-xl p-3 border dark:border-white/5 border-border">
                         <div className="text-muted-foreground text-xs font-medium mb-1">Lagerort</div>
-                        <div className="text-lg font-bold text-white truncate" title={article.location}>{article.location || '-'}</div>
+                        <div className="text-lg font-bold text-foreground truncate" title={article.location}>{article.location || '-'}</div>
                         <div className="text-xs text-muted-foreground mt-1 flex items-center gap-1 truncate" title={article.category}><Layers size={10} /> {article.category}</div>
                     </div>
                 </div>
@@ -144,15 +144,15 @@ export const ArticleDetailContent: React.FC<ArticleDetailContentProps> = ({
                     <div className="bg-muted rounded-xl border border-border divide-y divide-white/5">
                         <div className="p-3 flex justify-between text-sm">
                             <span className="text-muted-foreground">Hersteller-Nr.</span>
-                            <span className="text-white font-mono select-all text-right ml-4 break-all">{article.sku || '-'}</span>
+                            <span className="text-foreground font-mono select-all text-right ml-4 break-all">{article.sku || '-'}</span>
                         </div>
                         <div className="p-3 flex justify-between text-sm">
                             <span className="text-muted-foreground">EAN / GTIN</span>
-                            <span className="text-white font-mono select-all text-right ml-4">{article.ean || '-'}</span>
+                            <span className="text-foreground font-mono select-all text-right ml-4">{article.ean || '-'}</span>
                         </div>
                         <div className="p-3 flex justify-between text-sm">
                             <span className="text-muted-foreground">Lieferant</span>
-                            <span className="text-white text-right ml-4 truncate">{article.supplier || '-'}</span>
+                            <span className="text-foreground text-right ml-4 truncate">{article.supplier || '-'}</span>
                         </div>
 
                         <div
@@ -160,7 +160,7 @@ export const ArticleDetailContent: React.FC<ArticleDetailContentProps> = ({
                             className={`p-3 flex justify-between text-sm cursor-pointer transition-colors ${copiedField === 'supplierSku' ? 'bg-primary/10' : 'hover:bg-muted'}`}
                         >
                             <span className="text-muted-foreground">Lieferant Art-Nr.</span>
-                            <span className={`font-mono flex items-center gap-2 ${copiedField === 'supplierSku' ? 'text-emerald-400' : 'text-white'}`}>
+                            <span className={`font-mono flex items-center gap-2 ${copiedField === 'supplierSku' ? 'dark:text-emerald-400 text-emerald-800' : 'text-foreground'}`}>
                                 {article.supplierSku || '-'}
                                 {article.supplierSku && (
                                     copiedField === 'supplierSku' ? <Check size={14} /> : <Copy size={14} className="opacity-50" />
@@ -171,7 +171,7 @@ export const ArticleDetailContent: React.FC<ArticleDetailContentProps> = ({
                         {article.productUrl && (
                             <div className="p-3 flex justify-between text-sm">
                                 <span className="text-muted-foreground">Produkt-Link</span>
-                                <a href={article.productUrl} target="_blank" rel="noopener noreferrer" className="text-blue-400 hover:underline flex items-center gap-1">
+                                <a href={article.productUrl} target="_blank" rel="noopener noreferrer" className="dark:text-blue-400 text-blue-800 hover:underline flex items-center gap-1">
                                     Öffnen <ExternalLink size={12} />
                                 </a>
                             </div>
@@ -188,13 +188,13 @@ export const ArticleDetailContent: React.FC<ArticleDetailContentProps> = ({
                     <div className="space-y-2">
                         {history.length === 0 && !loading && <div className="text-center text-muted-foreground py-4 text-xs italic">Keine Bewegungen.</div>}
                         {history.map(move => (
-                            <div key={move.id} className="bg-muted p-2.5 rounded-xl border border-white/5 flex justify-between items-center">
+                            <div key={move.id} className="bg-muted p-2.5 rounded-xl border dark:border-white/5 border-border flex justify-between items-center">
                                 <div>
                                     <div className="text-[10px] text-muted-foreground mb-0.5">{new Date(move.created_at).toLocaleDateString()} • {new Date(move.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</div>
-                                    <div className="text-sm text-white">{move.reference || 'Manuelle Buchung'}</div>
+                                    <div className="text-sm text-foreground">{move.reference || 'Manuelle Buchung'}</div>
                                     <div className="text-[10px] text-muted-foreground flex items-center gap-1"><User size={10} /> {move.profiles?.full_name || 'Unbekannt'}</div>
                                 </div>
-                                <div className={`font-bold font-mono ${move.amount > 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
+                                <div className={`font-bold font-mono ${move.amount > 0 ? 'dark:text-emerald-400 text-emerald-800' : 'dark:text-rose-400 text-rose-800'}`}>
                                     {move.amount > 0 ? '+' : ''}{move.amount}
                                 </div>
                             </div>

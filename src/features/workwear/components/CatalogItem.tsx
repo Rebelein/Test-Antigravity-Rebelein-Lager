@@ -44,13 +44,13 @@ export const CatalogItem: React.FC<CatalogItemProps> = ({ template, onAddToCart,
 
     return (
         <GlassCard className="group relative overflow-hidden flex flex-col h-full hover:border-emerald-500/30 transition-all duration-300">
-            <div className="aspect-square bg-black/20 rounded-lg mb-4 flex items-center justify-center overflow-hidden relative">
+            <div className="aspect-square dark:bg-black/20 bg-muted/60 rounded-lg mb-4 flex items-center justify-center overflow-hidden relative">
                 {template.image_url ? (
                     <img src={template.image_url} alt={template.name} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
                 ) : (
                     <Shirt size={48} className="text-muted-foreground" />
                 )}
-                <div className="absolute top-2 right-2 bg-black/30 backdrop-blur-sm text-xs font-mono px-2 py-1 rounded text-emerald-400">
+                <div className="absolute top-2 right-2 dark:bg-black/30 bg-muted/70 backdrop-blur-sm text-xs font-mono px-2 py-1 rounded dark:text-emerald-400 text-emerald-800">
                     {template.price?.toFixed(2)} €
                 </div>
                 {template.has_logo && (
@@ -60,13 +60,13 @@ export const CatalogItem: React.FC<CatalogItemProps> = ({ template, onAddToCart,
                 )}
             </div>
             <div className="flex-1">
-                <div className="text-xs text-emerald-400 uppercase tracking-wider mb-1">{template.category}</div>
-                <h3 className="font-bold text-white mb-1 line-clamp-1" title={template.name}>{template.name}</h3>
+                <div className="text-xs dark:text-emerald-400 text-emerald-800 uppercase tracking-wider mb-1">{template.category}</div>
+                <h3 className="font-bold text-foreground mb-1 line-clamp-1" title={template.name}>{template.name}</h3>
                 <p className="text-muted-foreground text-xs mb-4">Art.Nr: {template.article_number}</p>
             </div>
-            <div className="mt-auto pt-4 border-t border-white/5 flex gap-2">
+            <div className="mt-auto pt-4 border-t dark:border-white/5 border-border flex gap-2">
                 <select
-                    className="bg-black/20 border border-border rounded-lg h-10 text-sm px-2 text-muted-foreground focus:border-emerald-500/50 outline-none w-24 cursor-pointer hover:bg-muted transition-colors"
+                    className="dark:bg-black/20 bg-muted/60 border border-border rounded-lg h-10 text-sm px-2 text-muted-foreground focus:border-emerald-500/50 outline-none w-24 cursor-pointer hover:bg-muted transition-colors"
                     value={size}
                     onChange={(e) => setSize(e.target.value)}
                 >
@@ -75,7 +75,7 @@ export const CatalogItem: React.FC<CatalogItemProps> = ({ template, onAddToCart,
                         <option key={opt} className="bg-zinc-900" value={opt}>{opt}</option>
                     ))}
                 </select>
-                <Button onClick={handleAdd} variant="secondary" className="flex-1 h-10 px-0 bg-primary/10 hover:bg-primary/20 text-emerald-400 border-emerald-500/20">
+                <Button onClick={handleAdd} variant="secondary" className="flex-1 h-10 px-0 bg-primary/10 hover:bg-primary/20 dark:text-emerald-400 text-emerald-800 border-emerald-500/20">
                     <Plus size={16} /> <span className="ml-1">Add</span>
                 </Button>
             </div>

@@ -46,13 +46,13 @@ export const ChangelogModal: React.FC = () => {
     if (!isOpen || !changelog) return null;
 
     return createPortal(
-        <div className="fixed inset-0 z-[170] flex items-center justify-center p-4 bg-black/30 backdrop-blur-sm animate-in fade-in duration-200">
+        <div className="fixed inset-0 z-[170] flex items-center justify-center p-4 dark:bg-black/30 bg-muted/70 backdrop-blur-sm animate-in fade-in duration-200">
             <div className="bg-background border border-border rounded-2xl shadow-2xl w-full max-w-md overflow-hidden animate-in zoom-in-95 duration-200">
 
                 {/* Header */}
                 <div className="relative bg-primary/20 p-6 border-b border-border">
                     <div className="absolute top-0 right-0 p-4">
-                        <button onClick={handleClose} className="text-muted-foreground hover:text-white transition-colors">
+                        <button onClick={handleClose} className="text-muted-foreground hover:text-foreground transition-colors">
                             <X size={20} />
                         </button>
                     </div>
@@ -60,9 +60,9 @@ export const ChangelogModal: React.FC = () => {
                         <div className="p-2 bg-primary rounded-lg shadow-lg shadow-emerald-500/20">
                             <PartyPopper className="text-gray-900" size={24} />
                         </div>
-                        <h2 className="text-xl font-bold text-white">Neu in v{changelog.version}</h2>
+                        <h2 className="text-xl font-bold text-foreground">Neu in v{changelog.version}</h2>
                     </div>
-                    <p className="text-emerald-200/80 text-sm">
+                    <p className="dark:text-emerald-200 text-emerald-900/80 text-sm">
                         Das Lager wird besser! Hier sind die neuesten Updates.
                     </p>
                 </div>
@@ -72,19 +72,19 @@ export const ChangelogModal: React.FC = () => {
                     {changelog.changes.map((change, index) => (
                         <div key={index} className="flex gap-3 items-start">
                             <div className="mt-0.5 shrink-0">
-                                {change.type === 'feature' && <Zap size={18} className="text-yellow-400" />}
-                                {change.type === 'fix' && <Wrench size={18} className="text-blue-400" />}
+                                {change.type === 'feature' && <Zap size={18} className="dark:text-yellow-400 text-yellow-800" />}
+                                {change.type === 'fix' && <Wrench size={18} className="dark:text-blue-400 text-blue-800" />}
                                 {change.type === 'info' && <Info size={18} className="text-muted-foreground" />}
                             </div>
                             <div>
                                 <span className={`text-xs font-bold uppercase tracking-wider px-1.5 py-0.5 rounded mr-2
-                  ${change.type === 'feature' ? 'bg-yellow-400/10 text-yellow-400' : ''}
-                  ${change.type === 'fix' ? 'bg-blue-400/10 text-blue-400' : ''}
-                  ${change.type === 'info' ? 'bg-card text-gray-300' : ''}
+                  ${change.type === 'feature' ? 'bg-yellow-400/10 dark:text-yellow-400 text-yellow-800' : ''}
+                  ${change.type === 'fix' ? 'bg-blue-400/10 dark:text-blue-400 text-blue-800' : ''}
+                  ${change.type === 'info' ? 'bg-card dark:text-gray-300 text-gray-800' : ''}
                 `}>
                                     {change.type === 'feature' ? 'NEU' : change.type === 'fix' ? 'FIX' : 'INFO'}
                                 </span>
-                                <span className="text-gray-300 text-sm leading-relaxed">
+                                <span className="dark:text-gray-300 text-gray-800 text-sm leading-relaxed">
                                     {change.text}
                                 </span>
                             </div>

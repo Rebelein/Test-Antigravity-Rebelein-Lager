@@ -29,21 +29,21 @@ const getStatusColors = (statusKey: string) => {
             return {
                 border: 'border-emerald-500/50',
                 leftBar: 'bg-primary',
-                badge: 'bg-primary/20 text-emerald-300 border-emerald-500/40',
+                badge: 'bg-primary/20 dark:text-emerald-300 text-emerald-800 border-emerald-500/40',
                 badgeText: 'Bereitgestellt'
             };
         case 'preparing':
             return {
                 border: 'border-blue-500/50',
                 leftBar: 'bg-blue-500',
-                badge: 'bg-blue-500/20 text-blue-300 border-blue-500/40',
+                badge: 'bg-blue-500/20 dark:text-blue-300 text-blue-800 border-blue-500/40',
                 badgeText: 'In Vorbereitung'
             };
         case 'draft':
             return {
                 border: 'border-gray-500/50',
                 leftBar: 'bg-gray-500',
-                badge: 'bg-gray-500/20 text-gray-300 border-gray-500/40',
+                badge: 'bg-gray-500/20 dark:text-gray-300 text-gray-800 border-gray-500/40',
                 badgeText: 'Entwurf'
             };
         case 'returnReady':
@@ -51,28 +51,28 @@ const getStatusColors = (statusKey: string) => {
             return {
                 border: 'border-purple-500/50',
                 leftBar: 'bg-purple-500',
-                badge: 'bg-purple-500/20 text-purple-300 border-purple-500/40',
+                badge: 'bg-purple-500/20 dark:text-purple-300 text-purple-800 border-purple-500/40',
                 badgeText: statusKey === 'returnReady' ? 'Rückgabe bereit' : 'Rückgabe ausstehend'
             };
         case 'trash':
             return {
                 border: 'border-rose-500/50',
                 leftBar: 'bg-rose-500',
-                badge: 'bg-rose-500/20 text-rose-300 border-rose-500/40',
+                badge: 'bg-rose-500/20 dark:text-rose-300 text-rose-800 border-rose-500/40',
                 badgeText: 'Gelöscht'
             };
         case 'withdrawn':
             return {
                 border: 'border-blue-400/50',
                 leftBar: 'bg-blue-400',
-                badge: 'bg-blue-400/20 text-blue-200 border-blue-400/40',
+                badge: 'bg-blue-400/20 dark:text-blue-200 text-blue-900 border-blue-400/40',
                 badgeText: 'Ausgegeben'
             };
         case 'missing':
             return {
                 border: 'border-amber-500/50',
                 leftBar: 'bg-amber-500',
-                badge: 'bg-amber-500/20 text-amber-300 border-amber-500/40',
+                badge: 'bg-amber-500/20 dark:text-amber-300 text-amber-800 border-amber-500/40',
                 badgeText: 'Überfällig'
             };
         default:
@@ -136,7 +136,7 @@ export const CommissionCard: React.FC<CommissionCardProps> = memo(({
             {/* Header: Name + Meta + StatusBadge */}
             <div className="flex justify-between items-start gap-3 mb-3">
                 <div className="flex-1 min-w-0">
-                    <h3 className="font-bold text-lg text-white leading-tight mb-1 truncate">
+                    <h3 className="font-bold text-lg text-foreground leading-tight mb-1 truncate">
                         {commission.name}
                     </h3>
                     <div className="flex items-center gap-2 text-xs text-muted-foreground flex-wrap">
@@ -156,21 +156,21 @@ export const CommissionCard: React.FC<CommissionCardProps> = memo(({
                 </div>
 
                 {/* Colored StatusBadge */}
-                <span className={`px-2.5 py-1 rounded-lg text-xs font-semibold border shadow-sm ${hasBackorders ? 'bg-red-500/20 text-red-300 border-red-500/40 animate-pulse' : statusColors.badge}`}>
+                <span className={`px-2.5 py-1 rounded-lg text-xs font-semibold border shadow-sm ${hasBackorders ? 'bg-red-500/20 dark:text-red-300 text-red-800 border-red-500/40 animate-pulse' : statusColors.badge}`}>
                     {hasBackorders ? `${statusColors.badgeText} (Rückstand)` : statusColors.badgeText}
                 </span>
             </div>
 
             {/* Notes */}
             {commission.warehouse_notes && (
-                <div className="text-sm font-medium text-amber-200 bg-amber-500/20 p-3 rounded-lg border border-amber-500/40 mb-3 shadow-inner flex items-start gap-2">
-                    <AlertTriangle size={16} className="text-amber-400 mt-0.5 shrink-0" />
+                <div className="text-sm font-medium dark:text-amber-200 text-amber-900 bg-amber-500/20 p-3 rounded-lg border border-amber-500/40 mb-3 shadow-inner flex items-start gap-2">
+                    <AlertTriangle size={16} className="dark:text-amber-400 text-amber-800 mt-0.5 shrink-0" />
                     <div className="flex-1 whitespace-pre-wrap leading-tight">{commission.warehouse_notes}</div>
                 </div>
             )}
             
             {commission.notes && (
-                <div className="text-sm text-yellow-100/90 italic bg-yellow-500/10 p-2.5 rounded-lg border border-yellow-500/20 line-clamp-2 mb-3 shadow-inner">
+                <div className="text-sm dark:text-yellow-100 text-amber-950/90 italic bg-yellow-500/10 p-2.5 rounded-lg border border-yellow-500/20 line-clamp-2 mb-3 shadow-inner">
                     "{commission.notes}"
                 </div>
             )}
@@ -195,8 +195,8 @@ export const CommissionCard: React.FC<CommissionCardProps> = memo(({
                             <span
                                 key={item.id}
                                 className={`px-2.5 py-0.5 rounded-full text-xs font-medium truncate max-w-[180px] border ${isBo
-                                    ? 'bg-red-500/20 text-red-200 border-red-500/40'
-                                    : 'bg-purple-500/15 text-purple-200 border-purple-500/30'
+                                    ? 'bg-red-500/20 dark:text-red-200 text-red-800 border-red-500/40'
+                                    : 'bg-purple-500/15 dark:text-purple-200 text-purple-800 border-purple-500/30'
                                     }`}
                             >
                                 {item.amount > 1 && <span className="opacity-70 mr-1">{item.amount}x</span>}
@@ -225,7 +225,7 @@ export const CommissionCard: React.FC<CommissionCardProps> = memo(({
 
             {/* Status Indicator (Ready = Abholbereit) */}
             {statusKey === 'ready' && (
-                <div className="flex items-center text-emerald-400 text-xs bg-primary/10 p-1.5 rounded w-fit mb-3">
+                <div className="flex items-center dark:text-emerald-400 text-emerald-800 text-xs bg-primary/10 p-1.5 rounded w-fit mb-3">
                     <CheckCircle2 size={12} className="mr-1.5" />
                     <span>Abholbereit</span>
                 </div>
@@ -233,7 +233,7 @@ export const CommissionCard: React.FC<CommissionCardProps> = memo(({
 
             {/* Missing/Overdue Warning */}
             {statusKey === 'missing' && (
-                <div className="flex items-center text-amber-400 text-xs bg-amber-500/10 p-1.5 rounded w-fit mb-3">
+                <div className="flex items-center dark:text-amber-400 text-amber-800 text-xs bg-amber-500/10 p-1.5 rounded w-fit mb-3">
                     <AlertTriangle size={12} className="mr-1.5" />
                     <span>Überfällig</span>
                 </div>
@@ -251,7 +251,7 @@ export const CommissionCard: React.FC<CommissionCardProps> = memo(({
                     {!isTrash && !isWithdrawn && onEdit && (
                         <button
                             onClick={(e) => { e.stopPropagation(); onEdit(commission); }}
-                            className="p-1.5 hover:bg-muted rounded-lg text-blue-400 transition-colors"
+                            className="p-1.5 hover:bg-muted rounded-lg dark:text-blue-400 text-blue-800 transition-colors"
                             title="Bearbeiten"
                         >
                             <Edit2 size={14} />
@@ -261,7 +261,7 @@ export const CommissionCard: React.FC<CommissionCardProps> = memo(({
                     {onPrintLabel && !isTrash && !isWithdrawn && (
                         <button
                             onClick={(e) => { e.stopPropagation(); onPrintLabel(commission.id, commission.name); }}
-                            className={`p-1.5 hover:bg-muted rounded-lg transition-colors ${commission.needs_label ? 'text-amber-400 animate-pulse' : 'text-muted-foreground'}`}
+                            className={`p-1.5 hover:bg-muted rounded-lg transition-colors ${commission.needs_label ? 'dark:text-amber-400 text-amber-800 animate-pulse' : 'text-muted-foreground'}`}
                             title="Etikett drucken"
                         >
                             <Printer size={14} />
@@ -271,7 +271,7 @@ export const CommissionCard: React.FC<CommissionCardProps> = memo(({
                     {onDelete && (
                         <button
                             onClick={(e) => onDelete(commission.id, commission.name, isTrash ? 'permanent' : 'trash', e)}
-                            className="p-1.5 hover:bg-rose-500/20 rounded-lg text-rose-400 transition-colors"
+                            className="p-1.5 hover:bg-rose-500/20 rounded-lg dark:text-rose-400 text-rose-800 transition-colors"
                             title={isTrash ? "Endgültig löschen" : "Löschen"}
                         >
                             <Trash2 size={14} />
@@ -281,7 +281,7 @@ export const CommissionCard: React.FC<CommissionCardProps> = memo(({
                     {isTrash && onRestore && (
                         <button
                             onClick={(e) => onRestore(commission.id, commission.name, e)}
-                            className="p-1.5 hover:bg-primary/20 rounded-lg text-emerald-400 transition-colors"
+                            className="p-1.5 hover:bg-primary/20 rounded-lg dark:text-emerald-400 text-emerald-800 transition-colors"
                             title="Wiederherstellen"
                         >
                             <Undo2 size={14} />
@@ -291,7 +291,7 @@ export const CommissionCard: React.FC<CommissionCardProps> = memo(({
                     {isWithdrawn && onRevertWithdraw && (
                         <button
                             onClick={(e) => onRevertWithdraw(commission, e)}
-                            className="p-1.5 hover:bg-blue-500/20 rounded-lg text-blue-400 transition-colors"
+                            className="p-1.5 hover:bg-blue-500/20 rounded-lg dark:text-blue-400 text-blue-800 transition-colors"
                             title="Widerrufen"
                         >
                             <Undo2 size={14} />
@@ -302,8 +302,8 @@ export const CommissionCard: React.FC<CommissionCardProps> = memo(({
 
             {/* Withdrawn/Trash Info Footer */}
             {(isTrash || isWithdrawn) && (
-                <div className="flex items-center justify-between mt-2 pt-2 border-t border-white/5">
-                    <div className={`text-xs flex items-center font-medium ${isTrash ? 'text-rose-300' : 'text-blue-300'}`}>
+                <div className="flex items-center justify-between mt-2 pt-2 border-t dark:border-white/5 border-border">
+                    <div className={`text-xs flex items-center font-medium ${isTrash ? 'dark:text-rose-300 text-rose-800' : 'dark:text-blue-300 text-blue-800'}`}>
                         {isTrash ? <Trash2 size={12} className="mr-1.5" /> : <Clock size={12} className="mr-1.5" />}
                         {isTrash ? 'Gelöscht: ' : ''}
                         {new Date(isTrash && commission.deleted_at ? commission.deleted_at : commission.updated_at).toLocaleDateString()}

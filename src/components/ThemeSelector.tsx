@@ -42,7 +42,7 @@ export const ThemeSelector: React.FC<ThemeSelectorProps> = ({ isOpen, onClose })
                         animate={{ opacity: 1 }}
                         exit={{ opacity: 0 }}
                         onClick={onClose}
-                        className="fixed inset-0 bg-black/30 backdrop-blur-sm z-[200]"
+                        className="fixed inset-0 dark:bg-black/30 bg-muted/70 backdrop-blur-sm z-[200]"
                     />
 
                     {/* Modal */}
@@ -58,16 +58,16 @@ export const ThemeSelector: React.FC<ThemeSelectorProps> = ({ isOpen, onClose })
                             <div className="flex items-center justify-between mb-6">
                                 <div className="flex items-center gap-3">
                                     <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center">
-                                        <Palette size={20} className="text-white" />
+                                        <Palette size={20} className="text-foreground" />
                                     </div>
                                     <div>
-                                        <h2 className="text-lg font-bold text-white">Design wählen</h2>
+                                        <h2 className="text-lg font-bold text-foreground">Design wählen</h2>
                                         <p className="text-xs text-muted-foreground">Passe das Aussehen der App an</p>
                                     </div>
                                 </div>
                                 <button
                                     onClick={onClose}
-                                    className="p-2 rounded-xl hover:bg-muted transition-colors text-muted-foreground hover:text-white"
+                                    className="p-2 rounded-xl hover:bg-muted transition-colors text-muted-foreground hover:text-foreground"
                                 >
                                     <X size={20} />
                                 </button>
@@ -105,9 +105,9 @@ export const ThemeSelector: React.FC<ThemeSelectorProps> = ({ isOpen, onClose })
                                             {/* Info */}
                                             <div className="flex-1 min-w-0">
                                                 <div className="flex items-center gap-2">
-                                                    <span className="font-semibold text-white">{t.name}</span>
+                                                    <span className="font-semibold text-foreground">{t.name}</span>
                                                     {theme === t.id && (
-                                                        <span className="text-xs px-2 py-0.5 rounded-full bg-primary/20 text-emerald-400 font-medium">
+                                                        <span className="text-xs px-2 py-0.5 rounded-full bg-primary/20 dark:text-emerald-400 text-emerald-800 font-medium">
                                                             Aktiv
                                                         </span>
                                                     )}

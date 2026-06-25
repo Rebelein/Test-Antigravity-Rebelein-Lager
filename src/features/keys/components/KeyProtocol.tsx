@@ -142,7 +142,7 @@ export const KeyProtocol = React.forwardRef<HTMLDivElement, KeyProtocolProps>(({
             </div>
 
             {/* Timestamp Footer */}
-            <div className="mt-8 text-center text-[10px] text-gray-300">
+            <div className="mt-8 text-center text-[10px] dark:text-gray-300 text-gray-800">
                 <p>Dokument digital erstellt am {format(new Date(), 'dd.MM.yyyy HH:mm')} via Rebelein LagerApp</p>
             </div>
         </div>

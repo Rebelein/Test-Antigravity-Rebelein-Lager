@@ -27,14 +27,14 @@ export const CommissionOfficeContent: React.FC<CommissionOfficeContentProps> = (
     return (
         <div className="flex flex-col h-full bg-transparent overflow-hidden relative">
             {/* Header */}
-            <div className="p-6 border-b border-white/5 bg-white/[0.02] flex justify-between items-start shrink-0">
+            <div className="p-6 border-b dark:border-white/5 border-border bg-white/[0.02] flex justify-between items-start shrink-0">
                 <div>
-                    <h2 className="text-xl font-bold text-white">Kommission bearbeiten</h2>
+                    <h2 className="text-xl font-bold text-foreground">Kommission bearbeiten</h2>
                     <p className="text-sm text-muted-foreground">{commission.name}</p>
                     {commission.status === 'ReturnReady' && <span className="text-xs text-purple-400 font-bold block mt-1">(Retoure Abholbereit)</span>}
                     {commission.status === 'ReturnPending' && <span className="text-xs text-orange-400 font-bold block mt-1">(Retoure Angemeldet)</span>}
                 </div>
-                <button onClick={onClose} className="p-2 bg-black/20 hover:bg-muted rounded-full text-muted-foreground hover:text-white transition-colors">
+                <button onClick={onClose} className="p-2 dark:bg-black/20 bg-muted/60 hover:bg-muted rounded-full text-muted-foreground hover:text-foreground transition-colors">
                     <X size={20} />
                 </button>
             </div>
@@ -50,7 +50,7 @@ export const CommissionOfficeContent: React.FC<CommissionOfficeContentProps> = (
                         {isProcessed && <Check size={16} />}
                     </div>
                     <div>
-                        <div className="font-bold text-white">Büro: Gesehen / Bearbeitet</div>
+                        <div className="font-bold text-foreground">Büro: Gesehen / Bearbeitet</div>
                         <div className="text-xs text-muted-foreground">Markiere den Vorgang als "in Bearbeitung" oder "Erledigt".</div>
                     </div>
                 </div>
@@ -61,7 +61,7 @@ export const CommissionOfficeContent: React.FC<CommissionOfficeContentProps> = (
                         <StickyNote size={12} /> Büro Notizen
                     </label>
                     <textarea
-                        className="w-full bg-muted border border-border rounded-xl p-3 text-white focus:outline-none focus:ring-1 focus:ring-emerald-500/50 min-h-[150px]"
+                        className="w-full bg-muted border border-border rounded-xl p-3 text-foreground focus:outline-none focus:ring-1 focus:ring-emerald-500/50 min-h-[150px]"
                         placeholder="z.B. Termin vereinbart am 12.12. / Kunde ruft an..."
                         value={officeNotes}
                         onChange={e => setOfficeNotes(e.target.value)}

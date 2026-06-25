@@ -55,7 +55,7 @@ export const PageManagerModal: React.FC<PageManagerModalProps> = ({ isOpen, onCl
 
                 {/* ACTIVE PAGES LIST (REORDERABLE) */}
                 <div>
-                    <h3 className="text-xs font-bold text-emerald-400 uppercase tracking-wider mb-3">Aktive Seiten ("Anzeige")</h3>
+                    <h3 className="text-xs font-bold dark:text-emerald-400 text-emerald-800 uppercase tracking-wider mb-3">Aktive Seiten ("Anzeige")</h3>
                     <div className="space-y-2">
                         {activeOrder.map((itemId, index) => {
                             const item = ALL_NAV_ITEMS.find(i => i.id === itemId);
@@ -65,7 +65,7 @@ export const PageManagerModal: React.FC<PageManagerModalProps> = ({ isOpen, onCl
                                 <div key={itemId} className="flex items-center justify-between p-3 bg-muted border border-border rounded-xl group hover:bg-muted transition-colors">
                                     <div className="flex items-center gap-3">
                                         <div className="text-muted-foreground">{item.icon}</div>
-                                        <span className="font-medium text-white">{item.label}</span>
+                                        <span className="font-medium text-foreground">{item.label}</span>
                                     </div>
 
                                     <div className="flex items-center gap-2">
@@ -73,14 +73,14 @@ export const PageManagerModal: React.FC<PageManagerModalProps> = ({ isOpen, onCl
                                             <button
                                                 disabled={index === 0}
                                                 onClick={() => moveSidebarItem(index, 'up')}
-                                                className="p-1 hover:bg-muted rounded text-muted-foreground hover:text-white disabled:opacity-20"
+                                                className="p-1 hover:bg-muted rounded text-muted-foreground hover:text-foreground disabled:opacity-20"
                                             >
                                                 <ChevronUp size={14} />
                                             </button>
                                             <button
                                                 disabled={index === activeOrder.length - 1}
                                                 onClick={() => moveSidebarItem(index, 'down')}
-                                                className="p-1 hover:bg-muted rounded text-muted-foreground hover:text-white disabled:opacity-20"
+                                                className="p-1 hover:bg-muted rounded text-muted-foreground hover:text-foreground disabled:opacity-20"
                                             >
                                                 <ChevronDown size={14} />
                                             </button>
@@ -88,7 +88,7 @@ export const PageManagerModal: React.FC<PageManagerModalProps> = ({ isOpen, onCl
 
                                         <button
                                             onClick={() => toggleSidebarItem(itemId)}
-                                            className="p-2 bg-primary/20 text-emerald-400 hover:bg-primary/30 rounded-lg transition-colors"
+                                            className="p-2 bg-primary/20 dark:text-emerald-400 text-emerald-800 hover:bg-primary/30 rounded-lg transition-colors"
                                             title="Ausblenden"
                                         >
                                             <Eye size={18} />
@@ -108,14 +108,14 @@ export const PageManagerModal: React.FC<PageManagerModalProps> = ({ isOpen, onCl
                             <div className="text-muted-foreground text-sm italic py-2">Alle Seiten sind aktiv.</div>
                         )}
                         {ALL_NAV_ITEMS.filter(i => !activeOrder.includes(i.id)).map(item => (
-                            <div key={item.id} className="flex items-center justify-between p-3 bg-muted border border-white/5 rounded-xl opacity-60 hover:opacity-100 transition-opacity">
+                            <div key={item.id} className="flex items-center justify-between p-3 bg-muted border dark:border-white/5 border-border rounded-xl opacity-60 hover:opacity-100 transition-opacity">
                                 <div className="flex items-center gap-3">
                                     <div className="text-muted-foreground grayscale">{item.icon}</div>
                                     <span className="font-medium text-muted-foreground">{item.label}</span>
                                 </div>
                                 <button
                                     onClick={() => toggleSidebarItem(item.id)}
-                                    className="p-2 bg-muted text-muted-foreground hover:bg-muted hover:text-white rounded-lg transition-colors"
+                                    className="p-2 bg-muted text-muted-foreground hover:bg-muted hover:text-foreground rounded-lg transition-colors"
                                     title="Einblenden"
                                 >
                                     <EyeOff size={18} />

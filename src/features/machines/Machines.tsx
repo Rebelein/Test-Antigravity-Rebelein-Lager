@@ -208,7 +208,7 @@ const Machines: React.FC = () => {
         <div className="space-y-6 pb-24 h-full overflow-y-auto pr-2">
             <header className="flex justify-between items-start">
                 <div>
-                    <h1 className="text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-emerald-300 to-teal-200">
+                    <h1 className="text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r dark:from-emerald-300 dark:to-teal-200 from-emerald-800 to-teal-700">
                         Maschinenpark
                     </h1>
                     <p className="text-muted-foreground">Verwaltung und Verleih von Werkzeugen.</p>
@@ -217,10 +217,10 @@ const Machines: React.FC = () => {
             </header>
 
             {/* Tabs */}
-            <div className="flex gap-2 p-1 bg-black/20 rounded-xl border border-white/5 mb-6">
+            <div className="flex gap-2 p-1 dark:bg-black/20 bg-muted/60 rounded-xl border dark:border-white/5 border-border mb-6">
                 <button
                     onClick={() => setActiveTab('available')}
-                    className={`flex-1 py-2 rounded-lg text-sm font-medium transition-all flex items-center justify-center gap-2 ${activeTab === 'available' ? 'bg-primary/20 text-emerald-200 border border-emerald-500/30 shadow' : 'text-muted-foreground'}`}
+                    className={`flex-1 py-2 rounded-lg text-sm font-medium transition-all flex items-center justify-center gap-2 ${activeTab === 'available' ? 'bg-primary/20 dark:text-emerald-200 text-emerald-900 border border-emerald-500/30 shadow' : 'text-muted-foreground'}`}
                 >
                     <Drill size={16} /> Verfügbar <span className="ml-1 bg-muted px-1.5 rounded text-[10px]">{availableCount}</span>
                 </button>
@@ -236,7 +236,7 @@ const Machines: React.FC = () => {
             <div className="relative mb-4">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" size={18} />
                 <input
-                    className="w-full bg-muted border border-border rounded-xl py-3 pl-10 pr-4 text-white focus:outline-none focus:border-emerald-500 transition-colors"
+                    className="w-full bg-muted border border-border rounded-xl py-3 pl-10 pr-4 text-foreground focus:outline-none focus:border-emerald-500 transition-colors"
                     placeholder="Maschine suchen..."
                     value={searchTerm}
                     onChange={e => setSearchTerm(e.target.value)}
@@ -260,23 +260,23 @@ const Machines: React.FC = () => {
                             onClick={() => { setSelectedMachine(machine); setIsCreating(false); setIsEditing(false); }}
                             className={`bg-muted backdrop-blur-sm border border-border rounded-xl p-2.5 flex items-center gap-3 hover:bg-muted transition-all cursor-pointer ${selectedMachine?.id === machine.id && !isCreating ? 'border-emerald-500/50 bg-primary/5' : ''}`}
                         >
-                            <div className="w-14 h-14 shrink-0 rounded-lg bg-black/30 overflow-hidden relative border border-white/5">
+                            <div className="w-14 h-14 shrink-0 rounded-lg dark:bg-black/30 bg-muted/70 overflow-hidden relative border dark:border-white/5 border-border">
                                 <img src={machine.image || `https://picsum.photos/seed/${machine.id}/200`} className="w-full h-full object-cover opacity-90" />
                                 {machine.status !== MachineStatus.AVAILABLE && (
-                                    <div className="absolute inset-0 bg-black/30 flex items-center justify-center">
-                                        {machine.status === MachineStatus.REPAIR ? <Wrench size={16} className="text-rose-400" /> : <User size={16} className="text-white" />}
+                                    <div className="absolute inset-0 dark:bg-black/30 bg-muted/70 flex items-center justify-center">
+                                        {machine.status === MachineStatus.REPAIR ? <Wrench size={16} className="dark:text-rose-400 text-rose-800" /> : <User size={16} className="text-foreground" />}
                                     </div>
                                 )}
                             </div>
                             <div className="flex-1 min-w-0">
-                                <h3 className="text-base font-bold text-white truncate">{machine.name}</h3>
+                                <h3 className="text-base font-bold text-foreground truncate">{machine.name}</h3>
                                 <div className="flex items-center gap-2 mt-0.5">
                                     <StatusBadge status={machine.status} />
-                                    {machine.status === MachineStatus.RENTED && <span className="text-xs text-amber-300 truncate">{machine.profiles?.full_name || machine.externalBorrower}</span>}
+                                    {machine.status === MachineStatus.RENTED && <span className="text-xs dark:text-amber-300 text-amber-800 truncate">{machine.profiles?.full_name || machine.externalBorrower}</span>}
                                 </div>
                             </div>
                             <div className="flex gap-2">
-                                <button onClick={(e) => handleContextMenuClick(e, machine.id)} className="p-2 text-muted-foreground hover:text-white hover:bg-muted rounded-lg transition-colors">
+                                <button onClick={(e) => handleContextMenuClick(e, machine.id)} className="p-2 text-muted-foreground hover:text-foreground hover:bg-muted rounded-lg transition-colors">
                                     <MoreVertical size={20} />
                                 </button>
                             </div>
@@ -332,10 +332,10 @@ const Machines: React.FC = () => {
                         if (!m) return null;
                         return (
                             <div className="py-1">
-                                <button onClick={() => { handlePrintLabel(m); }} className="w-full text-left px-4 py-3 text-sm text-white hover:bg-muted flex gap-3 items-center"><Printer size={16} /> Etikett</button>
-                                <button onClick={() => { handleEdit(m); }} className="w-full text-left px-4 py-3 text-sm text-white hover:bg-muted flex gap-3 items-center"><Edit2 size={16} /> Bearbeiten</button>
+                                <button onClick={() => { handlePrintLabel(m); }} className="w-full text-left px-4 py-3 text-sm text-foreground hover:bg-muted flex gap-3 items-center"><Printer size={16} /> Etikett</button>
+                                <button onClick={() => { handleEdit(m); }} className="w-full text-left px-4 py-3 text-sm text-foreground hover:bg-muted flex gap-3 items-center"><Edit2 size={16} /> Bearbeiten</button>
                                 <div className="h-px bg-muted my-1"></div>
-                                <button onClick={() => { handleDeleteMachine(m); }} className="w-full text-left px-4 py-3 text-sm text-rose-400 hover:bg-rose-500/10 flex gap-3 items-center"><Trash2 size={16} /> Löschen</button>
+                                <button onClick={() => { handleDeleteMachine(m); }} className="w-full text-left px-4 py-3 text-sm dark:text-rose-400 text-rose-800 hover:bg-rose-500/10 flex gap-3 items-center"><Trash2 size={16} /> Löschen</button>
                             </div>
                         )
                     })()}

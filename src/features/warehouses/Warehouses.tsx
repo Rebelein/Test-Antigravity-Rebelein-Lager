@@ -74,9 +74,9 @@ const Warehouses: React.FC = () => {
   };
 
   const getIcon = (type: WarehouseType) => {
-    if (type === 'Main') return <WarehouseIcon size={24} className="text-emerald-400" />;
-    if (type === 'Vehicle') return <Truck size={24} className="text-blue-400" />;
-    return <HardHat size={24} className="text-amber-400" />;
+    if (type === 'Main') return <WarehouseIcon size={24} className="dark:text-emerald-400 text-emerald-800" />;
+    if (type === 'Vehicle') return <Truck size={24} className="dark:text-blue-400 text-blue-800" />;
+    return <HardHat size={24} className="dark:text-amber-400 text-amber-800" />;
   };
 
   const warehouseTypes = [
@@ -90,8 +90,8 @@ const Warehouses: React.FC = () => {
       {/* Header */}
       <header className="flex items-center justify-between gap-4">
         <div>
-          <button onClick={() => navigate('/dashboard')} className="text-sm text-muted-foreground hover:text-white mb-2">← Dashboard</button>
-          <h1 className="text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-emerald-300 to-teal-200">Lagerorte</h1>
+          <button onClick={() => navigate('/dashboard')} className="text-sm text-muted-foreground hover:text-foreground mb-2">← Dashboard</button>
+          <h1 className="text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r dark:from-emerald-300 dark:to-teal-200 from-emerald-800 to-teal-700">Lagerorte</h1>
         </div>
         <Button icon={<Plus size={18} />} onClick={handleOpenCreate}>Neu</Button>
       </header>
@@ -101,10 +101,10 @@ const Warehouses: React.FC = () => {
           <GlassCard key={warehouse.id} className="relative group">
             <div className="flex items-center gap-4">
               <div className="w-12 h-12 rounded-xl bg-muted flex items-center justify-center">{getIcon(warehouse.type)}</div>
-              <div className="flex-1"><h3 className="text-white font-bold">{warehouse.name}</h3></div>
+              <div className="flex-1"><h3 className="text-foreground font-bold">{warehouse.name}</h3></div>
               <div className="flex gap-2">
-                <button onClick={() => handleOpenEdit(warehouse)} className="p-2 bg-muted rounded-lg text-muted-foreground hover:text-white"><Edit2 size={16} /></button>
-                <button onClick={() => handleDelete(warehouse.id, warehouse.name)} className="p-2 bg-muted rounded-lg text-muted-foreground hover:text-rose-400"><Trash2 size={16} /></button>
+                <button onClick={() => handleOpenEdit(warehouse)} className="p-2 bg-muted rounded-lg text-muted-foreground hover:text-foreground"><Edit2 size={16} /></button>
+                <button onClick={() => handleDelete(warehouse.id, warehouse.name)} className="p-2 bg-muted rounded-lg text-muted-foreground hover:dark:text-rose-400 text-rose-800"><Trash2 size={16} /></button>
               </div>
             </div>
             <div className="flex gap-2 mt-3">
@@ -127,7 +127,7 @@ const Warehouses: React.FC = () => {
       </div>
 
       {isModalOpen && (
-        <div className="fixed inset-0 z-[170] flex items-center justify-center p-4 bg-black/30 backdrop-blur-sm animate-in fade-in zoom-in-95">
+        <div className="fixed inset-0 z-[170] flex items-center justify-center p-4 dark:bg-black/30 bg-muted/70 backdrop-blur-sm animate-in fade-in zoom-in-95">
           <GlassCard className="w-full max-w-lg" title={editingId ? "Lager bearbeiten" : "Neuer Lager"}>
             <button onClick={() => setIsModalOpen(false)} className="absolute top-4 right-4 text-muted-foreground"><X size={20} /></button>
             <form onSubmit={handleSubmit} className="space-y-5 mt-2">
@@ -146,7 +146,7 @@ const Warehouses: React.FC = () => {
                         key={t.id}
                         type="button"
                         onClick={() => setWarehouseForm({ ...warehouseForm, type: t.id as WarehouseType })}
-                        className={`flex flex-col items-center justify-center gap-2 py-3 rounded-xl border transition-all ${isActive ? 'bg-primary/20 border-emerald-500 text-emerald-300' : 'bg-muted border-border text-muted-foreground hover:bg-muted hover:text-white'}`}
+                        className={`flex flex-col items-center justify-center gap-2 py-3 rounded-xl border transition-all ${isActive ? 'bg-primary/20 border-emerald-500 dark:text-emerald-300 text-emerald-800' : 'bg-muted border-border text-muted-foreground hover:bg-muted hover:text-foreground'}`}
                       >
                         <t.icon size={20} />
                         <span className="text-xs font-medium">{t.label}</span>

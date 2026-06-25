@@ -70,7 +70,7 @@ export function PushNotificationToggle({ userId, compact = false }: PushNotifica
         className={[
           'relative flex items-center justify-center rounded-lg p-2 transition-all duration-200',
           subscribed
-            ? 'text-blue-400 hover:bg-blue-500/10'
+            ? 'dark:text-blue-400 text-blue-800 hover:bg-blue-500/10'
             : 'text-muted-foreground hover:bg-slate-700/50 hover:text-slate-200',
           loading ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer',
         ].join(' ')}
@@ -96,7 +96,7 @@ export function PushNotificationToggle({ userId, compact = false }: PushNotifica
         <div
           className={[
             'flex h-10 w-10 items-center justify-center rounded-lg',
-            subscribed ? 'bg-blue-500/20 text-blue-400' : 'bg-slate-700/50 text-muted-foreground',
+            subscribed ? 'bg-blue-500/20 dark:text-blue-400 text-blue-800' : 'bg-slate-700/50 text-muted-foreground',
           ].join(' ')}
         >
           {subscribed ? <BellRing className="h-5 w-5" /> : <Bell className="h-5 w-5" />}

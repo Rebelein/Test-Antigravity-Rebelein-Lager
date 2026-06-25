@@ -11,12 +11,12 @@ const STEPS = [
   {
     title: "Willkommen!",
     content: "Willkommen in der Rebelein LagerApp. Diese kurze Tour zeigt dir die wichtigsten Funktionen, damit du sofort loslegen kannst.",
-    icon: <LayoutDashboard size={48} className="text-emerald-400 mb-4" />
+    icon: <LayoutDashboard size={48} className="dark:text-emerald-400 text-emerald-800 mb-4" />
   },
   {
     title: "Navigation",
     content: "Am Desktop findest du das Menü links. Auf dem Handy ist das Menü unten. Dort erreichst du schnell Lagerbestand, Bestellungen und Werkzeuge.",
-    icon: <ArrowRight size={48} className="text-blue-400 mb-4" />
+    icon: <ArrowRight size={48} className="dark:text-blue-400 text-blue-800 mb-4" />
   },
   {
     title: "Scanner Button",
@@ -26,7 +26,7 @@ const STEPS = [
   {
     title: "Online Zwang",
     content: "Die App benötigt eine Internetverbindung, um sicherzustellen, dass der Lagerbestand immer aktuell ist. Ohne Netz sind keine Buchungen möglich.",
-    icon: <WifiOff size={48} className="text-rose-400 mb-4" />
+    icon: <WifiOff size={48} className="dark:text-rose-400 text-rose-800 mb-4" />
   }
 ];
 
@@ -44,7 +44,7 @@ export const OnboardingTour: React.FC<OnboardingTourProps> = ({ onComplete }) =>
   const stepData = STEPS[currentStep];
 
   return (
-    <div className="fixed inset-0 z-[9999] flex items-center justify-center p-6 bg-black/30 backdrop-blur-sm animate-in fade-in duration-300">
+    <div className="fixed inset-0 z-[9999] flex items-center justify-center p-6 dark:bg-black/30 bg-muted/70 backdrop-blur-sm animate-in fade-in duration-300">
       <GlassCard className="w-full max-w-sm flex flex-col items-center text-center relative overflow-hidden">
         {/* Progress Bar */}
         <div className="absolute top-0 left-0 right-0 h-1 bg-muted">
@@ -58,7 +58,7 @@ export const OnboardingTour: React.FC<OnboardingTourProps> = ({ onComplete }) =>
           <div className="w-24 h-24 rounded-full bg-muted flex items-center justify-center mb-6 animate-in zoom-in duration-300 key={currentStep}">
              {stepData.icon}
           </div>
-          <h2 className="text-2xl font-bold text-white mb-3">{stepData.title}</h2>
+          <h2 className="text-2xl font-bold text-foreground mb-3">{stepData.title}</h2>
           <p className="text-muted-foreground text-sm leading-relaxed min-h-[80px]">
             {stepData.content}
           </p>

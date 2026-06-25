@@ -266,12 +266,12 @@ const Labels: React.FC = () => {
         <div className="space-y-6 pb-20 h-full overflow-y-auto lg:overflow-visible">
             <header className="flex items-center justify-between gap-4">
                 <div>
-                    <button onClick={() => navigate('/dashboard')} className="text-sm text-muted-foreground hover:text-white mb-2">← Dashboard</button>
+                    <button onClick={() => navigate('/dashboard')} className="text-sm text-muted-foreground hover:text-foreground mb-2">← Dashboard</button>
                     <h1 className="text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-indigo-300">Etikettendruck</h1>
                 </div>
             </header>
 
-            {loading ? <div className="flex justify-center py-12"><Loader2 className="animate-spin text-blue-400" /></div> : (
+            {loading ? <div className="flex justify-center py-12"><Loader2 className="animate-spin dark:text-blue-400 text-blue-800" /></div> : (
                 <div className="flex flex-col lg:flex-row gap-6 h-auto lg:h-[calc(100vh-200px)] min-h-0 lg:min-h-[650px] shrink-0">
 
                     {/* LEFT: SELECTION */}
@@ -282,16 +282,16 @@ const Labels: React.FC = () => {
                         <div className="p-4 border-b border-border bg-muted space-y-3">
 
                             {/* View Mode Toggle (Article vs Location) */}
-                            <div className="flex p-1 bg-black/40 rounded-lg border border-border">
+                            <div className="flex p-1 dark:bg-black/40 bg-muted/80 rounded-lg border border-border">
                                 <button
                                     onClick={() => { setLabelViewMode('articles'); setSelectedArticleIds(new Set()); setPreviewIndex(0); }}
-                                    className={`flex-1 py-1.5 text-xs font-medium rounded-md transition-all flex items-center justify-center gap-2 ${labelViewMode === 'articles' ? 'bg-muted text-white' : 'text-muted-foreground hover:text-white'}`}
+                                    className={`flex-1 py-1.5 text-xs font-medium rounded-md transition-all flex items-center justify-center gap-2 ${labelViewMode === 'articles' ? 'bg-muted text-foreground' : 'text-muted-foreground hover:text-foreground'}`}
                                 >
                                     <Box size={14} /> Artikel-Ansicht
                                 </button>
                                 <button
                                     onClick={() => { setLabelViewMode('locations'); setSelectedLocations(new Set()); setPreviewIndex(0); setLocationOccupancyFilter('multi'); }}
-                                    className={`flex-1 py-1.5 text-xs font-medium rounded-md transition-all flex items-center justify-center gap-2 ${labelViewMode === 'locations' ? 'bg-muted text-white' : 'text-muted-foreground hover:text-white'}`}
+                                    className={`flex-1 py-1.5 text-xs font-medium rounded-md transition-all flex items-center justify-center gap-2 ${labelViewMode === 'locations' ? 'bg-muted text-foreground' : 'text-muted-foreground hover:text-foreground'}`}
                                 >
                                     <Layers size={14} /> Lagerfächer
                                 </button>
@@ -303,8 +303,8 @@ const Labels: React.FC = () => {
                                         value={labelFilterWarehouse}
                                         onChange={(e) => setLabelFilterWarehouse(e.target.value)}
                                     >
-                                        <option value="all" className="bg-background text-white">Alle Lager</option>
-                                        {warehouses.map(w => <option key={w.id} value={w.id} className="bg-background text-white">{w.name}</option>)}
+                                        <option value="all" className="bg-background text-foreground">Alle Lager</option>
+                                        {warehouses.map(w => <option key={w.id} value={w.id} className="bg-background text-foreground">{w.name}</option>)}
                                     </GlassSelect>
                                 </div>
                                 <div className="flex-1">
@@ -312,8 +312,8 @@ const Labels: React.FC = () => {
                                         value={labelFilterCategory}
                                         onChange={(e) => setLabelFilterCategory(e.target.value)}
                                     >
-                                        <option value="all" className="bg-background text-white">Alle Regale</option>
-                                        {availableCategories.map(c => <option key={c} value={c} className="bg-background text-white">{c}</option>)}
+                                        <option value="all" className="bg-background text-foreground">Alle Regale</option>
+                                        {availableCategories.map(c => <option key={c} value={c} className="bg-background text-foreground">{c}</option>)}
                                     </GlassSelect>
                                 </div>
                             </div>
@@ -321,9 +321,9 @@ const Labels: React.FC = () => {
                             {/* Extra Filter for Location View */}
                             {labelViewMode === 'locations' && (
                                 <div className="flex gap-2 text-xs">
-                                    <button onClick={() => setLocationOccupancyFilter('all')} className={`px-3 py-1 rounded-full border ${locationOccupancyFilter === 'all' ? 'bg-muted border-border text-white' : 'border-transparent text-muted-foreground'}`}>Alle Fächer</button>
-                                    <button onClick={() => setLocationOccupancyFilter('single')} className={`px-3 py-1 rounded-full border ${locationOccupancyFilter === 'single' ? 'bg-primary/20 border-emerald-500/30 text-emerald-300' : 'border-transparent text-muted-foreground'}`}>Einzeln</button>
-                                    <button onClick={() => setLocationOccupancyFilter('multi')} className={`px-3 py-1 rounded-full border ${locationOccupancyFilter === 'multi' ? 'bg-blue-500/20 border-blue-500/30 text-blue-300' : 'border-transparent text-muted-foreground'}`}>Mehrfach</button>
+                                    <button onClick={() => setLocationOccupancyFilter('all')} className={`px-3 py-1 rounded-full border ${locationOccupancyFilter === 'all' ? 'bg-muted border-border text-foreground' : 'border-transparent text-muted-foreground'}`}>Alle Fächer</button>
+                                    <button onClick={() => setLocationOccupancyFilter('single')} className={`px-3 py-1 rounded-full border ${locationOccupancyFilter === 'single' ? 'bg-primary/20 border-emerald-500/30 dark:text-emerald-300 text-emerald-800' : 'border-transparent text-muted-foreground'}`}>Einzeln</button>
+                                    <button onClick={() => setLocationOccupancyFilter('multi')} className={`px-3 py-1 rounded-full border ${locationOccupancyFilter === 'multi' ? 'bg-blue-500/20 border-blue-500/30 dark:text-blue-300 text-blue-800' : 'border-transparent text-muted-foreground'}`}>Mehrfach</button>
                                 </div>
                             )}
 
@@ -336,7 +336,7 @@ const Labels: React.FC = () => {
                             />
 
                             <div className="flex items-center justify-between pt-2">
-                                <button onClick={toggleSelectAll} className="flex items-center gap-2 text-sm text-emerald-400 hover:text-emerald-300 transition-colors">
+                                <button onClick={toggleSelectAll} className="flex items-center gap-2 text-sm dark:text-emerald-400 text-emerald-800 hover:dark:text-emerald-300 text-emerald-800 transition-colors">
                                     {((labelViewMode === 'articles' && selectedArticleIds.size > 0) || (labelViewMode === 'locations' && selectedLocations.size > 0)) ? <CheckSquare size={16} /> : <Square size={16} />}
                                     Alle auswählen ({labelViewMode === 'articles' ? filteredLabelArticles.length : filteredLocations.length})
                                 </button>
@@ -362,7 +362,7 @@ const Labels: React.FC = () => {
                                                 {selectedArticleIds.has(article.id) && <Check size={10} />}
                                             </div>
                                             <div className="flex-1 min-w-0">
-                                                <div className="text-sm font-medium text-white truncate">{article.name}</div>
+                                                <div className="text-sm font-medium text-foreground truncate">{article.name}</div>
                                                 <div className="text-xs text-muted-foreground flex gap-2">
                                                     <span>{article.sku}</span>
                                                     <span>•</span>
@@ -390,8 +390,8 @@ const Labels: React.FC = () => {
                                                 </div>
                                                 <div className="flex-1 min-w-0">
                                                     <div className="flex justify-between items-center mb-1">
-                                                        <div className="text-sm font-bold text-white truncate">{loc.category} / {loc.locationName}</div>
-                                                        <div className={`text-[10px] px-1.5 py-0.5 rounded border ${isMulti ? 'bg-blue-500/20 text-blue-300 border-blue-500/30' : 'bg-muted text-muted-foreground border-border'}`}>
+                                                        <div className="text-sm font-bold text-foreground truncate">{loc.category} / {loc.locationName}</div>
+                                                        <div className={`text-[10px] px-1.5 py-0.5 rounded border ${isMulti ? 'bg-blue-500/20 dark:text-blue-300 text-blue-800 border-blue-500/30' : 'bg-muted text-muted-foreground border-border'}`}>
                                                             {loc.articles.length} Artikel
                                                         </div>
                                                     </div>
@@ -413,19 +413,19 @@ const Labels: React.FC = () => {
                         {/* Config Panel */}
                         <GlassCard className="p-4 space-y-4 flex-1 flex flex-col">
                             <div className="flex items-center justify-between border-b border-border pb-3">
-                                <h3 className="text-white font-bold flex items-center gap-2"><Sliders size={18} className="text-emerald-400" /> Etikett anpassen</h3>
+                                <h3 className="text-foreground font-bold flex items-center gap-2"><Sliders size={18} className="dark:text-emerald-400 text-emerald-800" /> Etikett anpassen</h3>
 
                                 <div className="flex gap-2">
                                     {/* Size Toggle */}
-                                    <div className="flex items-center bg-black/30 rounded-lg p-1 border border-border">
-                                        <button onClick={() => setIsCustomSize(false)} className={`px-3 py-1 rounded-md text-xs font-medium transition-all ${!isCustomSize ? 'bg-muted text-white' : 'text-muted-foreground'}`}>Standard</button>
+                                    <div className="flex items-center dark:bg-black/30 bg-muted/70 rounded-lg p-1 border border-border">
+                                        <button onClick={() => setIsCustomSize(false)} className={`px-3 py-1 rounded-md text-xs font-medium transition-all ${!isCustomSize ? 'bg-muted text-foreground' : 'text-muted-foreground'}`}>Standard</button>
                                         <button onClick={() => setIsCustomSize(true)} className={`px-3 py-1 rounded-md text-xs font-medium transition-all ${isCustomSize ? 'bg-primary text-white' : 'text-muted-foreground'}`}>Manuell</button>
                                     </div>
                                 </div>
                             </div>
 
                             {/* Preview Area */}
-                            <div className="flex flex-col items-center justify-center bg-black/20 rounded-xl p-4 border border-white/5 relative flex-1 min-h-[200px] overflow-auto">
+                            <div className="flex flex-col items-center justify-center dark:bg-black/20 bg-muted/60 rounded-xl p-4 border dark:border-white/5 border-border relative flex-1 min-h-[200px] overflow-auto">
                                 {previewItem ? (
                                     (() => {
                                         const isLocation = !('sku' in previewItem);
@@ -555,14 +555,14 @@ const Labels: React.FC = () => {
                         </GlassCard>
 
                         {/* Download Actions */}
-                        <div className="bg-black/20 border border-border rounded-xl p-3">
+                        <div className="dark:bg-black/20 bg-muted/60 border border-border rounded-xl p-3">
                             {/* Format Toggle */}
                             <div className="flex justify-center mb-3">
                                 <div className="flex items-center bg-muted rounded-lg p-1 border border-border w-full">
-                                    <button onClick={() => setDownloadFormat('pdf')} className={`flex-1 flex items-center justify-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition-all ${downloadFormat === 'pdf' ? 'bg-primary text-white shadow-lg' : 'text-muted-foreground hover:text-white'}`}>
+                                    <button onClick={() => setDownloadFormat('pdf')} className={`flex-1 flex items-center justify-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition-all ${downloadFormat === 'pdf' ? 'bg-primary text-white shadow-lg' : 'text-muted-foreground hover:text-foreground'}`}>
                                         <FileText size={16} /> PDF (Drucken)
                                     </button>
-                                    <button onClick={() => setDownloadFormat('png')} className={`flex-1 flex items-center justify-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition-all ${downloadFormat === 'png' ? 'bg-blue-600 text-white shadow-lg' : 'text-muted-foreground hover:text-white'}`}>
+                                    <button onClick={() => setDownloadFormat('png')} className={`flex-1 flex items-center justify-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition-all ${downloadFormat === 'png' ? 'bg-blue-600 text-white shadow-lg' : 'text-muted-foreground hover:text-foreground'}`}>
                                         <ImageIcon size={16} /> Bild (PNG)
                                     </button>
                                 </div>

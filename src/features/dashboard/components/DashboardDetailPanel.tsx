@@ -68,7 +68,7 @@ export const DashboardDetailPanel: React.FC<DashboardDetailPanelProps> = ({
             {selectedMachine && (
                 <div className="h-full bg-background/50 backdrop-blur-2xl rounded-2xl border border-border shadow-xl overflow-hidden flex flex-col relative">
                     <div className="absolute top-4 right-4 z-50">
-                        <button onClick={onCloseMachine} className="p-2 bg-black/50 hover:bg-muted rounded-full text-muted-foreground hover:text-white transition-colors">
+                        <button onClick={onCloseMachine} className="p-2 dark:bg-black/50 bg-muted/80 hover:bg-muted rounded-full text-muted-foreground hover:text-foreground transition-colors">
                             <X size={20} />
                         </button>
                     </div>
@@ -99,7 +99,7 @@ export const DashboardDetailPanel: React.FC<DashboardDetailPanelProps> = ({
             {selectedDashboardTask && (
                 <div className="h-full bg-background/50 backdrop-blur-2xl rounded-2xl border border-border shadow-xl overflow-hidden flex flex-col relative">
                     <div className="absolute top-4 right-4 z-[60]">
-                        <button onClick={onCloseTask} className="p-2 bg-black/50 hover:bg-muted rounded-full text-muted-foreground hover:text-white transition-colors">
+                        <button onClick={onCloseTask} className="p-2 dark:bg-black/50 bg-muted/80 hover:bg-muted rounded-full text-muted-foreground hover:text-foreground transition-colors">
                             <X size={20} />
                         </button>
                     </div>
@@ -186,7 +186,7 @@ export const DashboardDetailPanel: React.FC<DashboardDetailPanelProps> = ({
             {showChangelogHistory && (
                 <div className="h-full bg-background/50 backdrop-blur-2xl rounded-2xl border border-border shadow-xl overflow-hidden flex flex-col relative">
                     <div className="absolute top-4 right-4 z-50">
-                        <button onClick={onCloseChangelog} className="p-2 bg-black/50 hover:bg-muted rounded-full text-muted-foreground hover:text-white transition-colors">
+                        <button onClick={onCloseChangelog} className="p-2 dark:bg-black/50 bg-muted/80 hover:bg-muted rounded-full text-muted-foreground hover:text-foreground transition-colors">
                             <X size={20} />
                         </button>
                     </div>
@@ -218,11 +218,11 @@ export const TaskDetailContent: React.FC<TaskDetailContentProps> = ({ task, onUp
         <div className="space-y-6 flex flex-col h-full overflow-y-auto w-full">
             <div>
                 <div className="flex justify-between items-start mb-4">
-                    <h2 className="text-2xl font-bold text-white pr-4">{task.title}</h2>
+                    <h2 className="text-2xl font-bold text-foreground pr-4">{task.title}</h2>
                     <div className="flex bg-muted border border-border rounded-lg overflow-hidden shrink-0 mt-1">
-                        <button onClick={() => onUpdateStatus(task.id, 'todo')} className={`px-3 py-1.5 text-xs font-medium ${task.status === 'todo' ? 'bg-muted text-white' : 'text-muted-foreground hover:bg-muted hover:text-muted-foreground'} transition-colors`}>Offen</button>
-                        <button onClick={() => onUpdateStatus(task.id, 'in_progress')} className={`px-3 py-1.5 text-xs font-medium border-l border-border ${task.status === 'in_progress' ? 'bg-teal-500/20 text-teal-400' : 'text-muted-foreground hover:bg-muted hover:text-muted-foreground'} transition-colors`}>In Arbeit</button>
-                        <button onClick={() => onUpdateStatus(task.id, 'done')} className={`px-3 py-1.5 text-xs font-medium border-l border-border ${task.status === 'done' ? 'bg-primary/20 text-emerald-400' : 'text-muted-foreground hover:bg-muted hover:text-muted-foreground'} transition-colors`}>Erledigt</button>
+                        <button onClick={() => onUpdateStatus(task.id, 'todo')} className={`px-3 py-1.5 text-xs font-medium ${task.status === 'todo' ? 'bg-muted text-foreground' : 'text-muted-foreground hover:bg-muted hover:text-muted-foreground'} transition-colors`}>Offen</button>
+                        <button onClick={() => onUpdateStatus(task.id, 'in_progress')} className={`px-3 py-1.5 text-xs font-medium border-l border-border ${task.status === 'in_progress' ? 'bg-teal-500/20 dark:text-teal-400 text-teal-800' : 'text-muted-foreground hover:bg-muted hover:text-muted-foreground'} transition-colors`}>In Arbeit</button>
+                        <button onClick={() => onUpdateStatus(task.id, 'done')} className={`px-3 py-1.5 text-xs font-medium border-l border-border ${task.status === 'done' ? 'bg-primary/20 dark:text-emerald-400 text-emerald-800' : 'text-muted-foreground hover:bg-muted hover:text-muted-foreground'} transition-colors`}>Erledigt</button>
                     </div>
                 </div>
                 {desc && <p className="text-muted-foreground whitespace-pre-wrap mt-4 bg-muted p-4 rounded-xl border border-border leading-relaxed text-sm">{desc}</p>}
@@ -237,7 +237,7 @@ export const TaskDetailContent: React.FC<TaskDetailContentProps> = ({ task, onUp
                         {task.subtasks.map((st: any) => (
                             <div key={st.id} onClick={() => onToggleSubtask(st.id, st.completed)} className="group flex items-center gap-3 p-4 bg-muted border border-border rounded-xl cursor-pointer hover:bg-muted hover:border-teal-500/30 transition-all">
                                 <div className="flex-shrink-0 mt-0.5">
-                                    {st.completed ? <CheckCircle2 className="text-teal-400" size={20} /> : <Circle className="text-muted-foreground group-hover:text-muted-foreground transition-colors" size={20} />}
+                                    {st.completed ? <CheckCircle2 className="dark:text-teal-400 text-teal-800" size={20} /> : <Circle className="text-muted-foreground group-hover:text-muted-foreground transition-colors" size={20} />}
                                 </div>
                                 <span className={`text-sm font-medium transition-colors ${st.completed ? 'text-muted-foreground line-through' : 'text-muted-foreground group-hover:text-teal-300'}`}>{st.title}</span>
                             </div>

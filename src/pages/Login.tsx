@@ -81,7 +81,7 @@ const Login: React.FC = () => {
   };
 
   return (
-    <div className="bg-[#0A0D14] relative min-h-screen overflow-hidden text-white font-sans">
+    <div className="bg-[#0A0D14] relative min-h-screen overflow-hidden text-foreground font-sans">
       {/* Background Gradients (Teal/Emerald Theme instead of Rose) */}
       <div className="absolute -top-10 left-0 h-1/2 w-full rounded-b-full bg-gradient-to-b from-[#0A0D14] to-transparent blur z-0"></div>
       <div className="absolute -top-64 left-0 h-1/2 w-full rounded-full bg-gradient-to-b from-teal-500/20 via-emerald-500/10 to-transparent blur-3xl z-0 pointer-events-none"></div>
@@ -103,8 +103,8 @@ const Login: React.FC = () => {
               className="flex justify-center"
             >
                 {/* Fallback Icon if no illustration is available */}
-                <div className="w-48 h-48 bg-gradient-to-br from-teal-500/20 to-emerald-500/20 rounded-[3rem] border border-white/10 flex items-center justify-center shadow-2xl shadow-teal-500/10">
-                   <Package size={80} className="text-teal-400 drop-shadow-lg" />
+                <div className="w-48 h-48 bg-gradient-to-br from-teal-500/20 to-emerald-500/20 rounded-[3rem] border dark:border-white/10 border-border flex items-center justify-center shadow-2xl shadow-teal-500/10">
+                   <Package size={80} className="dark:text-teal-400 text-teal-800 drop-shadow-lg" />
                 </div>
             </motion.div>
             <motion.h1
@@ -143,12 +143,12 @@ const Login: React.FC = () => {
                 {!showSql ? (
                     <>
                         {/* Tabs (Login / Register) */}
-                        <div className="flex justify-center mb-2 border-b border-border/50 pb-0 pt-2 bg-black/20">
+                        <div className="flex justify-center mb-2 border-b border-border/50 pb-0 pt-2 dark:bg-black/20 bg-muted/60">
                             <button
                                 type="button"
                                 onClick={() => { setIsLogin(true); setError(null); setMsg(null); }}
                                 className={`flex-1 py-4 text-sm font-bold transition-all relative ${
-                                isLogin ? 'text-teal-400' : 'text-muted-foreground hover:text-white'
+                                isLogin ? 'dark:text-teal-400 text-teal-800' : 'text-muted-foreground hover:text-foreground'
                                 }`}
                             >
                                 Anmelden
@@ -158,7 +158,7 @@ const Login: React.FC = () => {
                                 type="button"
                                 onClick={() => { setIsLogin(false); setError(null); setMsg(null); }}
                                 className={`flex-1 py-4 text-sm font-bold transition-all relative ${
-                                !isLogin ? 'text-teal-400' : 'text-muted-foreground hover:text-white'
+                                !isLogin ? 'dark:text-teal-400 text-teal-800' : 'text-muted-foreground hover:text-foreground'
                                 }`}
                             >
                                 Registrieren
@@ -174,7 +174,7 @@ const Login: React.FC = () => {
                                 animate={{ opacity: 1, y: 0 }}
                                 transition={{ duration: 0.4, delay: 0.3 }}
                             >
-                                <h2 className="text-2xl font-bold tracking-tight text-white">
+                                <h2 className="text-2xl font-bold tracking-tight text-foreground">
                                     {isLogin ? 'Willkommen zurück' : 'Account erstellen'}
                                 </h2>
                                 <p className="text-muted-foreground text-sm">
@@ -246,7 +246,7 @@ const Login: React.FC = () => {
                                 </motion.div>
 
                                 {error && (
-                                    <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="bg-red-500/10 border border-red-500/30 p-3 rounded-xl text-red-300 text-sm flex items-start gap-2 shadow-inner">
+                                    <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="bg-red-500/10 border border-red-500/30 p-3 rounded-xl dark:text-red-300 text-red-800 text-sm flex items-start gap-2 shadow-inner">
                                         <AlertCircle size={16} className="mt-0.5 shrink-0" />
                                         <span>{error}</span>
                                     </motion.div>
@@ -275,8 +275,8 @@ const Login: React.FC = () => {
                     </>
                 ) : (
                     <div className="p-8 animate-in fade-in zoom-in duration-200">
-                        <div className="bg-black/60 rounded-2xl border border-white/10 p-5 mb-2 shadow-inner">
-                            <h3 className="text-teal-400 font-bold mb-2 flex items-center gap-2 text-lg">
+                        <div className="bg-black/60 rounded-2xl border dark:border-white/10 border-border p-5 mb-2 shadow-inner">
+                            <h3 className="dark:text-teal-400 text-teal-800 font-bold mb-2 flex items-center gap-2 text-lg">
                                 <Database size={18} /> Initial SQL Setup
                             </h3>
                             <p className="text-sm text-muted-foreground mb-4">
@@ -285,15 +285,15 @@ const Login: React.FC = () => {
                             <div className="relative">
                                 <textarea
                                     readOnly
-                                    className="w-full h-64 bg-black/80 rounded-xl border border-white/5 p-4 text-[11px] font-mono text-teal-200/80 focus:outline-none resize-none custom-scrollbar"
+                                    className="w-full h-64 bg-black/80 rounded-xl border dark:border-white/5 border-border p-4 text-[11px] font-mono text-teal-200/80 focus:outline-none resize-none custom-scrollbar"
                                     value={MANUAL_SETUP_SQL}
                                 />
                                 <button
                                     type="button"
                                     onClick={copySqlToClipboard}
-                                    className="absolute top-3 right-3 p-2 bg-white/10 hover:bg-white/20 backdrop-blur-md rounded-lg text-white transition-colors border border-white/10 shadow-lg"
+                                    className="absolute top-3 right-3 p-2 bg-white/10 hover:bg-white/20 backdrop-blur-md rounded-lg text-foreground transition-colors border dark:border-white/10 border-border shadow-lg"
                                 >
-                                    {sqlCopied ? <Check size={16} className="text-teal-400" /> : <Copy size={16} />}
+                                    {sqlCopied ? <Check size={16} className="dark:text-teal-400 text-teal-800" /> : <Copy size={16} />}
                                 </button>
                             </div>
                         </div>
@@ -309,14 +309,14 @@ const Login: React.FC = () => {
                transition={{ duration: 0.5, delay: 0.8 }}
             >
                 <div className="flex items-center justify-center gap-6 text-xs font-medium text-muted-foreground">
-                    <a href="https://badpartner.net/impressum/" target="_blank" rel="noopener noreferrer" className="hover:text-teal-400 transition-colors">Impressum</a>
-                    <a href="https://badpartner.net/datenschutz/" target="_blank" rel="noopener noreferrer" className="hover:text-teal-400 transition-colors">Datenschutz</a>
+                    <a href="https://badpartner.net/impressum/" target="_blank" rel="noopener noreferrer" className="hover:dark:text-teal-400 text-teal-800 transition-colors">Impressum</a>
+                    <a href="https://badpartner.net/datenschutz/" target="_blank" rel="noopener noreferrer" className="hover:dark:text-teal-400 text-teal-800 transition-colors">Datenschutz</a>
                 </div>
 
                 <button
                     type="button"
                     onClick={() => setShowSql(!showSql)}
-                    className="text-xs font-medium text-muted-foreground/60 hover:text-teal-400 flex items-center justify-center gap-1.5 w-full transition-colors mx-auto"
+                    className="text-xs font-medium text-muted-foreground/60 hover:dark:text-teal-400 text-teal-800 flex items-center justify-center gap-1.5 w-full transition-colors mx-auto"
                 >
                     <Database size={12} />
                     <span>{showSql ? 'Zurück zum Login' : 'Datenbank Setup (Entwickler)'}</span>

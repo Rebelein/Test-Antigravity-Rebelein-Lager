@@ -26,7 +26,7 @@ const getEventIconAndColor = (type: string) => {
     switch (type) {
         case 'status_change':
             return {
-                bg: "bg-blue-100 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400",
+                bg: "bg-blue-100 dark:text-blue-400 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400",
                 icon: <Clock size={12} />
             };
         case 'item_picked':
@@ -37,7 +37,7 @@ const getEventIconAndColor = (type: string) => {
         case 'labels_printed':
         case 'labels_reprinted':
             return {
-                bg: "bg-purple-100 text-purple-600 dark:bg-purple-900/30 dark:text-purple-400",
+                bg: "bg-purple-100 dark:text-purple-400 text-purple-800 dark:bg-purple-900/30 dark:text-purple-400",
                 icon: <Printer size={12} />
             };
         case 'storno':
@@ -320,8 +320,8 @@ export const CommissionDetailContent: React.FC<CommissionDetailContentProps> = (
                             <span className={cn(
                                 "text-[11px] font-extrabold uppercase tracking-wider px-2 py-0.5 rounded-full border shadow-sm shrink-0 inline-flex items-center gap-1",
                                 isStock 
-                                    ? "bg-blue-50 dark:bg-blue-950/20 text-blue-600 dark:text-blue-400 border-blue-100 dark:border-blue-900/30" 
-                                    : "bg-purple-50 dark:bg-purple-950/20 text-purple-600 dark:text-purple-400 border-purple-100 dark:border-purple-900/30"
+                                    ? "bg-blue-50 dark:bg-blue-950/20 dark:text-blue-400 text-blue-800 dark:text-blue-400 border-blue-100 dark:border-blue-900/30" 
+                                    : "bg-purple-50 dark:bg-purple-950/20 dark:text-purple-400 text-purple-800 dark:text-purple-400 border-purple-100 dark:border-purple-900/30"
                             )}>
                                 {isStock ? (
                                     <>
@@ -341,7 +341,7 @@ export const CommissionDetailContent: React.FC<CommissionDetailContentProps> = (
                             {isStock ? (
                                 <>
                                     <span className="flex items-center gap-1.5 bg-blue-600 dark:bg-blue-500 text-white px-3 py-1 rounded-lg font-black font-mono shadow-sm tracking-wide text-xs">
-                                        <MapPin size={12} className="text-blue-200 dark:text-blue-100" /> 
+                                        <MapPin size={12} className="dark:text-blue-200 text-blue-900 dark:text-blue-100" /> 
                                         {item.article?.location || 'Kein Lagerort'}
                                     </span>
                                     {item.article?.sku && (
@@ -405,7 +405,7 @@ export const CommissionDetailContent: React.FC<CommissionDetailContentProps> = (
                             className={cn(
                                 "px-3 py-1.5 rounded-lg text-xs font-bold uppercase transition-all border shadow-sm cursor-pointer",
                                 isBackorder 
-                                    ? 'bg-orange-500 border-orange-600 text-white shadow-orange-500/20' 
+                                    ? 'bg-orange-500 border-orange-600 text-foreground shadow-orange-500/20' 
                                     : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:bg-orange-50 hover:text-orange-600 hover:border-orange-200 dark:hover:bg-orange-900/30'
                             )}
                         >
@@ -523,7 +523,7 @@ export const CommissionDetailContent: React.FC<CommissionDetailContentProps> = (
             <Button 
                 onClick={onInitReturn} 
                 disabled={isSubmitting} 
-                className="w-full sm:w-auto bg-orange-500 hover:bg-orange-600 text-white font-bold h-12 rounded-xl flex items-center justify-center gap-2 shadow-lg shadow-orange-500/20 active:scale-95 transition-transform cursor-pointer"
+                className="w-full sm:w-auto bg-orange-500 hover:bg-orange-600 text-foreground font-bold h-12 rounded-xl flex items-center justify-center gap-2 shadow-lg shadow-orange-500/20 active:scale-95 transition-transform cursor-pointer"
             >
                 <Undo2 size={18} /> Retoure buchen
             </Button>
@@ -826,7 +826,7 @@ export const CommissionDetailContent: React.FC<CommissionDetailContentProps> = (
                                 <ChevronRight size={10} className="opacity-50 shrink-0" />
                                 <span className={cn(activeStep === 1 ? "text-primary font-extrabold" : activeStep > 1 ? "text-slate-600 dark:text-slate-400" : "")}>In Arbeit</span>
                                 <ChevronRight size={10} className="opacity-50 shrink-0" />
-                                <span className={cn(activeStep === 2 ? "text-purple-600 dark:text-purple-400 font-extrabold" : activeStep > 2 ? "text-slate-600 dark:text-slate-400" : "")}>Bereitgestellt</span>
+                                <span className={cn(activeStep === 2 ? "dark:text-purple-400 text-purple-800 dark:text-purple-400 font-extrabold" : activeStep > 2 ? "text-slate-600 dark:text-slate-400" : "")}>Bereitgestellt</span>
                                 <ChevronRight size={10} className="opacity-50 shrink-0" />
                                 <span className={cn(activeStep === 3 ? "text-emerald-600 dark:text-emerald-400 font-extrabold" : "")}>Abgeschlossen</span>
                             </div>
@@ -1002,7 +1002,7 @@ export const CommissionDetailContent: React.FC<CommissionDetailContentProps> = (
                     )}
                     {commission.notes && (
                         <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className="bg-blue-50 dark:bg-blue-500/10 border border-blue-200 dark:border-blue-500/30 rounded-2xl p-4 sm:p-5 shadow-sm flex items-start gap-4">
-                            <div className="bg-blue-100 dark:bg-blue-500/20 p-2 rounded-xl shrink-0 text-blue-600 dark:text-blue-400">
+                            <div className="bg-blue-100 dark:bg-blue-500/20 p-2 rounded-xl shrink-0 dark:text-blue-400 text-blue-800 dark:text-blue-400">
                                 <FileText size={24} />
                             </div>
                             <div>
@@ -1111,7 +1111,7 @@ export const CommissionDetailContent: React.FC<CommissionDetailContentProps> = (
                             </div>
 
                             <div className="mt-6 pt-6 border-t border-slate-100 dark:border-slate-800">
-                                <Button onClick={handleSaveOffice} disabled={isSubmitting} className="w-full bg-slate-900 hover:bg-slate-800 dark:bg-slate-100 dark:hover:bg-white text-white dark:text-slate-900 text-sm h-12 shadow-lg rounded-xl font-bold border-none transition-transform active:scale-95 cursor-pointer">
+                                <Button onClick={handleSaveOffice} disabled={isSubmitting} className="w-full bg-slate-900 hover:bg-slate-800 dark:bg-slate-100 dark:hover:bg-white text-foreground dark:text-slate-900 text-sm h-12 shadow-lg rounded-xl font-bold border-none transition-transform active:scale-95 cursor-pointer">
                                     Speichern
                                 </Button>
                             </div>
@@ -1200,7 +1200,7 @@ export const CommissionDetailContent: React.FC<CommissionDetailContentProps> = (
                             <PackageX size={28} />
                             <span className="text-xs font-bold uppercase tracking-wider">Einlagern</span>
                         </button>
-                        <button onClick={() => setStornoType('return_supplier')} className={cn("p-5 rounded-2xl border-2 flex flex-col items-center gap-3 transition-all cursor-pointer", stornoType === 'return_supplier' ? 'bg-purple-50 dark:bg-purple-500/10 border-purple-500 text-purple-600 shadow-md' : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-500 hover:border-purple-300')}>
+                        <button onClick={() => setStornoType('return_supplier')} className={cn("p-5 rounded-2xl border-2 flex flex-col items-center gap-3 transition-all cursor-pointer", stornoType === 'return_supplier' ? 'bg-purple-50 dark:bg-purple-500/10 border-purple-500 dark:text-purple-400 text-purple-800 shadow-md' : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-500 hover:border-purple-300')}>
                             <Truck size={28} />
                             <span className="text-xs font-bold uppercase tracking-wider">Lieferant</span>
                         </button>

@@ -354,7 +354,7 @@ const Commissions: React.FC = () => {
                 if (loadingArticles) {
                     return (
                         <div className="flex flex-col items-center justify-center h-full text-muted-foreground gap-4">
-                            <Loader2 className="animate-spin text-emerald-400" size={32} />
+                            <Loader2 className="animate-spin dark:text-emerald-400 text-emerald-800" size={32} />
                             <p>Lade Artikeldatenbank...</p>
                         </div>
                     );
@@ -377,14 +377,14 @@ const Commissions: React.FC = () => {
                     <div className="flex flex-col h-full bg-[#1a1d24]">
                         <div className="p-4 border-b border-border flex gap-2 shrink-0 bg-muted">
                             <Search className="text-muted-foreground" />
-                            <input autoFocus={!isMobile} className="bg-transparent border-none text-white flex-1 focus:outline-none" placeholder="Suchen..." value={globalSearchTerm} onChange={e => performGlobalSearch(e.target.value)} />
+                            <input autoFocus={!isMobile} className="bg-transparent border-none text-foreground flex-1 focus:outline-none" placeholder="Suchen..." value={globalSearchTerm} onChange={e => performGlobalSearch(e.target.value)} />
                         </div>
                         <div className="flex-1 overflow-y-auto p-2 custom-scrollbar">
                             {isSearching && <div className="p-4 text-center text-muted-foreground"><Loader2 className="animate-spin inline mr-2" />Suchen...</div>}
                             {!isSearching && searchResults.length === 0 && globalSearchTerm.length >= 2 && <div className="p-4 text-center text-muted-foreground">Keine Ergebnisse</div>}
                             {searchResults.map(c => (
-                                <div key={c.id} onClick={() => handleOpenDetail(c)} className="p-3 hover:bg-muted rounded cursor-pointer border-b border-white/5 last:border-0">
-                                    <div className="font-bold text-white">{c.name}</div>
+                                <div key={c.id} onClick={() => handleOpenDetail(c)} className="p-3 hover:bg-muted rounded cursor-pointer border-b dark:border-white/5 border-border last:border-0">
+                                    <div className="font-bold text-foreground">{c.name}</div>
                                     <div className="text-xs text-muted-foreground">{c.order_number} • {c.status}</div>
                                 </div>
                             ))}
@@ -395,10 +395,10 @@ const Commissions: React.FC = () => {
                 return (
                     <div className="flex flex-col h-full bg-[#1a1d24]">
                         <div className="p-4 overflow-y-auto h-full space-y-2 custom-scrollbar">
-                            {loadingHistory && <div className="text-center p-4"><Loader2 className="animate-spin text-emerald-400 mx-auto" /></div>}
+                            {loadingHistory && <div className="text-center p-4"><Loader2 className="animate-spin dark:text-emerald-400 text-emerald-800 mx-auto" /></div>}
                             {!loadingHistory && historyLogs.map(log => (
-                                <div key={log.id} className="bg-muted p-2 rounded text-sm border border-white/5">
-                                    <div className="font-bold text-white">{log.commission_name}</div>
+                                <div key={log.id} className="bg-muted p-2 rounded text-sm border dark:border-white/5 border-border">
+                                    <div className="font-bold text-foreground">{log.commission_name}</div>
                                     <div className="text-muted-foreground">{log.details}</div>
                                     <div className="text-xs text-muted-foreground">{new Date(log.created_at).toLocaleString()}</div>
                                 </div>
@@ -904,8 +904,8 @@ const Commissions: React.FC = () => {
         if (items.length === 0) return null;
         return (
             <div className="mb-6">
-                <GlassCard className="p-0 border-white/5 bg-white/[0.02]" contentClassName="p-4">
-                    <div onClick={() => setCollapsedCategories(prev => ({ ...prev, [statusKey]: !prev[statusKey] }))} className="flex items-center justify-between px-2 pb-4 cursor-pointer select-none border-b border-white/5">
+                <GlassCard className="p-0 dark:border-white/5 border-border bg-white/[0.02]" contentClassName="p-4">
+                    <div onClick={() => setCollapsedCategories(prev => ({ ...prev, [statusKey]: !prev[statusKey] }))} className="flex items-center justify-between px-2 pb-4 cursor-pointer select-none border-b dark:border-white/5 border-border">
                         <div className="flex items-center gap-3">
                             <div className={`transition-transform duration-200 text-muted-foreground ${isCollapsed ? '-rotate-90' : ''}`}>▼</div>
                             <h3 className={`font-bold uppercase tracking-wider text-xs ${colorClass}`}>{title} ({items.length})</h3>
@@ -970,11 +970,11 @@ const Commissions: React.FC = () => {
                 onClick={() => { setActiveTab('active'); setActiveSubFilter('all'); setIsMobileCategoryOpen(false); }}
                 className={clsx(
                     "flex items-center justify-between px-4 py-3 rounded-xl transition-all duration-200 text-left group w-full gap-3",
-                    activeTab === 'active' && activeSubFilter === 'all' ? "bg-primary/20 text-emerald-400 border border-emerald-500/30" : "text-muted-foreground hover:text-white hover:bg-muted"
+                    activeTab === 'active' && activeSubFilter === 'all' ? "bg-primary/20 dark:text-emerald-400 text-emerald-800 border border-emerald-500/30" : "text-muted-foreground hover:text-foreground hover:bg-muted"
                 )}
             >
                 <div className="flex items-center gap-3">
-                    <Clock size={18} className={clsx(activeTab === 'active' && activeSubFilter === 'all' ? "text-emerald-400" : "text-muted-foreground group-hover:text-muted-foreground")} />
+                    <Clock size={18} className={clsx(activeTab === 'active' && activeSubFilter === 'all' ? "dark:text-emerald-400 text-emerald-800" : "text-muted-foreground group-hover:text-muted-foreground")} />
                     <span className="font-medium text-sm">Aktive</span>
                 </div>
             </button>
@@ -986,7 +986,7 @@ const Commissions: React.FC = () => {
                         onClick={() => { setActiveSubFilter('ready'); setIsMobileCategoryOpen(false); }}
                         className={clsx(
                             "flex items-center justify-between px-3 py-2 rounded-xl transition-all duration-200 text-left group w-full gap-2",
-                            activeSubFilter === 'ready' ? "bg-primary/10 text-emerald-300 border border-emerald-500/20" : "text-muted-foreground hover:text-white hover:bg-muted"
+                            activeSubFilter === 'ready' ? "bg-primary/10 dark:text-emerald-300 text-emerald-800 border border-emerald-500/20" : "text-muted-foreground hover:text-foreground hover:bg-muted"
                         )}
                     >
                         <span className="text-xs font-medium truncate">Bereitgestellt</span>
@@ -996,7 +996,7 @@ const Commissions: React.FC = () => {
                         onClick={() => { setActiveSubFilter('preparing'); setIsMobileCategoryOpen(false); }}
                         className={clsx(
                             "flex items-center justify-between px-3 py-2 rounded-xl transition-all duration-200 text-left group w-full gap-2",
-                            activeSubFilter === 'preparing' ? "bg-blue-500/10 text-blue-300 border border-blue-500/20" : "text-muted-foreground hover:text-white hover:bg-muted"
+                            activeSubFilter === 'preparing' ? "bg-blue-500/10 dark:text-blue-300 text-blue-800 border border-blue-500/20" : "text-muted-foreground hover:text-foreground hover:bg-muted"
                         )}
                     >
                         <span className="text-xs font-medium truncate">In Vorbereitung</span>
@@ -1006,7 +1006,7 @@ const Commissions: React.FC = () => {
                         onClick={() => { setActiveSubFilter('draft'); setIsMobileCategoryOpen(false); }}
                         className={clsx(
                             "flex items-center justify-between px-3 py-2 rounded-xl transition-all duration-200 text-left group w-full gap-2",
-                            activeSubFilter === 'draft' ? "bg-gray-500/10 text-gray-300 border border-gray-500/20" : "text-muted-foreground hover:text-white hover:bg-muted"
+                            activeSubFilter === 'draft' ? "bg-gray-500/10 dark:text-gray-300 text-gray-800 border border-gray-500/20" : "text-muted-foreground hover:text-foreground hover:bg-muted"
                         )}
                     >
                         <span className="text-xs font-medium truncate">Entwürfe</span>
@@ -1019,7 +1019,7 @@ const Commissions: React.FC = () => {
                 onClick={() => { setActiveTab('returns'); setActiveSubFilter('all'); setIsMobileCategoryOpen(false); }}
                 className={clsx(
                     "flex items-center justify-between px-4 py-3 rounded-xl transition-all duration-200 text-left group w-full gap-3",
-                    activeTab === 'returns' && activeSubFilter === 'all' ? "bg-purple-500/20 text-purple-400 border border-purple-500/30" : "text-muted-foreground hover:text-white hover:bg-muted"
+                    activeTab === 'returns' && activeSubFilter === 'all' ? "bg-purple-500/20 text-purple-400 border border-purple-500/30" : "text-muted-foreground hover:text-foreground hover:bg-muted"
                 )}
             >
                 <div className="flex items-center gap-3">
@@ -1036,7 +1036,7 @@ const Commissions: React.FC = () => {
                         onClick={() => { setActiveSubFilter('returnReady'); setIsMobileCategoryOpen(false); }}
                         className={clsx(
                             "flex items-center justify-between px-3 py-2 rounded-xl transition-all duration-200 text-left group w-full gap-2",
-                            activeSubFilter === 'returnReady' ? "bg-purple-500/10 text-purple-300 border border-purple-500/20" : "text-muted-foreground hover:text-white hover:bg-muted"
+                            activeSubFilter === 'returnReady' ? "bg-purple-500/10 dark:text-purple-300 text-purple-800 border border-purple-500/20" : "text-muted-foreground hover:text-foreground hover:bg-muted"
                         )}
                     >
                         <span className="text-xs font-medium truncate">Abholbereit</span>
@@ -1046,7 +1046,7 @@ const Commissions: React.FC = () => {
                         onClick={() => { setActiveSubFilter('returnPending'); setIsMobileCategoryOpen(false); }}
                         className={clsx(
                             "flex items-center justify-between px-3 py-2 rounded-xl transition-all duration-200 text-left group w-full gap-2",
-                            activeSubFilter === 'returnPending' ? "bg-orange-500/10 text-orange-300 border border-orange-500/20" : "text-muted-foreground hover:text-white hover:bg-muted"
+                            activeSubFilter === 'returnPending' ? "bg-orange-500/10 text-orange-300 border border-orange-500/20" : "text-muted-foreground hover:text-foreground hover:bg-muted"
                         )}
                     >
                         <span className="text-xs font-medium truncate">Angemeldet</span>
@@ -1059,11 +1059,11 @@ const Commissions: React.FC = () => {
                 onClick={() => { setActiveTab('withdrawn'); setIsMobileCategoryOpen(false); }}
                 className={clsx(
                     "flex items-center justify-between px-4 py-3 rounded-xl transition-all duration-200 text-left group w-full gap-3",
-                    activeTab === 'withdrawn' ? "bg-blue-500/20 text-blue-400 border border-blue-500/30" : "text-muted-foreground hover:text-white hover:bg-muted"
+                    activeTab === 'withdrawn' ? "bg-blue-500/20 dark:text-blue-400 text-blue-800 border border-blue-500/30" : "text-muted-foreground hover:text-foreground hover:bg-muted"
                 )}
             >
                 <div className="flex items-center gap-3">
-                    <CheckCircle2 size={18} className={clsx(activeTab === 'withdrawn' ? "text-blue-400" : "text-muted-foreground group-hover:text-muted-foreground")} />
+                    <CheckCircle2 size={18} className={clsx(activeTab === 'withdrawn' ? "dark:text-blue-400 text-blue-800" : "text-muted-foreground group-hover:text-muted-foreground")} />
                     <span className="font-medium text-sm">Entnommen</span>
                 </div>
             </button>
@@ -1074,7 +1074,7 @@ const Commissions: React.FC = () => {
                 onClick={() => { setActiveTab('missing'); setIsMobileCategoryOpen(false); }}
                 className={clsx(
                     "flex items-center justify-between px-4 py-3 rounded-xl transition-all duration-200 text-left group w-full gap-3",
-                    activeTab === 'missing' ? "bg-orange-500/20 text-orange-400 border border-orange-500/30" : "text-muted-foreground hover:text-white hover:bg-muted"
+                    activeTab === 'missing' ? "bg-orange-500/20 text-orange-400 border border-orange-500/30" : "text-muted-foreground hover:text-foreground hover:bg-muted"
                 )}
             >
                 <div className="flex items-center gap-3">
@@ -1087,7 +1087,7 @@ const Commissions: React.FC = () => {
                 onClick={() => { setActiveTab('trash'); setIsMobileCategoryOpen(false); }}
                 className={clsx(
                     "flex items-center justify-between px-4 py-3 rounded-xl transition-all duration-200 text-left group w-full gap-3",
-                    activeTab === 'trash' ? "bg-red-500/20 text-red-400 border border-red-500/30" : "text-muted-foreground hover:text-white hover:bg-muted"
+                    activeTab === 'trash' ? "bg-red-500/20 text-red-400 border border-red-500/30" : "text-muted-foreground hover:text-foreground hover:bg-muted"
                 )}
             >
                 <div className="flex items-center gap-3">
@@ -1100,17 +1100,17 @@ const Commissions: React.FC = () => {
 
     const listContent = (
         <div className="relative h-full flex flex-col overflow-hidden">
-            <header className="flex items-center justify-between gap-3 px-1 pt-4 pb-4 border-b border-white/5 shrink-0">
+            <header className="flex items-center justify-between gap-3 px-1 pt-4 pb-4 border-b dark:border-white/5 border-border shrink-0">
                 <div className="flex items-center gap-3 min-w-0">
                     {isMobile && (
                         <button 
                             onClick={() => setIsMobileCategoryOpen(true)}
-                            className="p-2.5 rounded-xl bg-muted text-emerald-400 border border-border active:scale-95 transition-transform"
+                            className="p-2.5 rounded-xl bg-muted dark:text-emerald-400 text-emerald-800 border border-border active:scale-95 transition-transform"
                         >
                             <Menu size={20} />
                         </button>
                     )}
-                    <h1 className="text-xl sm:text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-emerald-300 to-teal-200 truncate">Komm.</h1>
+                    <h1 className="text-xl sm:text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r dark:from-emerald-300 dark:to-teal-200 from-emerald-800 to-teal-700 truncate">Komm.</h1>
                 </div>
                 <div className="flex gap-2 shrink-0 items-center">
                     <Button icon={<Search size={18} />} variant="secondary" onClick={() => setSidePanelMode('search')} />
@@ -1121,7 +1121,7 @@ const Commissions: React.FC = () => {
             <div className="flex h-full overflow-hidden mt-2">
                 {/* Desktop Sidebar */}
                 {!isMobile && (
-                    <aside className="w-64 flex-shrink-0 border-r border-white/5 flex flex-col pr-4 animate-in slide-in-from-left duration-500">
+                    <aside className="w-64 flex-shrink-0 border-r dark:border-white/5 border-border flex flex-col pr-4 animate-in slide-in-from-left duration-500">
                         <div className="px-4 py-2 flex items-center gap-2 text-muted-foreground uppercase tracking-widest text-[10px] font-bold">
                             <Filter size={10} />
                             Ansicht
@@ -1139,7 +1139,7 @@ const Commissions: React.FC = () => {
                                 animate={{ opacity: 1 }}
                                 exit={{ opacity: 0 }}
                                 onClick={() => setIsMobileCategoryOpen(false)}
-                                className="fixed inset-0 bg-black/30 backdrop-blur-sm z-40"
+                                className="fixed inset-0 dark:bg-black/30 bg-muted/70 backdrop-blur-sm z-40"
                             />
                             <motion.aside
                                 initial={{ x: '-100%' }}
@@ -1149,10 +1149,10 @@ const Commissions: React.FC = () => {
                                 className="fixed inset-y-0 left-0 w-[80%] max-w-sm bg-background border-r border-border shadow-2xl z-50 flex flex-col"
                             >
                                 <div className="p-4 border-b border-border flex items-center justify-between">
-                                    <div className="flex items-center gap-2 text-emerald-400 font-bold uppercase tracking-wider text-sm">
+                                    <div className="flex items-center gap-2 dark:text-emerald-400 text-emerald-800 font-bold uppercase tracking-wider text-sm">
                                         <Filter size={16} /> Ansicht
                                     </div>
-                                    <button onClick={() => setIsMobileCategoryOpen(false)} className="p-2 rounded-xl bg-muted text-muted-foreground hover:text-white">
+                                    <button onClick={() => setIsMobileCategoryOpen(false)} className="p-2 rounded-xl bg-muted text-muted-foreground hover:text-foreground">
                                         <X size={20} />
                                     </button>
                                 </div>
@@ -1171,7 +1171,7 @@ const Commissions: React.FC = () => {
 
                         {loading ? (
                             <div className="flex-1 flex items-center justify-center">
-                                <Loader2 className="animate-spin text-emerald-400" size={32} />
+                                <Loader2 className="animate-spin dark:text-emerald-400 text-emerald-800" size={32} />
                             </div>
                         ) : (
                             <div className="flex-1 min-h-0 pr-1">
@@ -1180,8 +1180,8 @@ const Commissions: React.FC = () => {
 
                         {activeTab === 'active' && (
                             <>
-                                {(activeSubFilter === 'all' || activeSubFilter === 'ready') && renderCategory("Bereitgestellt", 'ready', filteredGroups.ready, 'text-emerald-400')}
-                                {(activeSubFilter === 'all' || activeSubFilter === 'preparing') && renderCategory("In Vorbereitung", 'preparing', filteredGroups.preparing, 'text-blue-400')}
+                                {(activeSubFilter === 'all' || activeSubFilter === 'ready') && renderCategory("Bereitgestellt", 'ready', filteredGroups.ready, 'dark:text-emerald-400 text-emerald-800')}
+                                {(activeSubFilter === 'all' || activeSubFilter === 'preparing') && renderCategory("In Vorbereitung", 'preparing', filteredGroups.preparing, 'dark:text-blue-400 text-blue-800')}
                                 {(activeSubFilter === 'all' || activeSubFilter === 'draft') && renderCategory("Entwürfe", 'draft', filteredGroups.draft, 'text-muted-foreground')}
                             </>
                         )}
@@ -1222,19 +1222,19 @@ const Commissions: React.FC = () => {
                                             {/* TOP PRIORITY: MISSING ITEMS */}
                                             <div className="flex-none max-h-[50%] flex flex-col">
                                                 <div className="flex justify-between items-center mb-3 px-1">
-                                                    <h3 className="text-xl font-bold text-rose-400 flex items-center gap-2">
+                                                    <h3 className="text-xl font-bold dark:text-rose-400 text-rose-800 flex items-center gap-2">
                                                         <AlertTriangle className="animate-pulse" />
                                                         Handlung Erforderlich ({missing.length})
                                                     </h3>
                                                     {missing.length === 0 && (
-                                                        <span className="text-emerald-400 font-bold flex items-center gap-1 text-sm bg-primary/10 px-3 py-1 rounded-full border border-emerald-500/20">
+                                                        <span className="dark:text-emerald-400 text-emerald-800 font-bold flex items-center gap-1 text-sm bg-primary/10 px-3 py-1 rounded-full border border-emerald-500/20">
                                                             <CheckCircle2 size={16} /> Alles sauber
                                                         </span>
                                                     )}
                                                 </div>
 
                                                 {missing.length === 0 ? (
-                                                    <div className="bg-muted border border-white/5 rounded-2xl p-6 text-center text-muted-foreground italic flex flex-col items-center gap-2">
+                                                    <div className="bg-muted border dark:border-white/5 border-border rounded-2xl p-6 text-center text-muted-foreground italic flex flex-col items-center gap-2">
                                                         <CheckCircle2 size={32} className="opacity-20" />
                                                         <div>Keine vermissten Kommissionen.</div>
                                                     </div>
@@ -1244,9 +1244,9 @@ const Commissions: React.FC = () => {
                                                             <div key={c.id} className="bg-rose-500/10 backdrop-blur-sm border border-rose-500/30 rounded-2xl p-4 flex flex-col gap-3 shadow-lg shadow-black/20 group hover:shadow-rose-900/20 transition-all">
                                                                 <div className="flex justify-between items-start">
                                                                     <div>
-                                                                        <div className="font-bold text-white text-lg cursor-pointer hover:underline" onClick={() => handleOpenDetail(c)}>{c.name}</div>
-                                                                        <div className="text-rose-300 font-mono text-sm mb-1">{c.order_number || 'Keine Auftragsnr.'}</div>
-                                                                        <div className="text-rose-300/60 text-[10px] flex items-center gap-1">
+                                                                        <div className="font-bold text-foreground text-lg cursor-pointer hover:underline" onClick={() => handleOpenDetail(c)}>{c.name}</div>
+                                                                        <div className="dark:text-rose-300 text-rose-800 font-mono text-sm mb-1">{c.order_number || 'Keine Auftragsnr.'}</div>
+                                                                        <div className="dark:text-rose-300 text-rose-800/60 text-[10px] flex items-center gap-1">
                                                                             <Calendar size={10} /> Erstellt: {new Date(c.created_at).toLocaleDateString('de-DE')}
                                                                         </div>
                                                                     </div>
@@ -1255,7 +1255,7 @@ const Commissions: React.FC = () => {
 
                                                                 <div className="p-3 bg-rose-900/20 rounded-lg text-rose-200 text-sm border border-rose-500/10">
                                                                     <div className="font-bold mb-1 flex items-center gap-2"><ScanLine size={14} /> Nicht im Regal gefunden!</div>
-                                                                    <div className="text-rose-300/70 text-xs">Bitte prüfen, ob Auftrag bereits abgeholt wurde.</div>
+                                                                    <div className="dark:text-rose-300 text-rose-800/70 text-xs">Bitte prüfen, ob Auftrag bereits abgeholt wurde.</div>
                                                                 </div>
 
                                                                 <div className="flex gap-2 mt-auto pt-2">
@@ -1286,7 +1286,7 @@ const Commissions: React.FC = () => {
                                                                     <Button
                                                                         variant="secondary"
                                                                         onClick={(e) => handleDelete(c.id, c.name, 'trash', e)}
-                                                                        className="bg-rose-500/10 hover:bg-rose-500/20 text-rose-400"
+                                                                        className="bg-rose-500/10 hover:bg-rose-500/20 dark:text-rose-400 text-rose-800"
                                                                         icon={<Trash2 size={16} />}
                                                                     />
                                                                 </div>
@@ -1315,7 +1315,7 @@ const Commissions: React.FC = () => {
                                                                 <div key={c.id} className="bg-orange-500/10 backdrop-blur-sm border border-orange-500/30 rounded-xl p-3 flex flex-col gap-2 shadow-lg hover:shadow-orange-900/10 transition-all">
                                                                     <div className="flex justify-between items-start">
                                                                         <div>
-                                                                            <div className="font-bold text-white text-base cursor-pointer hover:underline" onClick={() => handleOpenDetail(c)}>{c.name}</div>
+                                                                            <div className="font-bold text-foreground text-base cursor-pointer hover:underline" onClick={() => handleOpenDetail(c)}>{c.name}</div>
                                                                             <div className="text-orange-300 font-mono text-xs mb-1">{c.order_number}</div>
                                                                             <div className="text-orange-300/60 text-[10px] flex items-center gap-1">
                                                                                 <Calendar size={10} /> Erstellt: {new Date(c.created_at).toLocaleDateString('de-DE')}
@@ -1360,7 +1360,7 @@ const Commissions: React.FC = () => {
                                             <div className="flex-1 flex flex-col min-h-0">
                                                 <div className="flex justify-between items-center mb-3 px-1">
                                                     <h3 className="text-lg font-bold text-muted-foreground flex items-center gap-2">
-                                                        <BoxSelect size={20} className="text-blue-400" />
+                                                        <BoxSelect size={20} className="dark:text-blue-400 text-blue-800" />
                                                         Inventur Status & Prüfung
                                                     </h3>
                                                     <Button onClick={() => setShowCleanupModal(true)} icon={<ScanLine size={18} />} className="bg-blue-600 hover:bg-blue-500 shadow-lg shadow-blue-500/20">
@@ -1373,14 +1373,14 @@ const Commissions: React.FC = () => {
                                                     {/* STATUS CARD 1: VERIFIED */}
                                                     <div className="bg-primary/5 border border-emerald-500/10 rounded-2xl flex flex-col overflow-hidden">
                                                         <div className="p-4 bg-primary/10 border-b border-emerald-500/10 flex justify-between items-center">
-                                                            <div className="font-bold text-emerald-400">Verwirifiziert (Im Regal)</div>
+                                                            <div className="font-bold dark:text-emerald-400 text-emerald-800">Verwirifiziert (Im Regal)</div>
                                                             <div className="bg-primary text-black font-bold px-2 py-0.5 rounded text-sm">{verified.length}</div>
                                                         </div>
                                                         <div className="p-2 overflow-y-auto flex-1 custom-scrollbar space-y-2">
                                                             {verified.map(c => (
                                                                 <div key={c.id} onClick={() => handleOpenDetail(c)} className="p-3 bg-primary/5 hover:bg-primary/10 border border-emerald-500/10 rounded-xl cursor-pointer transition-colors flex justify-between items-center">
                                                                     <div className="font-medium text-muted-foreground">{c.name}</div>
-                                                                    <div className="text-[10px] text-emerald-300 opacity-60 flex items-center gap-1">
+                                                                    <div className="text-[10px] dark:text-emerald-300 text-emerald-800 opacity-60 flex items-center gap-1">
                                                                         <CheckCircle2 size={10} />
                                                                         {new Date(c.last_scanned_at!).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                                                                     </div>
@@ -1391,16 +1391,16 @@ const Commissions: React.FC = () => {
                                                     </div>
 
                                                     {/* STATUS CARD 2: OPEN / UNVERIFIED */}
-                                                    <div className="bg-muted border border-white/5 rounded-2xl flex flex-col overflow-hidden">
-                                                        <div className="p-4 bg-muted border-b border-white/5 flex justify-between items-center">
+                                                    <div className="bg-muted border dark:border-white/5 border-border rounded-2xl flex flex-col overflow-hidden">
+                                                        <div className="p-4 bg-muted border-b dark:border-white/5 border-border flex justify-between items-center">
                                                             <div className="font-bold text-muted-foreground">Offen / Ungeprüft</div>
-                                                            <div className="bg-muted text-white font-bold px-2 py-0.5 rounded text-sm">{open.length}</div>
+                                                            <div className="bg-muted text-foreground font-bold px-2 py-0.5 rounded text-sm">{open.length}</div>
                                                         </div>
                                                         <div className="p-2 overflow-y-auto flex-1 custom-scrollbar space-y-2">
                                                             {open.map(c => (
-                                                                <div key={c.id} onClick={() => handleOpenDetail(c)} className="p-3 bg-muted hover:bg-muted border border-white/5 rounded-xl cursor-pointer transition-colors flex justify-between items-center opacity-60 hover:opacity-100">
+                                                                <div key={c.id} onClick={() => handleOpenDetail(c)} className="p-3 bg-muted hover:bg-muted border dark:border-white/5 border-border rounded-xl cursor-pointer transition-colors flex justify-between items-center opacity-60 hover:opacity-100">
                                                                     <div>
-                                                                        <div className="font-medium text-white">{c.name}</div>
+                                                                        <div className="font-medium text-foreground">{c.name}</div>
                                                                         <div className="text-xs text-muted-foreground">{c.status}</div>
                                                                     </div>
                                                                     <div className="w-2 h-2 rounded-full bg-muted" />
@@ -1408,7 +1408,7 @@ const Commissions: React.FC = () => {
                                                             ))}
                                                             {open.length === 0 && <div className="text-center text-muted-foreground py-8 italic text-sm">Alles geprüft!</div>}
                                                         </div>
-                                                        <div className="p-2 border-t border-white/5 bg-muted">
+                                                        <div className="p-2 border-t dark:border-white/5 border-border bg-muted">
                                                             <button
                                                                 onClick={async () => {
                                                                     if (!confirm("Prüfung wirklich neu starten? Alle 'Geprüft'-Markierungen werden entfernt.")) return;
@@ -1440,11 +1440,11 @@ const Commissions: React.FC = () => {
                                         <div className="p-3 flex justify-between items-center">
                                             <div>
                                                 <h3 className="font-bold text-muted-foreground">{c.name}</h3>
-                                                <span className="text-xs text-rose-400">Gelöscht: {c.deleted_at}</span>
+                                                <span className="text-xs dark:text-rose-400 text-rose-800">Gelöscht: {c.deleted_at}</span>
                                             </div>
                                             <div className="flex gap-2">
-                                                <button onClick={(e) => handleRestore(c.id, c.name, e)} className="p-2 bg-primary/20 text-emerald-300 rounded"><RotateCcw size={16} /></button>
-                                                <button onClick={(e) => handleDelete(c.id, c.name, 'permanent', e)} className="p-2 bg-rose-500/20 text-rose-300 rounded"><X size={16} /></button>
+                                                <button onClick={(e) => handleRestore(c.id, c.name, e)} className="p-2 bg-primary/20 dark:text-emerald-300 text-emerald-800 rounded"><RotateCcw size={16} /></button>
+                                                <button onClick={(e) => handleDelete(c.id, c.name, 'permanent', e)} className="p-2 bg-rose-500/20 dark:text-rose-300 text-rose-800 rounded"><X size={16} /></button>
                                             </div>
                                         </div>
                                     </GlassCard>
@@ -1475,8 +1475,8 @@ const Commissions: React.FC = () => {
         >
             <GlassModal isOpen={showConfirmReadyModal} onClose={() => setShowConfirmReadyModal(false)} className="max-w-sm">
                 <div className="p-6 text-center">
-                    <CheckCircle2 size={48} className="mx-auto text-emerald-400 mb-4" />
-                    <h3 className="text-xl font-bold text-white mb-2">Bereitstellen?</h3>
+                    <CheckCircle2 size={48} className="mx-auto dark:text-emerald-400 text-emerald-800 mb-4" />
+                    <h3 className="text-xl font-bold text-foreground mb-2">Bereitstellen?</h3>
                     <p className="text-muted-foreground mb-6">Lagerbestände werden gebucht.</p>
                     <div className="flex gap-3"><Button variant="secondary" onClick={() => setShowConfirmReadyModal(false)} className="flex-1">Abbrechen</Button><Button onClick={executeSetReady} className="flex-1 bg-primary hover:bg-primary">OK</Button></div>
                 </div>
@@ -1485,7 +1485,7 @@ const Commissions: React.FC = () => {
             <GlassModal isOpen={showConfirmWithdrawModal} onClose={() => setShowConfirmWithdrawModal(false)} className="max-w-sm">
                 <div className="p-6 text-center">
                     <LogOut size={48} className="mx-auto text-purple-400 mb-4" />
-                    <h3 className="text-xl font-bold text-white mb-2">Entnehmen & Abschließen?</h3>
+                    <h3 className="text-xl font-bold text-foreground mb-2">Entnehmen & Abschließen?</h3>
                     <div className="flex gap-3 mt-6"><Button variant="secondary" onClick={() => setShowConfirmWithdrawModal(false)} className="flex-1">Abbrechen</Button><Button onClick={executeWithdraw} className="flex-1 bg-purple-600 hover:bg-purple-500">OK</Button></div>
                 </div>
             </GlassModal>
@@ -1493,7 +1493,7 @@ const Commissions: React.FC = () => {
             <GlassModal isOpen={showDeleteModal} onClose={() => setShowDeleteModal(false)} className="max-w-sm">
                 <div className="p-6 text-center">
                     <Trash2 size={48} className="mx-auto text-rose-500 mb-4" />
-                    <h3 className="text-xl font-bold text-white mb-2">{deleteTarget?.mode === 'trash' ? 'In Papierkorb?' : 'Endgültig löschen?'}</h3>
+                    <h3 className="text-xl font-bold text-foreground mb-2">{deleteTarget?.mode === 'trash' ? 'In Papierkorb?' : 'Endgültig löschen?'}</h3>
                     <p className="text-muted-foreground mb-6">{deleteTarget?.name}</p>
                     <div className="flex gap-3">
                         <Button variant="secondary" onClick={() => setShowDeleteModal(false)} className="flex-1">Abbrechen</Button>
@@ -1506,7 +1506,7 @@ const Commissions: React.FC = () => {
                 <GlassModal isOpen={true} onClose={() => setShowLabelUpdateModal(false)} className="max-w-sm text-center">
                     <div className="p-6">
                         <AlertTriangle size={48} className="mx-auto text-amber-500 mb-4" />
-                        <h3 className="text-lg font-bold text-white mb-2">Etikett aktualisieren?</h3>
+                        <h3 className="text-lg font-bold text-foreground mb-2">Etikett aktualisieren?</h3>
                         <p className="text-muted-foreground mb-4">Daten geändert.</p>
                         <div className="space-y-2">
                             <Button onClick={() => handleSinglePrint(activeCommission!.id)} className="w-full">Drucken</Button>
@@ -1536,7 +1536,7 @@ const Commissions: React.FC = () => {
                     <div className="flex-1 bg-black relative">
                         <UnifiedScanner onScan={handleScan} />
                     </div>
-                    <div className="p-4 bg-black/30 text-center text-muted-foreground">
+                    <div className="p-4 dark:bg-black/30 bg-muted/70 text-center text-muted-foreground">
                         QR-Code scannen...
                     </div>
                 </div>

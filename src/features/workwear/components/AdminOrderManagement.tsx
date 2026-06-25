@@ -282,27 +282,27 @@ export const AdminOrderManagement: React.FC<AdminOrderManagementProps> = ({ onBa
                         <ArrowLeft size={20} />
                     </Button>
                     <div>
-                        <h2 className="text-2xl font-bold text-white">Bestellübersicht</h2>
+                        <h2 className="text-2xl font-bold text-foreground">Bestellübersicht</h2>
                         <p className="text-muted-foreground">{orders.length} Bestellungen angezeigt</p>
                     </div>
                 </div>
 
-                <div className="flex gap-2 bg-black/20 p-1 rounded-lg">
+                <div className="flex gap-2 dark:bg-black/20 bg-muted/60 p-1 rounded-lg">
                     <button
                         onClick={() => setFilterStatus('REQUESTED')}
-                        className={clsx("px-4 py-2 rounded-md text-sm font-medium transition-colors", filterStatus === 'REQUESTED' ? "bg-amber-500/20 text-amber-400" : "text-muted-foreground hover:bg-muted")}
+                        className={clsx("px-4 py-2 rounded-md text-sm font-medium transition-colors", filterStatus === 'REQUESTED' ? "bg-amber-500/20 dark:text-amber-400 text-amber-800" : "text-muted-foreground hover:bg-muted")}
                     >
                         Offen
                     </button>
                     <button
                         onClick={() => setFilterStatus('ORDERED')}
-                        className={clsx("px-4 py-2 rounded-md text-sm font-medium transition-colors", filterStatus === 'ORDERED' ? "bg-blue-500/20 text-blue-400" : "text-muted-foreground hover:bg-muted")}
+                        className={clsx("px-4 py-2 rounded-md text-sm font-medium transition-colors", filterStatus === 'ORDERED' ? "bg-blue-500/20 dark:text-blue-400 text-blue-800" : "text-muted-foreground hover:bg-muted")}
                     >
                         Bestellt
                     </button>
                     <button
                         onClick={() => setFilterStatus('ALL')}
-                        className={clsx("px-4 py-2 rounded-md text-sm font-medium transition-colors", filterStatus === 'ALL' ? "bg-muted text-white" : "text-muted-foreground hover:bg-muted")}
+                        className={clsx("px-4 py-2 rounded-md text-sm font-medium transition-colors", filterStatus === 'ALL' ? "bg-muted text-foreground" : "text-muted-foreground hover:bg-muted")}
                     >
                         Alle
                     </button>
@@ -313,11 +313,11 @@ export const AdminOrderManagement: React.FC<AdminOrderManagementProps> = ({ onBa
             {filterStatus === 'REQUESTED' && orders.length > 0 && (
                 <GlassCard className="p-4 flex justify-between items-center bg-primary/5 border-emerald-500/10">
                     <div className="flex gap-4 items-center">
-                        <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center text-emerald-400">
+                        <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center dark:text-emerald-400 text-emerald-800">
                             <FileDown size={20} />
                         </div>
                         <div>
-                            <div className="font-bold text-white">Bestellliste exportieren</div>
+                            <div className="font-bold text-foreground">Bestellliste exportieren</div>
                             <div className="text-xs text-muted-foreground">PDF für Lieferanten generieren</div>
                         </div>
                     </div>
@@ -338,7 +338,7 @@ export const AdminOrderManagement: React.FC<AdminOrderManagementProps> = ({ onBa
                                     <User size={18} className="text-muted-foreground" />
                                 </div>
                                 <div>
-                                    <div className="font-bold text-white">{order.profile?.full_name || 'Unbekannt'}</div>
+                                    <div className="font-bold text-foreground">{order.profile?.full_name || 'Unbekannt'}</div>
                                     <div className="text-xs text-muted-foreground pb-1">{order.items.length} Artikel • Summe: {order.total_amount.toFixed(2)} €</div>
                                     <div className="text-[10px] text-muted-foreground">{format(new Date(order.created_at), 'dd.MM.yyyy HH:mm')}</div>
                                 </div>
@@ -350,7 +350,7 @@ export const AdminOrderManagement: React.FC<AdminOrderManagementProps> = ({ onBa
                                     <Button
                                         onClick={(e) => { e.stopPropagation(); markAsOrdered(order.id); }}
                                         variant="ghost"
-                                        className="bg-blue-500/10 text-blue-400 hover:bg-blue-500/20 text-xs h-8 whitespace-nowrap"
+                                        className="bg-blue-500/10 dark:text-blue-400 text-blue-800 hover:bg-blue-500/20 text-xs h-8 whitespace-nowrap"
                                     >
                                         Markieren als Bestellt
                                     </Button>
@@ -359,7 +359,7 @@ export const AdminOrderManagement: React.FC<AdminOrderManagementProps> = ({ onBa
                                     <Button
                                         onClick={(e) => { e.stopPropagation(); markAsCompleted(order.id); }}
                                         variant="ghost"
-                                        className="bg-primary/10 text-emerald-400 hover:bg-primary/20 text-xs h-8 whitespace-nowrap"
+                                        className="bg-primary/10 dark:text-emerald-400 text-emerald-800 hover:bg-primary/20 text-xs h-8 whitespace-nowrap"
                                     >
                                         Rückläufer / Ausgabe
                                     </Button>
@@ -368,7 +368,7 @@ export const AdminOrderManagement: React.FC<AdminOrderManagementProps> = ({ onBa
                                     <Button
                                         onClick={(e) => { e.stopPropagation(); markAsReturned(order.id); }}
                                         variant="ghost"
-                                        className="bg-rose-500/10 text-rose-400 hover:bg-rose-500/20 text-xs h-8 whitespace-nowrap"
+                                        className="bg-rose-500/10 dark:text-rose-400 text-rose-800 hover:bg-rose-500/20 text-xs h-8 whitespace-nowrap"
                                     >
                                         Als Retoure markieren
                                     </Button>
@@ -377,7 +377,7 @@ export const AdminOrderManagement: React.FC<AdminOrderManagementProps> = ({ onBa
                                 <Button
                                     onClick={(e) => { e.stopPropagation(); deleteOrder(order.id); }}
                                     variant="ghost"
-                                    className="w-8 h-8 p-0 flex items-center justify-center text-muted-foreground hover:text-rose-400 hover:bg-rose-500/10 rounded-full transition-colors shrink-0"
+                                    className="w-8 h-8 p-0 flex items-center justify-center text-muted-foreground hover:dark:text-rose-400 text-rose-800 hover:bg-rose-500/10 rounded-full transition-colors shrink-0"
                                 >
                                     <Trash2 size={16} />
                                 </Button>
@@ -387,7 +387,7 @@ export const AdminOrderManagement: React.FC<AdminOrderManagementProps> = ({ onBa
                         </div>
 
                         {expandedOrder === order.id && (
-                            <div className="bg-black/20 border-t border-white/5 p-4">
+                            <div className="dark:bg-black/20 bg-muted/60 border-t dark:border-white/5 border-border p-4">
                                 <table className="w-full text-sm text-left text-muted-foreground">
                                     <thead className="text-xs text-muted-foreground uppercase bg-muted">
                                         <tr>
@@ -401,15 +401,15 @@ export const AdminOrderManagement: React.FC<AdminOrderManagementProps> = ({ onBa
                                     </thead>
                                     <tbody>
                                         {order.items.map(item => (
-                                            <tr key={item.id} className="border-b border-white/5 last:border-0 hover:bg-muted">
+                                            <tr key={item.id} className="border-b dark:border-white/5 border-border last:border-0 hover:bg-muted">
                                                 <td className="px-3 py-2 flex items-center gap-2">
                                                     <div className="flex flex-col">
                                                         <span>{item.template_name}</span>
                                                         {item.use_logo && (
                                                             <div className="flex items-center gap-2 mt-1">
-                                                                <span className="text-[10px] bg-primary/20 text-emerald-400 px-1.5 py-0.5 rounded font-medium">MIT LOGO</span>
+                                                                <span className="text-[10px] bg-primary/20 dark:text-emerald-400 text-emerald-800 px-1.5 py-0.5 rounded font-medium">MIT LOGO</span>
                                                                 {logoUrl && (
-                                                                    <button onClick={(e) => downloadLogo(e, logoUrl)} className="text-[10px] text-blue-400 hover:text-blue-300 underline flex items-center gap-0.5 bg-transparent border-0 cursor-pointer p-0">
+                                                                    <button onClick={(e) => downloadLogo(e, logoUrl)} className="text-[10px] dark:text-blue-400 text-blue-800 hover:dark:text-blue-300 text-blue-800 underline flex items-center gap-0.5 bg-transparent border-0 cursor-pointer p-0">
                                                                         <FileDown size={10} /> Logo laden
                                                                     </button>
                                                                 )}
@@ -418,14 +418,14 @@ export const AdminOrderManagement: React.FC<AdminOrderManagementProps> = ({ onBa
                                                     </div>
                                                 </td>
                                                 <td className="px-3 py-2 font-mono text-xs opacity-50">{item.article_number}</td>
-                                                <td className="px-3 py-2 text-white font-bold">{item.size}</td>
+                                                <td className="px-3 py-2 text-foreground font-bold">{item.size}</td>
                                                 <td className="px-3 py-2 text-center font-bold">{item.quantity}</td>
                                                 <td className="px-3 py-2 text-right">{(item.price_at_order * item.quantity).toFixed(2)} €</td>
                                                 <td className="px-2 py-2 text-right">
                                                     {order.status === 'REQUESTED' && (
                                                         <button
                                                             onClick={() => deleteOrderItem(order, item.id)}
-                                                            className="text-muted-foreground hover:text-rose-400 p-1 bg-transparent border-0 cursor-pointer"
+                                                            className="text-muted-foreground hover:dark:text-rose-400 text-rose-800 p-1 bg-transparent border-0 cursor-pointer"
                                                             title="Artikel entfernen"
                                                         >
                                                             <Trash2 size={14} />

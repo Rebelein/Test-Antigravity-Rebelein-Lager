@@ -29,14 +29,14 @@ const NotificationToast: React.FC = () => {
 
                             {/* Content */}
                             <div className="flex-1 min-w-0">
-                                <h4 className="text-sm font-bold text-white leading-tight">{notification.title}</h4>
+                                <h4 className="text-sm font-bold text-foreground leading-tight">{notification.title}</h4>
                                 <p className="text-xs text-muted-foreground mt-1 leading-relaxed">{notification.message}</p>
                             </div>
 
                             {/* Close Button */}
                             <button
                                 onClick={() => removeNotification(notification.id)}
-                                className="shrink-0 text-muted-foreground hover:text-white transition-colors"
+                                className="shrink-0 text-muted-foreground hover:text-foreground transition-colors"
                             >
                                 <X size={16} />
                             </button>
@@ -68,11 +68,11 @@ const getStyleForType = (type: string) => {
 
 const getIconForType = (type: string) => {
     switch (type) {
-        case 'success': return <CheckCircle2 size={18} className="text-white" />;
-        case 'error': return <XCircle size={18} className="text-white" />;
-        case 'warning': return <AlertTriangle size={18} className="text-white" />;
-        case 'update': return <Bell size={18} className="text-white" />;
-        default: return <Info size={18} className="text-white" />;
+        case 'success': return <CheckCircle2 size={18} className="text-foreground" />;
+        case 'error': return <XCircle size={18} className="text-foreground" />;
+        case 'warning': return <AlertTriangle size={18} className="text-foreground" />;
+        case 'update': return <Bell size={18} className="text-foreground" />;
+        default: return <Info size={18} className="text-foreground" />;
     }
 };
 

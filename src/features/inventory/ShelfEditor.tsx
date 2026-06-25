@@ -92,9 +92,9 @@ const ShelfEditor: React.FC = () => {
 
     const getWarehouseIcon = (type: any) => {
         switch (type) {
-            case 'Main': return <WarehouseIcon size={24} className="text-emerald-400" />;
-            case 'Vehicle': return <Truck size={24} className="text-blue-400" />;
-            case 'Site': return <HardHat size={24} className="text-amber-400" />;
+            case 'Main': return <WarehouseIcon size={24} className="dark:text-emerald-400 text-emerald-800" />;
+            case 'Vehicle': return <Truck size={24} className="dark:text-blue-400 text-blue-800" />;
+            case 'Site': return <HardHat size={24} className="dark:text-amber-400 text-amber-800" />;
             default: return <WarehouseIcon size={24} />;
         }
     };
@@ -102,7 +102,7 @@ const ShelfEditor: React.FC = () => {
     return (
         <div className="h-full overflow-y-auto custom-scrollbar space-y-6 pb-24 px-1">
             <header className="flex items-center gap-3">
-                <button onClick={() => navigate('/dashboard')} className="p-2 bg-muted rounded-full hover:bg-muted text-muted-foreground hover:text-white transition-colors">
+                <button onClick={() => navigate('/dashboard')} className="p-2 bg-muted rounded-full hover:bg-muted text-muted-foreground hover:text-foreground transition-colors">
                     <ArrowRight className="rotate-180" size={20} />
                 </button>
                 <div>
@@ -121,14 +121,14 @@ const ShelfEditor: React.FC = () => {
                         warehouses.map(w => (
                             <GlassCard key={w.id} onClick={() => setSelectedWarehouse(w)} className="cursor-pointer hover:bg-muted transition-colors group">
                                 <div className="flex items-center gap-4">
-                                    <div className="w-12 h-12 rounded-xl bg-muted flex items-center justify-center border border-white/5">
+                                    <div className="w-12 h-12 rounded-xl bg-muted flex items-center justify-center border dark:border-white/5 border-border">
                                         {getWarehouseIcon(w.type)}
                                     </div>
                                     <div className="flex-1">
-                                        <h3 className="font-bold text-white group-hover:text-amber-200 transition-colors">{w.name}</h3>
+                                        <h3 className="font-bold text-foreground group-hover:dark:text-amber-200 text-amber-900 transition-colors">{w.name}</h3>
                                         <p className="text-xs text-muted-foreground">{w.location || 'Kein Standort'}</p>
                                     </div>
-                                    <ArrowRight size={18} className="text-muted-foreground group-hover:text-white" />
+                                    <ArrowRight size={18} className="text-muted-foreground group-hover:text-foreground" />
                                 </div>
                             </GlassCard>
                         ))}
@@ -138,19 +138,19 @@ const ShelfEditor: React.FC = () => {
                 <div className="space-y-4">
                     <div className="flex items-center justify-between bg-muted p-3 rounded-xl border border-border">
                         <div className="flex items-center gap-3">
-                            <div className="w-10 h-10 rounded-lg bg-amber-500/10 flex items-center justify-center text-amber-400">
+                            <div className="w-10 h-10 rounded-lg bg-amber-500/10 flex items-center justify-center dark:text-amber-400 text-amber-800">
                                 {getWarehouseIcon(selectedWarehouse.type)}
                             </div>
                             <div>
-                                <div className="font-bold text-white">{selectedWarehouse.name}</div>
+                                <div className="font-bold text-foreground">{selectedWarehouse.name}</div>
                                 <div className="text-xs text-muted-foreground">{shelves.length} Kategorien gefunden</div>
                             </div>
                         </div>
-                        <button onClick={() => { setSelectedWarehouse(null); setShelves([]); }} className="text-xs text-amber-400 hover:underline">Ändern</button>
+                        <button onClick={() => { setSelectedWarehouse(null); setShelves([]); }} className="text-xs dark:text-amber-400 text-amber-800 hover:underline">Ändern</button>
                     </div>
 
                     {loading ? (
-                        <div className="flex justify-center py-10"><Loader2 className="animate-spin text-amber-400" /></div>
+                        <div className="flex justify-center py-10"><Loader2 className="animate-spin dark:text-amber-400 text-amber-800" /></div>
                     ) : shelves.length === 0 ? (
                         <div className="text-center text-muted-foreground py-10">Keine Artikel/Kategorien in diesem Lager.</div>
                     ) : (
@@ -159,9 +159,9 @@ const ShelfEditor: React.FC = () => {
                                 <div key={shelf} className="bg-muted border border-border rounded-xl p-4 flex items-center justify-between">
                                     <div className="flex items-center gap-3">
                                         <Library size={18} className="text-muted-foreground" />
-                                        <span className="font-medium text-white">{shelf}</span>
+                                        <span className="font-medium text-foreground">{shelf}</span>
                                     </div>
-                                    <button onClick={() => handleOpenEdit(shelf)} className="p-2 bg-muted hover:bg-muted rounded-lg text-muted-foreground hover:text-white transition-colors">
+                                    <button onClick={() => handleOpenEdit(shelf)} className="p-2 bg-muted hover:bg-muted rounded-lg text-muted-foreground hover:text-foreground transition-colors">
                                         <Edit2 size={16} />
                                     </button>
                                 </div>
@@ -173,15 +173,15 @@ const ShelfEditor: React.FC = () => {
 
             {/* EDIT MODAL */}
             {editingShelf && (
-                <div className="fixed inset-0 z-[170] flex items-center justify-center p-4 bg-black/30 backdrop-blur-sm animate-in fade-in">
+                <div className="fixed inset-0 z-[170] flex items-center justify-center p-4 dark:bg-black/30 bg-muted/70 backdrop-blur-sm animate-in fade-in">
                     <GlassCard className="w-full max-w-md">
                         <div className="flex justify-between items-center mb-4">
-                            <h3 className="text-lg font-bold text-white">Regal umbenennen</h3>
-                            <button onClick={() => setEditingShelf(null)}><X className="text-muted-foreground hover:text-white" /></button>
+                            <h3 className="text-lg font-bold text-foreground">Regal umbenennen</h3>
+                            <button onClick={() => setEditingShelf(null)}><X className="text-muted-foreground hover:text-foreground" /></button>
                         </div>
 
                         <div className="space-y-4">
-                            <div className="bg-blue-500/10 border border-blue-500/20 p-3 rounded-xl text-xs text-blue-200">
+                            <div className="bg-blue-500/10 border border-blue-500/20 p-3 rounded-xl text-xs dark:text-blue-200 text-blue-900">
                                 Alle Artikel im Lager <b>"{selectedWarehouse?.name}"</b> mit der Kategorie <b>"{editingShelf}"</b> werden verschoben.
                             </div>
 

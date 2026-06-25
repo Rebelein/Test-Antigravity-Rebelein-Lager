@@ -393,11 +393,11 @@ const Orders: React.FC = () => {
                 onClick={() => { setActiveTab('proposals'); setSelectedSupplier(null); setIsMobileCategoryOpen(false); }}
                 className={clsx(
                     "flex items-center justify-between px-4 py-3 rounded-xl transition-all duration-200 text-left group w-full gap-3",
-                    activeTab === 'proposals' && !selectedSupplier ? "bg-blue-500/20 text-blue-400 border border-blue-500/30" : "text-muted-foreground hover:text-white hover:bg-muted"
+                    activeTab === 'proposals' && !selectedSupplier ? "bg-blue-500/20 dark:text-blue-400 text-blue-800 border border-blue-500/30" : "text-muted-foreground hover:text-foreground hover:bg-muted"
                 )}
             >
                 <div className="flex items-center gap-3">
-                    <Send size={18} className={clsx(activeTab === 'proposals' && !selectedSupplier ? "text-blue-400" : "text-muted-foreground group-hover:text-muted-foreground")} />
+                    <Send size={18} className={clsx(activeTab === 'proposals' && !selectedSupplier ? "dark:text-blue-400 text-blue-800" : "text-muted-foreground group-hover:text-muted-foreground")} />
                     <span className="font-medium text-sm">Vorschläge</span>
                 </div>
                 {badgeCounts.proposals > 0 && <span className="bg-primary text-white text-[10px] px-1.5 py-0.5 rounded-full">{badgeCounts.proposals}</span>}
@@ -412,7 +412,7 @@ const Orders: React.FC = () => {
                             onClick={() => { setSelectedSupplier(supplier); setIsMobileCategoryOpen(false); }}
                             className={clsx(
                                 "flex items-center justify-between px-3 py-2 rounded-xl transition-all duration-200 text-left group w-full gap-2",
-                                selectedSupplier === supplier ? "bg-blue-500/10 text-blue-300 border border-blue-500/20" : "text-muted-foreground hover:text-white hover:bg-muted"
+                                selectedSupplier === supplier ? "bg-blue-500/10 dark:text-blue-300 text-blue-800 border border-blue-500/20" : "text-muted-foreground hover:text-foreground hover:bg-muted"
                             )}
                         >
                             <span className="text-xs font-medium truncate">{supplier}</span>
@@ -426,11 +426,11 @@ const Orders: React.FC = () => {
                 onClick={() => { setActiveTab('pending'); setSelectedSupplier(null); setIsMobileCategoryOpen(false); }}
                 className={clsx(
                     "flex items-center justify-between px-4 py-3 rounded-xl transition-all duration-200 text-left group w-full gap-3",
-                    activeTab === 'pending' ? "bg-blue-500/20 text-blue-400 border border-blue-500/30" : "text-muted-foreground hover:text-white hover:bg-muted"
+                    activeTab === 'pending' ? "bg-blue-500/20 dark:text-blue-400 text-blue-800 border border-blue-500/30" : "text-muted-foreground hover:text-foreground hover:bg-muted"
                 )}
             >
                 <div className="flex items-center gap-3">
-                    <Clock size={18} className={clsx(activeTab === 'pending' ? "text-blue-400" : "text-muted-foreground group-hover:text-muted-foreground")} />
+                    <Clock size={18} className={clsx(activeTab === 'pending' ? "dark:text-blue-400 text-blue-800" : "text-muted-foreground group-hover:text-muted-foreground")} />
                     <span className="font-medium text-sm">Offen</span>
                 </div>
                 {badgeCounts.pending > 0 && <span className="bg-blue-500 text-white text-[10px] px-1.5 py-0.5 rounded-full">{badgeCounts.pending}</span>}
@@ -440,11 +440,11 @@ const Orders: React.FC = () => {
                 onClick={() => { setActiveTab('commission'); setIsMobileCategoryOpen(false); }}
                 className={clsx(
                     "flex items-center justify-between px-4 py-3 rounded-xl transition-all duration-200 text-left group w-full gap-3",
-                    activeTab === 'commission' ? "bg-amber-500/20 text-amber-400 border border-amber-500/30" : "text-muted-foreground hover:text-white hover:bg-muted"
+                    activeTab === 'commission' ? "bg-amber-500/20 dark:text-amber-400 text-amber-800 border border-amber-500/30" : "text-muted-foreground hover:text-foreground hover:bg-muted"
                 )}
             >
                 <div className="flex items-center gap-3">
-                    <ClipboardList size={18} className={clsx(activeTab === 'commission' ? "text-amber-400" : "text-muted-foreground group-hover:text-muted-foreground")} />
+                    <ClipboardList size={18} className={clsx(activeTab === 'commission' ? "dark:text-amber-400 text-amber-800" : "text-muted-foreground group-hover:text-muted-foreground")} />
                     <span className="font-medium text-sm">Kommissionen</span>
                 </div>
                 {badgeCounts.commission > 0 && <span className="bg-amber-500 text-white text-[10px] px-1.5 py-0.5 rounded-full">{badgeCounts.commission}</span>}
@@ -454,11 +454,11 @@ const Orders: React.FC = () => {
                 onClick={() => { setActiveTab('completed'); setIsMobileCategoryOpen(false); }}
                 className={clsx(
                     "flex items-center justify-between px-4 py-3 rounded-xl transition-all duration-200 text-left group w-full gap-3",
-                    activeTab === 'completed' ? "bg-blue-500/20 text-blue-400 border border-blue-500/30" : "text-muted-foreground hover:text-white hover:bg-muted"
+                    activeTab === 'completed' ? "bg-blue-500/20 dark:text-blue-400 text-blue-800 border border-blue-500/30" : "text-muted-foreground hover:text-foreground hover:bg-muted"
                 )}
             >
                 <div className="flex items-center gap-3">
-                    <CheckCircle2 size={18} className={clsx(activeTab === 'completed' ? "text-blue-400" : "text-muted-foreground group-hover:text-muted-foreground")} />
+                    <CheckCircle2 size={18} className={clsx(activeTab === 'completed' ? "dark:text-blue-400 text-blue-800" : "text-muted-foreground group-hover:text-muted-foreground")} />
                     <span className="font-medium text-sm">Erledigt</span>
                 </div>
             </button>
@@ -469,11 +469,11 @@ const Orders: React.FC = () => {
                 onClick={() => { setActiveTab('import'); setIsMobileCategoryOpen(false); }}
                 className={clsx(
                     "flex items-center justify-between px-4 py-3 rounded-xl transition-all duration-200 text-left group w-full gap-3",
-                    activeTab === 'import' ? "bg-primary/20 text-emerald-400 border border-emerald-500/30" : "text-muted-foreground hover:text-white hover:bg-muted"
+                    activeTab === 'import' ? "bg-primary/20 dark:text-emerald-400 text-emerald-800 border border-emerald-500/30" : "text-muted-foreground hover:text-foreground hover:bg-muted"
                 )}
             >
                 <div className="flex items-center gap-3">
-                    <Plus size={18} className={clsx(activeTab === 'import' ? "text-emerald-400" : "text-muted-foreground group-hover:text-muted-foreground")} />
+                    <Plus size={18} className={clsx(activeTab === 'import' ? "dark:text-emerald-400 text-emerald-800" : "text-muted-foreground group-hover:text-muted-foreground")} />
                     <span className="font-medium text-sm">Neu anlegen</span>
                 </div>
                 {importCandidates.length > 0 && <span className="bg-primary text-white text-[10px] px-1.5 py-0.5 rounded-full">{importCandidates.length}</span>}
@@ -483,12 +483,12 @@ const Orders: React.FC = () => {
 
     const renderListContent = () => (
         <div className="relative h-full flex flex-col overflow-hidden">
-            <header className="flex flex-col md:flex-row md:items-center justify-between gap-4 px-1 pt-4 pb-4 border-b border-white/5 shrink-0">
+            <header className="flex flex-col md:flex-row md:items-center justify-between gap-4 px-1 pt-4 pb-4 border-b dark:border-white/5 border-border shrink-0">
                 <div className="flex items-center gap-3">
                     {isMobile && (
                         <button 
                             onClick={() => setIsMobileCategoryOpen(true)}
-                            className="p-2.5 rounded-xl bg-muted text-blue-400 border border-border active:scale-95 transition-transform"
+                            className="p-2.5 rounded-xl bg-muted dark:text-blue-400 text-blue-800 border border-border active:scale-95 transition-transform"
                         >
                             <Menu size={20} />
                         </button>
@@ -506,7 +506,7 @@ const Orders: React.FC = () => {
             <div className="flex h-full overflow-hidden mt-2">
                 {/* Desktop Sidebar */}
                 {!isMobile && (
-                    <aside className="w-64 flex-shrink-0 border-r border-white/5 flex flex-col pr-4 animate-in slide-in-from-left duration-500">
+                    <aside className="w-64 flex-shrink-0 border-r dark:border-white/5 border-border flex flex-col pr-4 animate-in slide-in-from-left duration-500">
                         <div className="px-4 py-2 flex items-center gap-2 text-muted-foreground uppercase tracking-widest text-[10px] font-bold">
                             <Filter size={10} />
                             Ansicht
@@ -524,7 +524,7 @@ const Orders: React.FC = () => {
                                 animate={{ opacity: 1 }}
                                 exit={{ opacity: 0 }}
                                 onClick={() => setIsMobileCategoryOpen(false)}
-                                className="fixed inset-0 bg-black/30 backdrop-blur-sm z-40"
+                                className="fixed inset-0 dark:bg-black/30 bg-muted/70 backdrop-blur-sm z-40"
                             />
                             <motion.aside
                                 initial={{ x: '-100%' }}
@@ -534,10 +534,10 @@ const Orders: React.FC = () => {
                                 className="fixed inset-y-0 left-0 w-[80%] max-w-sm bg-background border-r border-border shadow-2xl z-50 flex flex-col"
                             >
                                 <div className="p-4 border-b border-border flex items-center justify-between">
-                                    <div className="flex items-center gap-2 text-blue-400 font-bold uppercase tracking-wider text-sm">
+                                    <div className="flex items-center gap-2 dark:text-blue-400 text-blue-800 font-bold uppercase tracking-wider text-sm">
                                         <Filter size={16} /> Ansicht
                                     </div>
-                                    <button onClick={() => setIsMobileCategoryOpen(false)} className="p-2 rounded-xl bg-muted text-muted-foreground hover:text-white">
+                                    <button onClick={() => setIsMobileCategoryOpen(false)} className="p-2 rounded-xl bg-muted text-muted-foreground hover:text-foreground">
                                         <X size={20} />
                                     </button>
                                 </div>
@@ -555,7 +555,7 @@ const Orders: React.FC = () => {
                         {/* --- CONTENT: PROPOSALS --- */}
                         {activeTab === 'proposals' && (
                             <div className="space-y-6 mt-2">
-                                {loadingProposals ? <Loader2 className="animate-spin text-blue-400 mx-auto" /> : (
+                                {loadingProposals ? <Loader2 className="animate-spin dark:text-blue-400 text-blue-800 mx-auto" /> : (
                                     Object.keys(groupedProposals).length === 0 ? (
                                         <div className="text-center text-muted-foreground py-10 border border-dashed border-border rounded-xl">Keine Nachbestellungen nötig.</div>
                                     ) : (
@@ -572,9 +572,9 @@ const Orders: React.FC = () => {
                                                     >
                                                         <div className="flex justify-between items-center">
                                                             <div className="flex items-center gap-3">
-                                                                <div className="w-10 h-10 rounded-full bg-blue-500/20 flex items-center justify-center text-blue-300"><ShoppingCart size={18} /></div>
+                                                                <div className="w-10 h-10 rounded-full bg-blue-500/20 flex items-center justify-center dark:text-blue-300 text-blue-800"><ShoppingCart size={18} /></div>
                                                                 <div>
-                                                                    <div className="font-bold text-white">{prop.warehouseName}</div>
+                                                                    <div className="font-bold text-foreground">{prop.warehouseName}</div>
                                                                     <div className="text-xs text-muted-foreground">{prop.totalItems} Artikel unter Bestand</div>
                                                                 </div>
                                                             </div>
@@ -594,7 +594,7 @@ const Orders: React.FC = () => {
                                 <div className="text-xs text-muted-foreground text-center mb-4">
                                     Artikel aus Bestellungen der letzten 30 Tage, die noch nicht im Lagerbestand sind.
                                 </div>
-                                {loadingImport ? <Loader2 className="animate-spin text-blue-400 mx-auto" /> : (
+                                {loadingImport ? <Loader2 className="animate-spin dark:text-blue-400 text-blue-800 mx-auto" /> : (
                                     importCandidates.map((item, idx) => (
                                         <GlassCard
                                             key={idx}
@@ -603,7 +603,7 @@ const Orders: React.FC = () => {
                                         >
                                             <div className="flex justify-between items-start">
                                                 <div>
-                                                    <h3 className="font-bold text-white flex items-center gap-2">
+                                                    <h3 className="font-bold text-foreground flex items-center gap-2">
                                                         {item.name || 'Unbenannt'}
                                                     </h3>
                                                     <p className="text-xs text-muted-foreground">
@@ -643,9 +643,9 @@ const Orders: React.FC = () => {
                                     >
                                         <div className="flex justify-between items-start">
                                             <div>
-                                                <h3 className="font-bold text-white group-hover:text-blue-300 transition-colors flex items-center gap-2">
+                                                <h3 className="font-bold text-foreground group-hover:dark:text-blue-300 text-blue-800 transition-colors flex items-center gap-2">
                                                     {order.supplier}
-                                                    {order.warehouseType === 'Vehicle' && <Truck size={14} className="text-blue-400" />}
+                                                    {order.warehouseType === 'Vehicle' && <Truck size={14} className="dark:text-blue-400 text-blue-800" />}
                                                 </h3>
                                                 <p className="text-xs text-muted-foreground">{new Date(order.date).toLocaleDateString()} • {order.warehouseName}</p>
                                                 {order.supplierOrderNumber && <p className="text-xs text-muted-foreground font-mono mt-1">Auftrag: {order.supplierOrderNumber}</p>}
@@ -674,7 +674,7 @@ const Orders: React.FC = () => {
                                                         <Box size={10} /> {order.commissionNumber}
                                                     </span>
                                                 )}
-                                                <button onClick={(e) => { e.stopPropagation(); handleDownloadCsv(order); }} className="p-2 text-emerald-400 hover:bg-primary/10 rounded-lg flex items-center gap-2 text-xs font-bold transition-colors">
+                                                <button onClick={(e) => { e.stopPropagation(); handleDownloadCsv(order); }} className="p-2 dark:text-emerald-400 text-emerald-800 hover:bg-primary/10 rounded-lg flex items-center gap-2 text-xs font-bold transition-colors">
                                                     <FileDown size={14} /> CSV
                                                 </button>
                                             </div>
@@ -689,7 +689,7 @@ const Orders: React.FC = () => {
                         {activeTab === 'completed' && (
                             <div className="space-y-4 mt-2">
                                 <div className="text-xs text-muted-foreground text-center mb-4">Automatische Löschung nach 60 Tagen.</div>
-                                {loadingCompleted ? <Loader2 className="animate-spin text-blue-400 mx-auto" /> : (
+                                {loadingCompleted ? <Loader2 className="animate-spin dark:text-blue-400 text-blue-800 mx-auto" /> : (
                                     completedOrders.map(order => (
                                         <GlassCard
                                             key={order.id}
@@ -698,7 +698,7 @@ const Orders: React.FC = () => {
                                         >
                                             <div className="flex justify-between items-start">
                                                 <div>
-                                                    <h3 className="font-bold text-white group-hover:text-blue-300 transition-colors flex items-center gap-2">
+                                                    <h3 className="font-bold text-foreground group-hover:dark:text-blue-300 text-blue-800 transition-colors flex items-center gap-2">
                                                         {order.supplier}
                                                     </h3>
                                                     <p className="text-xs text-muted-foreground">{new Date(order.date).toLocaleDateString()} • {order.warehouseName}</p>
@@ -721,7 +721,7 @@ const Orders: React.FC = () => {
                         {/* --- CONTENT: PICKUP ORDERS --- */}
                         {activeTab === 'commission' && (
                             <div className="space-y-4 mt-2">
-                                <div className="text-xs text-amber-200/60 uppercase tracking-wider font-bold pl-2 mb-2 flex items-center gap-2">
+                                <div className="text-xs dark:text-amber-200 text-amber-900/60 uppercase tracking-wider font-bold pl-2 mb-2 flex items-center gap-2">
                                     <AlertTriangle size={12} /> Ware ist da - wartet auf Abholung / Verladung
                                 </div>
                                 {pickupOrders.map(order => (
@@ -732,9 +732,9 @@ const Orders: React.FC = () => {
                                     >
                                         <div className="flex justify-between items-start">
                                             <div>
-                                                <h3 className="font-bold text-white group-hover:text-amber-300 transition-colors flex items-center gap-2">
+                                                <h3 className="font-bold text-foreground group-hover:dark:text-amber-300 text-amber-800 transition-colors flex items-center gap-2">
                                                     {order.supplier}
-                                                    {order.warehouseType === 'Vehicle' && <Truck size={14} className="text-amber-400" />}
+                                                    {order.warehouseType === 'Vehicle' && <Truck size={14} className="dark:text-amber-400 text-amber-800" />}
                                                 </h3>
                                                 <p className="text-xs text-muted-foreground">{new Date(order.date).toLocaleDateString()} • {order.warehouseName}</p>
                                             </div>
@@ -751,7 +751,7 @@ const Orders: React.FC = () => {
 
                                         <div className="flex items-center justify-between pt-2 border-t border-border">
                                             <span className="text-sm text-muted-foreground">{order.itemCount} Positionen</span>
-                                            <div className="text-xs text-amber-300 flex items-center gap-1">
+                                            <div className="text-xs dark:text-amber-300 text-amber-800 flex items-center gap-1">
                                                 <Archive size={14} /> Abholbereit
                                             </div>
                                         </div>

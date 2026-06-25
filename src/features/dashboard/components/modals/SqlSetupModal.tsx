@@ -52,24 +52,24 @@ export const SqlSetupModal: React.FC<SqlSetupModalProps> = ({ isOpen, onClose, o
     };
 
     return (
-        <div className="fixed inset-0 z-[170] flex items-center justify-center p-4 bg-black/30 backdrop-blur-sm animate-in fade-in duration-200">
+        <div className="fixed inset-0 z-[170] flex items-center justify-center p-4 dark:bg-black/30 bg-muted/70 backdrop-blur-sm animate-in fade-in duration-200">
             <div className="w-full max-w-3xl bg-background border border-border rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[85vh]">
                 <div className="p-6 border-b border-border flex justify-between items-center bg-muted">
                     <div className="flex items-center gap-3">
-                        <Database className="text-emerald-400" size={24} />
+                        <Database className="dark:text-emerald-400 text-emerald-800" size={24} />
                         <div>
-                            <h2 className="text-xl font-bold text-white">Datenbank Einrichtung</h2>
+                            <h2 className="text-xl font-bold text-foreground">Datenbank Einrichtung</h2>
                             <p className="text-xs text-muted-foreground">Reparatur & SQL Befehle</p>
                         </div>
                     </div>
-                    <button onClick={onClose} className="p-2 hover:bg-muted rounded-full text-muted-foreground hover:text-white">
+                    <button onClick={onClose} className="p-2 hover:bg-muted rounded-full text-muted-foreground hover:text-foreground">
                         <X size={20} />
                     </button>
                 </div>
 
                 <div className="p-6 overflow-y-auto space-y-6">
                     <div className="bg-primary/10 border border-emerald-500/20 rounded-xl p-4 space-y-3">
-                        <h3 className="text-lg font-semibold text-emerald-300 flex items-center gap-2">
+                        <h3 className="text-lg font-semibold dark:text-emerald-300 text-emerald-800 flex items-center gap-2">
                             <Settings size={18} /> Automatische Einrichtung
                         </h3>
                         <div className="flex gap-3">
@@ -91,7 +91,7 @@ export const SqlSetupModal: React.FC<SqlSetupModalProps> = ({ isOpen, onClose, o
                             </Button>
                         </div>
                         {initError && (
-                            <div className="mt-3 p-3 bg-red-500/20 border border-red-500/30 text-red-200 text-sm rounded-lg flex items-start gap-2">
+                            <div className="mt-3 p-3 bg-red-500/20 border border-red-500/30 dark:text-red-200 text-red-800 text-sm rounded-lg flex items-start gap-2">
                                 <AlertTriangle size={16} className="mt-0.5 flex-shrink-0" />
                                 <span className="break-words max-w-full">{initError}</span>
                             </div>
@@ -105,9 +105,9 @@ export const SqlSetupModal: React.FC<SqlSetupModalProps> = ({ isOpen, onClose, o
                     </div>
 
                     <div>
-                        <h3 className="text-lg font-semibold text-white mb-2">Manuelles SQL</h3>
+                        <h3 className="text-lg font-semibold text-foreground mb-2">Manuelles SQL</h3>
                         <div className="relative group">
-                            <pre className="bg-black/50 p-4 rounded-xl text-xs font-mono text-emerald-300/80 overflow-x-auto border border-border whitespace-pre-wrap max-h-[300px] overflow-y-auto">
+                            <pre className="dark:bg-black/50 bg-muted/80 p-4 rounded-xl text-xs font-mono dark:text-emerald-300 text-emerald-800/80 overflow-x-auto border border-border whitespace-pre-wrap max-h-[300px] overflow-y-auto">
                                 {MANUAL_SETUP_SQL}
                             </pre>
                             <div className="absolute top-2 right-2">

@@ -67,19 +67,19 @@ export const InstallPrompt: React.FC = () => {
             <div className="p-4 rounded-2xl bg-card border border-emerald-500/40 shadow-xl shadow-emerald-500/20 relative">
                 <button
                     onClick={handleClose}
-                    className="absolute top-3 right-3 p-2 text-muted-foreground hover:text-white hover:bg-muted rounded-lg transition-colors"
+                    className="absolute top-3 right-3 p-2 text-muted-foreground hover:text-foreground hover:bg-muted rounded-lg transition-colors"
                     aria-label="Schließen"
                 >
                     <X size={20} />
                 </button>
 
                 <div className="flex items-start gap-4 pr-8">
-                    <div className="p-3 rounded-xl bg-primary/20 text-emerald-400 shrink-0">
+                    <div className="p-3 rounded-xl bg-primary/20 dark:text-emerald-400 text-emerald-800 shrink-0">
                         <Download size={24} />
                     </div>
                     <div>
-                        <h3 className="font-bold text-white mb-1">App installieren</h3>
-                        <p className="text-sm text-gray-300 mb-3">
+                        <h3 className="font-bold text-foreground mb-1">App installieren</h3>
+                        <p className="text-sm dark:text-gray-300 text-gray-800 mb-3">
                             {isIOS
                                 ? "Installiere die App für den besten Zugriff: Tippe auf 'Teilen' und dann 'Zum Home-Bildschirm'."
                                 : "Installiere die App für schnelleren Zugriff und Offline-Funktionen."}

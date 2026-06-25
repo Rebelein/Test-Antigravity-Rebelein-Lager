@@ -176,13 +176,13 @@ export const OrderDetailContent: React.FC<OrderDetailContentProps> = ({ order, o
     };
 
     return (
-        <div className="flex flex-col h-full bg-transparent text-slate-100">
+        <div className="flex flex-col h-full bg-transparent text-foreground">
             {/* Header */}
             <div className="p-4 sm:p-6 border-b border-border flex justify-between items-center bg-white/[0.02] shrink-0">
                 <div>
-                    <h2 className="text-xl font-bold text-white flex items-center gap-2">
+                    <h2 className="text-xl font-bold text-foreground flex items-center gap-2">
                         {order.supplier}
-                        {order.status === 'Received' && <span className="bg-primary/20 text-emerald-400 text-xs px-2 py-0.5 rounded border border-emerald-500/30">Abgeschlossen</span>}
+                        {order.status === 'Received' && <span className="bg-primary/20 dark:text-emerald-400 text-emerald-800 text-xs px-2 py-0.5 rounded border border-emerald-500/30">Abgeschlossen</span>}
                     </h2>
                     <div className="flex flex-wrap items-center gap-3 mt-1 text-sm text-muted-foreground">
                         <span>{new Date(order.date).toLocaleDateString()}</span>
@@ -199,7 +199,7 @@ export const OrderDetailContent: React.FC<OrderDetailContentProps> = ({ order, o
                         {order.supplierOrderNumber && (
                             <>
                                 <span>•</span>
-                                <span className="flex items-center gap-1 text-xs font-mono bg-blue-500/10 text-blue-300 px-1.5 py-0.5 rounded border border-blue-500/20">
+                                <span className="flex items-center gap-1 text-xs font-mono bg-blue-500/10 dark:text-blue-300 text-blue-800 px-1.5 py-0.5 rounded border border-blue-500/20">
                                     Auftrag: {order.supplierOrderNumber}
                                 </span>
                             </>
@@ -207,21 +207,21 @@ export const OrderDetailContent: React.FC<OrderDetailContentProps> = ({ order, o
                     </div>
                 </div>
                 <div className="flex gap-2">
-                    <button onClick={handleDownloadCsv} className="p-2 rounded-full hover:bg-muted text-emerald-400" title="CSV Download"><FileDown size={20} /></button>
-                    <button onClick={onClose} className="p-2 rounded-full hover:bg-muted text-muted-foreground hover:text-white"><X size={20} /></button>
+                    <button onClick={handleDownloadCsv} className="p-2 rounded-full hover:bg-muted dark:text-emerald-400 text-emerald-800" title="CSV Download"><FileDown size={20} /></button>
+                    <button onClick={onClose} className="p-2 rounded-full hover:bg-muted text-muted-foreground hover:text-foreground"><X size={20} /></button>
                 </div>
             </div>
 
             {/* List */}
             <div className="flex-1 overflow-y-auto p-4 space-y-4">
-                {loading ? <div className="py-10 flex justify-center"><Loader2 className="animate-spin text-emerald-400" /></div> :
+                {loading ? <div className="py-10 flex justify-center"><Loader2 className="animate-spin dark:text-emerald-400 text-emerald-800" /></div> :
                     items.map((item, idx) => {
                         const delta = item.newTotalReceived - item.quantityReceived;
                         const isChange = delta !== 0;
                         const isFullyReceived = item.newTotalReceived >= item.quantityOrdered && item.quantityOrdered > 0;
 
                         return (
-                            <div key={item.id} className="p-3 rounded-xl bg-muted border border-white/5 flex items-center gap-4">
+                            <div key={item.id} className="p-3 rounded-xl bg-muted border dark:border-white/5 border-border flex items-center gap-4">
 
                                 {/* Checkbox (Left) */}
                                 {order.status !== 'Received' && (
@@ -244,10 +244,10 @@ export const OrderDetailContent: React.FC<OrderDetailContentProps> = ({ order, o
                                 <div className="flex-1 min-w-0">
                                     <div className="flex justify-between items-start mb-1">
                                         <div className="flex-1">
-                                            <div className="text-sm font-bold text-white truncate">{item.articleName || item.customName || 'Unbekannt'}</div>
+                                            <div className="text-sm font-bold text-foreground truncate">{item.articleName || item.customName || 'Unbekannt'}</div>
                                             <div className="text-xs text-muted-foreground flex gap-2">
                                                 <span>Art-Nr: {item.articleSku || item.customSku || '-'}</span>
-                                                {!item.articleId && <span className="text-amber-400 font-bold bg-amber-900/30 px-1 rounded">Manuell</span>}
+                                                {!item.articleId && <span className="dark:text-amber-400 text-amber-800 font-bold bg-amber-900/30 px-1 rounded">Manuell</span>}
                                             </div>
                                         </div>
                                     </div>
@@ -256,14 +256,14 @@ export const OrderDetailContent: React.FC<OrderDetailContentProps> = ({ order, o
                                         <div className="flex items-center justify-between mt-2">
                                             <div className="text-xs flex flex-col">
                                                 <span className="text-muted-foreground">Ziel / Bestellt</span>
-                                                <span className="font-bold text-white"><span className="text-emerald-400">{item.quantityReceived}</span> / {item.quantityOrdered}</span>
+                                                <span className="font-bold text-foreground"><span className="dark:text-emerald-400 text-emerald-800">{item.quantityReceived}</span> / {item.quantityOrdered}</span>
                                             </div>
 
                                             {/* Controls (Right) */}
-                                            <div className="flex items-center gap-1 bg-black/30 rounded-lg p-1 border border-border">
+                                            <div className="flex items-center gap-1 dark:bg-black/30 bg-muted/70 rounded-lg p-1 border border-border">
                                                 <button
                                                     onClick={() => handleAmountChange(idx, item.newTotalReceived - 1)}
-                                                    className="w-8 h-8 flex items-center justify-center rounded hover:bg-muted text-muted-foreground hover:text-white transition-colors"
+                                                    className="w-8 h-8 flex items-center justify-center rounded hover:bg-muted text-muted-foreground hover:text-foreground transition-colors"
                                                 >
                                                     <Minus size={16} />
                                                 </button>
@@ -278,20 +278,20 @@ export const OrderDetailContent: React.FC<OrderDetailContentProps> = ({ order, o
 
                                                 <button
                                                     onClick={() => handleAmountChange(idx, item.newTotalReceived + 1)}
-                                                    className="w-8 h-8 flex items-center justify-center rounded hover:bg-muted text-muted-foreground hover:text-white transition-colors"
+                                                    className="w-8 h-8 flex items-center justify-center rounded hover:bg-muted text-muted-foreground hover:text-foreground transition-colors"
                                                 >
                                                     <Plus size={16} />
                                                 </button>
                                             </div>
                                         </div>
                                     ) : (
-                                        <div className="bg-primary/10 text-emerald-400 text-xs font-bold px-2 py-1 rounded text-center mt-2">
+                                        <div className="bg-primary/10 dark:text-emerald-400 text-emerald-800 text-xs font-bold px-2 py-1 rounded text-center mt-2">
                                             Vollständig Erhalten
                                         </div>
                                     )}
 
                                     {isChange && (
-                                        <div className={`mt-2 text-xs px-2 py-1 rounded flex items-center gap-2 ${delta > 0 ? 'bg-primary/10 text-emerald-400' : 'bg-amber-500/10 text-amber-300'}`}>
+                                        <div className={`mt-2 text-xs px-2 py-1 rounded flex items-center gap-2 ${delta > 0 ? 'bg-primary/10 dark:text-emerald-400 text-emerald-800' : 'bg-amber-500/10 dark:text-amber-300 text-amber-800'}`}>
                                             {delta > 0 ? <Plus size={10} /> : <AlertTriangle size={10} />}
                                             <span className="font-bold">{delta > 0 ? '+' : ''}{delta}</span>
                                             <span>{delta > 0 ? 'werden gebucht' : 'Korrektur (Abzug)'}</span>
@@ -333,15 +333,15 @@ export const OrderDetailContent: React.FC<OrderDetailContentProps> = ({ order, o
                 )}
 
                 {showVehicleDecision && (
-                    <div className="bg-black/50 p-4 rounded-xl border border-border animate-in fade-in slide-in-from-bottom-2">
+                    <div className="dark:bg-black/50 bg-muted/80 p-4 rounded-xl border border-border animate-in fade-in slide-in-from-bottom-2">
                         <div className="text-center mb-3">
-                            <h3 className="font-bold text-white">Fahrzeugbestellung</h3>
+                            <h3 className="font-bold text-foreground">Fahrzeugbestellung</h3>
                             <p className="text-xs text-muted-foreground">Direkt buchen oder zur Abholung?</p>
                         </div>
                         <div className="flex flex-col gap-2">
                             <Button onClick={() => executeReceipt('Direct')} className="bg-primary hover:bg-primary" icon={<PackageCheck size={16} />}>Direkt Verladen (Bestand +)</Button>
                             <Button onClick={() => executeReceipt('Commission')} variant="secondary" icon={<Archive size={16} />}>Als Kommission bereitstellen</Button>
-                            <button onClick={() => setShowVehicleDecision(false)} className="text-xs text-muted-foreground mt-2 hover:text-white">Abbrechen</button>
+                            <button onClick={() => setShowVehicleDecision(false)} className="text-xs text-muted-foreground mt-2 hover:text-foreground">Abbrechen</button>
                         </div>
                     </div>
                 )}

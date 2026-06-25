@@ -360,12 +360,12 @@ export const CommissionEditContent: React.FC<CommissionEditContentProps> = ({
                     <div className="absolute top-0 inset-x-0 h-1 bg-gradient-to-r from-emerald-500 to-blue-500" />
                     <div className="flex justify-between items-start mb-4">
                         <div>
-                            <h2 className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-white to-white/70 tracking-tight">
+                            <h2 className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r dark:from-white dark:to-white/70 from-foreground to-foreground/70 tracking-tight">
                                 {isEditMode ? 'Kommission bearbeiten' : 'Neue Kommission'}
                             </h2>
                             <p className="text-sm text-muted-foreground mt-0.5">Details und benötigtes Material erfassen.</p>
                         </div>
-                        {isMobile && <button onClick={onClose} className="p-2 -mr-2 text-muted-foreground hover:text-white"><X size={24} /></button>}
+                        {isMobile && <button onClick={onClose} className="p-2 -mr-2 text-muted-foreground hover:text-foreground"><X size={24} /></button>}
                     </div>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -414,7 +414,7 @@ export const CommissionEditContent: React.FC<CommissionEditContentProps> = ({
                             <label className="flex items-center gap-3 cursor-pointer group">
                                 <div className="relative flex items-center">
                                     <input type="checkbox" className="peer h-5 w-5 cursor-pointer appearance-none rounded-md border-2 border-muted-foreground/30 bg-background checked:bg-amber-500 checked:border-amber-500 transition-all" checked={newComm.is_price_inquiry} onChange={e => setNewComm({ ...newComm, is_price_inquiry: e.target.checked })} />
-                                    <Check className="absolute h-3.5 w-3.5 text-white opacity-0 peer-checked:opacity-100 left-[3px] pointer-events-none" strokeWidth={4} />
+                                    <Check className="absolute h-3.5 w-3.5 text-foreground opacity-0 peer-checked:opacity-100 left-[3px] pointer-events-none" strokeWidth={4} />
                                 </div>
                                 <span className="text-sm font-bold text-muted-foreground group-hover:text-foreground transition-colors">Preisanfrage</span>
                             </label>
@@ -422,7 +422,7 @@ export const CommissionEditContent: React.FC<CommissionEditContentProps> = ({
                             <label className="flex items-center gap-3 cursor-pointer group">
                                 <div className="relative flex items-center">
                                     <input type="checkbox" className="peer h-5 w-5 cursor-pointer appearance-none rounded-md border-2 border-muted-foreground/30 bg-background checked:bg-blue-500 checked:border-blue-500 transition-all" checked={newComm.delivery_date_unknown} onChange={e => setNewComm({ ...newComm, delivery_date_unknown: e.target.checked })} />
-                                    <Check className="absolute h-3.5 w-3.5 text-white opacity-0 peer-checked:opacity-100 left-[3px] pointer-events-none" strokeWidth={4} />
+                                    <Check className="absolute h-3.5 w-3.5 text-foreground opacity-0 peer-checked:opacity-100 left-[3px] pointer-events-none" strokeWidth={4} />
                                 </div>
                                 <span className="text-sm font-bold text-muted-foreground group-hover:text-foreground transition-colors">Liefertermin unbekannt</span>
                             </label>
@@ -601,7 +601,7 @@ export const CommissionEditContent: React.FC<CommissionEditContentProps> = ({
                                                         Rückstd.
                                                     </button>
                                                     <div className="w-px h-4 bg-border mx-1"></div>
-                                                    <button onClick={() => removeTempItem(item.uniqueId)} className="p-1.5 rounded text-muted-foreground hover:bg-rose-500 hover:text-white transition-colors shadow-sm" title="Entfernen"><Trash2 size={14} /></button>
+                                                    <button onClick={() => removeTempItem(item.uniqueId)} className="p-1.5 rounded text-muted-foreground hover:bg-rose-500 hover:text-foreground transition-colors shadow-sm" title="Entfernen"><Trash2 size={14} /></button>
                                                 </div>
                                             </div>
                                         </div>

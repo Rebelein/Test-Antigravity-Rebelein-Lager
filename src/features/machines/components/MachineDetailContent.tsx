@@ -216,17 +216,17 @@ export const MachineDetailContent: React.FC<MachineDetailContentProps> = ({ mach
     // --- RENDER CONTENT ---
 
     return (
-        <div className="flex flex-col h-full bg-transparent text-slate-100">
+        <div className="flex flex-col h-full bg-transparent text-foreground">
             {/* HEADER */}
-            <div className="relative h-48 w-full bg-black/50 shrink-0">
+            <div className="relative h-48 w-full dark:bg-black/50 bg-muted/80 shrink-0">
                 <img src={machine.image || `https://picsum.photos/seed/${machine.id}/800/400`} className="w-full h-full object-cover opacity-60" />
                 <div className="absolute inset-0 bg-gradient-to-t from-[#1a1d24] to-transparent"></div>
 
                 <div className="absolute bottom-4 left-4 right-4">
-                    <h2 className="text-2xl font-bold text-white mb-1">{machine.name}</h2>
+                    <h2 className="text-2xl font-bold text-foreground mb-1">{machine.name}</h2>
                     <div className="flex gap-2">
-                        <div className={`px-2 py-0.5 rounded text-xs font-bold uppercase ${machine.status === MachineStatus.AVAILABLE ? 'bg-primary/20 text-emerald-400' :
-                            machine.status === MachineStatus.RENTED ? 'bg-amber-500/20 text-amber-400' : 'bg-rose-500/20 text-rose-400'
+                        <div className={`px-2 py-0.5 rounded text-xs font-bold uppercase ${machine.status === MachineStatus.AVAILABLE ? 'bg-primary/20 dark:text-emerald-400 text-emerald-800' :
+                            machine.status === MachineStatus.RENTED ? 'bg-amber-500/20 dark:text-amber-400 text-amber-800' : 'bg-rose-500/20 dark:text-rose-400 text-rose-800'
                             }`}>
                             {machine.status === MachineStatus.AVAILABLE ? 'Verfügbar' :
                                 machine.status === MachineStatus.RENTED ? 'Verliehen' : 'In Reparatur'}
@@ -242,7 +242,7 @@ export const MachineDetailContent: React.FC<MachineDetailContentProps> = ({ mach
 
             {/* QUICK ACTIONS BAR (Only in Overview) */}
             {mode === 'overview' && (
-                <div className="p-4 grid grid-cols-2 gap-2 shrink-0 border-b border-white/5">
+                <div className="p-4 grid grid-cols-2 gap-2 shrink-0 border-b dark:border-white/5 border-border">
                     {machine.status === MachineStatus.AVAILABLE ? (
                         <Button onClick={() => setMode('borrow')} className="bg-primary hover:bg-primary">Ausleihen</Button>
                     ) : machine.status === MachineStatus.RENTED ? (
@@ -258,11 +258,11 @@ export const MachineDetailContent: React.FC<MachineDetailContentProps> = ({ mach
 
             {/* TAB NAVIGATION */}
             {mode === 'overview' && (
-                <div className="flex border-b border-white/5 mx-4 overflow-x-auto gap-4 my-2">
-                    <button onClick={() => setMode('reservations')} className="pb-2 text-sm text-muted-foreground hover:text-white transition-colors flex items-center gap-2">
+                <div className="flex border-b dark:border-white/5 border-border mx-4 overflow-x-auto gap-4 my-2">
+                    <button onClick={() => setMode('reservations')} className="pb-2 text-sm text-muted-foreground hover:text-foreground transition-colors flex items-center gap-2">
                         <Calendar size={14} /> Reservierungen {reservations.length > 0 && <span className="bg-muted px-1 rounded text-[10px]">{reservations.length}</span>}
                     </button>
-                    <button onClick={() => setMode('history')} className="pb-2 text-sm text-muted-foreground hover:text-white transition-colors flex items-center gap-2">
+                    <button onClick={() => setMode('history')} className="pb-2 text-sm text-muted-foreground hover:text-foreground transition-colors flex items-center gap-2">
                         <History size={14} /> Verlauf
                     </button>
                     {/* Add Edit button later or here */}
@@ -277,25 +277,25 @@ export const MachineDetailContent: React.FC<MachineDetailContentProps> = ({ mach
                     <div className="space-y-4">
                         {machine.status === MachineStatus.RENTED && (
                             <GlassCard className="bg-amber-500/10 border-amber-500/20">
-                                <h3 className="text-sm font-bold text-amber-200 mb-2 flex items-center gap-2"><User size={16} /> Aktueller Besitzer</h3>
-                                <div className="text-xl font-bold text-white">{machine.profiles?.full_name || machine.externalBorrower || 'Unbekannt'}</div>
+                                <h3 className="text-sm font-bold dark:text-amber-200 text-amber-900 mb-2 flex items-center gap-2"><User size={16} /> Aktueller Besitzer</h3>
+                                <div className="text-xl font-bold text-foreground">{machine.profiles?.full_name || machine.externalBorrower || 'Unbekannt'}</div>
                             </GlassCard>
                         )}
                         {machine.status === MachineStatus.REPAIR && (
                             <GlassCard className="bg-rose-500/10 border-rose-500/20">
                                 <h3 className="text-sm font-bold text-rose-200 mb-2 flex items-center gap-2"><AlertTriangle size={16} /> Defekt Beschreibung</h3>
-                                <div className="text-white italic">"{machine.notes}"</div>
+                                <div className="text-foreground italic">"{machine.notes}"</div>
                             </GlassCard>
                         )}
 
-                        <div className="bg-muted rounded-xl p-4 border border-white/5">
+                        <div className="bg-muted rounded-xl p-4 border dark:border-white/5 border-border">
                             <h3 className="text-sm font-bold text-muted-foreground mb-4">Nächste Reservierungen</h3>
                             {reservations.length === 0 ? <div className="text-muted-foreground text-sm">Keine anstehenden Reservierungen.</div> : (
                                 <div className="space-y-2">
                                     {reservations.slice(0, 3).map(r => (
-                                        <div key={r.id} className="flex justify-between items-center text-sm bg-black/20 p-2 rounded">
-                                            <span className="text-emerald-400 font-mono">{new Date(r.start_date).toLocaleDateString()}</span>
-                                            <span className="text-white">{r.profiles?.full_name}</span>
+                                        <div key={r.id} className="flex justify-between items-center text-sm dark:bg-black/20 bg-muted/60 p-2 rounded">
+                                            <span className="dark:text-emerald-400 text-emerald-800 font-mono">{new Date(r.start_date).toLocaleDateString()}</span>
+                                            <span className="text-foreground">{r.profiles?.full_name}</span>
                                         </div>
                                     ))}
                                 </div>
@@ -308,8 +308,8 @@ export const MachineDetailContent: React.FC<MachineDetailContentProps> = ({ mach
                 {mode === 'borrow' && (
                     <div className="space-y-4 animate-in slide-in-from-right-4">
                         <div className="flex items-center gap-2 mb-4">
-                            <button onClick={() => setMode('overview')} className="p-2 hover:bg-muted rounded-full"><ArrowLeft size={20} className="text-white" /></button>
-                            <h3 className="text-lg font-bold text-white">{machine.status === MachineStatus.RENTED ? 'Weitergeben / Transfer' : 'Ausleihen'}</h3>
+                            <button onClick={() => setMode('overview')} className="p-2 hover:bg-muted rounded-full"><ArrowLeft size={20} className="text-foreground" /></button>
+                            <h3 className="text-lg font-bold text-foreground">{machine.status === MachineStatus.RENTED ? 'Weitergeben / Transfer' : 'Ausleihen'}</h3>
                         </div>
 
                         {conflictWarning && (
@@ -348,15 +348,15 @@ export const MachineDetailContent: React.FC<MachineDetailContentProps> = ({ mach
                 {mode === 'return' && (
                     <div className="space-y-4 animate-in slide-in-from-right-4">
                         <div className="flex items-center gap-2 mb-4">
-                            <button onClick={() => setMode('overview')} className="p-2 hover:bg-muted rounded-full"><ArrowLeft size={20} className="text-white" /></button>
-                            <h3 className="text-lg font-bold text-white">Rückgabe</h3>
+                            <button onClick={() => setMode('overview')} className="p-2 hover:bg-muted rounded-full"><ArrowLeft size={20} className="text-foreground" /></button>
+                            <h3 className="text-lg font-bold text-foreground">Rückgabe</h3>
                         </div>
 
                         <div className="grid grid-cols-2 gap-3">
-                            <button onClick={() => setReturnCondition('OK')} className={`p-4 rounded-xl border flex flex-col items-center gap-2 transition-all ${returnCondition === 'OK' ? 'bg-primary/20 border-emerald-500 text-emerald-300' : 'bg-muted border-border text-muted-foreground'}`}>
+                            <button onClick={() => setReturnCondition('OK')} className={`p-4 rounded-xl border flex flex-col items-center gap-2 transition-all ${returnCondition === 'OK' ? 'bg-primary/20 border-emerald-500 dark:text-emerald-300 text-emerald-800' : 'bg-muted border-border text-muted-foreground'}`}>
                                 <CheckCircle2 size={32} /> <span className="font-bold">Alles OK</span>
                             </button>
-                            <button onClick={() => setReturnCondition('Defect')} className={`p-4 rounded-xl border flex flex-col items-center gap-2 transition-all ${returnCondition === 'Defect' ? 'bg-rose-500/20 border-rose-500 text-rose-300' : 'bg-muted border-border text-muted-foreground'}`}>
+                            <button onClick={() => setReturnCondition('Defect')} className={`p-4 rounded-xl border flex flex-col items-center gap-2 transition-all ${returnCondition === 'Defect' ? 'bg-rose-500/20 border-rose-500 dark:text-rose-300 text-rose-800' : 'bg-muted border-border text-muted-foreground'}`}>
                                 <AlertTriangle size={32} /> <span className="font-bold">Defekt</span>
                             </button>
                         </div>
@@ -365,7 +365,7 @@ export const MachineDetailContent: React.FC<MachineDetailContentProps> = ({ mach
                             <div className="space-y-2 animate-in fade-in">
                                 <label className="text-xs text-muted-foreground">Beschreibung des Defekts</label>
                                 <textarea
-                                    className="w-full bg-black/30 border border-border rounded-lg p-3 text-white focus:outline-none focus:border-rose-500"
+                                    className="w-full dark:bg-black/30 bg-muted/70 border border-border rounded-lg p-3 text-foreground focus:outline-none focus:border-rose-500"
                                     rows={3}
                                     value={defectNote}
                                     onChange={e => setDefectNote(e.target.value)}
@@ -384,14 +384,14 @@ export const MachineDetailContent: React.FC<MachineDetailContentProps> = ({ mach
                 {mode === 'history' && (
                     <div className="space-y-4 animate-in slide-in-from-right-4">
                         <div className="flex items-center gap-2 mb-4">
-                            <button onClick={() => setMode('overview')} className="p-2 hover:bg-muted rounded-full"><ArrowLeft size={20} className="text-white" /></button>
-                            <h3 className="text-lg font-bold text-white">Verlauf</h3>
+                            <button onClick={() => setMode('overview')} className="p-2 hover:bg-muted rounded-full"><ArrowLeft size={20} className="text-foreground" /></button>
+                            <h3 className="text-lg font-bold text-foreground">Verlauf</h3>
                         </div>
                         <div className="space-y-3">
                             {historyLogs.map(log => (
                                 <div key={log.id} className="relative pl-4 border-l border-border text-sm pb-4 last:pb-0">
                                     <div className="absolute -left-1 top-0 w-2 h-2 rounded-full bg-primary"></div>
-                                    <div className="font-bold text-white">{new Date(log.created_at).toLocaleString()}</div>
+                                    <div className="font-bold text-foreground">{new Date(log.created_at).toLocaleString()}</div>
                                     <div className="text-muted-foreground">{log.details}</div>
                                     <div className="text-xs text-muted-foreground mt-1">Durch: {log.profiles?.full_name}</div>
                                 </div>
@@ -404,17 +404,17 @@ export const MachineDetailContent: React.FC<MachineDetailContentProps> = ({ mach
                 {mode === 'reservations' && (
                     <div className="space-y-4 animate-in slide-in-from-right-4">
                         <div className="flex items-center gap-2 mb-4">
-                            <button onClick={() => setMode('overview')} className="p-2 hover:bg-muted rounded-full"><ArrowLeft size={20} className="text-white" /></button>
-                            <h3 className="text-lg font-bold text-white">Reservierungen</h3>
+                            <button onClick={() => setMode('overview')} className="p-2 hover:bg-muted rounded-full"><ArrowLeft size={20} className="text-foreground" /></button>
+                            <h3 className="text-lg font-bold text-foreground">Reservierungen</h3>
                         </div>
 
-                        <div className="bg-muted rounded-xl p-4 border border-white/5 mb-6">
-                            <h4 className="font-bold text-white mb-3 text-sm">Neue Reservierung</h4>
+                        <div className="bg-muted rounded-xl p-4 border dark:border-white/5 border-border mb-6">
+                            <h4 className="font-bold text-foreground mb-3 text-sm">Neue Reservierung</h4>
                             <div className="grid grid-cols-2 gap-2 mb-2">
-                                <div><label className="text-xs text-muted-foreground">Von</label><input type="date" className="w-full bg-black/30 border border-border rounded p-2 text-sm text-white" value={resStartDate} onChange={e => setResStartDate(e.target.value)} /></div>
-                                <div><label className="text-xs text-muted-foreground">Bis</label><input type="date" className="w-full bg-black/30 border border-border rounded p-2 text-sm text-white" value={resEndDate} onChange={e => setResEndDate(e.target.value)} /></div>
+                                <div><label className="text-xs text-muted-foreground">Von</label><input type="date" className="w-full dark:bg-black/30 bg-muted/70 border border-border rounded p-2 text-sm text-foreground" value={resStartDate} onChange={e => setResStartDate(e.target.value)} /></div>
+                                <div><label className="text-xs text-muted-foreground">Bis</label><input type="date" className="w-full dark:bg-black/30 bg-muted/70 border border-border rounded p-2 text-sm text-foreground" value={resEndDate} onChange={e => setResEndDate(e.target.value)} /></div>
                             </div>
-                            <input className="w-full bg-black/30 border border-border rounded p-2 text-sm text-white mb-3" placeholder="Notiz (Optional)" value={resNote} onChange={e => setResNote(e.target.value)} />
+                            <input className="w-full dark:bg-black/30 bg-muted/70 border border-border rounded p-2 text-sm text-foreground mb-3" placeholder="Notiz (Optional)" value={resNote} onChange={e => setResNote(e.target.value)} />
                             <Button onClick={executeReservation} disabled={loading} size="sm" className="w-full">Reservieren</Button>
                         </div>
 
@@ -422,11 +422,11 @@ export const MachineDetailContent: React.FC<MachineDetailContentProps> = ({ mach
                             {reservations.map(r => (
                                 <div key={r.id} className="bg-muted p-3 rounded-lg flex justify-between items-center group">
                                     <div>
-                                        <div className="font-bold text-white text-sm">{new Date(r.start_date).toLocaleDateString()} - {new Date(r.end_date).toLocaleDateString()}</div>
+                                        <div className="font-bold text-foreground text-sm">{new Date(r.start_date).toLocaleDateString()} - {new Date(r.end_date).toLocaleDateString()}</div>
                                         <div className="text-xs text-muted-foreground">{r.profiles?.full_name} {r.note && `• ${r.note}`}</div>
                                     </div>
                                     {r.user_id === user?.id && (
-                                        <button onClick={() => deleteReservation(r.id)} className="p-2 text-rose-400 opacity-0 group-hover:opacity-100 transition-opacity"><Trash2 size={16} /></button>
+                                        <button onClick={() => deleteReservation(r.id)} className="p-2 dark:text-rose-400 text-rose-800 opacity-0 group-hover:opacity-100 transition-opacity"><Trash2 size={16} /></button>
                                     )}
                                 </div>
                             ))}

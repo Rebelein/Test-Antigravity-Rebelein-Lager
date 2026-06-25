@@ -72,14 +72,14 @@ export const ReloadPrompt: React.FC = () => {
                             )}
                             <button
                                 onClick={close}
-                                className="px-3 py-1.5 text-xs font-medium text-muted-foreground dark:text-muted-foreground hover:text-gray-900 dark:hover:text-white transition-colors"
+                                className="px-3 py-1.5 text-xs font-medium text-muted-foreground dark:text-muted-foreground hover:text-gray-900 dark:hover:text-foreground transition-colors"
                             >
                                 Schließen
                             </button>
                         </div>
                     </div>
 
-                    <button onClick={close} className="text-muted-foreground hover:text-muted-foreground dark:hover:text-white transition-colors">
+                    <button onClick={close} className="text-muted-foreground hover:text-muted-foreground dark:hover:text-foreground transition-colors">
                         <X size={16} />
                     </button>
                 </div>

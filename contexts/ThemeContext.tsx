@@ -2,12 +2,16 @@ import React, { createContext, useContext, useEffect, useState } from 'react';
 
 type ViewMode = 'default' | 'desktop';
 type AppTheme = 'default' | 'glass';
+type ColorMode = 'light' | 'dark';
 
 interface ThemeContextType {
   viewMode: ViewMode;
   toggleViewMode: () => void;
   theme: AppTheme;
   setTheme: (theme: AppTheme) => void;
+  colorMode: ColorMode;
+  toggleColorMode: () => void;
+  isDark: boolean;
   isLowPerfMode: boolean;
   toggleLowPerfMode: () => void;
 }
@@ -17,6 +21,9 @@ const ThemeContext = createContext<ThemeContextType>({
   toggleViewMode: () => { },
   theme: 'default',
   setTheme: () => { },
+  colorMode: 'dark',
+  toggleColorMode: () => { },
+  isDark: true,
   isLowPerfMode: false,
   toggleLowPerfMode: () => { },
 });
@@ -40,13 +47,34 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     return 'default';
   });
 
-  // Apply Theme to HTML element
+  // Color Mode: light or dark
+  const [colorMode, setColorMode] = useState<ColorMode>(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('app_color_mode');
+      return (saved as ColorMode) || 'dark';
+    }
+    return 'dark';
+  });
+
+  const isDark = colorMode === 'dark';
+
+  // Apply Color Mode + Theme to HTML element
   useEffect(() => {
     const root = window.document.documentElement;
 
-    // Enforce dark mode always
-    root.classList.add('dark');
-    root.classList.remove('light');
+    if (colorMode === 'dark') {
+      root.classList.add('dark');
+      root.classList.remove('light');
+    } else {
+      root.classList.add('light');
+      root.classList.remove('dark');
+    }
+
+    // Update theme-color meta tag dynamically for PWA status bar matching
+    const themeColorMeta = window.document.querySelector('meta[name="theme-color"]');
+    if (themeColorMeta) {
+      themeColorMeta.setAttribute('content', colorMode === 'dark' ? '#0b0f19' : '#EDF1F5');
+    }
 
     // Apply theme data attribute for CSS styling
     // If saved theme was glass-light (legacy), force it to glass
@@ -54,7 +82,8 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
     root.setAttribute('data-theme', effectiveTheme);
     localStorage.setItem('app_theme_style', effectiveTheme);
-  }, [theme]);
+    localStorage.setItem('app_color_mode', colorMode);
+  }, [theme, colorMode]);
 
   // Apply View Mode
   useEffect(() => {
@@ -67,6 +96,14 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
   const setTheme = (newTheme: AppTheme) => {
     setThemeState(newTheme);
+  };
+
+  const toggleColorMode = () => {
+    setColorMode(prev => {
+      const newMode = prev === 'dark' ? 'light' : 'dark';
+      localStorage.setItem('app_color_mode', newMode);
+      return newMode;
+    });
   };
 
   // Performance Mode (Default: ON for all devices)
@@ -106,7 +143,7 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   }, [isLowPerfMode]);
 
   return (
-    <ThemeContext.Provider value={{ viewMode, toggleViewMode, theme, setTheme, isLowPerfMode, toggleLowPerfMode }}>
+    <ThemeContext.Provider value={{ viewMode, toggleViewMode, theme, setTheme, colorMode, toggleColorMode, isDark, isLowPerfMode, toggleLowPerfMode }}>
       {children}
     </ThemeContext.Provider>
   );

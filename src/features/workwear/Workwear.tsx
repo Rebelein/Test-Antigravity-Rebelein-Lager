@@ -284,7 +284,7 @@ const Workwear = () => {
                         onClick={() => setIsCartOpen(true)}
                         className="relative p-3 rounded-xl bg-muted hover:bg-muted border border-border transition-colors"
                     >
-                        <ShoppingCart size={20} className="text-white" />
+                        <ShoppingCart size={20} className="text-foreground" />
                         {cart.reduce((a, b) => a + b.quantity, 0) > 0 && (
                             <div className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-primary text-black text-xs font-bold flex items-center justify-center">
                                 {cart.reduce((a, b) => a + b.quantity, 0)}
@@ -294,8 +294,8 @@ const Workwear = () => {
 
                     {/* Budget Flag */}
                     <GlassCard className="px-4 py-2 flex items-center gap-4 bg-primary/10 border-emerald-500/20">
-                        <div className="text-xs text-emerald-400 font-bold uppercase tracking-wider">Mein Budget ({new Date().getFullYear()})</div>
-                        <div className="text-lg font-mono font-bold text-white">
+                        <div className="text-xs dark:text-emerald-400 text-emerald-800 font-bold uppercase tracking-wider">Mein Budget ({new Date().getFullYear()})</div>
+                        <div className="text-lg font-mono font-bold text-foreground">
                             {myBudget ? `${(myBudget.limit - myBudget.used - myBudget.reserved).toFixed(2)} €` : 'Loading...'}
                         </div>
                     </GlassCard>
@@ -311,8 +311,8 @@ const Workwear = () => {
                         className={clsx(
                             "flex-1 md:flex-none px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 flex items-center justify-center gap-2",
                             activeTab === tab.id
-                                ? "bg-primary/20 text-emerald-300 shadow-sm"
-                                : "text-muted-foreground hover:text-white hover:bg-muted"
+                                ? "bg-primary/20 dark:text-emerald-300 text-emerald-800 shadow-sm"
+                                : "text-muted-foreground hover:text-foreground hover:bg-muted"
                         )}
                     >
                         {tab.icon}
@@ -335,7 +335,7 @@ const Workwear = () => {
                             {/* NEW: Custom Item Request Button (For everyone) */}
                             <button
                                 onClick={() => setIsCustomRequestModalOpen(true)}
-                                className="w-full py-4 mb-6 border border-dashed border-border rounded-xl flex items-center justify-center gap-2 text-muted-foreground hover:text-emerald-400 hover:border-emerald-500/30 hover:bg-primary/5 transition-all group"
+                                className="w-full py-4 mb-6 border border-dashed border-border rounded-xl flex items-center justify-center gap-2 text-muted-foreground hover:dark:text-emerald-400 text-emerald-800 hover:border-emerald-500/30 hover:bg-primary/5 transition-all group"
                             >
                                 <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center group-hover:scale-110 transition-transform">
                                     <Plus size={16} />
@@ -355,11 +355,11 @@ const Workwear = () => {
                                 <div key={category} className="space-y-4">
                                     <button
                                         onClick={() => setCollapsedCategories(prev => prev.includes(category) ? prev.filter(c => c !== category) : [...prev, category])}
-                                        className="w-full flex items-center justify-between p-4 bg-muted hover:bg-muted border border-white/5 rounded-xl transition-all group"
+                                        className="w-full flex items-center justify-between p-4 bg-muted hover:bg-muted border dark:border-white/5 border-border rounded-xl transition-all group"
                                     >
                                         <div className="flex items-center gap-3">
-                                            {collapsedCategories.includes(category) ? <ChevronRight size={20} className="text-muted-foreground" /> : <ChevronDown size={20} className="text-emerald-400" />}
-                                            <h3 className="text-lg font-bold text-white">{category}</h3>
+                                            {collapsedCategories.includes(category) ? <ChevronRight size={20} className="text-muted-foreground" /> : <ChevronDown size={20} className="dark:text-emerald-400 text-emerald-800" />}
+                                            <h3 className="text-lg font-bold text-foreground">{category}</h3>
                                             <span className="bg-muted text-muted-foreground text-xs px-2 py-0.5 rounded-full">{items.length}</span>
                                         </div>
                                         <div className="w-full h-px bg-muted flex-1 mx-4 group-hover:bg-muted transition-colors" />
@@ -380,7 +380,7 @@ const Workwear = () => {
                                     <div className="w-20 h-20 rounded-full bg-muted flex items-center justify-center mb-4">
                                         <Shirt size={40} className="text-muted-foreground" />
                                     </div>
-                                    <h3 className="text-lg font-bold text-white mb-2">Keine Artikel gefunden</h3>
+                                    <h3 className="text-lg font-bold text-foreground mb-2">Keine Artikel gefunden</h3>
                                     <p className="text-muted-foreground max-w-sm">
                                         Es wurden noch keine Arbeitskleidungs-Vorlagen erstellt.
                                     </p>
@@ -416,7 +416,7 @@ const Workwear = () => {
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                             <GlassCard onClick={() => setAdminView('orders')} className="p-6 cursor-pointer hover:border-emerald-500/50 transition-colors group">
                                 <div className="flex items-center gap-4 mb-4">
-                                    <div className="w-12 h-12 rounded-full bg-blue-500/20 flex items-center justify-center text-blue-400 group-hover:scale-110 transition-transform">
+                                    <div className="w-12 h-12 rounded-full bg-blue-500/20 flex items-center justify-center dark:text-blue-400 text-blue-800 group-hover:scale-110 transition-transform">
                                         <FileText size={24} />
                                     </div>
                                     <div>
@@ -429,7 +429,7 @@ const Workwear = () => {
 
                             <GlassCard onClick={() => setAdminView('budgets')} className="p-6 cursor-pointer hover:border-emerald-500/50 transition-colors group">
                                 <div className="flex items-center gap-4 mb-4">
-                                    <div className="w-12 h-12 rounded-full bg-primary/20 flex items-center justify-center text-emerald-400 group-hover:scale-110 transition-transform">
+                                    <div className="w-12 h-12 rounded-full bg-primary/20 flex items-center justify-center dark:text-emerald-400 text-emerald-800 group-hover:scale-110 transition-transform">
                                         <Settings size={24} />
                                     </div>
                                     <div>
@@ -465,8 +465,8 @@ const Workwear = () => {
                     ) : (
                         <div className="space-y-4">
                             {cart.map(item => (
-                                <div key={item.id} className="flex items-center gap-4 bg-muted p-3 rounded-lg border border-white/5">
-                                    <div className="w-12 h-12 bg-black/30 rounded flex items-center justify-center shrink-0 overflow-hidden">
+                                <div key={item.id} className="flex items-center gap-4 bg-muted p-3 rounded-lg border dark:border-white/5 border-border">
+                                    <div className="w-12 h-12 dark:bg-black/30 bg-muted/70 rounded flex items-center justify-center shrink-0 overflow-hidden">
                                         {item.type === 'catalog' && item.template?.image_url ? (
                                             <img src={item.template.image_url} className="w-full h-full object-cover" />
                                         ) : (
@@ -474,7 +474,7 @@ const Workwear = () => {
                                         )}
                                     </div>
                                     <div className="flex-1 min-w-0">
-                                        <div className="font-bold text-white truncate">
+                                        <div className="font-bold text-foreground truncate">
                                             {item.type === 'catalog' ? item.template!.name : item.customData!.name}
                                         </div>
                                         <div className="text-xs text-muted-foreground">
@@ -482,20 +482,20 @@ const Workwear = () => {
                                             {item.type === 'catalog' && item.template!.has_logo ? ' Mit Logo' : ' Ohne Logo'}
                                         </div>
                                     </div>
-                                    <div className="font-mono text-emerald-300">
+                                    <div className="font-mono dark:text-emerald-300 text-emerald-800">
                                         {((item.type === 'catalog' ? item.template!.price : item.customData!.price) * item.quantity).toFixed(2)} €
                                     </div>
-                                    <button onClick={() => removeFromCart(item.id)} className="p-2 hover:bg-muted rounded-full text-muted-foreground hover:text-rose-400"><Trash2 size={16} /></button>
+                                    <button onClick={() => removeFromCart(item.id)} className="p-2 hover:bg-muted rounded-full text-muted-foreground hover:dark:text-rose-400 text-rose-800"><Trash2 size={16} /></button>
                                 </div>
                             ))}
 
                             <div className="border-t border-border pt-4 mt-4 flex justify-between items-center">
                                 <div className="text-muted-foreground">Gesamtsumme</div>
-                                <div className="text-xl font-bold text-emerald-400 font-mono">{cartTotal.toFixed(2)} €</div>
+                                <div className="text-xl font-bold dark:text-emerald-400 text-emerald-800 font-mono">{cartTotal.toFixed(2)} €</div>
                             </div>
 
                             {cartTotal > availableBudget && role !== 'chef' && (
-                                <div className="bg-rose-500/10 border border-rose-500/20 p-3 rounded-lg text-rose-300 text-sm flex items-center gap-2">
+                                <div className="bg-rose-500/10 border border-rose-500/20 p-3 rounded-lg dark:text-rose-300 text-rose-800 text-sm flex items-center gap-2">
                                     <AlertTriangle size={16} />
                                     <div>
                                         Budget überschritten! (Verfügbar: {availableBudget.toFixed(2)} €)

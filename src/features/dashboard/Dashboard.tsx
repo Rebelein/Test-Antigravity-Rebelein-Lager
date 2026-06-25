@@ -500,7 +500,7 @@ const Dashboard: React.FC = () => {
 
             {/* CREATE COMMISSION MODAL (Directly on Dashboard) */}
             {showCreateCommissionModal && (
-                <div className="fixed inset-0 z-[170] flex items-center justify-center p-4 bg-black/30 backdrop-blur-sm">
+                <div className="fixed inset-0 z-[170] flex items-center justify-center p-4 dark:bg-black/30 bg-muted/70 backdrop-blur-sm">
                     <div
                         onMouseDown={(e) => e.stopPropagation()}
                         onClick={(e) => e.stopPropagation()}
