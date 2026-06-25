@@ -5,6 +5,7 @@ import { ScanLine, X, Loader2, AlertTriangle, Search, ArrowRight, CheckCircle2, 
 import { useNavigate } from 'react-router-dom';
 import { Toaster, toast } from 'sonner';
 import UnifiedScanner from '../../components/UnifiedScanner';
+import { motion, AnimatePresence } from 'framer-motion';
 
 const Stocktaking: React.FC = () => {
     const navigate = useNavigate();
@@ -143,149 +144,164 @@ const Stocktaking: React.FC = () => {
     };
 
     return (
-        <div className="fixed inset-0 z-[170] bg-black flex flex-col">
+        <div className="fixed inset-0 z-[170] bg-black/45 dark:bg-black/60 backdrop-blur-md flex items-end justify-center">
             <Toaster position="top-center" />
 
-            {/* HEADER */}
-            <div className="absolute top-0 left-0 right-0 p-4 z-20 flex justify-between items-center bg-gradient-to-b from-black/80 to-transparent">
-                <div className="flex items-center gap-2">
-                    <ScanLine className="dark:text-emerald-400 text-emerald-800" size={24} />
-                    <h1 className="text-xl font-bold text-foreground">Scanner</h1>
-                </div>
-                <button onClick={() => navigate('/dashboard')} className="p-2 bg-muted rounded-full text-muted-foreground hover:text-foreground backdrop-blur-sm">
-                    <X size={24} />
-                </button>
-            </div>
+            {/* Backdrop click-to-close */}
+            <div className="absolute inset-0 z-10" onClick={() => navigate(-1)} />
 
-            {/* SCANNER VIEWPORT */}
-            <div className="flex-1 relative overflow-hidden bg-background">
-                {/* UNIFIED SCANNER */}
-                {!scannedResult && (
-                    <UnifiedScanner
-                        onScan={handleScanSuccess}
-                        onError={setError}
-                        className="absolute inset-0 w-full h-full"
-                    />
-                )}
+            {/* SLIDE-UP DRAWER PANEL */}
+            <motion.div
+                initial={{ y: "100%" }}
+                animate={{ y: 0 }}
+                exit={{ y: "100%" }}
+                transition={{ type: "spring", damping: 25, stiffness: 280, mass: 0.9 }}
+                className="relative z-20 w-full max-w-lg h-[82vh] bg-white dark:bg-[#090e17] border-t border-slate-200 dark:border-white/10 rounded-t-[2.5rem] shadow-[0_-8px_32px_rgba(0,0,0,0.5)] overflow-hidden flex flex-col"
+            >
+                {/* Drag Handle representation */}
+                <div className="w-12 h-1.5 bg-slate-300 dark:bg-white/20 rounded-full mx-auto my-3.5 shrink-0" />
 
-
-
-                {/* Error Toast */}
-                {error && (
-                    <div className="absolute bottom-40 left-4 right-4 p-4 bg-red-500/90 backdrop-blur-sm text-white rounded-xl border border-red-400/50 flex items-center gap-3 animate-in slide-in-from-bottom-5 z-30">
-                        <AlertTriangle size={24} className="shrink-0" />
-                        <span className="text-sm font-medium">{error}</span>
+                {/* Header inside Panel */}
+                <div className="px-6 pb-3 flex justify-between items-center shrink-0">
+                    <div className="flex items-center gap-2 dark:text-emerald-400 text-emerald-800">
+                        <ScanLine size={20} className="shrink-0" />
+                        <h1 className="text-lg font-bold text-slate-800 dark:text-white">Hauptscanner</h1>
                     </div>
-                )}
-            </div>
+                    <button 
+                        onClick={() => navigate(-1)} 
+                        className="p-1.5 rounded-full bg-slate-100 dark:bg-white/10 hover:bg-slate-200 dark:hover:bg-white/20 text-slate-500 dark:text-white transition-all cursor-pointer border-none flex items-center justify-center"
+                    >
+                        <X size={18} />
+                    </button>
+                </div>
 
-            {/* FOOTER / MANUAL INPUT */}
-            {!scannedResult && (
-                <div className="p-6 bg-black pb-24 z-20">
-                    <div className="relative">
-                        <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground" size={20} />
-                        <input
-                            type="text"
-                            placeholder="Code manuell eingeben..."
-                            className="w-full bg-muted border border-border rounded-xl py-4 pl-12 pr-4 text-foreground dark:placeholder-white/30 placeholder-muted-foreground/80 focus:outline-none focus:ring-2 focus:ring-emerald-500/50"
-                            onKeyDown={(e) => {
-                                if (e.key === 'Enter') handleScanSuccess((e.target as HTMLInputElement).value);
-                            }}
+                {/* Scanner Viewport or Result Box */}
+                <div className="flex-1 relative overflow-hidden bg-black">
+                    {/* CAMERA STAGE */}
+                    {!scannedResult && (
+                        <UnifiedScanner
+                            onScan={handleScanSuccess}
+                            onError={setError}
+                            className="absolute inset-0 w-full h-full"
                         />
-                        <button
-                            onClick={(e) => handleScanSuccess((e.currentTarget.previousElementSibling as HTMLInputElement).value)}
-                            className="absolute right-2 top-1/2 -translate-y-1/2 p-2 bg-primary rounded-lg text-white"
-                        >
-                            <ArrowRight size={20} />
-                        </button>
-                    </div>
+                    )}
+
+                    {/* Scanner Error */}
+                    {error && (
+                        <div className="absolute bottom-4 left-4 right-4 p-4 bg-red-500/90 backdrop-blur-sm text-white rounded-xl border border-red-400/50 flex items-center gap-3 animate-in slide-in-from-bottom-5 z-30">
+                            <AlertTriangle size={24} className="shrink-0" />
+                            <span className="text-sm font-medium">{error}</span>
+                        </div>
+                    )}
+
+                    {/* RESULT CARD - Rendered inside the panel */}
+                    {scannedResult && scannedResult.type === 'article' && (
+                        <div className="absolute inset-0 z-40 bg-white dark:bg-[#090e17] p-6 overflow-y-auto flex flex-col justify-between">
+                            <div className="flex-1 flex flex-col justify-center max-w-md mx-auto w-full">
+                                {/* Title / Close Row */}
+                                <div className="flex justify-between items-start mb-6">
+                                    <div className="flex items-center gap-2 dark:text-emerald-400 text-emerald-800">
+                                        <CheckCircle2 size={24} />
+                                        <span className="font-bold text-lg">Artikel gefunden</span>
+                                    </div>
+                                    <button onClick={handleCloseResult} className="text-muted-foreground hover:text-foreground"><X size={24} /></button>
+                                </div>
+
+                                {/* Article Info Card */}
+                                <div className="flex gap-4 mb-6 bg-slate-50 dark:bg-slate-900/40 p-4 border border-slate-100 dark:border-white/5 rounded-2xl">
+                                    <div className="w-20 h-20 bg-muted rounded-xl overflow-hidden shrink-0 border border-border">
+                                        <img src={scannedResult.data.image_url || `https://picsum.photos/seed/${scannedResult.data.id}/200`} className="w-full h-full object-cover" />
+                                    </div>
+                                    <div className="min-w-0">
+                                        <h3 className="font-bold text-foreground text-base line-clamp-2 break-words">{scannedResult.data.name}</h3>
+                                        <div className="text-xs text-muted-foreground mt-0.5 font-mono">{scannedResult.data.sku}</div>
+                                        <div className="mt-2 flex items-center gap-2 flex-wrap">
+                                            <span className="text-[10px] px-2 py-0.5 bg-slate-200 dark:bg-slate-800 rounded font-semibold text-slate-600 dark:text-slate-300 uppercase tracking-wider">{scannedResult.data.location || 'Kein Ort'}</span>
+                                            <span className={`text-sm font-bold ${scannedResult.data.stock < scannedResult.data.target_stock ? 'dark:text-rose-400 text-rose-800' : 'dark:text-emerald-400 text-emerald-800'}`}>
+                                                Bestand: {scannedResult.data.stock}
+                                            </span>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* Quick Booking Section */}
+                                <div className="bg-slate-50 dark:bg-slate-900/40 rounded-2xl p-4 border border-slate-100 dark:border-white/5 mb-6">
+                                    <div className="flex items-center justify-between gap-4 mb-4">
+                                        <button
+                                            onClick={() => setBookingAmount(prev => prev - 1)}
+                                            className="w-12 h-12 flex items-center justify-center rounded-xl bg-slate-200 hover:bg-slate-300 dark:bg-slate-800 dark:hover:bg-slate-750 text-foreground transition-colors cursor-pointer border-none"
+                                        >
+                                            <Minus size={20} />
+                                        </button>
+
+                                        <div className="flex flex-col items-center">
+                                            <span className="text-xs text-muted-foreground uppercase tracking-wider font-semibold mb-0.5">Menge</span>
+                                            <span className={`text-3xl font-black font-mono ${bookingAmount > 0 ? 'dark:text-emerald-400 text-emerald-800' :
+                                                bookingAmount < 0 ? 'dark:text-rose-400 text-rose-800' : 'text-foreground'
+                                                }`}>
+                                                {bookingAmount > 0 ? '+' : ''}{bookingAmount}
+                                            </span>
+                                        </div>
+
+                                        <button
+                                            onClick={() => setBookingAmount(prev => prev + 1)}
+                                            className="w-12 h-12 flex items-center justify-center rounded-xl bg-slate-200 hover:bg-slate-300 dark:bg-slate-800 dark:hover:bg-slate-750 text-foreground transition-colors cursor-pointer border-none"
+                                        >
+                                            <Plus size={20} />
+                                        </button>
+                                    </div>
+
+                                    <Button
+                                        onClick={handleQuickBook}
+                                        disabled={bookingAmount === 0 || isBooking}
+                                        className={`w-full py-4 text-base font-bold shadow-lg transition-all border-none cursor-pointer ${bookingAmount > 0
+                                            ? 'bg-primary hover:bg-primary shadow-emerald-950/20 text-white'
+                                            : bookingAmount < 0
+                                                ? 'bg-rose-600 hover:bg-rose-500 shadow-rose-950/20 text-white'
+                                                : 'bg-slate-200 dark:bg-slate-800 text-slate-400 dark:text-slate-600 cursor-not-allowed'
+                                            }`}
+                                    >
+                                        {isBooking ? (
+                                            <Loader2 className="animate-spin mx-auto" size={20} />
+                                        ) : (
+                                            bookingAmount === 0 ? 'Menge wählen' :
+                                                bookingAmount > 0 ? `Einlagern (+${bookingAmount})` : `Entnehmen (${bookingAmount})`
+                                        )}
+                                    </Button>
+                                </div>
+                            </div>
+
+                            <div className="flex gap-3 max-w-md mx-auto w-full pt-4 border-t border-slate-100 dark:border-white/5">
+                                <Button variant="secondary" onClick={handleCloseResult} className="flex-1 bg-slate-100 dark:bg-slate-800 border-none cursor-pointer">Scan weiter</Button>
+                                <Button onClick={handleGoToArticle} className="flex-1 bg-blue-600 hover:bg-blue-500 text-white border-none cursor-pointer">Details</Button>
+                            </div>
+                        </div>
+                    )}
                 </div>
-            )}
 
-            {/* RESULT MODAL */}
-            {scannedResult && scannedResult.type === 'article' && (
-                <div className="absolute inset-0 z-30 dark:bg-black/30 bg-muted/70 backdrop-blur-sm flex items-end sm:items-center justify-center sm:p-4">
-                    <GlassCard className="w-full sm:max-w-sm rounded-t-3xl sm:rounded-3xl animate-in slide-in-from-bottom-full sm:slide-in-from-bottom-10 flex flex-col max-h-[90vh]">
-
-                        {/* Title & Close */}
-                        <div className="flex justify-between items-start mb-4 shrink-0">
-                            <div className="flex items-center gap-2 dark:text-emerald-400 text-emerald-800">
-                                <CheckCircle2 size={24} />
-                                <span className="font-bold">Artikel gefunden</span>
-                            </div>
-                            <button onClick={handleCloseResult} className="text-muted-foreground hover:text-foreground"><X size={24} /></button>
-                        </div>
-
-                        {/* Article Info */}
-                        <div className="flex gap-4 mb-6 shrink-0">
-                            <div className="w-20 h-20 bg-muted rounded-xl overflow-hidden shrink-0 border border-border">
-                                <img src={scannedResult.data.image_url || `https://picsum.photos/seed/${scannedResult.data.id}/200`} className="w-full h-full object-cover" />
-                            </div>
-                            <div>
-                                <h3 className="font-bold text-foreground line-clamp-2">{scannedResult.data.name}</h3>
-                                <div className="text-sm text-muted-foreground mt-1">{scannedResult.data.sku}</div>
-                                <div className="mt-2 flex items-center gap-2">
-                                    <span className="text-xs px-2 py-0.5 bg-muted rounded text-muted-foreground">{scannedResult.data.location || 'Kein Ort'}</span>
-                                    <span className={`text-sm font-bold ${scannedResult.data.stock < scannedResult.data.target_stock ? 'dark:text-rose-400 text-rose-800' : 'dark:text-emerald-400 text-emerald-800'}`}>
-                                        Bestand: {scannedResult.data.stock}
-                                    </span>
-                                </div>
-                            </div>
-                        </div>
-
-                        {/* Quick Booking Section */}
-                        <div className="bg-muted rounded-xl p-4 mb-4 border border-border shrink-0">
-                            <div className="flex items-center justify-between gap-4 mb-4">
-                                <button
-                                    onClick={() => setBookingAmount(prev => prev - 1)}
-                                    className="w-12 h-12 flex items-center justify-center rounded-xl bg-muted hover:bg-muted text-foreground transition-colors"
-                                >
-                                    <Minus size={24} />
-                                </button>
-
-                                <div className="flex flex-col items-center">
-                                    <span className="text-xs text-muted-foreground uppercase tracking-wider font-medium mb-1">Menge</span>
-                                    <span className={`text-3xl font-bold font-mono ${bookingAmount > 0 ? 'dark:text-emerald-400 text-emerald-800' :
-                                        bookingAmount < 0 ? 'dark:text-rose-400 text-rose-800' : 'text-foreground'
-                                        }`}>
-                                        {bookingAmount > 0 ? '+' : ''}{bookingAmount}
-                                    </span>
-                                </div>
-
-                                <button
-                                    onClick={() => setBookingAmount(prev => prev + 1)}
-                                    className="w-12 h-12 flex items-center justify-center rounded-xl bg-muted hover:bg-muted text-foreground transition-colors"
-                                >
-                                    <Plus size={24} />
-                                </button>
-                            </div>
-
-                            <Button
-                                onClick={handleQuickBook}
-                                disabled={bookingAmount === 0 || isBooking}
-                                className={`w-full py-4 text-lg font-bold shadow-lg transition-all ${bookingAmount > 0
-                                    ? 'bg-primary hover:bg-primary shadow-emerald-900/20'
-                                    : bookingAmount < 0
-                                        ? 'bg-rose-600 hover:bg-rose-500 shadow-rose-900/20'
-                                        : 'bg-muted text-muted-foreground cursor-not-allowed'
-                                    }`}
+                {/* Footer Input Bar */}
+                {!scannedResult && (
+                    <div className="p-5 pb-[calc(env(safe-area-inset-bottom)+1.25rem)] bg-slate-50 dark:bg-slate-900/60 border-t border-slate-200/50 dark:border-white/5 z-20 shrink-0">
+                        <div className="relative">
+                            <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground" size={20} />
+                            <input
+                                type="text"
+                                placeholder="Code manuell eingeben..."
+                                className="w-full bg-slate-100 dark:bg-slate-850 border border-slate-200 dark:border-white/5 rounded-xl py-3.5 pl-12 pr-12 text-foreground dark:placeholder-white/30 placeholder-muted-foreground/80 focus:outline-none focus:ring-2 focus:ring-emerald-500/50 text-sm font-medium"
+                                onKeyDown={(e) => {
+                                    if (e.key === 'Enter') handleScanSuccess((e.target as HTMLInputElement).value);
+                                }}
+                            />
+                            <button
+                                onClick={(e) => handleScanSuccess((e.currentTarget.previousElementSibling as HTMLInputElement).value)}
+                                className="absolute right-2 top-1/2 -translate-y-1/2 p-2 bg-primary rounded-lg text-white border-none cursor-pointer flex items-center justify-center min-w-[32px] min-h-[32px]"
                             >
-                                {isBooking ? (
-                                    <Loader2 className="animate-spin mx-auto" size={24} />
-                                ) : (
-                                    bookingAmount === 0 ? 'Menge wählen' :
-                                        bookingAmount > 0 ? `Einlagern (+${bookingAmount})` : `Entnehmen (${bookingAmount})`
-                                )}
-                            </Button>
+                                <ArrowRight size={16} />
+                            </button>
                         </div>
-
-                        <div className="flex gap-3 shrink-0">
-                            <Button variant="secondary" onClick={handleCloseResult} className="flex-1">Scan weiter</Button>
-                            <Button onClick={handleGoToArticle} className="flex-1 bg-blue-600/20 dark:text-blue-200 text-blue-900 hover:bg-blue-600/30 border border-blue-500/30">Details</Button>
-                        </div>
-                    </GlassCard>
-                </div>
-            )}
+                    </div>
+                )}
+            </motion.div>
         </div>
     );
 };

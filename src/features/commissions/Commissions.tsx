@@ -566,6 +566,13 @@ const Commissions: React.FC = () => {
 
         const now = new Date();
         const timestamp = now.toISOString().replace(/[:.]/g, '-').slice(0, 19);
+        const printDateStr = now.toLocaleString('de-DE', { 
+            day: '2-digit', 
+            month: '2-digit', 
+            year: 'numeric', 
+            hour: '2-digit', 
+            minute: '2-digit' 
+        });
         let docTitle = `Kommissionen_Batch_${timestamp}`;
 
         if (data.length === 1) {
@@ -582,7 +589,8 @@ const Commissions: React.FC = () => {
                 const otherLocations = locations.filter(l => l !== currentLocation);
                 const otherText = otherLocations.length > 0 ? `+ ${otherLocations.join(', ')}` : '';
 
-                const ITEMS_PER_PAGE = 8; // Maximal 8 Positionen pro DIN A6 Seite (sicherer Puffer für Notizen)
+                // Compact layout with safe buffer: max 5 items per page
+                const ITEMS_PER_PAGE = 5; 
                 const chunks = [];
                 
                 if (!items || items.length === 0) {
@@ -594,39 +602,99 @@ const Commissions: React.FC = () => {
                 }
 
                 const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(`COMM:${comm.id}`)}`;
-                const notesHtml = comm.notes ? `<div class="notes" style="font-size: 10pt; margin-top: 2mm; font-style: italic; color: #000; border-top: 1px dotted #aaa; padding-top: 1mm; line-height: 1.2;">${comm.notes}</div>` : '';
-                const warehouseNotesHtml = comm.warehouse_notes ? `<div style="background-color: #fff3cd; border: 1px solid #ffe69c; padding: 3mm; margin-top: 3mm; margin-bottom: 3mm; border-radius: 2mm;"><strong style="color: #856404; font-size: 10pt;">⚠️ Info ans Lager:</strong><div style="margin-top: 1mm; font-size: 10pt; color: #000; font-weight: bold; white-space: pre-wrap;">${comm.warehouse_notes}</div></div>` : '';
                 const renderLocation = (article: Article) => (!article.category && !article.location) ? '-' : `${article.category || ''} / ${article.location || ''}`;
 
                 return chunks.map((chunk, index) => {
                     const stockItems = chunk.filter(i => i.type === 'Stock');
                     const extItems = chunk.filter(i => i.type === 'External');
-                    const pageIndicator = chunks.length > 1 ? `<div style="font-size: 9pt; font-weight: bold; margin-top: 2mm; color: #d97706;">Seite ${index + 1} von ${chunks.length}</div>` : '';
+                    
+                    const pageIndicator = chunks.length > 1 ? `Seite ${index + 1}/${chunks.length}` : '';
+                    
+                    const warehouseNotesHtml = comm.warehouse_notes ? `
+                        <div class="warehouse-notes-box">
+                            <div class="warehouse-notes-title">⚠️ Info ans Lager:</div>
+                            <div class="warehouse-notes-content">${comm.warehouse_notes}</div>
+                        </div>
+                    ` : '';
+
+                    const notesHtml = comm.notes ? `
+                        <div class="notes-text"><b>Hinweis:</b> ${comm.notes}</div>
+                    ` : '';
+
+                    const labelFooterHtml = `
+                        <div class="label-footer">
+                            <span class="print-date">Gedruckt: ${printDateStr}</span>
+                            ${pageIndicator ? `<span class="page-num">${pageIndicator}</span>` : ''}
+                        </div>
+                    `;
 
                     return `
                 <div class="page">
                     <div class="label-area">
-                        <div class="header-text">
-                            <div class="commission-title">${comm.name}</div>
-                            <div class="order-id" style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; margin-top: 1mm;">
-                                <span>Auftrag: ${comm.order_number || '-'}</span>
-                                <span style="font-weight: 900; border: 2px solid #000; color: #000; padding: 2px 6px; border-radius: 4px; font-size: 8pt; font-family: monospace; text-transform: uppercase;">
-                                    ${currentLocation} ${locations.length > 1 ? `(${locIndex + 1}/${locations.length})` : ''}
-                                </span>
+                        <div class="label-left">
+                            <div>
+                                <div class="commission-title">${comm.name}</div>
+                                <div class="divider"></div>
+                                <div class="order-info">Auftrag: ${comm.order_number || '-'}</div>
+                                <div class="locations-row">
+                                    <span class="location-badge">
+                                        ${currentLocation} ${locations.length > 1 ? `(${locIndex + 1}/${locations.length})` : ''}
+                                    </span>
+                                    ${otherText ? `<span class="other-locations">${otherText}</span>` : ''}
+                                </div>
+                                ${index === 0 ? notesHtml : ''}
                             </div>
-                            ${otherText ? `<div style="font-size: 8pt; font-weight: bold; color: #555; margin-top: 1.5mm;">${otherText}</div>` : ''}
-                            ${pageIndicator}
-                            ${index === 0 ? notesHtml : ''}
+                            ${labelFooterHtml}
                         </div>
-                        <div class="qr-container"><img src="${qrUrl}" class="qr-code" /></div>
+                        <div class="qr-box">
+                            <img src="${qrUrl}" class="qr-code" />
+                            <div class="qr-label">SCAN COMM</div>
+                        </div>
                     </div>
-                    <div class="fold-line"><span class="fold-text">Hier falten / knicken</span></div>
+                    
+                    <div class="fold-line">
+                        <span class="fold-text">Hier falten / knicken</span>
+                    </div>
+                    
                     <div class="list-area">
                         ${index === 0 ? warehouseNotesHtml : ''}
-                        ${extItems.length > 0 ? `<div class="list-title">Erwartete externe Bestellungen:</div><ul>${extItems.map(i => `<li><div class="checkbox"></div><div class="item-text"><strong>${i.amount}x</strong> Externe Bestellung: ${i.custom_name}${i.is_backorder ? ' <b>[RÜCKSTAND]</b>' : ''}<br><span style="font-size: 8pt; color: #555;">(Vorgang: ${i.external_reference || 'N/A'})</span>${i.notes ? `<br><span style="font-style: italic; font-size: 8pt;">Note: ${i.notes}</span>` : ''}</div></li>`).join('')}</ul><br>` : ''}
-                        ${stockItems.length > 0 ? `<div class="list-title">Material aus Lager:</div><ul>${stockItems.map(i => {
-                        return `<li><div class="checkbox"></div><div class="item-text"><strong>${i.amount}x</strong> ${i.article?.name}${i.is_backorder ? ' <b>[RÜCKSTAND]</b>' : ''}<br><span style="font-size: 8pt; color: #555;">Lagerort: ${i.article ? renderLocation(i.article) : '-'}</span>${i.notes ? `<br><span style="font-style: italic; font-size: 8pt;">Note: ${i.notes}</span>` : ''}</div></li>`;
-                    }).join('')}</ul>` : ''}
+                        
+                        ${extItems.length > 0 ? `
+                            <div class="list-title">Erwartete externe Bestellungen:</div>
+                            ${extItems.map(i => `
+                                <div class="item-card">
+                                    <div class="card-checkbox"></div>
+                                    <div class="card-content">
+                                        <div class="card-header-row">
+                                            <span class="card-amount">${i.amount}x</span>
+                                            <span class="card-title">Externe Bestellung: ${i.custom_name}</span>
+                                            ${i.is_backorder ? '<span class="backorder-badge">Rückstand</span>' : ''}
+                                        </div>
+                                        <div class="card-subtext">(Vorgang: ${i.external_reference || 'N/A'})</div>
+                                        ${i.notes ? `<div class="card-note">Note: ${i.notes}</div>` : ''}
+                                    </div>
+                                </div>
+                            `).join('')}
+                            <br>
+                        ` : ''}
+                        
+                        ${stockItems.length > 0 ? `
+                            <div class="list-title">Material aus Lager:</div>
+                            ${stockItems.map(i => `
+                                <div class="item-card">
+                                    <div class="card-checkbox"></div>
+                                    <div class="card-content">
+                                        <div class="card-header-row">
+                                            <span class="card-amount">${i.amount}x</span>
+                                            <span class="card-title">${i.article?.name || 'Unbekannter Artikel'}</span>
+                                            ${i.is_backorder ? '<span class="backorder-badge">Rückstand</span>' : ''}
+                                        </div>
+                                        <div class="card-subtext">Lagerort: ${i.article ? renderLocation(i.article) : '-'}</div>
+                                        ${i.notes ? `<div class="card-note">Note: ${i.notes}</div>` : ''}
+                                    </div>
+                                </div>
+                            `).join('')}
+                        ` : ''}
                     </div>
                 </div>
               `;
@@ -639,25 +707,261 @@ const Commissions: React.FC = () => {
         <head>
             <title>${docTitle}</title>
             <style>
-                @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap');
+                @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
                 body { margin: 0; padding: 0; font-family: 'Inter', sans-serif; background: white; }
                 @page { size: 105mm 148mm; margin: 0; }
                 .page { width: 105mm; height: 147mm; margin: 0 auto; position: relative; box-sizing: border-box; overflow: hidden; page-break-after: always; }
                 .page:last-child { page-break-after: auto; }
-                .label-area { position: absolute; top: 8mm; left: 50%; transform: translateX(-50%); width: 90mm; height: 50mm; border: 1px solid #ddd; padding: 4mm; box-sizing: border-box; display: grid; grid-template-columns: minmax(0, 1fr) 30mm; grid-template-rows: auto 1fr auto; }
-                .header-text { grid-column: 1 / 2; display: flex; flex-direction: column; justify-content: center; padding-right: 2mm; }
-                .commission-title { font-size: 16pt; font-weight: 800; color: black; line-height: 1.1; max-height: 3.3em; overflow: hidden; word-wrap: break-word; overflow-wrap: break-word; hyphens: auto; }
-                .order-id { font-size: 11pt; font-weight: 500; color: #444; margin-top: 2mm; }
-                .qr-container { grid-column: 2 / 3; grid-row: 1 / 4; display: flex; justify-content: flex-end; align-items: flex-start; overflow: hidden; }
-                .qr-code { width: 28mm; height: 28mm; object-fit: contain; }
-                .fold-line { position: absolute; top: 62mm; left: 5mm; right: 5mm; border-top: 1px dashed #999; text-align: center; font-size: 8pt; color: #999; }
-                .fold-text { background: white; padding: 0 2mm; position: relative; top: -0.7em; }
-                .list-area { position: absolute; top: 68mm; left: 7.5mm; right: 7.5mm; bottom: 5mm; font-size: 9pt; }
-                .list-title { font-weight: 700; margin-bottom: 2mm; font-size: 10pt; border-bottom: 1px solid black; padding-bottom: 1mm; }
-                ul { padding-left: 0; margin: 0; list-style: none; }
-                li { margin-bottom: 2mm; display: flex; align-items: flex-start; gap: 2mm; }
-                .checkbox { width: 3mm; height: 3mm; border: 1px solid #333; margin-top: 1mm; flex-shrink: 0; }
-                @media print { body { background: none; } .label-area { border: none; } }
+                
+                /* Obere Label-Fläche (sichtbar am Regal) */
+                .label-area { 
+                    position: absolute; 
+                    top: 8mm; 
+                    left: 7.5mm; 
+                    right: 7.5mm; 
+                    height: 50mm; 
+                    border: 1.5px solid #000; 
+                    border-radius: 6px; 
+                    padding: 3.5mm; 
+                    box-sizing: border-box; 
+                    display: grid; 
+                    grid-template-columns: 1fr 34mm; 
+                    gap: 3mm; 
+                    background: #fff; 
+                }
+                .label-left { 
+                    display: flex; 
+                    flex-direction: column; 
+                    justify-content: space-between; 
+                    height: 100%; 
+                    min-width: 0;
+                }
+                .commission-title { 
+                    font-size: 15pt; 
+                    font-weight: 800; 
+                    color: #000; 
+                    line-height: 1.1; 
+                    max-height: 2.2em; 
+                    overflow: hidden; 
+                    word-wrap: break-word; 
+                    overflow-wrap: break-word; 
+                }
+                .divider { 
+                    height: 1px; 
+                    background-color: #000; 
+                    margin: 1.5mm 0; 
+                }
+                .order-info { 
+                    font-size: 9pt; 
+                    font-weight: 500; 
+                    color: #333; 
+                }
+                .locations-row { 
+                    display: flex; 
+                    align-items: center; 
+                    gap: 2mm; 
+                    margin-top: 1.5mm; 
+                    flex-wrap: wrap; 
+                }
+                .location-badge { 
+                    background: #000; 
+                    color: #fff; 
+                    padding: 1.5px 6px; 
+                    border-radius: 4px; 
+                    font-weight: 700; 
+                    font-size: 8.5pt; 
+                    font-family: monospace; 
+                    text-transform: uppercase; 
+                }
+                .other-locations { 
+                    font-size: 7.5pt; 
+                    font-weight: bold; 
+                    color: #666; 
+                }
+                .notes-text { 
+                    font-size: 7.5pt; 
+                    font-style: italic; 
+                    color: #333; 
+                    border-left: 2px solid #000; 
+                    padding-left: 1.5mm; 
+                    margin-top: 1.5mm; 
+                    line-height: 1.25; 
+                }
+                .label-footer { 
+                    display: flex; 
+                    justify-content: space-between; 
+                    align-items: center; 
+                    font-size: 7pt; 
+                    font-weight: bold; 
+                    color: #555; 
+                    border-top: 1px dashed #ccc; 
+                    padding-top: 1mm; 
+                    margin-top: auto; 
+                }
+                
+                /* QR-Code Box */
+                .qr-box { 
+                    border: 1px solid #000; 
+                    border-radius: 4px; 
+                    padding: 1mm; 
+                    display: flex; 
+                    flex-direction: column; 
+                    align-items: center; 
+                    justify-content: center; 
+                    box-sizing: border-box; 
+                    height: 100%; 
+                }
+                .qr-code { 
+                    width: 28mm; 
+                    height: 28mm; 
+                    object-fit: contain; 
+                }
+                .qr-label { 
+                    font-size: 6pt; 
+                    font-weight: 800; 
+                    margin-top: 0.5mm; 
+                    letter-spacing: 0.5px; 
+                    font-family: monospace; 
+                    color: #333; 
+                }
+                
+                /* Knickfalte */
+                .fold-line { 
+                    position: absolute; 
+                    top: 62mm; 
+                    left: 5mm; 
+                    right: 5mm; 
+                    border-top: 1.5px dashed #555; 
+                    text-align: center; 
+                    font-size: 7.5pt; 
+                    font-weight: 700; 
+                    color: #555; 
+                    text-transform: uppercase; 
+                    letter-spacing: 1px; 
+                }
+                .fold-text { 
+                    background: white; 
+                    padding: 0 3mm; 
+                    position: relative; 
+                    top: -0.7em; 
+                }
+                
+                /* Checklisten-Bereich */
+                .list-area { 
+                    position: absolute; 
+                    top: 68mm; 
+                    left: 7.5mm; 
+                    right: 7.5mm; 
+                    bottom: 5mm; 
+                    font-size: 9pt; 
+                }
+                .list-title { 
+                    font-size: 9pt; 
+                    font-weight: 800; 
+                    text-transform: uppercase; 
+                    letter-spacing: 0.5px; 
+                    margin-bottom: 2mm; 
+                    border-bottom: 1.5px solid #000; 
+                    padding-bottom: 0.5mm; 
+                    color: #000; 
+                }
+                
+                /* Info an das Lager */
+                .warehouse-notes-box { 
+                    border: 1.5px solid #000; 
+                    background: #f9f9f9; 
+                    padding: 2.5mm; 
+                    margin-bottom: 3mm; 
+                    border-radius: 6px; 
+                }
+                .warehouse-notes-title { 
+                    font-weight: 800; 
+                    font-size: 9.5pt; 
+                    text-transform: uppercase; 
+                    margin-bottom: 1mm; 
+                }
+                .warehouse-notes-content { 
+                    font-size: 8.5pt; 
+                    font-weight: 700; 
+                    white-space: pre-wrap; 
+                }
+                
+                /* Item-Cards */
+                .item-card { 
+                    border: 1px solid #000; 
+                    border-radius: 6px; 
+                    padding: 2.2mm 2.8mm; 
+                    margin-bottom: 1.8mm; 
+                    display: grid; 
+                    grid-template-columns: 18px 1fr; 
+                    gap: 2.5mm; 
+                    align-items: start; 
+                    background: #fff; 
+                    box-sizing: border-box; 
+                    page-break-inside: avoid; 
+                }
+                .card-checkbox { 
+                    width: 4mm; 
+                    height: 4mm; 
+                    border: 1.5px solid #000; 
+                    border-radius: 3px; 
+                    margin-top: 0.5mm; 
+                    flex-shrink: 0; 
+                }
+                .card-content { 
+                    display: flex; 
+                    flex-direction: column; 
+                    gap: 0.5mm; 
+                    font-size: 8.5pt; 
+                    line-height: 1.3; 
+                    min-width: 0;
+                }
+                .card-header-row { 
+                    display: flex; 
+                    align-items: baseline; 
+                    gap: 1.5mm; 
+                    flex-wrap: wrap; 
+                }
+                .card-amount { 
+                    font-weight: 800; 
+                    font-size: 9.5pt; 
+                }
+                .card-title { 
+                    font-weight: 700; 
+                    color: #000; 
+                }
+                .backorder-badge { 
+                    background: #000; 
+                    color: #fff; 
+                    font-size: 6.5pt; 
+                    font-weight: 800; 
+                    padding: 0.5px 4px; 
+                    border-radius: 3px; 
+                    text-transform: uppercase; 
+                    letter-spacing: 0.5px; 
+                }
+                .card-subtext { 
+                    font-size: 7.5pt; 
+                    color: #555; 
+                }
+                .card-note { 
+                    font-size: 7.5pt; 
+                    font-style: italic; 
+                    color: #333; 
+                    background: #f5f5f5; 
+                    padding: 1px 4px; 
+                    border-radius: 3px; 
+                    display: inline-block; 
+                    margin-top: 0.5mm; 
+                    border-left: 2px solid #000; 
+                    width: fit-content;
+                }
+                
+                @media print { 
+                    body { background: none; } 
+                    .label-area { border: 1.5px solid #000; } /* keep borders in print */
+                    .item-card { border: 1px solid #000; }
+                }
             </style>
         </head>
         <body>
@@ -744,7 +1048,12 @@ const Commissions: React.FC = () => {
 
     const handleSetReadyTrigger = () => {
         if (!activeCommission || !allItemsPicked || hasBackorders) return;
-        setShowConfirmReadyModal(true);
+        const locations = activeCommission.staging_locations || [];
+        if (locations.length > 1) {
+            setShowConfirmReadyModal(true);
+        } else {
+            executeSetReady();
+        }
     };
 
     const executeSetReady = async () => {
@@ -776,7 +1085,16 @@ const Commissions: React.FC = () => {
         } catch (err: any) { alert("Fehler: " + err.message); } finally { setIsSubmitting(false); }
     };
 
-    const handleWithdrawTrigger = () => setShowConfirmWithdrawModal(true);
+    const handleWithdrawTrigger = () => {
+        if (!activeCommission) return;
+        const locations = activeCommission.staging_locations || [];
+        if (locations.length > 1) {
+            setShowConfirmWithdrawModal(true);
+        } else {
+            executeWithdraw();
+        }
+    };
+
     const executeWithdraw = async () => {
         if (!activeCommission) return;
         setIsSubmitting(true);
@@ -795,7 +1113,7 @@ const Commissions: React.FC = () => {
 
     // Other Status Updates
     const executeResetStatus = async () => {
-        if (!activeCommission || !window.confirm("Status zurücksetzen?")) return;
+        if (!activeCommission) return;
         setIsSubmitting(true);
         try {
             await supabase.from('commissions').update({ status: 'Preparing' }).eq('id', activeCommission.id);
@@ -806,7 +1124,7 @@ const Commissions: React.FC = () => {
     };
 
     const executeRevertWithdrawal = async () => {
-        if (!activeCommission || !window.confirm("Wieder auf Bereit setzen?")) return;
+        if (!activeCommission) return;
         setIsSubmitting(true);
         try {
             await supabase.from('commissions').update({ status: 'Ready', withdrawn_at: null }).eq('id', activeCommission.id);
@@ -817,7 +1135,7 @@ const Commissions: React.FC = () => {
     };
 
     const handleInitReturn = async () => {
-        if (!activeCommission || !window.confirm("Als Retoure markieren?")) return;
+        if (!activeCommission) return;
         setIsSubmitting(true);
         try {
             await supabase.from('commissions').update({ status: 'ReturnPending', is_processed: false }).eq('id', activeCommission.id);
@@ -1477,7 +1795,17 @@ const Commissions: React.FC = () => {
                 <div className="p-6 text-center">
                     <CheckCircle2 size={48} className="mx-auto dark:text-emerald-400 text-emerald-800 mb-4" />
                     <h3 className="text-xl font-bold text-foreground mb-2">Bereitstellen?</h3>
-                    <p className="text-muted-foreground mb-6">Lagerbestände werden gebucht.</p>
+                    <p className="text-muted-foreground mb-4">Lagerbestände werden gebucht.</p>
+                    
+                    <div className="bg-amber-500/10 border border-amber-500/30 text-amber-850 dark:text-amber-400 rounded-xl p-3 mb-6 text-sm text-left">
+                        <strong className="block mb-1">📍 Standorte der Kommission:</strong>
+                        <ul className="list-disc list-inside">
+                            {activeCommission?.staging_locations?.map(loc => (
+                                <li key={loc} className="font-bold">{loc}</li>
+                            ))}
+                        </ul>
+                    </div>
+                    
                     <div className="flex gap-3"><Button variant="secondary" onClick={() => setShowConfirmReadyModal(false)} className="flex-1">Abbrechen</Button><Button onClick={executeSetReady} className="flex-1 bg-primary hover:bg-primary">OK</Button></div>
                 </div>
             </GlassModal>
@@ -1486,6 +1814,16 @@ const Commissions: React.FC = () => {
                 <div className="p-6 text-center">
                     <LogOut size={48} className="mx-auto text-purple-400 mb-4" />
                     <h3 className="text-xl font-bold text-foreground mb-2">Entnehmen & Abschließen?</h3>
+                    
+                    <div className="bg-purple-500/10 border border-purple-500/30 text-purple-850 dark:text-purple-400 rounded-xl p-3 mb-6 text-sm text-left">
+                        <strong className="block mb-1">📍 Bitte an allen Standorten verladen:</strong>
+                        <ul className="list-disc list-inside">
+                            {activeCommission?.staging_locations?.map(loc => (
+                                <li key={loc} className="font-bold">{loc}</li>
+                            ))}
+                        </ul>
+                    </div>
+
                     <div className="flex gap-3 mt-6"><Button variant="secondary" onClick={() => setShowConfirmWithdrawModal(false)} className="flex-1">Abbrechen</Button><Button onClick={executeWithdraw} className="flex-1 bg-purple-600 hover:bg-purple-500">OK</Button></div>
                 </div>
             </GlassModal>

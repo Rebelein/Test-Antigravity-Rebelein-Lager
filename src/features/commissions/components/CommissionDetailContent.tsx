@@ -129,12 +129,27 @@ export const CommissionDetailContent: React.FC<CommissionDetailContentProps> = (
         const allNonBackorderedItemsPicked = items.filter(i => !i.is_backorder).every(i => i.is_picked);
 
         if (status === 'Draft' || status === 'Preparing') {
-            if (allNonBackorderedItemsPicked && !hasBackorders) {
+            if (hasBackorders) {
+                return (
+                    <div className="flex flex-col gap-2 w-full">
+                        <div className="flex items-center gap-2 px-3 py-2 bg-rose-50 dark:bg-rose-950/20 border border-rose-200 dark:border-rose-900/50 rounded-xl text-rose-600 dark:text-rose-400 text-xs font-bold leading-snug">
+                            <AlertTriangle size={16} className="shrink-0" />
+                            <span>Kommission auf Rückstand (Bereitstellen gesperrt).</span>
+                        </div>
+                        <Button 
+                            disabled={true} 
+                            className="w-full bg-slate-100 dark:bg-slate-800 text-slate-400 dark:text-slate-600 font-bold h-10 px-4 rounded-xl flex items-center justify-center gap-1.5 cursor-not-allowed border-none text-xs sm:text-sm"
+                        >
+                            <CheckCircle2 size={16} /> Bereitstellen
+                        </Button>
+                    </div>
+                );
+            } else if (allNonBackorderedItemsPicked) {
                 return (
                     <Button 
                         onClick={onSetReady} 
                         disabled={isSubmitting} 
-                        className="bg-emerald-500 hover:bg-emerald-600 text-white font-bold h-10 px-4 rounded-xl flex items-center justify-center gap-1.5 shadow-md shadow-emerald-500/10 active:scale-95 transition-all duration-200 cursor-pointer text-xs sm:text-sm border-none"
+                        className="w-full md:w-auto bg-emerald-500 hover:bg-emerald-600 text-white font-bold h-10 px-4 rounded-xl flex items-center justify-center gap-1.5 shadow-md shadow-emerald-500/10 active:scale-95 transition-all duration-200 cursor-pointer text-xs sm:text-sm border-none"
                     >
                         <CheckCircle2 size={16} /> Bereitstellen
                     </Button>
@@ -142,13 +157,23 @@ export const CommissionDetailContent: React.FC<CommissionDetailContentProps> = (
             }
         } else if (status === 'Ready') {
             return (
-                <Button 
-                    onClick={onWithdraw} 
-                    disabled={isSubmitting} 
-                    className="bg-purple-600 hover:bg-purple-700 text-white font-bold h-10 px-4 rounded-xl flex items-center justify-center gap-1.5 shadow-md shadow-purple-500/10 active:scale-95 transition-all duration-200 cursor-pointer text-xs sm:text-sm border-none"
-                >
-                    <Truck size={16} /> Entnehmen
-                </Button>
+                <div className="flex gap-2 w-full md:w-auto">
+                    <Button 
+                        onClick={onResetStatus} 
+                        disabled={isSubmitting} 
+                        variant="secondary"
+                        className="flex-1 md:flex-initial text-amber-600 dark:text-amber-400 border-amber-200 dark:border-amber-900/50 bg-amber-500/5 hover:bg-amber-500/10 font-bold h-10 px-4 rounded-xl flex items-center justify-center gap-1.5 active:scale-95 transition-all duration-200 cursor-pointer text-xs sm:text-sm"
+                    >
+                        <RotateCcw size={16} /> Zurückstellen
+                    </Button>
+                    <Button 
+                        onClick={onWithdraw} 
+                        disabled={isSubmitting} 
+                        className="flex-1 md:flex-initial bg-purple-600 hover:bg-purple-700 text-white font-bold h-10 px-4 rounded-xl flex items-center justify-center gap-1.5 shadow-md shadow-purple-500/10 active:scale-95 transition-all duration-200 cursor-pointer text-xs sm:text-sm border-none"
+                    >
+                        <Truck size={16} /> Entnehmen
+                    </Button>
+                </div>
             );
         } else if (status === 'ReturnPending') {
             const isRestock = commission.notes?.includes('Einlagern') || commission.notes?.includes('ZURÜCK INS LAGER');
@@ -156,7 +181,7 @@ export const CommissionDetailContent: React.FC<CommissionDetailContentProps> = (
                 <Button 
                     onClick={isRestock ? onCompleteReturn : onReturnToReady} 
                     disabled={isSubmitting} 
-                    className="bg-emerald-500 hover:bg-emerald-600 text-white font-bold h-10 px-4 rounded-xl flex items-center justify-center gap-1.5 shadow-md shadow-emerald-500/10 active:scale-95 transition-all duration-200 cursor-pointer text-xs sm:text-sm border-none"
+                    className="w-full md:w-auto bg-emerald-500 hover:bg-emerald-600 text-white font-bold h-10 px-4 rounded-xl flex items-center justify-center gap-1.5 shadow-md shadow-emerald-500/10 active:scale-95 transition-all duration-200 cursor-pointer text-xs sm:text-sm border-none"
                 >
                     <CheckCircle2 size={16} /> {isRestock ? 'Eingelagert' : 'Ins Abholregal'}
                 </Button>
@@ -166,14 +191,34 @@ export const CommissionDetailContent: React.FC<CommissionDetailContentProps> = (
                 <Button 
                     onClick={onCompleteReturn} 
                     disabled={isSubmitting} 
-                    className="bg-emerald-500 hover:bg-emerald-600 text-white font-bold h-10 px-4 rounded-xl flex items-center justify-center gap-1.5 shadow-md shadow-emerald-500/10 active:scale-95 transition-all duration-200 cursor-pointer text-xs sm:text-sm border-none"
+                    className="w-full md:w-auto bg-emerald-500 hover:bg-emerald-600 text-white font-bold h-10 px-4 rounded-xl flex items-center justify-center gap-1.5 shadow-md shadow-emerald-500/10 active:scale-95 transition-all duration-200 cursor-pointer text-xs sm:text-sm border-none"
                 >
                     <CheckCircle2 size={16} /> Erledigt
                 </Button>
             );
+        } else if (status === 'Withdrawn') {
+            return (
+                <div className="flex gap-2 w-full md:w-auto">
+                    <Button 
+                        onClick={onRevertWithdraw} 
+                        disabled={isSubmitting} 
+                        variant="secondary"
+                        className="flex-1 md:flex-initial text-amber-600 dark:text-amber-400 border-amber-200 dark:border-amber-900/50 bg-amber-500/5 hover:bg-amber-500/10 font-bold h-10 px-4 rounded-xl flex items-center justify-center gap-1.5 active:scale-95 transition-all duration-200 cursor-pointer text-xs sm:text-sm"
+                    >
+                        <RotateCcw size={16} /> Zurückstellen
+                    </Button>
+                    <Button 
+                        onClick={onInitReturn} 
+                        disabled={isSubmitting} 
+                        className="flex-1 md:flex-initial bg-orange-500 hover:bg-orange-600 text-white font-bold h-10 px-4 rounded-xl flex items-center justify-center gap-1.5 shadow-md shadow-orange-500/10 active:scale-95 transition-all duration-200 cursor-pointer text-xs sm:text-sm border-none"
+                    >
+                        <Undo2 size={16} /> Retoure anmelden
+                    </Button>
+                </div>
+            );
         }
         return null;
-    }, [commission?.status, items, hasBackorders, isSubmitting, onSetReady, onWithdraw, onCompleteReturn, onReturnToReady]);
+    }, [commission?.status, commission?.notes, items, hasBackorders, isSubmitting, onSetReady, onWithdraw, onCompleteReturn, onReturnToReady, onRevertWithdraw, onInitReturn, onResetStatus]);
 
     const handleSaveOffice = () => {
         if (onSaveOfficeData) {
@@ -861,47 +906,11 @@ export const CommissionDetailContent: React.FC<CommissionDetailContentProps> = (
                             </div>
                         </div>
                     </div>
-                    {/* Mobile Close Button (Top Right) */}
-                    {onClose && (
-                        <button
-                            onClick={onClose}
-                            className="md:hidden p-1.5 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-all duration-200 focus:outline-none cursor-pointer border border-transparent hover:border-slate-200 dark:hover:border-slate-700 flex items-center justify-center shrink-0"
-                            title="Schließen"
-                            aria-label="Schließen"
-                        >
-                            <X size={18} />
-                        </button>
-                    )}
-                </div>
-                
-                {/* Actions container (Desktop: inline. Mobile: block below title with top border) */}
-                <div className="flex items-center justify-end gap-2 w-full md:w-auto shrink-0 border-t md:border-t-0 border-slate-100 dark:border-slate-800/55 pt-2.5 md:pt-0 mt-1 md:mt-0 animate-fade-in">
-                    {/* Header Primary Action Button */}
-                    <div className="flex-1 md:flex-initial flex justify-end">
-                        {headerPrimaryAction}
-                    </div>
-
-                    {/* Desktop actions (hidden on mobile) */}
-                    <div className="hidden md:flex items-center gap-2">
-                        <Button variant="secondary" onClick={(e) => onEdit(e)} icon={<Edit2 size={16} />} className="bg-white dark:bg-slate-800 shadow-sm border-slate-200 dark:border-slate-700 hover:border-primary/50 text-slate-700 dark:text-slate-200">Bearbeiten</Button>
-                        <Button variant="secondary" onClick={onPrint} icon={<Printer size={16} />} className="bg-white dark:bg-slate-800 shadow-sm border-slate-200 dark:border-slate-700 hover:border-primary/50 text-slate-700 dark:text-slate-200">Drucken</Button>
-                        {onRequestCancellation && !commission.status.startsWith('Return') && commission.status !== 'Withdrawn' && (
-                            <Button 
-                                variant="secondary" 
-                                onClick={() => setShowStornoModal(true)} 
-                                icon={<Undo2 size={16} />} 
-                                className="bg-rose-50 hover:bg-rose-100 dark:bg-rose-950/20 dark:hover:bg-rose-950/45 text-rose-600 dark:text-rose-400 border-rose-200 dark:border-rose-900/50 shadow-sm font-semibold"
-                            >
-                                Storno
-                            </Button>
-                        )}
-                    </div>
-
-                    {/* Mobile actions (three dots menu) */}
-                    <div className="md:hidden relative">
+                    {/* Mobile Actions Menu (Top Right - replacing Close Button) */}
+                    <div className="md:hidden relative shrink-0">
                         <button
                             onClick={() => setShowMobileMenu(!showMobileMenu)}
-                            className="p-2 rounded-xl bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700 hover:text-foreground transition-all focus:outline-none cursor-pointer flex items-center justify-center min-w-[38px] min-h-[38px]"
+                            className="p-1.5 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-500 hover:text-slate-750 dark:text-slate-400 dark:hover:text-slate-200 transition-all duration-200 focus:outline-none cursor-pointer border border-transparent hover:border-slate-200 dark:hover:border-slate-700 flex items-center justify-center shrink-0 min-w-[32px] min-h-[32px]"
                             title="Aktionen"
                             aria-label="Aktionen"
                         >
@@ -922,20 +931,20 @@ export const CommissionDetailContent: React.FC<CommissionDetailContentProps> = (
                                     >
                                         <button
                                             onClick={(e) => { setShowMobileMenu(false); onEdit(e); }}
-                                            className="w-full text-left px-4 py-2.5 text-sm font-semibold hover:bg-slate-50 dark:hover:bg-slate-750/50 text-slate-700 dark:text-slate-200 flex items-center gap-2 transition-colors cursor-pointer"
+                                            className="w-full text-left px-4 py-2.5 text-sm font-semibold hover:bg-slate-50 dark:hover:bg-slate-750/50 text-slate-700 dark:text-slate-200 flex items-center gap-2 transition-colors cursor-pointer border-none"
                                         >
                                             <Edit2 size={15} /> Bearbeiten
                                         </button>
                                         <button
                                             onClick={() => { setShowMobileMenu(false); onPrint(); }}
-                                            className="w-full text-left px-4 py-2.5 text-sm font-semibold hover:bg-slate-50 dark:hover:bg-slate-750/50 text-slate-700 dark:text-slate-200 flex items-center gap-2 transition-colors cursor-pointer"
+                                            className="w-full text-left px-4 py-2.5 text-sm font-semibold hover:bg-slate-50 dark:hover:bg-slate-750/50 text-slate-700 dark:text-slate-200 flex items-center gap-2 transition-colors cursor-pointer border-none"
                                         >
                                             <Printer size={15} /> Drucken
                                         </button>
                                         {onRequestCancellation && !commission.status.startsWith('Return') && commission.status !== 'Withdrawn' && (
                                             <button
                                                 onClick={() => { setShowMobileMenu(false); setShowStornoModal(true); }}
-                                                className="w-full text-left px-4 py-2.5 text-sm font-bold hover:bg-rose-50 dark:hover:bg-rose-950/20 text-rose-600 dark:text-rose-400 flex items-center gap-2 transition-colors cursor-pointer"
+                                                className="w-full text-left px-4 py-2.5 text-sm font-bold hover:bg-rose-50 dark:hover:bg-rose-950/20 text-rose-600 dark:text-rose-400 flex items-center gap-2 transition-colors cursor-pointer border-none"
                                             >
                                                 <Undo2 size={15} /> Storno
                                             </button>
@@ -945,18 +954,33 @@ export const CommissionDetailContent: React.FC<CommissionDetailContentProps> = (
                             )}
                         </AnimatePresence>
                     </div>
+                </div>
+                
+                {/* Actions container (Desktop: inline. Mobile: block below title with top border) */}
+                <div className={cn(
+                    "flex items-center justify-end gap-2 w-full md:w-auto shrink-0 md:border-t-0 border-slate-100 dark:border-slate-800/55 md:pt-0 mt-1 md:mt-0 animate-fade-in",
+                    headerPrimaryAction ? "border-t pt-2.5" : "border-t-0 pt-0"
+                )}>
+                    {/* Header Primary Action Button */}
+                    <div className="flex-1 md:flex-initial flex justify-end w-full md:w-auto">
+                        {headerPrimaryAction}
+                    </div>
 
-                    {/* Desktop Close Action (hidden on mobile) */}
-                    {onClose && (
-                        <button
-                            onClick={onClose}
-                            className="hidden md:flex p-2 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-all duration-200 focus:outline-none cursor-pointer border border-transparent hover:border-slate-200 dark:hover:border-slate-700 items-center justify-center min-w-[38px] min-h-[38px]"
-                            title="Schließen"
-                            aria-label="Schließen"
-                        >
-                            <X size={18} />
-                        </button>
-                    )}
+                    {/* Desktop actions (hidden on mobile) */}
+                    <div className="hidden md:flex items-center gap-2">
+                        <Button variant="secondary" onClick={(e) => onEdit(e)} icon={<Edit2 size={16} />} className="bg-white dark:bg-slate-800 shadow-sm border-slate-200 dark:border-slate-700 hover:border-primary/50 text-slate-700 dark:text-slate-200">Bearbeiten</Button>
+                        <Button variant="secondary" onClick={onPrint} icon={<Printer size={16} />} className="bg-white dark:bg-slate-800 shadow-sm border-slate-200 dark:border-slate-700 hover:border-primary/50 text-slate-700 dark:text-slate-200">Drucken</Button>
+                        {onRequestCancellation && !commission.status.startsWith('Return') && commission.status !== 'Withdrawn' && (
+                            <Button 
+                                variant="secondary" 
+                                onClick={() => setShowStornoModal(true)} 
+                                icon={<Undo2 size={16} />} 
+                                className="bg-rose-50 hover:bg-rose-100 dark:bg-rose-950/20 dark:hover:bg-rose-950/45 text-rose-600 dark:text-rose-400 border-rose-200 dark:border-rose-900/50 shadow-sm font-semibold"
+                            >
+                                Storno
+                            </Button>
+                        )}
+                    </div>
                 </div>
 
                 {/* Thin Segmented Progress Bar */}
@@ -1156,8 +1180,6 @@ export const CommissionDetailContent: React.FC<CommissionDetailContentProps> = (
                             )}
                         </div>
                     </div>
-                    {/* SMART HERO ACTION CARD */}
-                    {renderSmartHeroActionCard()}
                 </div>
             </div>
 
