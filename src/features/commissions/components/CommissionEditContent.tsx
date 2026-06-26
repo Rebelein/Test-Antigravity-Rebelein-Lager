@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { Button, GlassInput } from '../../../components/UIComponents';
-import { Plus, Search, Package, ExternalLink, Trash2, Save, X, BoxSelect, Clipboard, Paperclip, ChevronDown, Loader2, Layers, FileText, ShoppingCart, Copy, Check, Menu } from 'lucide-react';
+import { Plus, Search, Package, ExternalLink, Trash2, Save, X, BoxSelect, Clipboard, Paperclip, ChevronDown, Loader2, Layers, FileText, ShoppingCart, Copy, Check, Menu, MapPin } from 'lucide-react';
 import { Article, Supplier, Commission, CommissionItem, ExtendedCommission } from '../../../../types';
 import { supabase } from '../../../../supabaseClient';
 import { useIsMobile } from '../../../../hooks/useIsMobile';
@@ -55,6 +55,9 @@ export const CommissionEditContent: React.FC<CommissionEditContentProps> = ({
         is_price_inquiry: false,
         delivery_date_unknown: false
     });
+    const [stagingLocations, setStagingLocations] = useState<string[]>(['Regal']);
+    const [customLocationInput, setCustomLocationInput] = useState('');
+    const [showCustomLocationInput, setShowCustomLocationInput] = useState(false);
     const [tempItems, setTempItems] = useState<TempCommissionItem[]>([]);
     const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -79,6 +82,7 @@ export const CommissionEditContent: React.FC<CommissionEditContentProps> = ({
                 is_price_inquiry: !!initialCommission.is_price_inquiry,
                 delivery_date_unknown: !!initialCommission.delivery_date_unknown
             });
+            setStagingLocations(initialCommission.staging_locations || ['Regal']);
 
             if (initialItems && initialItems.length > 0) {
                 const mapped: TempCommissionItem[] = initialItems.map((item: any) => ({
@@ -107,6 +111,7 @@ export const CommissionEditContent: React.FC<CommissionEditContentProps> = ({
                 is_price_inquiry: false,
                 delivery_date_unknown: false
             });
+            setStagingLocations(['Regal']);
             setTempItems([]);
         }
         // Reset UI states
@@ -291,7 +296,8 @@ export const CommissionEditContent: React.FC<CommissionEditContentProps> = ({
                 warehouse_notes: newComm.warehouse_notes,
                 warehouse_id: primaryWarehouseId,
                 is_price_inquiry: newComm.is_price_inquiry,
-                delivery_date_unknown: newComm.delivery_date_unknown
+                delivery_date_unknown: newComm.delivery_date_unknown,
+                staging_locations: stagingLocations
             };
 
             if (!isEditMode) {
@@ -407,6 +413,105 @@ export const CommissionEditContent: React.FC<CommissionEditContentProps> = ({
                                 value={newComm.warehouse_notes}
                                 onChange={e => setNewComm({ ...newComm, warehouse_notes: e.target.value })}
                             />
+                        </div>
+
+                        <div className="md:col-span-2 space-y-2">
+                            <label className="text-xs font-bold text-muted-foreground uppercase tracking-wider flex items-center gap-1.5">
+                                <MapPin size={14} className="text-primary" /> Bereitstellungsort(e)
+                            </label>
+                            <div className="flex flex-wrap gap-2 items-center">
+                                {Array.from(new Set(['Regal', 'Garage', 'Hof', 'Palette', ...stagingLocations])).map(loc => {
+                                    const isActive = stagingLocations.includes(loc);
+                                    return (
+                                        <button
+                                            key={loc}
+                                            type="button"
+                                            onClick={() => {
+                                                let nextLocs = [...stagingLocations];
+                                                if (isActive) {
+                                                    if (nextLocs.length <= 1) {
+                                                        alert("Mindestens ein Bereitstellungsort muss aktiv bleiben.");
+                                                        return;
+                                                    }
+                                                    nextLocs = nextLocs.filter(l => l !== loc);
+                                                } else {
+                                                    nextLocs.push(loc);
+                                                }
+                                                setStagingLocations(nextLocs);
+                                            }}
+                                            className={`px-3 py-2 rounded-xl text-xs font-bold transition-all duration-200 flex items-center gap-1.5 cursor-pointer border ${
+                                                isActive
+                                                    ? "bg-primary/10 border-primary/30 text-primary"
+                                                    : "bg-background border-border hover:bg-muted text-slate-500"
+                                            }`}
+                                        >
+                                            {isActive && <Check size={11} strokeWidth={3} />}
+                                            {loc}
+                                        </button>
+                                    );
+                                })}
+
+                                {showCustomLocationInput ? (
+                                    <div className="flex items-center gap-1.5 bg-background border border-border rounded-xl px-2 py-0.5 animate-in fade-in zoom-in-95 duration-100">
+                                        <input
+                                            type="text"
+                                            className="bg-transparent border-none text-xs font-bold text-foreground focus:outline-none w-20 py-1"
+                                            placeholder="Ort..."
+                                            value={customLocationInput}
+                                            onChange={e => setCustomLocationInput(e.target.value)}
+                                            onKeyDown={e => {
+                                                if (e.key === 'Enter') {
+                                                    e.preventDefault();
+                                                    const trimmed = customLocationInput.trim();
+                                                    if (trimmed && !stagingLocations.includes(trimmed)) {
+                                                        setStagingLocations([...stagingLocations, trimmed]);
+                                                    }
+                                                    setCustomLocationInput('');
+                                                    setShowCustomLocationInput(false);
+                                                }
+                                                if (e.key === 'Escape') {
+                                                    setShowCustomLocationInput(false);
+                                                    setCustomLocationInput('');
+                                                }
+                                            }}
+                                            autoFocus
+                                        />
+                                        <button
+                                            type="button"
+                                            onClick={() => {
+                                                const trimmed = customLocationInput.trim();
+                                                if (trimmed && !stagingLocations.includes(trimmed)) {
+                                                    setStagingLocations([...stagingLocations, trimmed]);
+                                                }
+                                                setCustomLocationInput('');
+                                                setShowCustomLocationInput(false);
+                                            }}
+                                            className="p-1 text-primary hover:bg-primary/10 rounded-lg animate-fade-in"
+                                        >
+                                            <Check size={11} strokeWidth={3} />
+                                        </button>
+                                        <button
+                                            type="button"
+                                            onClick={() => {
+                                                setShowCustomLocationInput(false);
+                                                setCustomLocationInput('');
+                                            }}
+                                            className="p-1 text-slate-400 hover:bg-muted rounded-lg"
+                                        >
+                                            <X size={11} />
+                                        </button>
+                                    </div>
+                                ) : (
+                                    <button
+                                        type="button"
+                                        onClick={() => setShowCustomLocationInput(true)}
+                                        className="px-3 py-2 rounded-xl text-xs font-bold border border-dashed border-border text-muted-foreground hover:text-foreground hover:border-primary/40 transition-colors flex items-center gap-1 cursor-pointer"
+                                    >
+                                        <Plus size={11} strokeWidth={3} />
+                                        Eigener Ort
+                                    </button>
+                                )}
+                            </div>
                         </div>
 
                         {/* Checkboxes */}

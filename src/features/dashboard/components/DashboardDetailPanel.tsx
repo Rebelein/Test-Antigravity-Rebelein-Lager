@@ -117,6 +117,11 @@ export const DashboardDetailPanel: React.FC<DashboardDetailPanelProps> = ({
             {/* COMMISSION DETAIL */}
             {viewingCommission && (
                 <div className="h-full bg-background/50 backdrop-blur-2xl rounded-2xl border border-border shadow-xl overflow-hidden flex flex-col relative">
+                    <div className="absolute top-4 right-4 z-50">
+                        <button onClick={onCloseCommission} className="p-2 dark:bg-black/50 bg-muted/80 hover:bg-muted rounded-full text-muted-foreground hover:text-foreground transition-colors">
+                            <X size={20} />
+                        </button>
+                    </div>
                     {['Draft', 'Preparing'].includes(viewingCommission.status) ? (
                         <CommissionDetailContent
                             commission={viewingCommission}

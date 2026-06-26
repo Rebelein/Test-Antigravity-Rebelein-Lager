@@ -86,6 +86,7 @@ const Commissions: React.FC = () => {
     // Printing
     const [showPrintArea, setShowPrintArea] = useState(false);
     const [printMinimized, setPrintMinimized] = usePersistentState<boolean>('commission-print-minimized', false);
+    const [enablePrintQueue, setEnablePrintQueue] = usePersistentState<boolean>('commission-enable-print-queue', true);
     const [printTab, setPrintTab] = useState<PrintTab>('queue');
     const [selectedPrintIds, setSelectedPrintIds] = useState<Set<string>>(new Set());
     const [selectedHistoryPrintIds, setSelectedHistoryPrintIds] = useState<Set<string>>(new Set()); // NEU
@@ -416,6 +417,7 @@ const Commissions: React.FC = () => {
                         allItemsPicked={activeCommission ? (commItems.length === 0 || commItems.every(i => i.is_picked)) : true}
                         hasBackorders={commItems.some(i => i.is_backorder)}
                         isSubmitting={isSubmitting}
+                        hideTitle={true}
                         onSetReady={handleSetReadyTrigger}
                         onWithdraw={handleWithdrawTrigger}
                         onRequestCancellation={async (id, type, note) => {
@@ -635,13 +637,26 @@ const Commissions: React.FC = () => {
                             <div>
                                 <div class="commission-title">${comm.name}</div>
                                 <div class="divider"></div>
-                                <div class="order-info">Auftrag: ${comm.order_number || '-'}</div>
-                                <div class="locations-row">
-                                    <span class="location-badge">
-                                        ${currentLocation} ${locations.length > 1 ? `(${locIndex + 1}/${locations.length})` : ''}
-                                    </span>
-                                    ${otherText ? `<span class="other-locations">${otherText}</span>` : ''}
+                                
+                                <div class="metadata-row">
+                                    <div class="metadata-group">
+                                        <span class="metadata-label">Auftrag</span>
+                                        <span class="metadata-value">${comm.order_number || '-'}</span>
+                                    </div>
+                                    <div class="metadata-group">
+                                        <span class="metadata-label">Bereich / Fach</span>
+                                        <span class="location-badge">
+                                            ${currentLocation} ${locations.length > 1 ? `(${locIndex + 1}/${locations.length})` : ''}
+                                        </span>
+                                    </div>
                                 </div>
+                                
+                                ${otherText ? `
+                                <div style="margin-top: 1mm; display: flex; align-items: center; gap: 1mm;">
+                                    <span class="metadata-label" style="margin-bottom: 0;">Weitere Orte:</span>
+                                    <span class="other-locations">${otherText}</span>
+                                </div>` : ''}
+                                
                                 ${index === 0 ? notesHtml : ''}
                             </div>
                             ${labelFooterHtml}
@@ -670,7 +685,10 @@ const Commissions: React.FC = () => {
                                             <span class="card-title">Externe Bestellung: ${i.custom_name}</span>
                                             ${i.is_backorder ? '<span class="backorder-badge">Rückstand</span>' : ''}
                                         </div>
-                                        <div class="card-subtext">(Vorgang: ${i.external_reference || 'N/A'})</div>
+                                        <div class="card-subtext">
+                                            <span class="subtext-label">VORGANG:</span>
+                                            <span class="subtext-value">${i.external_reference || 'N/A'}</span>
+                                        </div>
                                         ${i.notes ? `<div class="card-note">Note: ${i.notes}</div>` : ''}
                                     </div>
                                 </div>
@@ -689,7 +707,10 @@ const Commissions: React.FC = () => {
                                             <span class="card-title">${i.article?.name || 'Unbekannter Artikel'}</span>
                                             ${i.is_backorder ? '<span class="backorder-badge">Rückstand</span>' : ''}
                                         </div>
-                                        <div class="card-subtext">Lagerort: ${i.article ? renderLocation(i.article) : '-'}</div>
+                                        <div class="card-subtext">
+                                            <span class="subtext-label">LAGERORT:</span>
+                                            <span class="subtext-value">${i.article ? renderLocation(i.article) : '-'}</span>
+                                        </div>
                                         ${i.notes ? `<div class="card-note">Note: ${i.notes}</div>` : ''}
                                     </div>
                                 </div>
@@ -708,7 +729,7 @@ const Commissions: React.FC = () => {
             <title>${docTitle}</title>
             <style>
                 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
-                body { margin: 0; padding: 0; font-family: 'Inter', sans-serif; background: white; }
+                body { margin: 0; padding: 0; font-family: 'Inter', sans-serif; background: white; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
                 @page { size: 105mm 148mm; margin: 0; }
                 .page { width: 105mm; height: 147mm; margin: 0 auto; position: relative; box-sizing: border-box; overflow: hidden; page-break-after: always; }
                 .page:last-child { page-break-after: auto; }
@@ -720,8 +741,6 @@ const Commissions: React.FC = () => {
                     left: 7.5mm; 
                     right: 7.5mm; 
                     height: 50mm; 
-                    border: 1.5px solid #000; 
-                    border-radius: 6px; 
                     padding: 3.5mm; 
                     box-sizing: border-box; 
                     display: grid; 
@@ -737,79 +756,98 @@ const Commissions: React.FC = () => {
                     min-width: 0;
                 }
                 .commission-title { 
-                    font-size: 15pt; 
-                    font-weight: 800; 
-                    color: #000; 
-                    line-height: 1.1; 
-                    max-height: 2.2em; 
+                    font-size: 13pt; 
+                    font-weight: 700; 
+                    color: #0f172a; 
+                    line-height: 1.2; 
+                    max-height: 2.4em; 
                     overflow: hidden; 
                     word-wrap: break-word; 
                     overflow-wrap: break-word; 
                 }
                 .divider { 
                     height: 1px; 
-                    background-color: #000; 
-                    margin: 1.5mm 0; 
+                    background-color: #cbd5e1; 
+                    margin: 1.5mm 0 1.2mm 0; 
                 }
-                .order-info { 
-                    font-size: 9pt; 
-                    font-weight: 500; 
-                    color: #333; 
+                .metadata-row {
+                    display: flex;
+                    justify-content: space-between;
+                    align-items: center;
+                    margin-top: 1.2mm;
+                    gap: 2mm;
                 }
-                .locations-row { 
-                    display: flex; 
-                    align-items: center; 
-                    gap: 2mm; 
-                    margin-top: 1.5mm; 
-                    flex-wrap: wrap; 
+                .metadata-group {
+                    display: flex;
+                    flex-direction: column;
+                    min-width: 0;
+                }
+                .metadata-label {
+                    font-size: 5.5pt;
+                    font-weight: 700;
+                    color: #888;
+                    letter-spacing: 0.8px;
+                    text-transform: uppercase;
+                    margin-bottom: 0.5mm;
+                }
+                .metadata-value {
+                    font-size: 8.5pt;
+                    font-weight: 600;
+                    color: #0f172a;
+                    white-space: nowrap;
+                    overflow: hidden;
+                    text-overflow: ellipsis;
                 }
                 .location-badge { 
-                    background: #000; 
+                    background: #0f172a; 
                     color: #fff; 
-                    padding: 1.5px 6px; 
+                    padding: 2px 6px; 
                     border-radius: 4px; 
                     font-weight: 700; 
-                    font-size: 8.5pt; 
-                    font-family: monospace; 
+                    font-size: 7.5pt; 
+                    letter-spacing: 0.3px;
                     text-transform: uppercase; 
                 }
                 .other-locations { 
-                    font-size: 7.5pt; 
-                    font-weight: bold; 
-                    color: #666; 
+                    font-size: 7pt; 
+                    font-weight: 600; 
+                    color: #64748b; 
                 }
                 .notes-text { 
-                    font-size: 7.5pt; 
+                    font-size: 7pt; 
                     font-style: italic; 
-                    color: #333; 
-                    border-left: 2px solid #000; 
-                    padding-left: 1.5mm; 
+                    color: #475569; 
+                    border-left: 2px solid #cbd5e1; 
+                    padding-left: 2mm; 
                     margin-top: 1.5mm; 
-                    line-height: 1.25; 
+                    line-height: 1.3; 
                 }
                 .label-footer { 
                     display: flex; 
                     justify-content: space-between; 
                     align-items: center; 
-                    font-size: 7pt; 
-                    font-weight: bold; 
-                    color: #555; 
-                    border-top: 1px dashed #ccc; 
-                    padding-top: 1mm; 
+                    font-size: 5.5pt; 
+                    font-weight: 600; 
+                    color: #94a3b8; 
+                    border-top: 1px solid #f1f5f9; 
+                    padding-top: 1.2mm; 
                     margin-top: auto; 
+                    letter-spacing: 0.5px;
+                    text-transform: uppercase;
                 }
                 
                 /* QR-Code Box */
                 .qr-box { 
-                    border: 1px solid #000; 
-                    border-radius: 4px; 
-                    padding: 1mm; 
+                    border: 1px solid #e2e8f0; 
+                    border-radius: 8px; 
+                    padding: 1.5mm; 
                     display: flex; 
                     flex-direction: column; 
                     align-items: center; 
                     justify-content: center; 
                     box-sizing: border-box; 
                     height: 100%; 
+                    background: #fafafa;
                 }
                 .qr-code { 
                     width: 28mm; 
@@ -817,33 +855,33 @@ const Commissions: React.FC = () => {
                     object-fit: contain; 
                 }
                 .qr-label { 
-                    font-size: 6pt; 
-                    font-weight: 800; 
-                    margin-top: 0.5mm; 
-                    letter-spacing: 0.5px; 
-                    font-family: monospace; 
-                    color: #333; 
+                    font-size: 5pt; 
+                    font-weight: 700; 
+                    margin-top: 1.5mm; 
+                    letter-spacing: 0.8px; 
+                    color: #64748b; 
+                    text-transform: uppercase;
                 }
                 
                 /* Knickfalte */
                 .fold-line { 
                     position: absolute; 
                     top: 62mm; 
-                    left: 5mm; 
-                    right: 5mm; 
-                    border-top: 1.5px dashed #555; 
+                    left: 7.5mm; 
+                    right: 7.5mm; 
+                    border-top: 1px dashed #cbd5e1; 
                     text-align: center; 
-                    font-size: 7.5pt; 
-                    font-weight: 700; 
-                    color: #555; 
+                    font-size: 6.5pt; 
+                    font-weight: 600; 
+                    color: #94a3b8; 
                     text-transform: uppercase; 
-                    letter-spacing: 1px; 
+                    letter-spacing: 1.5px; 
                 }
                 .fold-text { 
                     background: white; 
-                    padding: 0 3mm; 
+                    padding: 0 4mm; 
                     position: relative; 
-                    top: -0.7em; 
+                    top: -0.75em; 
                 }
                 
                 /* Checklisten-Bereich */
@@ -853,42 +891,47 @@ const Commissions: React.FC = () => {
                     left: 7.5mm; 
                     right: 7.5mm; 
                     bottom: 5mm; 
-                    font-size: 9pt; 
+                    font-size: 8.5pt; 
                 }
                 .list-title { 
-                    font-size: 9pt; 
-                    font-weight: 800; 
+                    font-size: 7.5pt; 
+                    font-weight: 700; 
                     text-transform: uppercase; 
-                    letter-spacing: 0.5px; 
-                    margin-bottom: 2mm; 
-                    border-bottom: 1.5px solid #000; 
-                    padding-bottom: 0.5mm; 
-                    color: #000; 
+                    letter-spacing: 1px; 
+                    margin-bottom: 2.5mm; 
+                    border-bottom: 2px solid #0f172a; 
+                    padding-bottom: 0.8mm; 
+                    color: #0f172a; 
                 }
                 
                 /* Info an das Lager */
                 .warehouse-notes-box { 
-                    border: 1.5px solid #000; 
-                    background: #f9f9f9; 
+                    border: 1px solid #fcd34d; 
+                    border-left: 3.5px solid #d97706; 
+                    background: #fffbeb; 
                     padding: 2.5mm; 
                     margin-bottom: 3mm; 
-                    border-radius: 6px; 
+                    border-radius: 4px; 
                 }
                 .warehouse-notes-title { 
-                    font-weight: 800; 
-                    font-size: 9.5pt; 
+                    font-weight: 700; 
+                    font-size: 7.5pt; 
                     text-transform: uppercase; 
-                    margin-bottom: 1mm; 
+                    color: #b45309;
+                    margin-bottom: 0.8mm; 
+                    letter-spacing: 0.5px;
                 }
                 .warehouse-notes-content { 
-                    font-size: 8.5pt; 
-                    font-weight: 700; 
+                    font-size: 8pt; 
+                    font-weight: 500; 
+                    color: #78350f;
                     white-space: pre-wrap; 
+                    line-height: 1.35;
                 }
                 
                 /* Item-Cards */
                 .item-card { 
-                    border: 1px solid #000; 
+                    border: 1px solid #e2e8f0; 
                     border-radius: 6px; 
                     padding: 2.2mm 2.8mm; 
                     margin-bottom: 1.8mm; 
@@ -903,8 +946,8 @@ const Commissions: React.FC = () => {
                 .card-checkbox { 
                     width: 4mm; 
                     height: 4mm; 
-                    border: 1.5px solid #000; 
-                    border-radius: 3px; 
+                    border: 1px solid #cbd5e1; 
+                    border-radius: 4px; 
                     margin-top: 0.5mm; 
                     flex-shrink: 0; 
                 }
@@ -912,7 +955,7 @@ const Commissions: React.FC = () => {
                     display: flex; 
                     flex-direction: column; 
                     gap: 0.5mm; 
-                    font-size: 8.5pt; 
+                    font-size: 8pt; 
                     line-height: 1.3; 
                     min-width: 0;
                 }
@@ -923,44 +966,60 @@ const Commissions: React.FC = () => {
                     flex-wrap: wrap; 
                 }
                 .card-amount { 
-                    font-weight: 800; 
-                    font-size: 9.5pt; 
+                    font-weight: 700; 
+                    font-size: 9pt; 
+                    color: #0f172a;
                 }
                 .card-title { 
-                    font-weight: 700; 
-                    color: #000; 
+                    font-weight: 600; 
+                    color: #1e293b; 
+                    font-size: 8.5pt;
                 }
                 .backorder-badge { 
-                    background: #000; 
+                    background: #ef4444; 
                     color: #fff; 
-                    font-size: 6.5pt; 
-                    font-weight: 800; 
-                    padding: 0.5px 4px; 
+                    font-size: 6pt; 
+                    font-weight: 700; 
+                    padding: 1px 4.5px; 
                     border-radius: 3px; 
                     text-transform: uppercase; 
                     letter-spacing: 0.5px; 
                 }
                 .card-subtext { 
-                    font-size: 7.5pt; 
-                    color: #555; 
+                    display: flex;
+                    align-items: center;
+                    gap: 1mm;
+                    margin-top: 0.5mm;
+                }
+                .subtext-label {
+                    font-size: 5.5pt;
+                    font-weight: 700;
+                    color: #94a3b8;
+                    letter-spacing: 0.5px;
+                }
+                .subtext-value {
+                    font-size: 7.5pt;
+                    font-weight: 600;
+                    color: #475569;
                 }
                 .card-note { 
                     font-size: 7.5pt; 
                     font-style: italic; 
-                    color: #333; 
-                    background: #f5f5f5; 
-                    padding: 1px 4px; 
+                    color: #475569; 
+                    background: #f8fafc; 
+                    padding: 1.5px 5px; 
                     border-radius: 3px; 
                     display: inline-block; 
-                    margin-top: 0.5mm; 
-                    border-left: 2px solid #000; 
+                    margin-top: 1mm; 
+                    border-left: 2px solid #cbd5e1; 
                     width: fit-content;
                 }
                 
                 @media print { 
-                    body { background: none; } 
-                    .label-area { border: 1.5px solid #000; } /* keep borders in print */
-                    .item-card { border: 1px solid #000; }
+                    body { background: none; -webkit-print-color-adjust: exact; print-color-adjust: exact; } 
+                    * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+                    .item-card { border: 1px solid #e2e8f0; }
+                    .warehouse-notes-box { border: 1px solid #fcd34d; border-left: 3.5px solid #d97706; }
                 }
             </style>
         </head>
@@ -1283,7 +1342,7 @@ const Commissions: React.FC = () => {
     const isMobile = useIsMobile();
 
     const CommissionSidebar = () => (
-        <div className="flex flex-col gap-1 py-2 h-full overflow-y-auto custom-scrollbar pr-2">
+        <div className="flex flex-col gap-1 py-2 h-full overflow-y-auto custom-scrollbar pr-2 pb-24 md:pb-2">
             <button
                 onClick={() => { setActiveTab('active'); setActiveSubFilter('all'); setIsMobileCategoryOpen(false); }}
                 className={clsx(
@@ -1413,6 +1472,29 @@ const Commissions: React.FC = () => {
                     <span className="font-medium text-sm">Papierkorb</span>
                 </div>
             </button>
+
+            {/* Device-specific print panel toggle switch */}
+            <div className="mt-auto pt-4 border-t border-border/40 dark:border-white/5 flex items-center justify-between px-2 py-2 select-none">
+                <div className="flex flex-col">
+                    <span className="text-xs font-semibold text-foreground">Drucker-Panel</span>
+                    <span className="text-[10px] text-muted-foreground">Warteschlange anzeigen</span>
+                </div>
+                <button
+                    onClick={() => setEnablePrintQueue(prev => !prev)}
+                    className={clsx(
+                        "w-9 h-5 rounded-full transition-colors relative focus:outline-none shrink-0 cursor-pointer",
+                        enablePrintQueue ? "bg-emerald-500" : "bg-slate-350 dark:bg-slate-700"
+                    )}
+                    aria-label="Drucker-Panel umschalten"
+                >
+                    <div
+                        className={clsx(
+                            "w-4 h-4 rounded-full bg-white absolute top-0.5 transition-all shadow",
+                            enablePrintQueue ? "left-[18px]" : "left-0.5"
+                        )}
+                    />
+                </button>
+            </div>
         </div>
     );
 
@@ -1882,7 +1964,7 @@ const Commissions: React.FC = () => {
 
             {/* Floating Print Dock */}
             <AnimatePresence>
-                {activeTab === 'active' && sidePanelMode === 'none' && (
+                {enablePrintQueue && activeTab === 'active' && sidePanelMode === 'none' && (
                     <PrintingSection
                         showPrintArea={showPrintArea}
                         setShowPrintArea={setShowPrintArea}

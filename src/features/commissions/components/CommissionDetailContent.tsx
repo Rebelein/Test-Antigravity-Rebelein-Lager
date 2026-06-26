@@ -79,6 +79,7 @@ interface CommissionDetailContentProps {
     onStartScan?: () => void;
     onDelete?: (e: React.MouseEvent) => void;
     onUpdateStagingLocations?: (locations: string[]) => void;
+    hideTitle?: boolean;
 }
 
 export const CommissionDetailContent: React.FC<CommissionDetailContentProps> = ({
@@ -86,7 +87,7 @@ export const CommissionDetailContent: React.FC<CommissionDetailContentProps> = (
     onSetReady, onWithdraw, onResetStatus, onRevertWithdraw, onInitReturn,
     onReturnToReady, onCompleteReturn, onEdit, onPrint, onTogglePicked,
     onToggleBackorder, onSaveNote, onClose, onSaveOfficeData, onRequestCancellation,
-    onStartScan, onDelete, onUpdateStagingLocations
+    onStartScan, onDelete, onUpdateStagingLocations, hideTitle = false
 }) => {
     const [editingItemNote, setEditingItemNote] = useState<{ itemId: string; note: string } | null>(null);
     const [viewingAttachment, setViewingAttachment] = useState<string | null>(null);
@@ -94,6 +95,7 @@ export const CommissionDetailContent: React.FC<CommissionDetailContentProps> = (
     const [hidePicked, setHidePicked] = useState(false);
     const [sortByLocation, setSortByLocation] = useState(true);
     const [showMobileMenu, setShowMobileMenu] = useState(false);
+    const [showHistoryModal, setShowHistoryModal] = useState(false);
 
     useEffect(() => {
         setShowMobileMenu(false);
@@ -108,18 +110,11 @@ export const CommissionDetailContent: React.FC<CommissionDetailContentProps> = (
     const [officeNotes, setOfficeNotes] = useState(commission?.office_notes || '');
     const [isProcessed, setIsProcessed] = useState(commission?.is_processed || false);
 
-    // Staging Locations State
-    const [locations, setLocations] = useState<string[]>(commission?.staging_locations || ['Regal']);
-    const [customInput, setCustomInput] = useState('');
-    const [showCustomInput, setShowCustomInput] = useState(false);
-    const [savingLocations, setSavingLocations] = useState(false);
-
     // Sync state when commission changes
     useEffect(() => {
         if (commission) {
             setOfficeNotes(commission.office_notes || '');
             setIsProcessed(commission.is_processed || false);
-            setLocations(commission.staging_locations || ['Regal']);
         }
     }, [commission]);
 
@@ -297,116 +292,80 @@ export const CommissionDetailContent: React.FC<CommissionDetailContentProps> = (
         const isBackorder = item.is_backorder;
         const isStock = item.type === 'Stock';
         
-        let cardBg = "bg-white dark:bg-card border-slate-200 dark:border-border hover:border-primary/40 shadow-sm";
-        let leftBarColor = "bg-slate-300 dark:bg-slate-700";
-
-        if (isBackorder) {
-            cardBg = "bg-orange-50/70 dark:bg-orange-950/15 border-orange-200 dark:border-orange-900/40 shadow-sm hover:border-orange-300/60";
-            leftBarColor = "bg-orange-500";
-        } else if (isPicked) {
-            cardBg = "bg-emerald-50/40 dark:bg-emerald-950/10 border-emerald-100 dark:border-emerald-900/30 opacity-80 shadow-sm hover:border-emerald-200/50";
-            leftBarColor = "bg-emerald-500";
-        } else if (isStock) {
-            cardBg = "bg-blue-50/30 dark:bg-blue-950/5 border-blue-200/60 dark:border-blue-900/30 hover:border-blue-300 shadow-sm";
-            leftBarColor = "bg-blue-500";
-        } else {
-            cardBg = "bg-purple-50/30 dark:bg-purple-950/5 border-purple-200/60 dark:border-purple-900/30 hover:border-purple-300 shadow-sm";
-            leftBarColor = "bg-purple-500";
-        }
+        let cardBg = "bg-white dark:bg-card hover:bg-slate-50/50 dark:hover:bg-slate-850/30 border-slate-200 dark:border-border";
+        let opacityClass = isPicked ? "opacity-50" : "opacity-100";
 
         return (
             <motion.div 
                 layout
-                initial={{ opacity: 0, scale: 0.95 }}
-                animate={{ opacity: 1, scale: 1 }}
-                exit={{ opacity: 0, scale: 0.95 }}
-                whileTap={{ scale: 0.99 }}
+                initial={{ opacity: 0, y: 5 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: 5 }}
                 onClick={() => onTogglePicked(item.id, item.is_picked)}
                 key={item.id} 
                 className={cn(
-                    "group flex flex-col sm:flex-row sm:items-center gap-4 p-4 rounded-2xl border transition-all duration-200 relative overflow-hidden cursor-pointer",
-                    cardBg
+                    "group flex flex-col sm:flex-row sm:items-center gap-3.5 p-3.5 rounded-xl border transition-all duration-150 cursor-pointer shadow-none relative overflow-hidden",
+                    cardBg,
+                    opacityClass
                 )}
             >
-                <div className={cn("absolute left-0 top-0 bottom-0 w-1.5 transition-all", leftBarColor)} />
-
-                <div className="flex items-start gap-4 flex-1 w-full pl-1">
+                <div className="flex items-start gap-3.5 flex-1 min-w-0">
+                    {/* Check Circle checkbox */}
                     <div
                         className={cn(
-                            "mt-1 shrink-0 w-8 h-8 rounded-xl border-2 flex items-center justify-center transition-all shadow-sm",
+                            "mt-0.5 shrink-0 w-6 h-6 rounded-full border flex items-center justify-center transition-colors duration-150 shadow-none",
                             isPicked 
-                                ? "bg-emerald-500 border-emerald-500 text-white shadow-emerald-500/20 scale-105" 
-                                : isStock
-                                    ? "border-blue-300 dark:border-blue-700 text-transparent bg-white dark:bg-slate-800"
-                                    : "border-purple-300 dark:border-purple-700 text-transparent bg-white dark:bg-slate-800"
+                                ? "bg-slate-900 dark:bg-white border-slate-900 dark:border-white text-white dark:text-slate-900" 
+                                : "border-slate-350 dark:border-slate-700 text-transparent bg-transparent hover:border-slate-450 dark:hover:border-slate-550"
                         )}
                     >
-                        <Check size={18} strokeWidth={3} />
+                        <Check size={14} strokeWidth={3} />
                     </div>
 
                     <div className="flex-1 min-w-0">
-                        <div className="flex flex-wrap items-center gap-2 mb-2">
-                            <span className={cn(
-                                "font-black text-sm px-2.5 py-1 rounded-lg leading-none shadow-sm shrink-0 border",
-                                isPicked 
-                                    ? "bg-emerald-100 text-emerald-800 border-emerald-200 dark:bg-emerald-900/50 dark:text-emerald-300 dark:border-emerald-800/40" 
-                                    : isStock 
-                                        ? "bg-blue-100 text-blue-800 border-blue-200 dark:bg-blue-900/40 dark:text-blue-300 dark:border-blue-800/40"
-                                        : "bg-purple-100 text-purple-800 border-purple-200 dark:bg-purple-900/40 dark:text-purple-300 dark:border-purple-800/40"
-                            )}>
+                        {/* Title and Amount */}
+                        <div className="flex flex-wrap items-center gap-2">
+                            <span className="font-mono font-bold text-sm tracking-tight text-slate-800 dark:text-slate-200">
                                 {item.amount}x
                             </span>
                             <span className={cn(
-                                "font-bold text-slate-800 dark:text-slate-100 text-base tracking-tight",
-                                isPicked && "line-through opacity-60"
+                                "font-semibold text-slate-900 dark:text-slate-100 text-sm tracking-tight",
+                                isPicked && "line-through opacity-70"
                             )}>
                                 {isStock ? item.article?.name : item.custom_name}
                             </span>
-                            <span className={cn(
-                                "text-[11px] font-extrabold uppercase tracking-wider px-2 py-0.5 rounded-full border shadow-sm shrink-0 inline-flex items-center gap-1",
-                                isStock 
-                                    ? "bg-blue-50 dark:bg-blue-950/20 dark:text-blue-400 text-blue-800 dark:text-blue-400 border-blue-100 dark:border-blue-900/30" 
-                                    : "bg-purple-50 dark:bg-purple-950/20 dark:text-purple-400 text-purple-800 dark:text-purple-400 border-purple-100 dark:border-purple-900/30"
-                            )}>
-                                {isStock ? (
-                                    <>
-                                        <Package size={10} />
-                                        Lagerware
-                                    </>
-                                ) : (
-                                    <>
-                                        <Truck size={10} />
-                                        Bestellware
-                                    </>
-                                )}
+                            
+                            <span className="text-[10px] font-bold uppercase tracking-wider text-slate-450 dark:text-slate-500 inline-flex items-center gap-1 select-none">
+                                {isStock ? 'Lager' : 'Bestellware'}
                             </span>
                         </div>
                         
-                        <div className="text-xs text-slate-500 dark:text-slate-400 flex flex-wrap items-center gap-2 mt-2">
+                        {/* Meta Info (Location, SKU, EAN) */}
+                        <div className="text-[11px] text-slate-500 dark:text-slate-450 flex flex-wrap items-center gap-2 mt-1.5 font-medium">
                             {isStock ? (
                                 <>
-                                    <span className="flex items-center gap-1.5 bg-blue-600 dark:bg-blue-500 text-white px-3 py-1 rounded-lg font-black font-mono shadow-sm tracking-wide text-xs">
-                                        <MapPin size={12} className="dark:text-blue-200 text-blue-900 dark:text-blue-100" /> 
+                                    <span className="inline-flex items-center gap-1 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-350 px-2 py-0.5 rounded font-mono font-bold text-[11px]">
+                                        <MapPin size={11} className="text-slate-450" /> 
                                         {item.article?.location || 'Kein Lagerort'}
                                     </span>
                                     {item.article?.sku && (
-                                        <span className="bg-white dark:bg-slate-850 px-2 py-0.5 rounded border border-slate-200 dark:border-slate-800 font-mono text-[10px] shadow-sm">
+                                        <span className="font-mono text-slate-400 dark:text-slate-500">
                                             SKU: {item.article.sku}
                                         </span>
                                     )}
                                     {item.article?.ean && (
-                                        <span className="bg-white dark:bg-slate-850 px-2 py-0.5 rounded border border-slate-200 dark:border-slate-800 font-mono text-[10px] shadow-sm">
+                                        <span className="font-mono text-slate-400 dark:text-slate-500">
                                             EAN: {item.article.ean}
                                         </span>
                                     )}
                                     {item.article?.stock !== undefined && item.article?.stock !== null && (
                                         <span className={cn(
-                                            "px-2 py-0.5 rounded border text-[10px] font-bold shadow-sm",
+                                            "font-bold",
                                             item.article.stock > 0 
-                                                ? "bg-emerald-50 dark:bg-emerald-950/20 text-emerald-600 dark:text-emerald-400 border-emerald-200/30 dark:border-emerald-900/30" 
-                                                : "bg-rose-50 dark:bg-rose-950/20 text-rose-600 dark:text-rose-400 border-rose-200/30 dark:border-rose-900/30"
+                                                ? "text-emerald-600 dark:text-emerald-500/80" 
+                                                : "text-rose-500 dark:text-rose-450/80"
                                         )}>
-                                            Bestand: {item.article.stock} Stk
+                                            (Bestand: {item.article.stock})
                                         </span>
                                     )}
                                 </>
@@ -415,43 +374,44 @@ export const CommissionDetailContent: React.FC<CommissionDetailContentProps> = (
                                     <button 
                                         onClick={(e) => handleCopyRef(e, item.external_reference, item.id)}
                                         className={cn(
-                                            "flex items-center gap-1.5 px-3 py-1 rounded-lg transition-colors border text-xs font-mono font-bold cursor-pointer shadow-sm",
+                                            "flex items-center gap-1 px-2 py-0.5 rounded transition-colors font-mono font-bold text-[11px] cursor-pointer border border-transparent shadow-none",
                                             copiedItemId === item.id 
-                                                ? "bg-emerald-500 border-emerald-600 text-white" 
-                                                : "bg-purple-600 border-purple-500 hover:bg-purple-700 text-white"
+                                                ? "bg-slate-900 dark:bg-white text-white dark:text-slate-900" 
+                                                : "bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300"
                                         )}
                                         title="Bestellnummer kopieren"
                                     >
-                                        {copiedItemId === item.id ? <Check size={12} /> : <ExternalLink size={12} />}
-                                        Bestellung: {item.external_reference || '-'}
+                                        {copiedItemId === item.id ? <Check size={10} /> : <ExternalLink size={10} />}
+                                        Ref: {item.external_reference || '-'}
                                     </button>
                                 </>
                             )}
                             {isBackorder && (
-                                <span className="inline-flex items-center text-[10px] font-extrabold uppercase tracking-wider text-orange-700 dark:text-orange-400 bg-orange-100 dark:bg-orange-500/20 px-2.5 py-1 rounded-lg border border-orange-200 dark:border-orange-500/30 shadow-sm animate-pulse">
-                                    <AlertTriangle size={12} className="mr-1 shrink-0" /> Rückstand
+                                <span className="inline-flex items-center text-[10px] font-extrabold uppercase tracking-wider text-amber-700 dark:text-amber-500 bg-amber-500/10 px-2 py-0.5 rounded border border-amber-500/20">
+                                    <AlertTriangle size={10} className="mr-0.5 shrink-0" /> Rückstand
                                 </span>
                             )}
                         </div>
                         
                         {item.notes && (
-                            <div className="mt-3 inline-flex items-start gap-2 text-amber-800 dark:text-amber-300 text-xs font-medium bg-amber-500/5 dark:bg-amber-500/10 px-3.5 py-2.5 rounded-xl border border-amber-500/20 dark:border-amber-500/10 w-full shadow-inner">
-                                <MessageSquare size={14} className="mt-0.5 shrink-0 text-amber-500" />
+                            <div className="mt-2 inline-flex items-start gap-1.5 text-amber-850 dark:text-amber-400 text-xs font-medium bg-amber-500/5 px-2.5 py-1.5 rounded-lg border border-amber-500/10 w-full shadow-none">
+                                <MessageSquare size={12} className="mt-0.5 shrink-0 text-amber-500" />
                                 <span className="leading-relaxed">{item.notes}</span>
                             </div>
                         )}
                     </div>
                 </div>
 
-                <div className="flex items-center gap-2 w-full sm:w-auto justify-end mt-2 sm:mt-0 pt-3 sm:pt-0 border-t sm:border-0 border-slate-100 dark:border-slate-800">
+                {/* Card Actions (Rückstand & Notiz) */}
+                <div className="flex items-center gap-1.5 w-full sm:w-auto justify-end mt-2 sm:mt-0 pt-2 sm:pt-0 border-t sm:border-0 border-slate-100 dark:border-slate-800">
                     {!isStock && (
                         <button 
                             onClick={(e) => { e.stopPropagation(); onToggleBackorder(item.id, item.is_backorder || false); }} 
                             className={cn(
-                                "px-3 py-1.5 rounded-lg text-xs font-bold uppercase transition-all border shadow-sm cursor-pointer",
+                                "px-2.5 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer border shadow-none",
                                 isBackorder 
-                                    ? 'bg-orange-500 border-orange-600 text-foreground shadow-orange-500/20' 
-                                    : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:bg-orange-50 hover:text-orange-600 hover:border-orange-200 dark:hover:bg-orange-900/30'
+                                    ? 'bg-amber-500/15 border-amber-500/20 text-amber-700 dark:text-amber-450' 
+                                    : 'bg-transparent text-slate-500 dark:text-slate-400 border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800'
                             )}
                         >
                             Rückstand
@@ -460,15 +420,15 @@ export const CommissionDetailContent: React.FC<CommissionDetailContentProps> = (
                     <button
                         onClick={(e) => { e.stopPropagation(); setEditingItemNote({ itemId: item.id, note: item.notes || '' }); }}
                         className={cn(
-                            "p-2 min-w-[44px] min-h-[44px] rounded-lg transition-all shadow-sm border cursor-pointer",
+                            "p-1.5 rounded-lg transition-all cursor-pointer border border-transparent hover:bg-slate-100 dark:hover:bg-slate-800",
                             item.notes
-                                ? 'text-amber-700 dark:text-amber-400 bg-amber-100 dark:bg-amber-900/30 border-amber-200 dark:border-amber-800 hover:bg-amber-200'
-                                : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:text-primary hover:border-primary/40'
+                                ? 'text-amber-600 dark:text-amber-400'
+                                : 'text-slate-400 hover:text-slate-600 dark:text-slate-500 dark:hover:text-slate-350'
                         )}
                         title="Notiz hinzufügen"
                         aria-label="Notiz hinzufügen"
                     >
-                        <MessageSquare size={16} />
+                        <MessageSquare size={14} />
                     </button>
                 </div>
             </motion.div>
@@ -707,143 +667,7 @@ export const CommissionDetailContent: React.FC<CommissionDetailContentProps> = (
         </div>
     );
 
-    const renderStagingLocationsWidget = () => {
-        const defaultOptions = ['Regal', 'Garage', 'Hof', 'Palette'];
-        
-        const toggleLocation = async (locName: string) => {
-            let nextLocs = [...locations];
-            if (nextLocs.includes(locName)) {
-                // Prevent removing the last remaining location
-                if (nextLocs.length <= 1) {
-                    toast.error("Mindestens ein Bereitstellungsort muss aktiv bleiben.");
-                    return;
-                }
-                nextLocs = nextLocs.filter(l => l !== locName);
-            } else {
-                nextLocs.push(locName);
-            }
-            
-            if (onUpdateStagingLocations) {
-                onUpdateStagingLocations(nextLocs);
-            } else {
-                // Fallback direct update
-                setSavingLocations(true);
-                try {
-                    const { error } = await supabase
-                        .from('commissions')
-                        .update({ staging_locations: nextLocs })
-                        .eq('id', commission.id);
-                    if (error) throw error;
-                    setLocations(nextLocs);
-                    toast.success("Bereitstellungsort aktualisiert");
-                } catch (err: any) {
-                    toast.error("Speichern fehlgeschlagen: " + err.message);
-                } finally {
-                    setSavingLocations(false);
-                }
-            }
-        };
 
-        const handleAddCustom = () => {
-            const trimmed = customInput.trim();
-            if (!trimmed) return;
-            if (locations.includes(trimmed)) {
-                toast.error("Ort existiert bereits.");
-                return;
-            }
-            const nextLocs = [...locations, trimmed];
-            setCustomInput('');
-            setShowCustomInput(false);
-            
-            if (onUpdateStagingLocations) {
-                onUpdateStagingLocations(nextLocs);
-            } else {
-                // Fallback direct update
-                updateStagingLocationsDirect(nextLocs);
-            }
-        };
-
-        const updateStagingLocationsDirect = async (nextLocs: string[]) => {
-            setSavingLocations(true);
-            try {
-                const { error } = await supabase
-                    .from('commissions')
-                    .update({ staging_locations: nextLocs })
-                    .eq('id', commission.id);
-                if (error) throw error;
-                setLocations(nextLocs);
-                toast.success("Bereitstellungsort hinzugefügt");
-            } catch (err: any) {
-                toast.error("Speichern fehlgeschlagen: " + err.message);
-            } finally {
-                setSavingLocations(false);
-            }
-        };
-
-        return (
-            <div className="bg-white dark:bg-card border border-slate-200 dark:border-border rounded-2xl md:rounded-3xl p-4 md:p-5 mb-6 shadow-sm">
-                <div className="flex items-center justify-between mb-4">
-                    <h3 className="text-sm font-black text-slate-800 dark:text-slate-100 flex items-center gap-2">
-                        <MapPin size={18} className="text-primary" />
-                        BEREITSTELLUNGSORT(E)
-                    </h3>
-                    {savingLocations && <span className="text-[10px] text-muted-foreground animate-pulse">Speichert...</span>}
-                </div>
-                <div className="flex flex-wrap gap-2 items-center">
-                    {/* Render default options + any custom active options */}
-                    {Array.from(new Set([...defaultOptions, ...locations])).map(loc => {
-                        const isActive = locations.includes(loc);
-                        return (
-                            <button
-                                key={loc}
-                                onClick={() => toggleLocation(loc)}
-                                className={cn(
-                                    "px-3 py-1.5 rounded-xl text-xs font-bold transition-all duration-200 flex items-center gap-1.5 cursor-pointer border",
-                                    isActive
-                                        ? "bg-primary/10 border-primary/30 text-primary"
-                                        : "bg-slate-50 border-slate-200 hover:bg-slate-100 text-slate-600 dark:bg-slate-800/40 dark:border-slate-800 dark:hover:bg-slate-800/80 dark:text-slate-400"
-                                )}
-                            >
-                                {isActive && <Check size={11} strokeWidth={3} />}
-                                {loc}
-                            </button>
-                        );
-                    })}
-
-                    {/* Custom Add Pill */}
-                    {showCustomInput ? (
-                        <div className="flex items-center gap-1.5 bg-slate-50 border border-slate-200 dark:bg-slate-800/40 dark:border-slate-800 rounded-xl px-2 py-0.5 animate-in fade-in zoom-in-95 duration-100">
-                            <input
-                                type="text"
-                                className="bg-transparent border-none text-xs font-bold text-slate-700 dark:text-slate-300 focus:outline-none w-20 py-1"
-                                placeholder="Ort eingeben..."
-                                value={customInput}
-                                onChange={e => setCustomInput(e.target.value)}
-                                onKeyDown={e => {
-                                    if (e.key === 'Enter') handleAddCustom();
-                                    if (e.key === 'Escape') {
-                                        setShowCustomInput(false);
-                                        setCustomInput('');
-                                    }
-                                }}
-                                autoFocus
-                            />
-                            <button onClick={handleAddCustom} aria-label="Ort hinzufügen" className="p-1 min-w-[44px] min-h-[44px] text-primary hover:bg-primary/10 rounded-lg"><Check size={11} strokeWidth={3} /></button>
-                            <button onClick={() => { setShowCustomInput(false); setCustomInput(''); }} aria-label="Abbrechen" className="p-1 min-w-[44px] min-h-[44px] text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg"><X size={11} /></button>
-                        </div>
-                    ) : (
-                        <button
-                            onClick={() => setShowCustomInput(true)}
-                            className="px-3 py-1.5 rounded-xl text-xs font-bold border border-dashed border-slate-300 dark:border-slate-700 text-slate-500 hover:text-slate-800 dark:hover:text-slate-200 hover:border-slate-400 transition-colors flex items-center gap-1 cursor-pointer"
-                        >
-                            <Plus size={11} strokeWidth={3} />
-                            Eigener Ort
-                        </button>
-                    )}
-                </div>
-            </div>
-        );
-    };
 
     return (
         <div className="flex flex-col h-full bg-slate-50/50 dark:bg-background overflow-y-auto relative font-sans custom-scrollbar">
@@ -852,18 +676,6 @@ export const CommissionDetailContent: React.FC<CommissionDetailContentProps> = (
                 {/* Main Content Area: Progress and Title Group */}
                 <div className="flex items-start justify-between gap-3 w-full min-w-0">
                     <div className="flex items-start gap-3 min-w-0 flex-1">
-                        {/* Progress Ring */}
-                        <div className="relative w-11 h-11 flex items-center justify-center shrink-0 mt-0.5">
-                            <svg className="w-full h-full transform -rotate-90" viewBox="0 0 36 36">
-                                <path className="text-slate-100 dark:text-slate-800" strokeWidth="3" stroke="currentColor" fill="none" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
-                                <motion.path 
-                                    className={`${hasBackorders ? "text-rose-500 dark:text-rose-400" : "text-primary"} drop-shadow-sm`} strokeWidth="3" strokeDasharray={`${progressPercent}, 100`} strokeLinecap="round" stroke="currentColor" fill="none" 
-                                    d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" 
-                                    initial={{ strokeDasharray: "0, 100" }} animate={{ strokeDasharray: `${progressPercent}, 100` }} transition={{ duration: 1, ease: "easeOut" }}
-                                />
-                            </svg>
-                            <span className={`absolute text-[9px] font-bold ${hasBackorders ? "text-rose-600 dark:text-rose-400" : "text-slate-700 dark:text-slate-300"}`}>{progressPercent}%</span>
-                        </div>
                         <div className="min-w-0 flex-1">
                             {/* Mini Stepper Breadcrumb (Hidden on narrow viewports/containers) */}
                             <div className="hidden items-center gap-1 text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500 mb-0.5 flex-wrap">
@@ -876,10 +688,12 @@ export const CommissionDetailContent: React.FC<CommissionDetailContentProps> = (
                                 <span className={cn(activeStep === 3 ? "text-emerald-600 dark:text-emerald-400 font-extrabold" : "")}>Abgeschlossen</span>
                             </div>
                             <div className="flex flex-col gap-1">
-                                <h1 className="text-base md:text-lg font-black tracking-tight text-slate-900 dark:text-white leading-tight break-words">
-                                    {commission.name}
-                                </h1>
-                                <div className="flex flex-wrap items-center gap-1.5 mt-0.5">
+                                {!hideTitle && (
+                                    <h1 className="text-base md:text-lg font-black tracking-tight text-slate-900 dark:text-white leading-tight break-words">
+                                        {commission.name}
+                                    </h1>
+                                )}
+                                <div className="flex flex-wrap items-center gap-2 mt-0.5">
                                     {commission.order_number && (
                                         <span 
                                             onClick={async (e) => {
@@ -891,11 +705,17 @@ export const CommissionDetailContent: React.FC<CommissionDetailContentProps> = (
                                                     toast.error("Kopieren fehlgeschlagen");
                                                 }
                                             }}
-                                            className="group cursor-pointer inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-slate-100 hover:bg-primary/10 dark:bg-slate-800 dark:hover:bg-primary/20 text-[10px] font-bold font-mono text-slate-700 dark:text-slate-300 hover:text-primary border border-slate-200 hover:border-primary/30 dark:border-slate-700 transition-all duration-200"
+                                            className="group cursor-pointer inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-100 hover:bg-primary/10 dark:bg-slate-800 dark:hover:bg-primary/20 text-sm font-extrabold font-mono text-slate-800 dark:text-slate-200 hover:text-primary border border-slate-200 hover:border-primary/30 dark:border-slate-700 transition-all duration-200 shadow-sm"
                                             title="Auftragsnummer kopieren"
                                         >
-                                            <FileText size={10} className="opacity-70 group-hover:text-primary" />
+                                            <FileText size={14} className="opacity-80 group-hover:text-primary" />
                                             {commission.order_number}
+                                        </span>
+                                    )}
+                                    {commission.staging_locations && commission.staging_locations.length > 0 && (
+                                        <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-[10px] font-bold text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 select-none">
+                                            <MapPin size={10} className="text-primary" />
+                                            {commission.staging_locations.join(', ')}
                                         </span>
                                     )}
                                     <StatusBadge status={translateStatus(commission.status)} />
@@ -941,6 +761,12 @@ export const CommissionDetailContent: React.FC<CommissionDetailContentProps> = (
                                         >
                                             <Printer size={15} /> Drucken
                                         </button>
+                                        <button
+                                            onClick={() => { setShowMobileMenu(false); setShowHistoryModal(true); }}
+                                            className="w-full text-left px-4 py-2.5 text-sm font-semibold hover:bg-slate-50 dark:hover:bg-slate-750/50 text-slate-700 dark:text-slate-200 flex items-center gap-2 transition-colors cursor-pointer border-none"
+                                        >
+                                            <History size={15} /> Verlauf
+                                        </button>
                                         {onRequestCancellation && !commission.status.startsWith('Return') && commission.status !== 'Withdrawn' && (
                                             <button
                                                 onClick={() => { setShowMobileMenu(false); setShowStornoModal(true); }}
@@ -983,6 +809,14 @@ export const CommissionDetailContent: React.FC<CommissionDetailContentProps> = (
                             title="Drucken"
                             aria-label="Drucken"
                         />
+                        <Button 
+                            variant="secondary" 
+                            onClick={() => setShowHistoryModal(true)} 
+                            icon={<History size={16} />} 
+                            className="p-2.5 h-10 w-10 flex items-center justify-center bg-white dark:bg-slate-800 shadow-sm border-slate-200 dark:border-slate-700 hover:border-primary/50 text-slate-700 dark:text-slate-200" 
+                            title="Verlauf anzeigen"
+                            aria-label="Verlauf anzeigen"
+                        />
                         {onRequestCancellation && !commission.status.startsWith('Return') && commission.status !== 'Withdrawn' && (
                             <Button 
                                 variant="secondary" 
@@ -1018,9 +852,6 @@ export const CommissionDetailContent: React.FC<CommissionDetailContentProps> = (
 
             {/* CONTENT CONTAINER */}
             <div className="p-3 md:p-8">
-                
-                {/* BEREITSTELLUNGSORTE WIDGET */}
-                {renderStagingLocationsWidget()}
                 
 
 
@@ -1060,15 +891,15 @@ export const CommissionDetailContent: React.FC<CommissionDetailContentProps> = (
                     <div className="flex flex-col gap-6">
                         {/* To Pick */}
                         {openItems.length > 0 && (
-                            <div className="bg-white dark:bg-card border border-slate-200 dark:border-border rounded-2xl md:rounded-3xl overflow-hidden shadow-sm">
-                                <div className="bg-slate-50 dark:bg-slate-900/50 px-4 md:px-6 py-3 md:py-4 border-b border-slate-200 dark:border-border flex justify-between items-center">
-                                    <h3 className="text-sm font-black text-slate-800 dark:text-slate-100 flex items-center gap-2">
-                                        <Package size={18} className="text-primary" /> 
-                                        NOCH OFFEN
+                            <div className="bg-white dark:bg-card border border-slate-250 dark:border-slate-800 rounded-xl overflow-hidden shadow-sm">
+                                <div className="bg-slate-50/80 dark:bg-slate-900/40 px-4 py-3 border-b border-slate-150 dark:border-slate-800 flex justify-between items-center select-none">
+                                    <h3 className="text-xs font-black text-slate-600 dark:text-slate-400 flex items-center gap-1.5 uppercase tracking-wider">
+                                        <Package size={15} className="text-slate-500" /> 
+                                        Noch Offen
                                     </h3>
-                                    <span className="bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300 text-xs font-bold px-3 py-1 rounded-full shadow-inner">{openItems.length}</span>
+                                    <span className="bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300 text-xs font-bold px-2 py-0.5 rounded shadow-none">{openItems.length}</span>
                                 </div>
-                                <div className="p-4 sm:p-6 space-y-4 bg-slate-50/30 dark:bg-transparent">
+                                <div className="p-3.5 space-y-2.5">
                                     <AnimatePresence>
                                         {openItems.map(renderItemCard)}
                                     </AnimatePresence>
@@ -1078,19 +909,19 @@ export const CommissionDetailContent: React.FC<CommissionDetailContentProps> = (
 
                         {/* Picked */}
                         {!hidePicked && (
-                            <div className="bg-white dark:bg-card border border-slate-200 dark:border-border rounded-2xl md:rounded-3xl overflow-hidden shadow-sm">
-                                <div className="bg-emerald-50 dark:bg-emerald-900/20 px-4 md:px-6 py-3 md:py-4 border-b border-emerald-100 dark:border-emerald-900/50 flex justify-between items-center">
-                                    <h3 className="text-sm font-black text-emerald-800 dark:text-emerald-400 flex items-center gap-2">
-                                        <CheckCircle2 size={18} /> 
-                                        GEPICKT
+                            <div className="bg-white dark:bg-card border border-slate-250 dark:border-slate-800 rounded-xl overflow-hidden shadow-sm">
+                                <div className="bg-slate-50/80 dark:bg-slate-900/40 px-4 py-3 border-b border-slate-150 dark:border-slate-800 flex justify-between items-center select-none">
+                                    <h3 className="text-xs font-black text-slate-600 dark:text-slate-400 flex items-center gap-1.5 uppercase tracking-wider">
+                                        <CheckCircle2 size={15} className="text-slate-500" /> 
+                                        Gepickt
                                     </h3>
-                                    <span className="bg-emerald-200 dark:bg-emerald-800 text-emerald-800 dark:text-emerald-100 text-xs font-bold px-3 py-1 rounded-full shadow-inner">{pickedItems.length}</span>
+                                    <span className="bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300 text-xs font-bold px-2 py-0.5 rounded shadow-none">{pickedItems.length}</span>
                                 </div>
-                                <div className="p-4 sm:p-6 space-y-4 bg-emerald-50/30 dark:bg-transparent">
+                                <div className="p-3.5 space-y-2.5">
                                     {pickedItems.length === 0 && (
-                                        <div className="text-center py-12 opacity-50">
-                                            <Package size={32} className="mx-auto mb-3 text-slate-400" />
-                                            <p className="text-slate-500 dark:text-slate-400 font-medium">Noch nichts gepickt.</p>
+                                        <div className="text-center py-8 opacity-40 select-none">
+                                            <Package size={24} className="mx-auto mb-2 text-slate-400" />
+                                            <p className="text-slate-500 dark:text-slate-400 text-xs font-medium">Noch nichts gepickt.</p>
                                         </div>
                                     )}
                                     <AnimatePresence>
@@ -1155,46 +986,57 @@ export const CommissionDetailContent: React.FC<CommissionDetailContentProps> = (
                         </div>
                     )}
 
-                    {/* HISTORY BENTO */}
-                    <div className="bg-white dark:bg-card border border-slate-200 dark:border-border rounded-2xl md:rounded-3xl p-4 md:p-6 shadow-sm flex flex-col min-h-[300px]">
-                        <h3 className="text-sm font-black text-slate-800 dark:text-slate-100 flex items-center gap-2 mb-6">
-                            <History size={18} className="text-slate-400" /> 
-                            VERLAUF
-                        </h3>
-
-                        <div className="bg-slate-50 dark:bg-slate-900/50 rounded-2xl p-5 flex-1 overflow-y-auto border border-slate-200 dark:border-slate-800 max-h-[400px] custom-scrollbar">
-                            {localHistoryLogs.length === 0 ? (
-                                <div className="text-center text-sm text-slate-500 italic py-8">Noch keine Einträge.</div>
-                            ) : (
-                                <div className="space-y-6">
-                                    {localHistoryLogs.map((log) => {
-                                        const { bg, icon } = getEventIconAndColor(log.event_type);
-                                        return (
-                                            <div key={log.id} className="flex gap-4 relative before:absolute before:left-[11px] before:top-8 before:bottom-[-1.5rem] before:w-0.5 before:bg-slate-200 dark:before:bg-slate-800 last:before:hidden">
-                                                <div className={cn("w-6 h-6 rounded-full flex items-center justify-center shrink-0 z-10 shadow-sm border border-white dark:border-slate-900", bg)}>
-                                                    {icon}
-                                                </div>
-                                                <div className="flex-1 pb-2">
-                                                    <div className="flex items-center justify-between mb-1">
-                                                        <span className="font-bold text-slate-800 dark:text-slate-200 text-sm">{log.profiles?.full_name?.split(' ')[0] || 'System'}</span>
-                                                        <span className="text-xs text-slate-500 font-mono bg-white dark:bg-slate-800 px-2 py-0.5 rounded-md border border-slate-200 dark:border-slate-700 shadow-sm">
-                                                            {new Date(log.created_at).toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' })}
-                                                        </span>
-                                                    </div>
-                                                    <div className="text-slate-600 dark:text-slate-400 text-xs leading-relaxed font-medium">{log.details}</div>
-                                                    <div className="text-[10px] text-slate-400 mt-1 font-semibold uppercase tracking-wider">
-                                                        {new Date(log.created_at).toLocaleDateString('de-DE', { day: '2-digit', month: 'short', year: 'numeric' })}
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        );
-                                    })}
-                                </div>
-                            )}
-                        </div>
-                    </div>
                 </div>
             </div>
+
+            {/* HISTORY MODAL */}
+            <GlassModal isOpen={showHistoryModal} onClose={() => setShowHistoryModal(false)} className="max-w-lg">
+                <div className="p-6 sm:p-8">
+                    <div className="flex items-center gap-3 mb-6 text-slate-800 dark:text-white">
+                        <div className="p-3 bg-slate-100 dark:bg-slate-800 rounded-2xl shadow-inner border border-slate-200 dark:border-slate-750">
+                            <History size={24} className="text-slate-500" />
+                        </div>
+                        <h3 className="text-xl font-black">Event-Verlauf</h3>
+                    </div>
+                    
+                    <div className="bg-slate-50 dark:bg-slate-900/50 rounded-2xl p-5 overflow-y-auto border border-slate-200 dark:border-slate-800 max-h-[50vh] custom-scrollbar mb-6">
+                        {localHistoryLogs.length === 0 ? (
+                            <div className="text-center text-sm text-slate-500 italic py-8">Noch keine Einträge.</div>
+                        ) : (
+                            <div className="space-y-6">
+                                {localHistoryLogs.map((log) => {
+                                    const { bg, icon } = getEventIconAndColor(log.event_type);
+                                    return (
+                                        <div key={log.id} className="flex gap-4 relative before:absolute before:left-[11px] before:top-8 before:bottom-[-1.5rem] before:w-0.5 before:bg-slate-200 dark:before:bg-slate-800 last:before:hidden">
+                                            <div className={cn("w-6 h-6 rounded-full flex items-center justify-center shrink-0 z-10 shadow-sm border border-white dark:border-slate-900", bg)}>
+                                                {icon}
+                                            </div>
+                                            <div className="flex-1 pb-2">
+                                                <div className="flex items-center justify-between mb-1">
+                                                    <span className="font-bold text-slate-800 dark:text-slate-200 text-sm">{log.profiles?.full_name?.split(' ')[0] || 'System'}</span>
+                                                    <span className="text-xs text-slate-500 font-mono bg-white dark:bg-slate-800 px-2 py-0.5 rounded-md border border-slate-200 dark:border-slate-700 shadow-sm">
+                                                        {new Date(log.created_at).toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' })}
+                                                    </span>
+                                                </div>
+                                                <div className="text-slate-600 dark:text-slate-400 text-xs leading-relaxed font-medium">{log.details}</div>
+                                                <div className="text-[10px] text-slate-400 mt-1 font-semibold uppercase tracking-wider">
+                                                    {new Date(log.created_at).toLocaleDateString('de-DE', { day: '2-digit', month: 'short', year: 'numeric' })}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                        )}
+                    </div>
+
+                    <div className="flex justify-end">
+                        <Button variant="secondary" onClick={() => setShowHistoryModal(false)} className="w-full bg-slate-150 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 font-bold border-none cursor-pointer">
+                            Schließen
+                        </Button>
+                    </div>
+                </div>
+            </GlassModal>
 
             {/* ITEM NOTE EDIT MODAL */}
             <GlassModal isOpen={!!editingItemNote} onClose={() => setEditingItemNote(null)} className="max-w-sm">

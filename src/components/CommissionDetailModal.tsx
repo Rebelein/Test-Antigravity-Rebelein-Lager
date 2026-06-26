@@ -31,8 +31,8 @@ export const CommissionDetailModal: React.FC<CommissionDetailModalProps> = ({ is
     if (!props.commission) return null;
 
     return (
-        <GlassModal isOpen={isOpen} onClose={onClose} className="max-w-3xl h-[90vh]">
-            <CommissionDetailContent  {...props} onClose={onClose} />
+        <GlassModal isOpen={isOpen} onClose={onClose} className="max-w-3xl h-[90vh]" title={props.commission.name}>
+            <CommissionDetailContent  {...props} onClose={onClose} hideTitle={true} />
         </GlassModal>
     );
 };
