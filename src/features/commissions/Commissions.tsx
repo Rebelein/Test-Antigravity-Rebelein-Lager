@@ -839,8 +839,6 @@ const Commissions: React.FC = () => {
                 
                 /* QR-Code Box */
                 .qr-box { 
-                    border: 1.5px solid #000000; 
-                    border-radius: 8px; 
                     padding: 1.5mm; 
                     display: flex; 
                     flex-direction: column; 
@@ -932,8 +930,6 @@ const Commissions: React.FC = () => {
                 
                 /* Item-Cards */
                 .item-card { 
-                    border: 1px solid #000000; 
-                    border-radius: 6px; 
                     padding: 2.2mm 2.8mm; 
                     margin-bottom: 1.8mm; 
                     display: grid; 
@@ -1020,7 +1016,6 @@ const Commissions: React.FC = () => {
                 @media print { 
                     body { background: none; -webkit-print-color-adjust: exact; print-color-adjust: exact; } 
                     * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-                    .item-card { border: 1px solid #000000; }
                     .warehouse-notes-box { border: 1.5px dashed #000000; border-left: 4px solid #000000; }
                 }
             </style>
