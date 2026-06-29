@@ -758,7 +758,7 @@ const Commissions: React.FC = () => {
                 .commission-title { 
                     font-size: 13pt; 
                     font-weight: 700; 
-                    color: #0f172a; 
+                    color: #000000; 
                     line-height: 1.2; 
                     max-height: 2.4em; 
                     overflow: hidden; 
@@ -766,8 +766,8 @@ const Commissions: React.FC = () => {
                     overflow-wrap: break-word; 
                 }
                 .divider { 
-                    height: 1px; 
-                    background-color: #cbd5e1; 
+                    height: 1.5px; 
+                    background-color: #000000; 
                     margin: 1.5mm 0 1.2mm 0; 
                 }
                 .metadata-row {
@@ -785,39 +785,40 @@ const Commissions: React.FC = () => {
                 .metadata-label {
                     font-size: 5.5pt;
                     font-weight: 700;
-                    color: #888;
+                    color: #000000;
                     letter-spacing: 0.8px;
                     text-transform: uppercase;
                     margin-bottom: 0.5mm;
                 }
                 .metadata-value {
                     font-size: 8.5pt;
-                    font-weight: 600;
-                    color: #0f172a;
+                    font-weight: 700;
+                    color: #000000;
                     white-space: nowrap;
                     overflow: hidden;
                     text-overflow: ellipsis;
                 }
                 .location-badge { 
-                    background: #0f172a; 
-                    color: #fff; 
-                    padding: 2px 6px; 
+                    background: transparent; 
+                    color: #000000; 
+                    border: 1.5px solid #000000;
+                    padding: 1px 5px; 
                     border-radius: 4px; 
-                    font-weight: 700; 
+                    font-weight: 800; 
                     font-size: 7.5pt; 
                     letter-spacing: 0.3px;
                     text-transform: uppercase; 
                 }
                 .other-locations { 
                     font-size: 7pt; 
-                    font-weight: 600; 
-                    color: #64748b; 
+                    font-weight: 700; 
+                    color: #000000; 
                 }
                 .notes-text { 
                     font-size: 7pt; 
                     font-style: italic; 
-                    color: #475569; 
-                    border-left: 2px solid #cbd5e1; 
+                    color: #000000; 
+                    border-left: 2px solid #000000; 
                     padding-left: 2mm; 
                     margin-top: 1.5mm; 
                     line-height: 1.3; 
@@ -827,9 +828,9 @@ const Commissions: React.FC = () => {
                     justify-content: space-between; 
                     align-items: center; 
                     font-size: 5.5pt; 
-                    font-weight: 600; 
-                    color: #94a3b8; 
-                    border-top: 1px solid #f1f5f9; 
+                    font-weight: 700; 
+                    color: #000000; 
+                    border-top: 1px solid #000000; 
                     padding-top: 1.2mm; 
                     margin-top: auto; 
                     letter-spacing: 0.5px;
@@ -838,7 +839,7 @@ const Commissions: React.FC = () => {
                 
                 /* QR-Code Box */
                 .qr-box { 
-                    border: 1px solid #e2e8f0; 
+                    border: 1.5px solid #000000; 
                     border-radius: 8px; 
                     padding: 1.5mm; 
                     display: flex; 
@@ -847,7 +848,7 @@ const Commissions: React.FC = () => {
                     justify-content: center; 
                     box-sizing: border-box; 
                     height: 100%; 
-                    background: #fafafa;
+                    background: transparent;
                 }
                 .qr-code { 
                     width: 28mm; 
@@ -856,10 +857,10 @@ const Commissions: React.FC = () => {
                 }
                 .qr-label { 
                     font-size: 5pt; 
-                    font-weight: 700; 
+                    font-weight: 800; 
                     margin-top: 1.5mm; 
                     letter-spacing: 0.8px; 
-                    color: #64748b; 
+                    color: #000000; 
                     text-transform: uppercase;
                 }
                 
@@ -869,11 +870,11 @@ const Commissions: React.FC = () => {
                     top: 62mm; 
                     left: 7.5mm; 
                     right: 7.5mm; 
-                    border-top: 1px dashed #cbd5e1; 
+                    border-top: 1.5px dashed #000000; 
                     text-align: center; 
                     font-size: 6.5pt; 
-                    font-weight: 600; 
-                    color: #94a3b8; 
+                    font-weight: 700; 
+                    color: #000000; 
                     text-transform: uppercase; 
                     letter-spacing: 1.5px; 
                 }
@@ -895,43 +896,43 @@ const Commissions: React.FC = () => {
                 }
                 .list-title { 
                     font-size: 7.5pt; 
-                    font-weight: 700; 
+                    font-weight: 800; 
                     text-transform: uppercase; 
                     letter-spacing: 1px; 
                     margin-bottom: 2.5mm; 
-                    border-bottom: 2px solid #0f172a; 
+                    border-bottom: 2px solid #000000; 
                     padding-bottom: 0.8mm; 
-                    color: #0f172a; 
+                    color: #000000; 
                 }
                 
                 /* Info an das Lager */
                 .warehouse-notes-box { 
-                    border: 1px solid #fcd34d; 
-                    border-left: 3.5px solid #d97706; 
-                    background: #fffbeb; 
+                    border: 1.5px dashed #000000; 
+                    border-left: 4px solid #000000; 
+                    background: transparent; 
                     padding: 2.5mm; 
                     margin-bottom: 3mm; 
                     border-radius: 4px; 
                 }
                 .warehouse-notes-title { 
-                    font-weight: 700; 
+                    font-weight: 800; 
                     font-size: 7.5pt; 
                     text-transform: uppercase; 
-                    color: #b45309;
+                    color: #000000;
                     margin-bottom: 0.8mm; 
                     letter-spacing: 0.5px;
                 }
                 .warehouse-notes-content { 
                     font-size: 8pt; 
-                    font-weight: 500; 
-                    color: #78350f;
+                    font-weight: 600; 
+                    color: #000000;
                     white-space: pre-wrap; 
                     line-height: 1.35;
                 }
                 
                 /* Item-Cards */
                 .item-card { 
-                    border: 1px solid #e2e8f0; 
+                    border: 1px solid #000000; 
                     border-radius: 6px; 
                     padding: 2.2mm 2.8mm; 
                     margin-bottom: 1.8mm; 
@@ -946,7 +947,7 @@ const Commissions: React.FC = () => {
                 .card-checkbox { 
                     width: 4mm; 
                     height: 4mm; 
-                    border: 1px solid #cbd5e1; 
+                    border: 1.5px solid #000000; 
                     border-radius: 4px; 
                     margin-top: 0.5mm; 
                     flex-shrink: 0; 
@@ -966,20 +967,21 @@ const Commissions: React.FC = () => {
                     flex-wrap: wrap; 
                 }
                 .card-amount { 
-                    font-weight: 700; 
-                    font-size: 9pt; 
-                    color: #0f172a;
+                    font-weight: 750; 
+                    font-size: 9.5pt; 
+                    color: #000000;
                 }
                 .card-title { 
-                    font-weight: 600; 
-                    color: #1e293b; 
+                    font-weight: 700; 
+                    color: #000000; 
                     font-size: 8.5pt;
                 }
                 .backorder-badge { 
-                    background: #ef4444; 
-                    color: #fff; 
+                    background: transparent; 
+                    border: 1.5px solid #000000;
+                    color: #000000; 
                     font-size: 6pt; 
-                    font-weight: 700; 
+                    font-weight: 800; 
                     padding: 1px 4.5px; 
                     border-radius: 3px; 
                     text-transform: uppercase; 
@@ -994,32 +996,32 @@ const Commissions: React.FC = () => {
                 .subtext-label {
                     font-size: 5.5pt;
                     font-weight: 700;
-                    color: #94a3b8;
+                    color: #000000;
                     letter-spacing: 0.5px;
                 }
                 .subtext-value {
                     font-size: 7.5pt;
-                    font-weight: 600;
-                    color: #475569;
+                    font-weight: 700;
+                    color: #000000;
                 }
                 .card-note { 
                     font-size: 7.5pt; 
                     font-style: italic; 
-                    color: #475569; 
-                    background: #f8fafc; 
+                    color: #000000; 
+                    background: transparent; 
                     padding: 1.5px 5px; 
                     border-radius: 3px; 
                     display: inline-block; 
                     margin-top: 1mm; 
-                    border-left: 2px solid #cbd5e1; 
+                    border-left: 2px solid #000000; 
                     width: fit-content;
                 }
                 
                 @media print { 
                     body { background: none; -webkit-print-color-adjust: exact; print-color-adjust: exact; } 
                     * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-                    .item-card { border: 1px solid #e2e8f0; }
-                    .warehouse-notes-box { border: 1px solid #fcd34d; border-left: 3.5px solid #d97706; }
+                    .item-card { border: 1px solid #000000; }
+                    .warehouse-notes-box { border: 1.5px dashed #000000; border-left: 4px solid #000000; }
                 }
             </style>
         </head>
@@ -1049,14 +1051,14 @@ const Commissions: React.FC = () => {
                 body { font-family: sans-serif; margin: 0; padding: 5mm; display: flex; flex-direction: column; height: 98vh; box-sizing: border-box; }
                 .container { border: 4px solid black; padding: 20px; flex: 1; display: flex; flex-direction: column; justify-content: flex-start; text-align: center; }
                 h1 { font-size: 2.5em; margin: 0 0 20px 0; font-weight: 900; text-transform: uppercase; border-bottom: 2px solid black; padding-bottom: 10px; }
-                .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; text-align: left; margin-bottom: 20px; border-bottom: 2px solid #ccc; padding-bottom: 20px; }
+                .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; text-align: left; margin-bottom: 20px; border-bottom: 2px solid black; padding-bottom: 20px; }
                 .info-item { display: flex; flex-direction: column; }
-                .label { font-size: 0.8em; color: #666; font-weight: bold; text-transform: uppercase; }
+                .label { font-size: 0.8em; color: black; font-weight: bold; text-transform: uppercase; }
                 .value { font-size: 1.1em; font-weight: bold; word-break: break-word; }
                 .value.large { font-size: 1.4em; }
                 .notes-container { text-align: left; margin-bottom: 20px; flex: 1; }
-                .notes { font-style: italic; background: #eee; padding: 10px; border-radius: 5px; font-size: 0.9em; white-space: pre-wrap; }
-                .qr-section { margin-top: auto; display: flex; flex-direction: column; align-items: center; border-top: 2px solid #ccc; padding-top: 10px; }
+                .notes { font-style: italic; background: transparent; border: 1.5px solid black; padding: 10px; border-radius: 5px; font-size: 0.9em; white-space: pre-wrap; }
+                .qr-section { margin-top: auto; display: flex; flex-direction: column; align-items: center; border-top: 2px solid black; padding-top: 10px; }
                 .date { font-size: 1em; font-weight: bold; margin-top: 5px; }
             </style>
           </head>
