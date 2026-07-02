@@ -591,8 +591,8 @@ const Commissions: React.FC = () => {
                 const otherLocations = locations.filter(l => l !== currentLocation);
                 const otherText = otherLocations.length > 0 ? `+ ${otherLocations.join(', ')}` : '';
 
-                // Compact layout with safe buffer: max 5 items per page
-                const ITEMS_PER_PAGE = 5; 
+                // Compact list layout: max 8 items per page
+                const ITEMS_PER_PAGE = 8; 
                 const chunks = [];
                 
                 if (!items || items.length === 0) {
@@ -610,60 +610,32 @@ const Commissions: React.FC = () => {
                     const stockItems = chunk.filter(i => i.type === 'Stock');
                     const extItems = chunk.filter(i => i.type === 'External');
                     
-                    const pageIndicator = chunks.length > 1 ? `Seite ${index + 1}/${chunks.length}` : '';
+                    const pageIndicator = chunks.length > 1 ? `Seite ${index + 1} von ${chunks.length}` : '';
                     
                     const warehouseNotesHtml = comm.warehouse_notes ? `
                         <div class="warehouse-notes-box">
-                            <div class="warehouse-notes-title">⚠️ Info ans Lager:</div>
+                            <strong class="warehouse-notes-title">⚠️ Info ans Lager:</strong>
                             <div class="warehouse-notes-content">${comm.warehouse_notes}</div>
                         </div>
                     ` : '';
 
                     const notesHtml = comm.notes ? `
-                        <div class="notes-text"><b>Hinweis:</b> ${comm.notes}</div>
+                        <div class="notes">${comm.notes}</div>
                     ` : '';
-
-                    const labelFooterHtml = `
-                        <div class="label-footer">
-                            <span class="print-date">Gedruckt: ${printDateStr}</span>
-                            ${pageIndicator ? `<span class="page-num">${pageIndicator}</span>` : ''}
-                        </div>
-                    `;
 
                     return `
                 <div class="page">
                     <div class="label-area">
-                        <div class="label-left">
-                            <div>
-                                <div class="commission-title">${comm.name}</div>
-                                <div class="divider"></div>
-                                
-                                <div class="metadata-row">
-                                    <div class="metadata-group">
-                                        <span class="metadata-label">Auftrag</span>
-                                        <span class="metadata-value">${comm.order_number || '-'}</span>
-                                    </div>
-                                    <div class="metadata-group">
-                                        <span class="metadata-label">Bereich / Fach</span>
-                                        <span class="location-badge">
-                                            ${currentLocation} ${locations.length > 1 ? `(${locIndex + 1}/${locations.length})` : ''}
-                                        </span>
-                                    </div>
-                                </div>
-                                
-                                ${otherText ? `
-                                <div style="margin-top: 1mm; display: flex; align-items: center; gap: 1mm;">
-                                    <span class="metadata-label" style="margin-bottom: 0;">Weitere Orte:</span>
-                                    <span class="other-locations">${otherText}</span>
-                                </div>` : ''}
-                                
-                                ${index === 0 ? notesHtml : ''}
-                            </div>
-                            ${labelFooterHtml}
+                        <div class="header-text">
+                            <div class="commission-title">${comm.name}</div>
+                            <div class="order-id">Auftrag: ${comm.order_number || '-'}</div>
+                            <div class="location-info">Bereich/Fach: ${currentLocation} ${locations.length > 1 ? `(${locIndex + 1}/${locations.length})` : ''}</div>
+                            ${otherText ? `<div class="other-locations-info">Weitere Orte: ${otherText}</div>` : ''}
+                            ${pageIndicator ? `<div class="page-indicator">${pageIndicator}</div>` : ''}
+                            ${index === 0 ? notesHtml : ''}
                         </div>
-                        <div class="qr-box">
+                        <div class="qr-container">
                             <img src="${qrUrl}" class="qr-code" />
-                            <div class="qr-label">SCAN COMM</div>
                         </div>
                     </div>
                     
@@ -676,45 +648,39 @@ const Commissions: React.FC = () => {
                         
                         ${extItems.length > 0 ? `
                             <div class="list-title">Erwartete externe Bestellungen:</div>
-                            ${extItems.map(i => `
-                                <div class="item-card">
-                                    <div class="card-checkbox"></div>
-                                    <div class="card-content">
-                                        <div class="card-header-row">
-                                            <span class="card-amount">${i.amount}x</span>
-                                            <span class="card-title">Externe Bestellung: ${i.custom_name}</span>
+                            <ul>
+                                ${extItems.map(i => `
+                                    <li>
+                                        <div class="checkbox"></div>
+                                        <div class="item-text">
+                                            <strong>${i.amount}x</strong> Externe Bestellung: ${i.custom_name}
                                             ${i.is_backorder ? '<span class="backorder-badge">Rückstand</span>' : ''}
+                                            <br>
+                                            <span class="item-subtext">(Vorgang: ${i.external_reference || 'N/A'})</span>
+                                            ${i.notes ? `<br><span class="item-note">Note: ${i.notes}</span>` : ''}
                                         </div>
-                                        <div class="card-subtext">
-                                            <span class="subtext-label">VORGANG:</span>
-                                            <span class="subtext-value">${i.external_reference || 'N/A'}</span>
-                                        </div>
-                                        ${i.notes ? `<div class="card-note">Note: ${i.notes}</div>` : ''}
-                                    </div>
-                                </div>
-                            `).join('')}
+                                    </li>
+                                `).join('')}
+                            </ul>
                             <br>
                         ` : ''}
                         
                         ${stockItems.length > 0 ? `
                             <div class="list-title">Material aus Lager:</div>
-                            ${stockItems.map(i => `
-                                <div class="item-card">
-                                    <div class="card-checkbox"></div>
-                                    <div class="card-content">
-                                        <div class="card-header-row">
-                                            <span class="card-amount">${i.amount}x</span>
-                                            <span class="card-title">${i.article?.name || 'Unbekannter Artikel'}</span>
+                            <ul>
+                                ${stockItems.map(i => `
+                                    <li>
+                                        <div class="checkbox"></div>
+                                        <div class="item-text">
+                                            <strong>${i.amount}x</strong> ${i.article?.name || 'Unbekannter Artikel'}
                                             ${i.is_backorder ? '<span class="backorder-badge">Rückstand</span>' : ''}
+                                            <br>
+                                            <span class="item-subtext">Lagerort: ${i.article ? renderLocation(i.article) : '-'}</span>
+                                            ${i.notes ? `<br><span class="item-note">Note: ${i.notes}</span>` : ''}
                                         </div>
-                                        <div class="card-subtext">
-                                            <span class="subtext-label">LAGERORT:</span>
-                                            <span class="subtext-value">${i.article ? renderLocation(i.article) : '-'}</span>
-                                        </div>
-                                        ${i.notes ? `<div class="card-note">Note: ${i.notes}</div>` : ''}
-                                    </div>
-                                </div>
-                            `).join('')}
+                                    </li>
+                                `).join('')}
+                            </ul>
                         ` : ''}
                     </div>
                 </div>
@@ -728,298 +694,203 @@ const Commissions: React.FC = () => {
         <head>
             <title>${docTitle}</title>
             <style>
-                @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
-                body { margin: 0; padding: 0; font-family: 'Inter', sans-serif; background: white; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+                @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700;800&display=swap');
+                body { margin: 0; padding: 0; font-family: 'Inter', sans-serif; background: white; }
                 @page { size: 105mm 148mm; margin: 0; }
                 .page { width: 105mm; height: 147mm; margin: 0 auto; position: relative; box-sizing: border-box; overflow: hidden; page-break-after: always; }
                 .page:last-child { page-break-after: auto; }
-                
-                /* Obere Label-Fläche (sichtbar am Regal) */
                 .label-area { 
                     position: absolute; 
                     top: 8mm; 
-                    left: 7.5mm; 
-                    right: 7.5mm; 
+                    left: 50%; 
+                    transform: translateX(-50%); 
+                    width: 90mm; 
                     height: 50mm; 
-                    padding: 3.5mm; 
+                    border: 1px solid #000000; 
+                    padding: 4mm; 
                     box-sizing: border-box; 
                     display: grid; 
-                    grid-template-columns: 1fr 34mm; 
-                    gap: 3mm; 
-                    background: #fff; 
+                    grid-template-columns: minmax(0, 1fr) 30mm; 
+                    grid-template-rows: auto 1fr auto; 
                 }
-                .label-left { 
+                .header-text { 
+                    grid-column: 1 / 2; 
                     display: flex; 
                     flex-direction: column; 
-                    justify-content: space-between; 
-                    height: 100%; 
+                    justify-content: center; 
+                    padding-right: 2mm; 
                     min-width: 0;
                 }
                 .commission-title { 
-                    font-size: 13pt; 
-                    font-weight: 700; 
-                    color: #0f172a; 
-                    line-height: 1.2; 
-                    max-height: 2.4em; 
+                    font-size: 18pt; 
+                    font-weight: 800; 
+                    color: #000000; 
+                    line-height: 1.1; 
+                    max-height: 2.2em; 
                     overflow: hidden; 
                     word-wrap: break-word; 
                     overflow-wrap: break-word; 
+                    hyphens: auto; 
                 }
-                .divider { 
-                    height: 1px; 
-                    background-color: #cbd5e1; 
-                    margin: 1.5mm 0 1.2mm 0; 
-                }
-                .metadata-row {
-                    display: flex;
-                    justify-content: space-between;
-                    align-items: center;
-                    margin-top: 1.2mm;
-                    gap: 2mm;
-                }
-                .metadata-group {
-                    display: flex;
-                    flex-direction: column;
-                    min-width: 0;
-                }
-                .metadata-label {
-                    font-size: 5.5pt;
-                    font-weight: 700;
-                    color: #888;
-                    letter-spacing: 0.8px;
-                    text-transform: uppercase;
-                    margin-bottom: 0.5mm;
-                }
-                .metadata-value {
-                    font-size: 8.5pt;
-                    font-weight: 600;
-                    color: #0f172a;
-                    white-space: nowrap;
-                    overflow: hidden;
-                    text-overflow: ellipsis;
-                }
-                .location-badge { 
-                    background: #0f172a; 
-                    color: #fff; 
-                    padding: 2px 6px; 
-                    border-radius: 4px; 
+                .order-id { 
+                    font-size: 12pt; 
                     font-weight: 700; 
-                    font-size: 7.5pt; 
-                    letter-spacing: 0.3px;
+                    color: #000000; 
+                    margin-top: 1.5mm; 
+                }
+                .location-info { 
+                    font-size: 11pt; 
+                    font-weight: 800; 
+                    color: #000000; 
+                    margin-top: 1.5mm; 
                     text-transform: uppercase; 
                 }
-                .other-locations { 
-                    font-size: 7pt; 
-                    font-weight: 600; 
-                    color: #64748b; 
+                .other-locations-info { 
+                    font-size: 8.5pt; 
+                    font-weight: 700; 
+                    color: #000000; 
+                    margin-top: 1mm; 
                 }
-                .notes-text { 
-                    font-size: 7pt; 
-                    font-style: italic; 
-                    color: #475569; 
-                    border-left: 2px solid #cbd5e1; 
-                    padding-left: 2mm; 
+                .page-indicator { 
+                    font-size: 9pt; 
+                    font-weight: 800; 
                     margin-top: 1.5mm; 
-                    line-height: 1.3; 
+                    color: #000000; 
                 }
-                .label-footer { 
+                .qr-container { 
+                    grid-column: 2 / 3; 
+                    grid-row: 1 / 4; 
                     display: flex; 
-                    justify-content: space-between; 
-                    align-items: center; 
-                    font-size: 5.5pt; 
-                    font-weight: 600; 
-                    color: #94a3b8; 
-                    border-top: 1px solid #f1f5f9; 
-                    padding-top: 1.2mm; 
-                    margin-top: auto; 
-                    letter-spacing: 0.5px;
-                    text-transform: uppercase;
-                }
-                
-                /* QR-Code Box */
-                .qr-box { 
-                    border: 1px solid #e2e8f0; 
-                    border-radius: 8px; 
-                    padding: 1.5mm; 
-                    display: flex; 
-                    flex-direction: column; 
-                    align-items: center; 
-                    justify-content: center; 
-                    box-sizing: border-box; 
-                    height: 100%; 
-                    background: #fafafa;
+                    justify-content: flex-end; 
+                    align-items: flex-start; 
+                    overflow: hidden; 
                 }
                 .qr-code { 
                     width: 28mm; 
                     height: 28mm; 
                     object-fit: contain; 
                 }
-                .qr-label { 
-                    font-size: 5pt; 
-                    font-weight: 700; 
-                    margin-top: 1.5mm; 
-                    letter-spacing: 0.8px; 
-                    color: #64748b; 
-                    text-transform: uppercase;
-                }
-                
-                /* Knickfalte */
                 .fold-line { 
                     position: absolute; 
                     top: 62mm; 
-                    left: 7.5mm; 
-                    right: 7.5mm; 
-                    border-top: 1px dashed #cbd5e1; 
+                    left: 5mm; 
+                    right: 5mm; 
+                    border-top: 1.5px dashed #000000; 
                     text-align: center; 
-                    font-size: 6.5pt; 
-                    font-weight: 600; 
-                    color: #94a3b8; 
+                    font-size: 8pt; 
+                    color: #000000; 
+                    font-weight: 700;
                     text-transform: uppercase; 
-                    letter-spacing: 1.5px; 
+                    letter-spacing: 1.5px;
                 }
                 .fold-text { 
                     background: white; 
-                    padding: 0 4mm; 
+                    padding: 0 2mm; 
                     position: relative; 
-                    top: -0.75em; 
+                    top: -0.7em; 
                 }
-                
-                /* Checklisten-Bereich */
                 .list-area { 
                     position: absolute; 
                     top: 68mm; 
                     left: 7.5mm; 
                     right: 7.5mm; 
                     bottom: 5mm; 
-                    font-size: 8.5pt; 
+                    font-size: 9pt; 
                 }
                 .list-title { 
-                    font-size: 7.5pt; 
-                    font-weight: 700; 
-                    text-transform: uppercase; 
-                    letter-spacing: 1px; 
-                    margin-bottom: 2.5mm; 
-                    border-bottom: 2px solid #0f172a; 
-                    padding-bottom: 0.8mm; 
-                    color: #0f172a; 
+                    font-weight: 800; 
+                    margin-bottom: 2mm; 
+                    font-size: 10pt; 
+                    border-bottom: 2px solid #000000; 
+                    padding-bottom: 1mm; 
+                    text-transform: uppercase;
+                    color: #000000;
                 }
-                
-                /* Info an das Lager */
+                ul { 
+                    padding-left: 0; 
+                    margin: 0; 
+                    list-style: none; 
+                }
+                li { 
+                    margin-bottom: 2mm; 
+                    display: flex; 
+                    align-items: flex-start; 
+                    gap: 2mm; 
+                }
+                .checkbox { 
+                    width: 3.5mm; 
+                    height: 3.5mm; 
+                    border: 1.5px solid #000000; 
+                    margin-top: 1.2mm; 
+                    flex-shrink: 0; 
+                    border-radius: 2px;
+                }
+                .item-text { 
+                    font-size: 9pt; 
+                    color: #000000; 
+                    line-height: 1.3;
+                }
+                .item-subtext { 
+                    font-size: 8pt; 
+                    color: #000000; 
+                    font-weight: 600;
+                }
+                .item-note { 
+                    font-style: italic; 
+                    font-size: 8pt; 
+                    color: #000000;
+                    border-left: 2px solid #000000;
+                    padding-left: 1.5mm;
+                    margin-top: 0.5mm;
+                    display: inline-block;
+                }
+                .backorder-badge { 
+                    border: 1.5px solid #000000; 
+                    padding: 1px 3px; 
+                    font-size: 7.5pt; 
+                    font-weight: 800; 
+                    margin-left: 2mm; 
+                    text-transform: uppercase; 
+                    color: #000000;
+                    border-radius: 2px;
+                }
                 .warehouse-notes-box { 
-                    border: 1px solid #fcd34d; 
-                    border-left: 3.5px solid #d97706; 
-                    background: #fffbeb; 
+                    border: 1px solid #000000; 
+                    border-left: 3.5px solid #000000; 
                     padding: 2.5mm; 
+                    margin-top: 3mm; 
                     margin-bottom: 3mm; 
                     border-radius: 4px; 
+                    background: transparent;
                 }
                 .warehouse-notes-title { 
-                    font-weight: 700; 
+                    font-weight: 800; 
                     font-size: 7.5pt; 
                     text-transform: uppercase; 
-                    color: #b45309;
+                    color: #000000;
                     margin-bottom: 0.8mm; 
                     letter-spacing: 0.5px;
                 }
                 .warehouse-notes-content { 
                     font-size: 8pt; 
-                    font-weight: 500; 
-                    color: #78350f;
+                    font-weight: 600; 
+                    color: #000000;
                     white-space: pre-wrap; 
                     line-height: 1.35;
                 }
-                
-                /* Item-Cards */
-                .item-card { 
-                    border: 1px solid #e2e8f0; 
-                    border-radius: 6px; 
-                    padding: 2.2mm 2.8mm; 
-                    margin-bottom: 1.8mm; 
-                    display: grid; 
-                    grid-template-columns: 18px 1fr; 
-                    gap: 2.5mm; 
-                    align-items: start; 
-                    background: #fff; 
-                    box-sizing: border-box; 
-                    page-break-inside: avoid; 
-                }
-                .card-checkbox { 
-                    width: 4mm; 
-                    height: 4mm; 
-                    border: 1px solid #cbd5e1; 
-                    border-radius: 4px; 
-                    margin-top: 0.5mm; 
-                    flex-shrink: 0; 
-                }
-                .card-content { 
-                    display: flex; 
-                    flex-direction: column; 
-                    gap: 0.5mm; 
-                    font-size: 8pt; 
-                    line-height: 1.3; 
-                    min-width: 0;
-                }
-                .card-header-row { 
-                    display: flex; 
-                    align-items: baseline; 
-                    gap: 1.5mm; 
-                    flex-wrap: wrap; 
-                }
-                .card-amount { 
-                    font-weight: 700; 
-                    font-size: 9pt; 
-                    color: #0f172a;
-                }
-                .card-title { 
-                    font-weight: 600; 
-                    color: #1e293b; 
-                    font-size: 8.5pt;
-                }
-                .backorder-badge { 
-                    background: #ef4444; 
-                    color: #fff; 
-                    font-size: 6pt; 
-                    font-weight: 700; 
-                    padding: 1px 4.5px; 
-                    border-radius: 3px; 
-                    text-transform: uppercase; 
-                    letter-spacing: 0.5px; 
-                }
-                .card-subtext { 
-                    display: flex;
-                    align-items: center;
-                    gap: 1mm;
-                    margin-top: 0.5mm;
-                }
-                .subtext-label {
-                    font-size: 5.5pt;
-                    font-weight: 700;
-                    color: #94a3b8;
-                    letter-spacing: 0.5px;
-                }
-                .subtext-value {
-                    font-size: 7.5pt;
-                    font-weight: 600;
-                    color: #475569;
-                }
-                .card-note { 
-                    font-size: 7.5pt; 
+                .notes { 
+                    font-size: 8.5pt; 
+                    margin-top: 2mm; 
                     font-style: italic; 
-                    color: #475569; 
-                    background: #f8fafc; 
-                    padding: 1.5px 5px; 
-                    border-radius: 3px; 
-                    display: inline-block; 
-                    margin-top: 1mm; 
-                    border-left: 2px solid #cbd5e1; 
-                    width: fit-content;
+                    color: #000000; 
+                    border-top: 1px dotted #000000; 
+                    padding-top: 1mm; 
+                    line-height: 1.2; 
                 }
-                
                 @media print { 
                     body { background: none; -webkit-print-color-adjust: exact; print-color-adjust: exact; } 
                     * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-                    .item-card { border: 1px solid #e2e8f0; }
-                    .warehouse-notes-box { border: 1px solid #fcd34d; border-left: 3.5px solid #d97706; }
+                    .label-area { border: none; } 
                 }
             </style>
         </head>
