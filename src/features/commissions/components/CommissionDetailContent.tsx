@@ -70,6 +70,7 @@ interface CommissionDetailContentProps {
     onCompleteReturn: () => void;
     onEdit: (e: React.MouseEvent) => void;
     onPrint: () => void;
+    onPrintPreview?: () => void;
     onTogglePicked: (itemId: string, current: boolean) => void;
     onToggleBackorder: (itemId: string, current: boolean) => void;
     onSaveNote: (itemId: string, note: string) => void;
@@ -85,7 +86,7 @@ interface CommissionDetailContentProps {
 export const CommissionDetailContent: React.FC<CommissionDetailContentProps> = ({
     commission, items, localHistoryLogs, allItemsPicked, hasBackorders, isSubmitting,
     onSetReady, onWithdraw, onResetStatus, onRevertWithdraw, onInitReturn,
-    onReturnToReady, onCompleteReturn, onEdit, onPrint, onTogglePicked,
+    onReturnToReady, onCompleteReturn, onEdit, onPrint, onPrintPreview, onTogglePicked,
     onToggleBackorder, onSaveNote, onClose, onSaveOfficeData, onRequestCancellation,
     onStartScan, onDelete, onUpdateStagingLocations, hideTitle = false
 }) => {
@@ -761,6 +762,14 @@ export const CommissionDetailContent: React.FC<CommissionDetailContentProps> = (
                                         >
                                             <Printer size={15} /> Drucken
                                         </button>
+                                        {onPrintPreview && (
+                                            <button
+                                                onClick={() => { setShowMobileMenu(false); onPrintPreview(); }}
+                                                className="w-full text-left px-4 py-2.5 text-sm font-semibold hover:bg-slate-50 dark:hover:bg-slate-750/50 text-slate-700 dark:text-slate-200 flex items-center gap-2 transition-colors cursor-pointer border-none"
+                                            >
+                                                <FileText size={15} /> Druckvorschlag
+                                            </button>
+                                        )}
                                         <button
                                             onClick={() => { setShowMobileMenu(false); setShowHistoryModal(true); }}
                                             className="w-full text-left px-4 py-2.5 text-sm font-semibold hover:bg-slate-50 dark:hover:bg-slate-750/50 text-slate-700 dark:text-slate-200 flex items-center gap-2 transition-colors cursor-pointer border-none"
@@ -809,6 +818,16 @@ export const CommissionDetailContent: React.FC<CommissionDetailContentProps> = (
                             title="Drucken"
                             aria-label="Drucken"
                         />
+                        {onPrintPreview && (
+                            <Button 
+                                variant="secondary" 
+                                onClick={onPrintPreview} 
+                                icon={<FileText size={16} />} 
+                                className="p-2.5 h-10 w-10 flex items-center justify-center bg-white dark:bg-slate-800 shadow-sm border-slate-200 dark:border-slate-700 hover:border-primary/50 text-slate-700 dark:text-slate-200" 
+                                title="Druckvorschlag"
+                                aria-label="Druckvorschlag"
+                            />
+                        )}
                         <Button 
                             variant="secondary" 
                             onClick={() => setShowHistoryModal(true)} 

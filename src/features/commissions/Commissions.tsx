@@ -5,7 +5,7 @@ import { supabase } from '../../../supabaseClient';
 import { useAuth } from '../../../contexts/AuthContext';
 import { useUserPreferences } from '../../../contexts/UserPreferencesContext';
 import { Commission, CommissionItem, Article, Supplier } from '../../../types';
-import { Plus, Search, CheckCircle2, Printer, X, Loader2, History, Trash2, BoxSelect, ArrowRight, Clock, LogOut, Undo2, RotateCcw, AlertTriangle, Layers, Tag, ScanLine, Truck, Calendar, Menu, Filter, ChevronRight } from 'lucide-react';
+import { Plus, Search, CheckCircle2, Printer, X, Loader2, History, Trash2, BoxSelect, ArrowRight, Clock, LogOut, Undo2, RotateCcw, AlertTriangle, Layers, Tag, ScanLine, Truck, Calendar, Menu, Filter, ChevronRight, FileText } from 'lucide-react';
 import { clsx } from 'clsx';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { CommissionCleanupModal } from './components/CommissionCleanupModal';
@@ -81,6 +81,7 @@ const Commissions: React.FC = () => {
     const [showDeleteModal, setShowDeleteModal] = useState(false);
     const [deleteTarget, setDeleteTarget] = useState<{ id: string, name: string, mode: 'trash' | 'permanent' } | null>(null);
     const [showLabelUpdateModal, setShowLabelUpdateModal] = useState(false);
+    const [showPrintPreviewAfterEdit, setShowPrintPreviewAfterEdit] = useState(false);
     const [showCleanupModal, setShowCleanupModal] = useState(false);
 
     // Printing
@@ -300,6 +301,7 @@ const Commissions: React.FC = () => {
             // If we were editing, restore detail view for that commission
             if (activeCommission && activeCommission.id === editingCommissionId) {
                 handleOpenDetail(activeCommission);
+                setShowPrintPreviewAfterEdit(true);
             } else {
                 setSidePanelMode('none');
             }
@@ -457,6 +459,7 @@ const Commissions: React.FC = () => {
                         onCompleteReturn={handleCompleteReturn}
                         onEdit={(e) => handleEditCommission(activeCommission, e)}
                         onPrint={() => handleSinglePrint()}
+                        onPrintPreview={() => handlePrintPreview()}
                         onTogglePicked={toggleActiveItemPicked}
                         onToggleBackorder={toggleBackorder}
                         onSaveNote={saveItemNote}
@@ -515,6 +518,25 @@ const Commissions: React.FC = () => {
         if (printTab === 'history') fetchPrintHistory();
         if (returnPath) { navigate(returnPath); setReturnPath(null); }
     };
+
+    const handlePrintPreview = async (commId?: string) => {
+        const id = commId || activeCommission?.id;
+        if (!id) return;
+
+        let comm = activeCommission;
+        let items = commItems;
+
+        if (!comm || comm.id !== id) {
+            const { data: c } = await supabase.from('commissions').select('*').eq('id', id).single();
+            const { data: i } = await supabase.from('commission_items').select('*, article:articles(*)').eq('commission_id', id);
+            comm = c;
+            items = i ? i.map((x: any) => ({ ...x, article: x.article })) : [];
+        }
+
+        if (comm) {
+            generateBatchPDF([{ comm, items }], false);
+        }
+    };
     
     const handleReprintBatch = async (commissionIds: string[]) => {
         if (commissionIds.length === 0) return;
@@ -562,7 +584,7 @@ const Commissions: React.FC = () => {
     };
 
     // Copy-pasted PDF Generation (Crucial to preserve)
-    const generateBatchPDF = (data: { comm: Commission, items: CommissionItem[] }[]) => {
+    const generateBatchPDF = (data: { comm: Commission, items: CommissionItem[] }[], autoPrint: boolean = true) => {
         const printWindow = window.open('', 'PRINT_COMM', 'height=800,width=600');
         if (!printWindow) return;
 
@@ -706,8 +728,8 @@ const Commissions: React.FC = () => {
                     transform: translateX(-50%); 
                     width: 90mm; 
                     height: 50mm; 
-                    border: 1px solid #000000; 
-                    padding: 4mm; 
+                    border: none; 
+                    padding: 0; 
                     box-sizing: border-box; 
                     display: grid; 
                     grid-template-columns: minmax(0, 1fr) 30mm; 
@@ -722,7 +744,7 @@ const Commissions: React.FC = () => {
                     min-width: 0;
                 }
                 .commission-title { 
-                    font-size: 18pt; 
+                    font-size: 24pt; 
                     font-weight: 800; 
                     color: #000000; 
                     line-height: 1.1; 
@@ -733,28 +755,28 @@ const Commissions: React.FC = () => {
                     hyphens: auto; 
                 }
                 .order-id { 
-                    font-size: 12pt; 
-                    font-weight: 700; 
-                    color: #000000; 
-                    margin-top: 1.5mm; 
-                }
-                .location-info { 
-                    font-size: 11pt; 
+                    font-size: 14pt; 
                     font-weight: 800; 
                     color: #000000; 
-                    margin-top: 1.5mm; 
+                    margin-top: 2.5mm; 
+                }
+                .location-info { 
+                    font-size: 13pt; 
+                    font-weight: 800; 
+                    color: #000000; 
+                    margin-top: 2.5mm; 
                     text-transform: uppercase; 
                 }
                 .other-locations-info { 
-                    font-size: 8.5pt; 
+                    font-size: 9.5pt; 
                     font-weight: 700; 
                     color: #000000; 
-                    margin-top: 1mm; 
+                    margin-top: 1.5mm; 
                 }
                 .page-indicator { 
-                    font-size: 9pt; 
+                    font-size: 10pt; 
                     font-weight: 800; 
-                    margin-top: 1.5mm; 
+                    margin-top: 2mm; 
                     color: #000000; 
                 }
                 .qr-container { 
@@ -775,7 +797,7 @@ const Commissions: React.FC = () => {
                     top: 62mm; 
                     left: 5mm; 
                     right: 5mm; 
-                    border-top: 1.5px dashed #000000; 
+                    border-top: 2px dotted #000000; 
                     text-align: center; 
                     font-size: 8pt; 
                     color: #000000; 
@@ -896,7 +918,7 @@ const Commissions: React.FC = () => {
         </head>
         <body>
             ${pagesHtml}
-            <script>window.onload = function() { setTimeout(() => { window.print(); }, 800); }</script>
+            <script>window.onload = function() { ${autoPrint ? "setTimeout(() => { window.print(); }, 800);" : ""} }</script>
         </body>
         </html>
         `);
@@ -1801,7 +1823,44 @@ const Commissions: React.FC = () => {
                         <p className="text-muted-foreground mb-4">Daten geändert.</p>
                         <div className="space-y-2">
                             <Button onClick={() => handleSinglePrint(activeCommission!.id)} className="w-full">Drucken</Button>
+                            <Button onClick={() => { handlePrintPreview(activeCommission!.id); setShowLabelUpdateModal(false); }} variant="secondary" className="w-full">
+                                <FileText size={16} className="mr-1.5 inline" /> Druckvorschlag
+                            </Button>
                             <Button onClick={() => setShowLabelUpdateModal(false)} variant="secondary" className="w-full">Nein</Button>
+                        </div>
+                    </div>
+                </GlassModal>
+            )}
+
+            {showPrintPreviewAfterEdit && activeCommission && (
+                <GlassModal isOpen={true} onClose={() => setShowPrintPreviewAfterEdit(false)} className="max-w-sm text-center">
+                    <div className="p-6">
+                        <FileText size={48} className="mx-auto text-blue-500 mb-4" />
+                        <h3 className="text-lg font-bold text-foreground mb-2">Kommission aktualisiert</h3>
+                        <p className="text-muted-foreground mb-4">
+                            Möchtest du einen aktualisierten Druckvorschlag erzeugen?
+                        </p>
+                        <div className="space-y-2">
+                            <Button 
+                                onClick={() => { handlePrintPreview(activeCommission!.id); setShowPrintPreviewAfterEdit(false); }} 
+                                className="w-full bg-blue-600 hover:bg-blue-500 border-none text-white font-bold"
+                            >
+                                <FileText size={16} className="mr-1.5 inline" /> Druckvorschlag erzeugen
+                            </Button>
+                            <Button 
+                                onClick={() => { handleSinglePrint(activeCommission!.id); setShowPrintPreviewAfterEdit(false); }} 
+                                variant="secondary" 
+                                className="w-full font-semibold"
+                            >
+                                <Printer size={16} className="mr-1.5 inline" /> Direkt drucken
+                            </Button>
+                            <Button 
+                                onClick={() => setShowPrintPreviewAfterEdit(false)} 
+                                variant="secondary" 
+                                className="w-full text-muted-foreground"
+                            >
+                                Überspringen
+                            </Button>
                         </div>
                     </div>
                 </GlassModal>
