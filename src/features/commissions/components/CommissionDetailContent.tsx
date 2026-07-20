@@ -877,55 +877,55 @@ export const CommissionDetailContent: React.FC<CommissionDetailContentProps> = (
             </div>
 
             {/* CONTENT CONTAINER */}
-            <div className="p-3 md:p-8">
-                
+            <div className="p-3 md:p-5">
+
 
 
                 {/* ALERTS */}
-                <div className="space-y-3 mb-8">
+                <div className="space-y-2 md:space-y-2.5 mb-5 md:mb-6">
                     {commission.warehouse_notes && (
-                        <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className="bg-amber-50 dark:bg-amber-500/10 border border-amber-200 dark:border-amber-500/30 rounded-2xl p-4 sm:p-5 shadow-sm flex items-start gap-4">
-                            <div className="bg-amber-100 dark:bg-amber-500/20 p-2 rounded-xl shrink-0 text-amber-600 dark:text-amber-400">
-                                <AlertTriangle size={24} />
+                        <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className="bg-amber-50 dark:bg-amber-500/10 border border-amber-200 dark:border-amber-500/30 rounded-lg md:rounded-xl p-3 md:p-4 shadow-sm flex items-start gap-3">
+                            <div className="bg-amber-100 dark:bg-amber-500/20 p-1.5 rounded-lg shrink-0 text-amber-600 dark:text-amber-400">
+                                <AlertTriangle size={18} />
                             </div>
                             <div>
-                                <h4 className="text-amber-800 dark:text-amber-300 font-bold text-sm uppercase tracking-wider mb-1">Lagerhinweis</h4>
-                                <p className="text-amber-900 dark:text-amber-100 text-sm leading-relaxed whitespace-pre-wrap">{commission.warehouse_notes}</p>
+                                <h4 className="text-amber-800 dark:text-amber-300 font-bold text-xs uppercase tracking-wider mb-0.5">Lagerhinweis</h4>
+                                <p className="text-amber-900 dark:text-amber-100 text-xs leading-relaxed whitespace-pre-wrap">{commission.warehouse_notes}</p>
                             </div>
                         </motion.div>
                     )}
                     {commission.notes && (
-                        <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className="bg-blue-50 dark:bg-blue-500/10 border border-blue-200 dark:border-blue-500/30 rounded-2xl p-4 sm:p-5 shadow-sm flex items-start gap-4">
-                            <div className="bg-blue-100 dark:bg-blue-500/20 p-2 rounded-xl shrink-0 dark:text-blue-400 text-blue-800 dark:text-blue-400">
-                                <FileText size={24} />
+                        <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className="bg-blue-50 dark:bg-blue-500/10 border border-blue-200 dark:border-blue-500/30 rounded-lg md:rounded-xl p-3 md:p-4 shadow-sm flex items-start gap-3">
+                            <div className="bg-blue-100 dark:bg-blue-500/20 p-1.5 rounded-lg shrink-0 dark:text-blue-400 text-blue-800 dark:text-blue-400">
+                                <FileText size={18} />
                             </div>
                             <div>
-                                <h4 className="text-blue-800 dark:text-blue-300 font-bold text-sm uppercase tracking-wider mb-1">Allgemeine Notiz</h4>
-                                <p className="text-blue-900 dark:text-blue-100 text-sm leading-relaxed whitespace-pre-wrap">{commission.notes}</p>
+                                <h4 className="text-blue-800 dark:text-blue-300 font-bold text-xs uppercase tracking-wider mb-0.5">Allgemeine Notiz</h4>
+                                <p className="text-blue-900 dark:text-blue-100 text-xs leading-relaxed whitespace-pre-wrap">{commission.notes}</p>
                             </div>
                         </motion.div>
                     )}
                 </div>
 
                 {/* MAIN CONTAINER */}
-                <div className="flex flex-col gap-6">
+                <div className="flex flex-col gap-4 md:gap-5">
                     
                     {/* ITEMS CONTROLS BAR */}
                     {renderItemsControlBar()}
 
                     {/* ITEMS LIST */}
-                    <div className="flex flex-col gap-6">
+                    <div className="flex flex-col gap-3 md:gap-4">
                         {/* To Pick */}
                         {openItems.length > 0 && (
-                            <div className="bg-white dark:bg-card border border-slate-250 dark:border-slate-800 rounded-xl overflow-hidden shadow-sm">
-                                <div className="bg-slate-50/80 dark:bg-slate-900/40 px-4 py-3 border-b border-slate-150 dark:border-slate-800 flex justify-between items-center select-none">
-                                    <h3 className="text-xs font-black text-slate-600 dark:text-slate-400 flex items-center gap-1.5 uppercase tracking-wider">
-                                        <Package size={15} className="text-slate-500" /> 
+                            <div className="bg-white dark:bg-card border border-slate-200 dark:border-slate-800 rounded-lg overflow-hidden shadow-sm">
+                                <div className="bg-slate-50/80 dark:bg-slate-900/40 px-3 md:px-4 py-2.5 border-b border-slate-150 dark:border-slate-800 flex justify-between items-center select-none">
+                                    <h3 className="text-[11px] font-bold text-slate-600 dark:text-slate-400 flex items-center gap-1.5 uppercase tracking-wider">
+                                        <Package size={14} className="text-slate-500" /> 
                                         Noch Offen
                                     </h3>
-                                    <span className="bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300 text-xs font-bold px-2 py-0.5 rounded shadow-none">{openItems.length}</span>
+                                    <span className="bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300 text-[11px] font-bold px-2 py-0.5 rounded shadow-none">{openItems.length}</span>
                                 </div>
-                                <div className="p-3.5 space-y-2.5">
+                                <div className="p-2.5 md:p-3.5 space-y-2">
                                     <AnimatePresence>
                                         {openItems.map(renderItemCard)}
                                     </AnimatePresence>
@@ -935,18 +935,18 @@ export const CommissionDetailContent: React.FC<CommissionDetailContentProps> = (
 
                         {/* Picked */}
                         {!hidePicked && (
-                            <div className="bg-white dark:bg-card border border-slate-250 dark:border-slate-800 rounded-xl overflow-hidden shadow-sm">
-                                <div className="bg-slate-50/80 dark:bg-slate-900/40 px-4 py-3 border-b border-slate-150 dark:border-slate-800 flex justify-between items-center select-none">
-                                    <h3 className="text-xs font-black text-slate-600 dark:text-slate-400 flex items-center gap-1.5 uppercase tracking-wider">
-                                        <CheckCircle2 size={15} className="text-slate-500" /> 
+                            <div className="bg-white dark:bg-card border border-slate-200 dark:border-slate-800 rounded-lg overflow-hidden shadow-sm">
+                                <div className="bg-slate-50/80 dark:bg-slate-900/40 px-3 md:px-4 py-2.5 border-b border-slate-150 dark:border-slate-800 flex justify-between items-center select-none">
+                                    <h3 className="text-[11px] font-bold text-slate-600 dark:text-slate-400 flex items-center gap-1.5 uppercase tracking-wider">
+                                        <CheckCircle2 size={14} className="text-slate-500" /> 
                                         Gepickt
                                     </h3>
-                                    <span className="bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300 text-xs font-bold px-2 py-0.5 rounded shadow-none">{pickedItems.length}</span>
+                                    <span className="bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300 text-[11px] font-bold px-2 py-0.5 rounded shadow-none">{pickedItems.length}</span>
                                 </div>
-                                <div className="p-3.5 space-y-2.5">
+                                <div className="p-2.5 md:p-3.5 space-y-2">
                                     {pickedItems.length === 0 && (
-                                        <div className="text-center py-8 opacity-40 select-none">
-                                            <Package size={24} className="mx-auto mb-2 text-slate-400" />
+                                        <div className="text-center py-6 opacity-40 select-none">
+                                            <Package size={20} className="mx-auto mb-1.5 text-slate-400" />
                                             <p className="text-slate-500 dark:text-slate-400 text-xs font-medium">Noch nichts gepickt.</p>
                                         </div>
                                     )}
@@ -960,15 +960,15 @@ export const CommissionDetailContent: React.FC<CommissionDetailContentProps> = (
 
                     {/* OFFICE BENTO */}
                     {onSaveOfficeData && (
-                        <div className="bg-white dark:bg-card border border-slate-200 dark:border-border rounded-2xl md:rounded-3xl p-4 md:p-6 shadow-sm">
-                            <h3 className="text-sm font-black text-slate-800 dark:text-slate-100 flex items-center gap-2 mb-6">
-                                <FileText size={18} className="text-blue-500" /> 
+                        <div className="bg-white dark:bg-card border border-slate-200 dark:border-border rounded-lg md:rounded-xl p-4 md:p-5 shadow-sm">
+                            <h3 className="text-sm font-bold text-slate-800 dark:text-slate-100 flex items-center gap-2 mb-4">
+                                <FileText size={16} className="text-blue-500" /> 
                                 BÜRO & VERWALTUNG
                             </h3>
 
                             <div
                                 className={cn(
-                                    "p-4 rounded-2xl border-2 cursor-pointer transition-all flex items-center gap-4 mb-6 shadow-sm hover:shadow-md",
+                                    "p-3.5 rounded-lg border-2 cursor-pointer transition-all flex items-center gap-3.5 mb-5 shadow-sm hover:shadow-md",
                                     isProcessed 
                                         ? "bg-emerald-50 dark:bg-emerald-900/20 border-emerald-500" 
                                         : "bg-slate-50 dark:bg-slate-800/50 border-slate-200 dark:border-slate-700 hover:border-emerald-500/50"
@@ -976,36 +976,36 @@ export const CommissionDetailContent: React.FC<CommissionDetailContentProps> = (
                                 onClick={() => setIsProcessed(!isProcessed)}
                             >
                                 <div className={cn(
-                                    "w-8 h-8 rounded-xl border-2 flex items-center justify-center shrink-0 transition-colors shadow-inner",
+                                    "w-7 h-7 rounded-lg border-2 flex items-center justify-center shrink-0 transition-colors shadow-inner",
                                     isProcessed ? "bg-emerald-500 border-emerald-500 text-white" : "border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-transparent"
                                 )}>
-                                    <Check size={18} strokeWidth={3} />
+                                    <Check size={16} strokeWidth={3} />
                                 </div>
                                 <div>
-                                    <div className={cn("font-bold text-base", isProcessed ? "text-emerald-700 dark:text-emerald-400" : "text-slate-700 dark:text-slate-300")}>Abgeschlossen</div>
-                                    <div className="text-xs text-slate-500 dark:text-slate-400 mt-0.5 font-medium">Vom Büro geprüft & verbucht</div>
+                                    <div className={cn("font-bold text-sm", isProcessed ? "text-emerald-700 dark:text-emerald-400" : "text-slate-700 dark:text-slate-300")}>Abgeschlossen</div>
+                                    <div className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5 font-medium">Vom Büro geprüft & verbucht</div>
                                 </div>
                             </div>
 
                             <div className="space-y-3">
-                                <label className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider block">Interne Notizen</label>
+                                <label className="text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider block">Interne Notizen</label>
                                 <textarea
-                                    className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-2xl p-4 text-sm text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all min-h-[120px] resize-none shadow-inner"
+                                    className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg p-3.5 text-sm text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all min-h-[100px] resize-none shadow-inner"
                                     placeholder="Wichtige Hinweise für die Buchhaltung..."
                                     value={officeNotes}
                                     onChange={e => setOfficeNotes(e.target.value)}
                                 />
                                 <div className="flex flex-wrap gap-2">
                                     {['Kunde informiert', 'Großhändler', 'Erledigt'].map(tag => (
-                                        <button key={tag} onClick={() => setOfficeNotes(prev => (prev ? prev + '\n' : '') + tag)} className="px-3 py-1.5 rounded-lg bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs font-medium text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors shadow-sm cursor-pointer">
+                                        <button key={tag} onClick={() => setOfficeNotes(prev => (prev ? prev + '\n' : '') + tag)} className="px-2.5 py-1.5 rounded-lg bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs font-medium text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors shadow-sm cursor-pointer">
                                             + {tag}
                                         </button>
                                     ))}
                                 </div>
                             </div>
 
-                            <div className="mt-6 pt-6 border-t border-slate-100 dark:border-slate-800">
-                                <Button onClick={handleSaveOffice} disabled={isSubmitting} className="w-full bg-slate-900 hover:bg-slate-800 dark:bg-slate-100 dark:hover:bg-white text-foreground dark:text-slate-900 text-sm h-12 shadow-lg rounded-xl font-bold border-none transition-transform active:scale-95 cursor-pointer">
+                            <div className="mt-5 pt-5 border-t border-slate-100 dark:border-slate-800">
+                                <Button onClick={handleSaveOffice} disabled={isSubmitting} className="w-full bg-slate-900 hover:bg-slate-800 dark:bg-slate-100 dark:hover:bg-white text-foreground dark:text-slate-900 text-sm h-11 shadow-lg rounded-lg font-bold border-none transition-transform active:scale-95 cursor-pointer">
                                     Speichern
                                 </Button>
                             </div>
