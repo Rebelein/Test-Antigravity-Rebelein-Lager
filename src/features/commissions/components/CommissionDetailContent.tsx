@@ -96,10 +96,12 @@ export const CommissionDetailContent: React.FC<CommissionDetailContentProps> = (
     const [hidePicked, setHidePicked] = useState(false);
     const [sortByLocation, setSortByLocation] = useState(true);
     const [showMobileMenu, setShowMobileMenu] = useState(false);
+    const [showDesktopMenu, setShowDesktopMenu] = useState(false);
     const [showHistoryModal, setShowHistoryModal] = useState(false);
 
     useEffect(() => {
         setShowMobileMenu(false);
+        setShowDesktopMenu(false);
     }, [commission?.id, commission?.status]);
 
     // Storno State
@@ -727,59 +729,112 @@ export const CommissionDetailContent: React.FC<CommissionDetailContentProps> = (
                             </div>
                         </div>
                     </div>
-                    {/* Mobile Actions Menu (Top Right - replacing Close Button) */}
-                    <div className="md:hidden relative shrink-0">
+                    {/* Actions Menu (Top Right) */}
+                    <div className="relative shrink-0">
                         <button
-                            onClick={() => setShowMobileMenu(!showMobileMenu)}
+                            onClick={() => { setShowMobileMenu(!showMobileMenu); setShowDesktopMenu(!showDesktopMenu); }}
                             className="p-1.5 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-500 hover:text-slate-750 dark:text-slate-400 dark:hover:text-slate-200 transition-all duration-200 focus:outline-none cursor-pointer border border-transparent hover:border-slate-200 dark:hover:border-slate-700 flex items-center justify-center shrink-0 min-w-[32px] min-h-[32px]"
                             title="Aktionen"
                             aria-label="Aktionen"
                         >
                             <MoreVertical size={18} />
                         </button>
+                        {/* Mobile Dropdown */}
                         <AnimatePresence>
                             {showMobileMenu && (
                                 <>
                                     <div 
                                         className="fixed inset-0 z-30" 
-                                        onClick={() => setShowMobileMenu(false)}
+                                        onClick={() => { setShowMobileMenu(false); setShowDesktopMenu(false); }}
                                     />
                                     <motion.div
                                         initial={{ opacity: 0, scale: 0.95, y: -10 }}
                                         animate={{ opacity: 1, scale: 1, y: 0 }}
                                         exit={{ opacity: 0, scale: 0.95, y: -10 }}
-                                        className="absolute right-0 mt-2 w-44 rounded-2xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 shadow-xl py-1.5 z-40 overflow-hidden"
+                                        className="md:hidden absolute right-0 mt-2 w-44 rounded-2xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 shadow-xl py-1.5 z-40 overflow-hidden"
                                     >
                                         <button
-                                            onClick={(e) => { setShowMobileMenu(false); onEdit(e); }}
+                                            onClick={(e) => { setShowMobileMenu(false); setShowDesktopMenu(false); onEdit(e); }}
                                             className="w-full text-left px-4 py-2.5 text-sm font-semibold hover:bg-slate-50 dark:hover:bg-slate-750/50 text-slate-700 dark:text-slate-200 flex items-center gap-2 transition-colors cursor-pointer border-none"
                                         >
                                             <Edit2 size={15} /> Bearbeiten
                                         </button>
                                         <button
-                                            onClick={() => { setShowMobileMenu(false); onPrint(); }}
+                                            onClick={() => { setShowMobileMenu(false); setShowDesktopMenu(false); onPrint(); }}
                                             className="w-full text-left px-4 py-2.5 text-sm font-semibold hover:bg-slate-50 dark:hover:bg-slate-750/50 text-slate-700 dark:text-slate-200 flex items-center gap-2 transition-colors cursor-pointer border-none"
                                         >
                                             <Printer size={15} /> Drucken
                                         </button>
                                         {onPrintPreview && (
                                             <button
-                                                onClick={() => { setShowMobileMenu(false); onPrintPreview(); }}
+                                                onClick={() => { setShowMobileMenu(false); setShowDesktopMenu(false); onPrintPreview(); }}
                                                 className="w-full text-left px-4 py-2.5 text-sm font-semibold hover:bg-slate-50 dark:hover:bg-slate-750/50 text-slate-700 dark:text-slate-200 flex items-center gap-2 transition-colors cursor-pointer border-none"
                                             >
                                                 <FileText size={15} /> Druckvorschlag
                                             </button>
                                         )}
                                         <button
-                                            onClick={() => { setShowMobileMenu(false); setShowHistoryModal(true); }}
+                                            onClick={() => { setShowMobileMenu(false); setShowDesktopMenu(false); setShowHistoryModal(true); }}
                                             className="w-full text-left px-4 py-2.5 text-sm font-semibold hover:bg-slate-50 dark:hover:bg-slate-750/50 text-slate-700 dark:text-slate-200 flex items-center gap-2 transition-colors cursor-pointer border-none"
                                         >
                                             <History size={15} /> Verlauf
                                         </button>
                                         {onRequestCancellation && !commission.status.startsWith('Return') && commission.status !== 'Withdrawn' && (
                                             <button
-                                                onClick={() => { setShowMobileMenu(false); setShowStornoModal(true); }}
+                                                onClick={() => { setShowMobileMenu(false); setShowDesktopMenu(false); setShowStornoModal(true); }}
                                                 className="w-full text-left px-4 py-2.5 text-sm font-bold hover:bg-rose-50 dark:hover:bg-rose-950/20 text-rose-600 dark:text-rose-400 flex items-center gap-2 transition-colors cursor-pointer border-none"
+                                            >
+                                                <Undo2 size={15} /> Storno
+                                            </button>
+                                        )}
+                                    </motion.div>
+                                </>
+                            )}
+                        </AnimatePresence>
+                        {/* Desktop Dropdown */}
+                        <AnimatePresence>
+                            {showDesktopMenu && (
+                                <>
+                                    <div 
+                                        className="fixed inset-0 z-30" 
+                                        onClick={() => { setShowMobileMenu(false); setShowDesktopMenu(false); }}
+                                    />
+                                    <motion.div
+                                        initial={{ opacity: 0, scale: 0.95, y: -10 }}
+                                        animate={{ opacity: 1, scale: 1, y: 0 }}
+                                        exit={{ opacity: 0, scale: 0.95, y: -10 }}
+                                        className="hidden md:block absolute right-0 mt-2 w-48 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 shadow-xl py-1.5 z-40 overflow-hidden"
+                                    >
+                                        <button
+                                            onClick={(e) => { setShowDesktopMenu(false); setShowMobileMenu(false); onEdit(e); }}
+                                            className="w-full text-left px-4 py-2.5 text-sm font-semibold hover:bg-slate-50 dark:hover:bg-slate-750/50 text-slate-700 dark:text-slate-200 flex items-center gap-2.5 transition-colors cursor-pointer border-none"
+                                        >
+                                            <Edit2 size={15} /> Bearbeiten
+                                        </button>
+                                        <button
+                                            onClick={() => { setShowDesktopMenu(false); setShowMobileMenu(false); onPrint(); }}
+                                            className="w-full text-left px-4 py-2.5 text-sm font-semibold hover:bg-slate-50 dark:hover:bg-slate-750/50 text-slate-700 dark:text-slate-200 flex items-center gap-2.5 transition-colors cursor-pointer border-none"
+                                        >
+                                            <Printer size={15} /> Drucken
+                                        </button>
+                                        {onPrintPreview && (
+                                            <button
+                                                onClick={() => { setShowDesktopMenu(false); setShowMobileMenu(false); onPrintPreview(); }}
+                                                className="w-full text-left px-4 py-2.5 text-sm font-semibold hover:bg-slate-50 dark:hover:bg-slate-750/50 text-slate-700 dark:text-slate-200 flex items-center gap-2.5 transition-colors cursor-pointer border-none"
+                                            >
+                                                <FileText size={15} /> Druckvorschlag
+                                            </button>
+                                        )}
+                                        <button
+                                            onClick={() => { setShowDesktopMenu(false); setShowMobileMenu(false); setShowHistoryModal(true); }}
+                                            className="w-full text-left px-4 py-2.5 text-sm font-semibold hover:bg-slate-50 dark:hover:bg-slate-750/50 text-slate-700 dark:text-slate-200 flex items-center gap-2.5 transition-colors cursor-pointer border-none"
+                                        >
+                                            <History size={15} /> Verlauf
+                                        </button>
+                                        {onRequestCancellation && !commission.status.startsWith('Return') && commission.status !== 'Withdrawn' && (
+                                            <button
+                                                onClick={() => { setShowDesktopMenu(false); setShowMobileMenu(false); setShowStornoModal(true); }}
+                                                className="w-full text-left px-4 py-2.5 text-sm font-bold hover:bg-rose-50 dark:hover:bg-rose-950/20 text-rose-600 dark:text-rose-400 flex items-center gap-2.5 transition-colors cursor-pointer border-none"
                                             >
                                                 <Undo2 size={15} /> Storno
                                             </button>
@@ -791,61 +846,13 @@ export const CommissionDetailContent: React.FC<CommissionDetailContentProps> = (
                     </div>
                 </div>
                 
-                {/* Actions container (Desktop: inline. Mobile: block below title with top border) */}
+                {/* Actions container */}
                 <div className={cn(
                     "flex items-center justify-between gap-2.5 w-full shrink-0 border-t border-slate-100 dark:border-slate-850 pt-2.5 mt-0.5 animate-fade-in"
                 )}>
                     {/* Header Primary Action Button */}
                     <div className="flex-1 flex justify-start w-full">
                         {headerPrimaryAction}
-                    </div>
-
-                    {/* Desktop actions (hidden on mobile) */}
-                    <div className="hidden md:flex items-center gap-2 shrink-0">
-                        <Button 
-                            variant="secondary" 
-                            onClick={(e) => onEdit(e)} 
-                            icon={<Edit2 size={16} />} 
-                            className="p-2.5 h-10 w-10 flex items-center justify-center bg-white dark:bg-slate-800 shadow-sm border-slate-200 dark:border-slate-700 hover:border-primary/50 text-slate-700 dark:text-slate-200" 
-                            title="Bearbeiten"
-                            aria-label="Bearbeiten"
-                        />
-                        <Button 
-                            variant="secondary" 
-                            onClick={onPrint} 
-                            icon={<Printer size={16} />} 
-                            className="p-2.5 h-10 w-10 flex items-center justify-center bg-white dark:bg-slate-800 shadow-sm border-slate-200 dark:border-slate-700 hover:border-primary/50 text-slate-700 dark:text-slate-200" 
-                            title="Drucken"
-                            aria-label="Drucken"
-                        />
-                        {onPrintPreview && (
-                            <Button 
-                                variant="secondary" 
-                                onClick={onPrintPreview} 
-                                icon={<FileText size={16} />} 
-                                className="p-2.5 h-10 w-10 flex items-center justify-center bg-white dark:bg-slate-800 shadow-sm border-slate-200 dark:border-slate-700 hover:border-primary/50 text-slate-700 dark:text-slate-200" 
-                                title="Druckvorschlag"
-                                aria-label="Druckvorschlag"
-                            />
-                        )}
-                        <Button 
-                            variant="secondary" 
-                            onClick={() => setShowHistoryModal(true)} 
-                            icon={<History size={16} />} 
-                            className="p-2.5 h-10 w-10 flex items-center justify-center bg-white dark:bg-slate-800 shadow-sm border-slate-200 dark:border-slate-700 hover:border-primary/50 text-slate-700 dark:text-slate-200" 
-                            title="Verlauf anzeigen"
-                            aria-label="Verlauf anzeigen"
-                        />
-                        {onRequestCancellation && !commission.status.startsWith('Return') && commission.status !== 'Withdrawn' && (
-                            <Button 
-                                variant="secondary" 
-                                onClick={() => setShowStornoModal(true)} 
-                                icon={<Undo2 size={16} />} 
-                                className="p-2.5 h-10 w-10 flex items-center justify-center bg-rose-50 hover:bg-rose-100 dark:bg-rose-950/20 dark:hover:bg-rose-950/45 text-rose-600 dark:text-rose-400 border-rose-200 dark:border-rose-900/50 shadow-sm font-semibold"
-                                title="Storno"
-                                aria-label="Storno"
-                            />
-                        )}
                     </div>
                 </div>
 

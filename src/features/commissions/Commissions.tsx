@@ -295,6 +295,20 @@ const Commissions: React.FC = () => {
         fetchArticles(); // Lazy load articles
     };
 
+    const handleCancelEdit = () => {
+        // Return to detail view of the commission we were editing
+        if (editingCommissionId) {
+            const comm = commissions.find(c => c.id === editingCommissionId) as ExtendedCommission;
+            if (comm) {
+                handleOpenDetail(comm);
+                return;
+            }
+        }
+        setSidePanelMode('none');
+        setActiveCommission(null);
+        setCommItems([]);
+    };
+
     const handleSaveCommission = (id?: string, isNew?: boolean) => {
         refreshCommissions();
         if (sidePanelMode === 'edit' && editingCommissionId) {
@@ -371,7 +385,7 @@ const Commissions: React.FC = () => {
                         availableArticles={availableArticles}
                         suppliers={suppliers}
                         onSave={handleSaveCommission}
-                        onClose={handleCloseSidePanel}
+                        onClose={sidePanelMode === 'edit' ? handleCancelEdit : handleCloseSidePanel}
                         onLogEvent={logCommissionEvent}
                     />
                 );
@@ -590,13 +604,7 @@ const Commissions: React.FC = () => {
 
         const now = new Date();
         const timestamp = now.toISOString().replace(/[:.]/g, '-').slice(0, 19);
-        const printDateStr = now.toLocaleString('de-DE', { 
-            day: '2-digit', 
-            month: '2-digit', 
-            year: 'numeric', 
-            hour: '2-digit', 
-            minute: '2-digit' 
-        });
+        const printDateStr = now.toLocaleDateString('de-DE');
         let docTitle = `Kommissionen_Batch_${timestamp}`;
 
         if (data.length === 1) {
@@ -613,8 +621,7 @@ const Commissions: React.FC = () => {
                 const otherLocations = locations.filter(l => l !== currentLocation);
                 const otherText = otherLocations.length > 0 ? `+ ${otherLocations.join(', ')}` : '';
 
-                // Compact list layout: max 8 items per page
-                const ITEMS_PER_PAGE = 8; 
+                const ITEMS_PER_PAGE = 8;
                 const chunks = [];
                 
                 if (!items || items.length === 0) {
@@ -626,84 +633,39 @@ const Commissions: React.FC = () => {
                 }
 
                 const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(`COMM:${comm.id}`)}`;
+                const notesHtml = comm.notes ? `<div class="notes" style="font-size: 10pt; margin-top: 2mm; font-style: italic; color: #000; border-top: 1px dotted #aaa; padding-top: 1mm; line-height: 1.2;">${comm.notes}</div>` : '';
+                const warehouseNotesHtml = comm.warehouse_notes ? `<div style="background-color: #fff3cd; border: 1px solid #ffe69c; padding: 3mm; margin-top: 3mm; margin-bottom: 3mm; border-radius: 2mm;"><strong style="color: #856404; font-size: 10pt;">⚠️ Info ans Lager:</strong><div style="margin-top: 1mm; font-size: 10pt; color: #000; font-weight: bold; white-space: pre-wrap;">${comm.warehouse_notes}</div></div>` : '';
                 const renderLocation = (article: Article) => (!article.category && !article.location) ? '-' : `${article.category || ''} / ${article.location || ''}`;
 
                 return chunks.map((chunk, index) => {
                     const stockItems = chunk.filter(i => i.type === 'Stock');
                     const extItems = chunk.filter(i => i.type === 'External');
-                    
-                    const pageIndicator = chunks.length > 1 ? `Seite ${index + 1} von ${chunks.length}` : '';
-                    
-                    const warehouseNotesHtml = comm.warehouse_notes ? `
-                        <div class="warehouse-notes-box">
-                            <strong class="warehouse-notes-title">⚠️ Info ans Lager:</strong>
-                            <div class="warehouse-notes-content">${comm.warehouse_notes}</div>
-                        </div>
-                    ` : '';
-
-                    const notesHtml = comm.notes ? `
-                        <div class="notes">${comm.notes}</div>
-                    ` : '';
+                    const pageIndicator = chunks.length > 1 ? `<div style="font-size: 9pt; font-weight: bold; margin-top: 2mm; color: #d97706;">Seite ${index + 1} von ${chunks.length}</div>` : '';
 
                     return `
                 <div class="page">
                     <div class="label-area">
                         <div class="header-text">
                             <div class="commission-title">${comm.name}</div>
-                            <div class="order-id">Auftrag: ${comm.order_number || '-'}</div>
-                            <div class="location-info">Bereich/Fach: ${currentLocation} ${locations.length > 1 ? `(${locIndex + 1}/${locations.length})` : ''}</div>
-                            ${otherText ? `<div class="other-locations-info">Weitere Orte: ${otherText}</div>` : ''}
-                            ${pageIndicator ? `<div class="page-indicator">${pageIndicator}</div>` : ''}
+                            <div class="order-id" style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; margin-top: 1mm;">
+                                <span>Auftrag: ${comm.order_number || '-'}</span>
+                                <span style="font-weight: 900; border: 2px solid #000; color: #000; padding: 2px 6px; border-radius: 4px; font-size: 8pt; font-family: monospace; text-transform: uppercase;">
+                                    ${currentLocation} ${locations.length > 1 ? `(${locIndex + 1}/${locations.length})` : ''}
+                                </span>
+                            </div>
+                            ${otherText ? `<div style="font-size: 8pt; font-weight: bold; color: #555; margin-top: 1.5mm;">${otherText}</div>` : ''}
+                            ${pageIndicator}
                             ${index === 0 ? notesHtml : ''}
                         </div>
-                        <div class="qr-container">
-                            <img src="${qrUrl}" class="qr-code" />
-                        </div>
+                        <div class="qr-container"><img src="${qrUrl}" class="qr-code" /><div class="qr-date">${printDateStr}</div></div>
                     </div>
-                    
-                    <div class="fold-line">
-                        <span class="fold-text">Hier falten / knicken</span>
-                    </div>
-                    
+                    <div class="fold-line"><span class="fold-text">Hier falten / knicken</span></div>
                     <div class="list-area">
                         ${index === 0 ? warehouseNotesHtml : ''}
-                        
-                        ${extItems.length > 0 ? `
-                            <div class="list-title">Erwartete externe Bestellungen:</div>
-                            <ul>
-                                ${extItems.map(i => `
-                                    <li>
-                                        <div class="checkbox"></div>
-                                        <div class="item-text">
-                                            <strong>${i.amount}x</strong> Externe Bestellung: ${i.custom_name}
-                                            ${i.is_backorder ? '<span class="backorder-badge">Rückstand</span>' : ''}
-                                            <br>
-                                            <span class="item-subtext">(Vorgang: ${i.external_reference || 'N/A'})</span>
-                                            ${i.notes ? `<br><span class="item-note">Note: ${i.notes}</span>` : ''}
-                                        </div>
-                                    </li>
-                                `).join('')}
-                            </ul>
-                            <br>
-                        ` : ''}
-                        
-                        ${stockItems.length > 0 ? `
-                            <div class="list-title">Material aus Lager:</div>
-                            <ul>
-                                ${stockItems.map(i => `
-                                    <li>
-                                        <div class="checkbox"></div>
-                                        <div class="item-text">
-                                            <strong>${i.amount}x</strong> ${i.article?.name || 'Unbekannter Artikel'}
-                                            ${i.is_backorder ? '<span class="backorder-badge">Rückstand</span>' : ''}
-                                            <br>
-                                            <span class="item-subtext">Lagerort: ${i.article ? renderLocation(i.article) : '-'}</span>
-                                            ${i.notes ? `<br><span class="item-note">Note: ${i.notes}</span>` : ''}
-                                        </div>
-                                    </li>
-                                `).join('')}
-                            </ul>
-                        ` : ''}
+                        ${extItems.length > 0 ? `<div class="list-title">Erwartete externe Bestellungen:</div><ul>${extItems.map(i => `<li><div class="checkbox"></div><div class="item-text"><strong>${i.amount}x</strong> Externe Bestellung: ${i.custom_name}${i.is_backorder ? ' <b>[RÜCKSTAND]</b>' : ''}<br><span style="font-size: 8pt; color: #555;">(Vorgang: ${i.external_reference || 'N/A'})</span>${i.notes ? `<br><span style="font-style: italic; font-size: 8pt;">Note: ${i.notes}</span>` : ''}</div></li>`).join('')}</ul><br>` : ''}
+                        ${stockItems.length > 0 ? `<div class="list-title">Material aus Lager:</div><ul>${stockItems.map(i => {
+                        return `<li><div class="checkbox"></div><div class="item-text"><strong>${i.amount}x</strong> ${i.article?.name}${i.is_backorder ? ' <b>[RÜCKSTAND]</b>' : ''}<br><span style="font-size: 8pt; color: #555;">Lagerort: ${i.article ? renderLocation(i.article) : '-'}</span>${i.notes ? `<br><span style="font-style: italic; font-size: 8pt;">Note: ${i.notes}</span>` : ''}</div></li>`;
+                    }).join('')}</ul>` : ''}
                     </div>
                 </div>
               `;
@@ -716,204 +678,26 @@ const Commissions: React.FC = () => {
         <head>
             <title>${docTitle}</title>
             <style>
-                @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700;800&display=swap');
+                @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap');
                 body { margin: 0; padding: 0; font-family: 'Inter', sans-serif; background: white; }
                 @page { size: 105mm 148mm; margin: 0; }
                 .page { width: 105mm; height: 147mm; margin: 0 auto; position: relative; box-sizing: border-box; overflow: hidden; page-break-after: always; }
                 .page:last-child { page-break-after: auto; }
-                .label-area { 
-                    position: absolute; 
-                    top: 8mm; 
-                    left: 50%; 
-                    transform: translateX(-50%); 
-                    width: 90mm; 
-                    height: 50mm; 
-                    border: none; 
-                    padding: 0; 
-                    box-sizing: border-box; 
-                    display: grid; 
-                    grid-template-columns: minmax(0, 1fr) 30mm; 
-                    grid-template-rows: auto 1fr auto; 
-                }
-                .header-text { 
-                    grid-column: 1 / 2; 
-                    display: flex; 
-                    flex-direction: column; 
-                    justify-content: center; 
-                    padding-right: 2mm; 
-                    min-width: 0;
-                }
-                .commission-title { 
-                    font-size: 24pt; 
-                    font-weight: 800; 
-                    color: #000000; 
-                    line-height: 1.1; 
-                    max-height: 2.2em; 
-                    overflow: hidden; 
-                    word-wrap: break-word; 
-                    overflow-wrap: break-word; 
-                    hyphens: auto; 
-                }
-                .order-id { 
-                    font-size: 14pt; 
-                    font-weight: 800; 
-                    color: #000000; 
-                    margin-top: 2.5mm; 
-                }
-                .location-info { 
-                    font-size: 13pt; 
-                    font-weight: 800; 
-                    color: #000000; 
-                    margin-top: 2.5mm; 
-                    text-transform: uppercase; 
-                }
-                .other-locations-info { 
-                    font-size: 9.5pt; 
-                    font-weight: 700; 
-                    color: #000000; 
-                    margin-top: 1.5mm; 
-                }
-                .page-indicator { 
-                    font-size: 10pt; 
-                    font-weight: 800; 
-                    margin-top: 2mm; 
-                    color: #000000; 
-                }
-                .qr-container { 
-                    grid-column: 2 / 3; 
-                    grid-row: 1 / 4; 
-                    display: flex; 
-                    justify-content: flex-end; 
-                    align-items: flex-start; 
-                    overflow: hidden; 
-                }
-                .qr-code { 
-                    width: 28mm; 
-                    height: 28mm; 
-                    object-fit: contain; 
-                }
-                .fold-line { 
-                    position: absolute; 
-                    top: 62mm; 
-                    left: 5mm; 
-                    right: 5mm; 
-                    border-top: 2px dotted #000000; 
-                    text-align: center; 
-                    font-size: 8pt; 
-                    color: #000000; 
-                    font-weight: 700;
-                    text-transform: uppercase; 
-                    letter-spacing: 1.5px;
-                }
-                .fold-text { 
-                    background: white; 
-                    padding: 0 2mm; 
-                    position: relative; 
-                    top: -0.7em; 
-                }
-                .list-area { 
-                    position: absolute; 
-                    top: 68mm; 
-                    left: 7.5mm; 
-                    right: 7.5mm; 
-                    bottom: 5mm; 
-                    font-size: 9pt; 
-                }
-                .list-title { 
-                    font-weight: 800; 
-                    margin-bottom: 2mm; 
-                    font-size: 10pt; 
-                    border-bottom: 2px solid #000000; 
-                    padding-bottom: 1mm; 
-                    text-transform: uppercase;
-                    color: #000000;
-                }
-                ul { 
-                    padding-left: 0; 
-                    margin: 0; 
-                    list-style: none; 
-                }
-                li { 
-                    margin-bottom: 2mm; 
-                    display: flex; 
-                    align-items: flex-start; 
-                    gap: 2mm; 
-                }
-                .checkbox { 
-                    width: 3.5mm; 
-                    height: 3.5mm; 
-                    border: 1.5px solid #000000; 
-                    margin-top: 1.2mm; 
-                    flex-shrink: 0; 
-                    border-radius: 2px;
-                }
-                .item-text { 
-                    font-size: 9pt; 
-                    color: #000000; 
-                    line-height: 1.3;
-                }
-                .item-subtext { 
-                    font-size: 8pt; 
-                    color: #000000; 
-                    font-weight: 600;
-                }
-                .item-note { 
-                    font-style: italic; 
-                    font-size: 8pt; 
-                    color: #000000;
-                    border-left: 2px solid #000000;
-                    padding-left: 1.5mm;
-                    margin-top: 0.5mm;
-                    display: inline-block;
-                }
-                .backorder-badge { 
-                    border: 1.5px solid #000000; 
-                    padding: 1px 3px; 
-                    font-size: 7.5pt; 
-                    font-weight: 800; 
-                    margin-left: 2mm; 
-                    text-transform: uppercase; 
-                    color: #000000;
-                    border-radius: 2px;
-                }
-                .warehouse-notes-box { 
-                    border: 1px solid #000000; 
-                    border-left: 3.5px solid #000000; 
-                    padding: 2.5mm; 
-                    margin-top: 3mm; 
-                    margin-bottom: 3mm; 
-                    border-radius: 4px; 
-                    background: transparent;
-                }
-                .warehouse-notes-title { 
-                    font-weight: 800; 
-                    font-size: 7.5pt; 
-                    text-transform: uppercase; 
-                    color: #000000;
-                    margin-bottom: 0.8mm; 
-                    letter-spacing: 0.5px;
-                }
-                .warehouse-notes-content { 
-                    font-size: 8pt; 
-                    font-weight: 600; 
-                    color: #000000;
-                    white-space: pre-wrap; 
-                    line-height: 1.35;
-                }
-                .notes { 
-                    font-size: 8.5pt; 
-                    margin-top: 2mm; 
-                    font-style: italic; 
-                    color: #000000; 
-                    border-top: 1px dotted #000000; 
-                    padding-top: 1mm; 
-                    line-height: 1.2; 
-                }
-                @media print { 
-                    body { background: none; -webkit-print-color-adjust: exact; print-color-adjust: exact; } 
-                    * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-                    .label-area { border: none; } 
-                }
+                .label-area { position: absolute; top: 8mm; left: 50%; transform: translateX(-50%); width: 90mm; height: 50mm; border: 1px solid #ddd; padding: 4mm; box-sizing: border-box; display: grid; grid-template-columns: minmax(0, 1fr) 30mm; grid-template-rows: auto 1fr auto; }
+                .header-text { grid-column: 1 / 2; display: flex; flex-direction: column; justify-content: center; padding-right: 2mm; }
+                .commission-title { font-size: 16pt; font-weight: 800; color: black; line-height: 1.1; max-height: 3.3em; overflow: hidden; word-wrap: break-word; overflow-wrap: break-word; hyphens: auto; }
+                .order-id { font-size: 11pt; font-weight: 500; color: #444; margin-top: 2mm; }
+                .qr-container { grid-column: 2 / 3; grid-row: 1 / 4; display: flex; flex-direction: column; justify-content: flex-start; align-items: flex-end; overflow: hidden; }
+                .qr-code { width: 28mm; height: 28mm; object-fit: contain; }
+                .qr-date { font-size: 7.5pt; color: #888; font-weight: 500; margin-top: 1.5mm; }
+                .fold-line { position: absolute; top: 62mm; left: 5mm; right: 5mm; border-top: 1px dashed #999; text-align: center; font-size: 8pt; color: #999; }
+                .fold-text { background: white; padding: 0 2mm; position: relative; top: -0.7em; }
+                .list-area { position: absolute; top: 68mm; left: 7.5mm; right: 7.5mm; bottom: 10mm; font-size: 9pt; }
+                .list-title { font-weight: 700; margin-bottom: 2mm; font-size: 10pt; border-bottom: 1px solid black; padding-bottom: 1mm; }
+                ul { padding-left: 0; margin: 0; list-style: none; }
+                li { margin-bottom: 2mm; display: flex; align-items: flex-start; gap: 2mm; }
+                .checkbox { width: 3mm; height: 3mm; border: 1px solid #333; margin-top: 1mm; flex-shrink: 0; }
+                @media print { body { background: none; } .label-area { border: none; } }
             </style>
         </head>
         <body>
