@@ -1039,6 +1039,10 @@ const Commissions: React.FC = () => {
 
     const handleWithdrawTrigger = () => {
         if (!activeCommission) return;
+        if (!allItemsPicked) {
+            toast.error("Kommission kann nicht entnommen werden: Nicht alle Artikel sind gepickt.");
+            return;
+        }
         const locations = activeCommission.staging_locations || [];
         if (locations.length > 1) {
             setShowConfirmWithdrawModal(true);

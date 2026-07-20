@@ -103,9 +103,6 @@ const PrintingSectionComponent: React.FC<PrintingSectionProps> = ({
     const stornoCount = stornoCommissions.length;
     const totalBadge = queueItems.length + stornoCount;
 
-    // Wenn nichts zu drucken ist – nichts anzeigen
-    if (totalBadge === 0) return null;
-
     const handlePrintAll = () => {
         if (queueItems.length === 0) return;
         onMarkAsPrinted(new Set(queueItems.map(c => c.id)));
@@ -131,7 +128,9 @@ const PrintingSectionComponent: React.FC<PrintingSectionProps> = ({
                         'flex items-center gap-2.5 px-4 py-2.5 rounded-full text-sm font-bold shadow-lg transition-all hover:scale-105 active:scale-95 cursor-pointer',
                         queueItems.length > 0
                             ? 'bg-blue-600 text-white hover:bg-blue-500'
-                            : 'bg-rose-600 text-white hover:bg-rose-500'
+                            : stornoCount > 0
+                            ? 'bg-rose-600 text-white hover:bg-rose-500'
+                            : 'bg-muted text-foreground hover:bg-default-200'
                     )}
                 >
                     <Printer size={16} />
@@ -143,6 +142,9 @@ const PrintingSectionComponent: React.FC<PrintingSectionProps> = ({
                     )}
                     {queueItems.length > 0 && stornoCount > 0 && (
                         <span className="opacity-70 text-xs">+{stornoCount} Storno</span>
+                    )}
+                    {queueItems.length === 0 && stornoCount === 0 && (
+                        <span>Drucker</span>
                     )}
                     <ChevronUp size={14} />
                 </button>

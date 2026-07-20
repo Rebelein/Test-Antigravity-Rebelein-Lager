@@ -164,7 +164,7 @@ export const CommissionDetailContent: React.FC<CommissionDetailContentProps> = (
                     </Button>
                     <Button 
                         onClick={onWithdraw} 
-                        disabled={isSubmitting} 
+                        disabled={isSubmitting || !allItemsPicked} 
                         className="flex-1 bg-purple-600 hover:bg-purple-700 text-white font-bold h-10 px-4 rounded-xl flex items-center justify-center gap-1.5 shadow-md shadow-purple-500/10 active:scale-95 transition-all duration-200 cursor-pointer text-xs sm:text-sm border-none"
                     >
                         <Truck size={16} /> Entnehmen
@@ -478,7 +478,7 @@ export const CommissionDetailContent: React.FC<CommissionDetailContentProps> = (
         const withdrawBtn = (
             <Button 
                 onClick={onWithdraw} 
-                disabled={isSubmitting} 
+                disabled={isSubmitting || !allItemsPicked} 
                 className="w-full sm:w-auto bg-purple-600 hover:bg-purple-700 text-white font-bold h-12 rounded-xl flex items-center justify-center gap-2 shadow-lg shadow-purple-500/20 active:scale-95 transition-transform cursor-pointer"
             >
                 <Truck size={18} /> Entnehmen & Abschließen
