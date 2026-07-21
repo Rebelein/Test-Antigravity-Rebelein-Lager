@@ -37,6 +37,8 @@ interface PrintingSectionProps {
     setSelectedHistoryPrintIds: (ids: Set<string>) => void;
     onReprintBatch: (ids: string[]) => void;
     activeCommissions: Commission[];
+    sidePanelOpen?: boolean;
+    sidebarWidth?: number;
 }
 
 const PrintingSectionComponent: React.FC<PrintingSectionProps> = ({
@@ -56,11 +58,28 @@ const PrintingSectionComponent: React.FC<PrintingSectionProps> = ({
     selectedHistoryPrintIds,
     setSelectedHistoryPrintIds,
     onReprintBatch,
-    activeCommissions = []
+    activeCommissions = [],
+    sidePanelOpen = false,
+    sidebarWidth: initialSidebarWidth = 450
 }) => {
     const { theme } = useTheme();
     const isGlass = theme === 'glass';
     const [mode, setMode] = useState<'print' | 'storno'>('print');
+    const [sidebarWidth, setSidebarWidth] = useState(initialSidebarWidth);
+
+    React.useEffect(() => {
+        const updateWidth = () => {
+            const saved = localStorage.getItem('sidebar_width');
+            if (saved) setSidebarWidth(parseInt(saved, 10));
+        };
+        updateWidth();
+        window.addEventListener('resize', updateWidth);
+        const interval = setInterval(updateWidth, 500);
+        return () => {
+            window.removeEventListener('resize', updateWidth);
+            clearInterval(interval);
+        };
+    }, []);
 
     const toggleQueueSelection = (id: string, e?: React.MouseEvent) => {
         if (e) e.stopPropagation();
@@ -114,13 +133,15 @@ const PrintingSectionComponent: React.FC<PrintingSectionProps> = ({
 
     /* ── MINIMIZED pill ── */
     if (minimized) {
+        const pillRight = sidePanelOpen ? sidebarWidth + 24 : 24;
         return (
             <motion.div
                 key="pill"
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: 20 }}
-                className="fixed bottom-24 lg:bottom-6 right-6 z-[var(--z-top)]"
+                className="fixed bottom-24 lg:bottom-6 z-[var(--z-top)] transition-[right] duration-300 ease-out"
+                style={{ right: pillRight }}
             >
                 <button
                     onClick={() => setMinimized(false)}

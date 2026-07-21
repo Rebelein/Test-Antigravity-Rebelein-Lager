@@ -45,7 +45,7 @@
 
 @layer base {
   :root {
-    --background: 0 0% 100%;
+    --background: 210 20% 98%;
     --foreground: 222.2 84% 4.9%;
 
     --card: 0 0% 100%;
@@ -71,39 +71,39 @@
 
     --border: 214.3 31.8% 91.4%;
     --input: 214.3 31.8% 91.4%;
-    --ring: 158 64% 39%; /* Emerald 500 */
+    --ring: 158 64% 39%;
  
-    --radius: 0.5rem;
+    --radius: 0.75rem;
   }
  
   .dark {
-    --background: 222.2 84% 4.9%;
+    --background: 0 0% 4%; /* Titanium Pitch Black #0a0a0c */
     --foreground: 210 40% 98%;
  
-    --card: 222.2 47.4% 11.2%;
+    --card: 240 5% 9%; /* Stealth Metallic Surface #16161a */
     --card-foreground: 210 40% 98%;
  
-    --popover: 222.2 84% 4.9%;
+    --popover: 240 5% 9%;
     --popover-foreground: 210 40% 98%;
  
-    --primary: 158 64% 39%; /* Emerald 500 */
-    --primary-foreground: 210 40% 98%;
+    --primary: 158 64% 42%; /* Pure Emerald #10b981 */
+    --primary-foreground: 0 0% 100%;
  
-    --secondary: 217.2 32.6% 17.5%;
+    --secondary: 240 4% 14%;
     --secondary-foreground: 210 40% 98%;
  
-    --muted: 217.2 32.6% 17.5%;
-    --muted-foreground: 215 20.2% 65.1%;
+    --muted: 240 4% 14%;
+    --muted-foreground: 240 4% 65%;
  
-    --accent: 217.2 32.6% 17.5%;
+    --accent: 240 4% 14%;
     --accent-foreground: 210 40% 98%;
  
     --destructive: 0 62.8% 30.6%;
     --destructive-foreground: 210 40% 98%;
  
-    --border: 217.2 32.6% 17.5%;
-    --input: 217.2 32.6% 17.5%;
-    --ring: 158 64% 39%;
+    --border: 240 4% 18%; /* Metallic Subtle Border */
+    --input: 240 4% 18%;
+    --ring: 158 64% 42%;
   }
 
   * {

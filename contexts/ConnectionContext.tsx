@@ -57,8 +57,10 @@ export const ConnectionProvider: React.FC<{ children: React.ReactNode }> = ({ ch
     }
   };
 
+  const value = React.useMemo(() => ({ isConnected, checkConnection }), [isConnected]);
+
   return (
-    <ConnectionContext.Provider value={{ isConnected, checkConnection }}>
+    <ConnectionContext.Provider value={value}>
       {children}
     </ConnectionContext.Provider>
   );

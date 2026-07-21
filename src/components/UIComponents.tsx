@@ -29,19 +29,18 @@ export const GlassCard: React.FC<GlassCardProps> = ({
   ...props
 }) => {
   const variants = {
-    default: "bg-white/[0.08] border-white/[0.15]", // Reference default
-    subtle: "bg-white/[0.02] dark:border-white/5 border-border",
-    prominent: "bg-white/[0.12] border-border shadow-2xl"
+    default: "bg-card/90 border-border/80 shadow-xl backdrop-blur-md", 
+    subtle: "bg-card/50 border-border/40",
+    prominent: "bg-card border-primary/40 shadow-2xl ring-1 ring-primary/20"
   };
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: 20 }}
+      initial={{ opacity: 0, y: 15 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.5, ease: "easeOut" }}
+      transition={{ duration: 0.3, ease: "easeOut" }}
       className={cn(
-        "relative backdrop-blur-2xl border rounded-3xl overflow-hidden flex flex-col will-change-transform",
-        "shadow-[0_8px_32px_0_rgba(0,0,0,0.36)]", // Reference shadow
+        "relative border rounded-2xl overflow-hidden flex flex-col will-change-transform transition-colors",
         variants[variant],
         className
       )}
@@ -116,8 +115,8 @@ export const GlassSelect: React.FC<GlassSelectProps> = ({ icon, children, classN
           "focus:outline-none focus:dark:bg-black/30 bg-muted/70 focus:border-teal-500/30 focus:ring-1 focus:ring-teal-500/30",
           "transition-all duration-200 appearance-none cursor-pointer",
           "hover:dark:bg-black/30 bg-muted/70",
-          // Fix for dropdown options visibility in dark mode
-          "[&>option]:bg-[#050b14] [&>option]:text-foreground",
+          // Fix for dropdown options visibility across dark and light modes
+          "[&>option]:bg-card [&>option]:text-card-foreground",
           icon ? 'pl-11' : 'pl-5',
           className
         )}

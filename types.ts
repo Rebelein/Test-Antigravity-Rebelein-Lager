@@ -288,7 +288,7 @@ export interface WorkwearOrder {
   updated_at: string;
   // Joins
   profiles?: { full_name: string };
-  files?: any;
+  files?: Array<{ name: string; url: string }> | null;
 }
 
 export interface WorkwearOrderItem {

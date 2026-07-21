@@ -142,8 +142,20 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     }
   }, [isLowPerfMode]);
 
+  const value = React.useMemo(() => ({
+    viewMode,
+    toggleViewMode,
+    theme,
+    setTheme,
+    colorMode,
+    toggleColorMode,
+    isDark,
+    isLowPerfMode,
+    toggleLowPerfMode
+  }), [viewMode, theme, colorMode, isDark, isLowPerfMode]);
+
   return (
-    <ThemeContext.Provider value={{ viewMode, toggleViewMode, theme, setTheme, colorMode, toggleColorMode, isDark, isLowPerfMode, toggleLowPerfMode }}>
+    <ThemeContext.Provider value={value}>
       {children}
     </ThemeContext.Provider>
   );

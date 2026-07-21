@@ -25,7 +25,12 @@ const UnifiedScanner: React.FC<UnifiedScannerProps> = ({ onScan, onError, classN
                 const scanner = new QrScanner(
                     videoRef.current,
                     (result) => {
-                        if (isMounted) onScan(result.data);
+                        if (isMounted) {
+                            if ('navigator' in window && navigator.vibrate) {
+                                try { navigator.vibrate(50); } catch (_) {}
+                            }
+                            onScan(result.data);
+                        }
                     },
                     {
                         onDecodeError: (error) => {

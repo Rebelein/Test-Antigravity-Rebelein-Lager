@@ -16,6 +16,7 @@ import { MasterDetailLayout } from '../../components/MasterDetailLayout';
 import { CommissionDetailContent } from './components/CommissionDetailContent';
 import { ExtendedCommission } from '../../../types';
 import { CommissionEditContent } from './components/CommissionEditContent';
+import { UnifiedCommissionHeader } from './components/UnifiedCommissionHeader';
 import { useIsMobile } from '../../../hooks/useIsMobile';
 import { usePersistentState } from '../../../hooks/usePersistentState';
 import { toast } from 'sonner';
@@ -62,6 +63,10 @@ const Commissions: React.FC = () => {
 
     // --- MASTER-DETAIL STATE ---
     const [sidePanelMode, setSidePanelMode] = useState<SidePanelMode>('none');
+    const [sidebarWidth, setSidebarWidth] = useState<number>(() => {
+        const saved = localStorage.getItem('sidebar_width');
+        return saved ? parseInt(saved, 10) : 450;
+    });
     const [activeCommission, setActiveCommission] = useState<ExtendedCommission | null>(null);
     const [commItems, setCommItems] = useState<CommissionItem[]>([]);
 
@@ -1181,23 +1186,25 @@ const Commissions: React.FC = () => {
 
     const listContent = (
         <div className="relative h-full flex flex-col overflow-hidden">
-            <header className="flex items-center justify-between gap-3 px-1 pt-4 pb-4 border-b dark:border-white/5 border-border shrink-0">
-                <div className="flex items-center gap-3 min-w-0">
-                    {isMobile && (
-                        <button 
-                            onClick={() => setIsMobileCategoryOpen(true)}
-                            className="p-2.5 rounded-xl bg-muted dark:text-emerald-400 text-emerald-800 border border-border active:scale-95 transition-transform"
-                        >
-                            <Menu size={20} />
-                        </button>
-                    )}
-                    <h1 className="text-xl sm:text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r dark:from-emerald-300 dark:to-teal-200 from-emerald-800 to-teal-700 truncate">Komm.</h1>
-                </div>
-                <div className="flex gap-2 shrink-0 items-center">
-                    <Button icon={<Search size={18} />} variant="secondary" onClick={() => setSidePanelMode('search')} />
-                    <Button icon={<Plus size={18} />} onClick={handleOpenCreate}>Neu</Button>
-                </div>
-            </header>
+            <UnifiedCommissionHeader
+                activeTab={activeTab}
+                setActiveTab={setActiveTab}
+                activeSubFilter={activeSubFilter}
+                setActiveSubFilter={setActiveSubFilter}
+                tabCounts={tabCounts}
+                searchTerm={globalSearchTerm}
+                setSearchTerm={(term) => {
+                    setGlobalSearchTerm(term);
+                    performGlobalSearch(term);
+                }}
+                onOpenCreate={handleOpenCreate}
+                onStartScan={() => setShowScanner(true)}
+                onTogglePrintArea={() => setShowPrintArea(!showPrintArea)}
+                showPrintArea={showPrintArea}
+                queueLength={queueItems.length}
+                isMobile={isMobile}
+                onOpenMobileCategory={() => setIsMobileCategoryOpen(true)}
+            />
 
             <div className="flex h-full overflow-hidden mt-2">
                 {/* Desktop Sidebar */}
@@ -1682,7 +1689,7 @@ const Commissions: React.FC = () => {
 
             {/* Floating Print Dock */}
             <AnimatePresence>
-                {enablePrintQueue && activeTab === 'active' && sidePanelMode === 'none' && (
+                {enablePrintQueue && activeTab === 'active' && (
                     <PrintingSection
                         showPrintArea={showPrintArea}
                         setShowPrintArea={setShowPrintArea}
@@ -1702,6 +1709,8 @@ const Commissions: React.FC = () => {
                         onReprint={(id) => handleSinglePrint(id, true)}
                         onReprintBatch={handleReprintBatch}
                         activeCommissions={activeCommissionsForPrint}
+                        sidePanelOpen={sidePanelMode !== 'none'}
+                        sidebarWidth={sidebarWidth}
                     />
                 )}
             </AnimatePresence>

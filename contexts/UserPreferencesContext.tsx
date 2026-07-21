@@ -134,13 +134,15 @@ export const UserPreferencesProvider: React.FC<{ children: React.ReactNode }> = 
         }
     };
 
+    const value = React.useMemo(() => ({
+        ...prefs,
+        updateWarehousePreference,
+        toggleCategoryCollapse,
+        markTourSeen
+    }), [prefs]);
+
     return (
-        <UserPreferencesContext.Provider value={{
-            ...prefs,
-            updateWarehousePreference,
-            toggleCategoryCollapse,
-            markTourSeen
-        }}>
+        <UserPreferencesContext.Provider value={value}>
             {children}
         </UserPreferencesContext.Provider>
     );

@@ -139,7 +139,7 @@ export const CommissionCard: React.FC<CommissionCardProps> = memo(({
                     <h3 className="font-bold text-lg text-foreground leading-tight mb-1 truncate">
                         {commission.name}
                     </h3>
-                    <div className="flex items-center gap-2 text-xs text-muted-foreground flex-wrap">
+                    <div className="flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400 flex-wrap">
                         {commission.created_at && (
                             <span className="flex items-center">
                                 <Calendar size={10} className="mr-1" />

@@ -10,7 +10,7 @@ import { Button, GlassCard } from '../../components/UIComponents';
 import { useAuth } from '../../../contexts/AuthContext';
 import { useUserPreferences } from '../../../contexts/UserPreferencesContext';
 import { Plus, ListChecks, CheckSquare, Loader2, Copy, Trash2, X, Check, Layers, Wand2, Menu, ChevronRight, Hash, Filter, Search, MoreHorizontal } from 'lucide-react';
-import { InventoryToolbar } from './components/InventoryToolbar';
+import { UnifiedInventoryHeader } from './components/UnifiedInventoryHeader';
 import { InventoryList } from './components/InventoryList';
 import { MasterDetailLayout } from '../../components/MasterDetailLayout';
 import { ArticleDetailContent } from './components/ArticleDetailContent';
@@ -445,147 +445,26 @@ const Inventory = () => {
     const isPanelOpen = !!selectedArticle || isEditModalOpen;
 
     const headerContent = (
-        <>
-            <header className={clsx("flex items-center justify-between gap-4 px-4 lg:px-1 pt-4 pb-2 w-full transition-all duration-200", isPanelOpen && "pt-3 pb-1")}>
-                <div className="flex items-center gap-3 min-w-0">
-                    {isMobile && !isPanelOpen && (
-                        <button
-                            onClick={() => setIsMobileCategoryOpen(true)}
-                            className="p-2.5 rounded-xl bg-muted dark:text-emerald-400 text-emerald-800 border border-border active:scale-95 transition-transform min-w-[44px] min-h-[44px]"
-                            aria-label="Kategorien öffnen"
-                        >
-                            <Menu size={20} />
-                        </button>
-                    )}
-                    {(!isMobile || !isSearchVisible) && (
-                        <div className="min-w-0">
-                            <h1 className={clsx("font-bold bg-clip-text text-transparent bg-gradient-to-r dark:from-emerald-300 dark:to-teal-200 from-emerald-800 to-teal-700 leading-tight transition-all duration-200 truncate", isPanelOpen ? "text-lg sm:text-xl" : "text-2xl sm:text-3xl")}>Lagerbestand</h1>
-                            {selectedCategory && !isPanelOpen && <p className="text-xs dark:text-emerald-400 text-emerald-800/70 font-medium truncate max-w-[150px]">{selectedCategory}</p>}
-                        </div>
-                    )}
-                </div>
-
-                {!isPanelOpen && (
-                    <div className="flex items-center gap-2 shrink-0">
-                        <div className="relative">
-                            <AnimatePresence initial={false}>
-                                {isSearchVisible ? (
-                                    <motion.div
-                                        key="search-input"
-                                        initial={{ width: 0, opacity: 0 }}
-                                        animate={{ width: isMobile ? '200px' : '280px', opacity: 1 }}
-                                        exit={{ width: 0, opacity: 0 }}
-                                        transition={{ duration: 0.2 }}
-                                        className="flex items-center bg-black/45 border dark:border-white/5 border-border rounded-xl px-3 py-1.5 focus-within:border-emerald-500/30 focus-within:ring-1 focus-within:ring-emerald-500/20 shadow-inner relative"
-                                    >
-                                        <Search size={14} className="text-foreground/40 mr-2 shrink-0" />
-                                        <input
-                                            id="inventory-search-input"
-                                            type="text"
-                                            autoFocus
-                                            placeholder="Suchen..."
-                                            value={searchTerm}
-                                            onChange={(e) => setSearchTerm(e.target.value)}
-                                            className="bg-transparent border-none outline-none text-sm text-foreground w-full placeholder:text-foreground/20 pr-6"
-                                        />
-                                        <button
-                                            onClick={() => {
-                                                setIsSearchVisible(false);
-                                                setSearchTerm('');
-                                            }}
-                                            className="absolute right-2 p-1 text-foreground/40 hover:text-foreground"
-                                        >
-                                            <X size={12} />
-                                        </button>
-                                    </motion.div>
-                                ) : (
-                                    <motion.button
-                                        key="search-button"
-                                        initial={{ scale: 0.9, opacity: 0 }}
-                                        animate={{ scale: 1, opacity: 1 }}
-                                        exit={{ scale: 0.9, opacity: 0 }}
-                                        onClick={() => setIsSearchVisible(true)}
-                                        className="p-2.5 rounded-xl bg-muted text-muted-foreground hover:text-foreground border border-border active:scale-95 transition-all min-w-[44px] min-h-[44px] flex items-center justify-center cursor-pointer"
-                                        title="Suche öffnen"
-                                    >
-                                        <Search size={18} />
-                                    </motion.button>
-                                )}
-                            </AnimatePresence>
-                        </div>
-
-                        <button
-                            onClick={() => openNewArticleModal(selectedCategory || undefined)}
-                            className="p-2.5 rounded-xl bg-primary text-white hover:bg-emerald-450 border border-primary/20 active:scale-95 transition-all min-w-[44px] min-h-[44px] flex items-center justify-center cursor-pointer shadow-lg shadow-emerald-500/10 font-bold"
-                            title="Neu"
-                        >
-                            <Plus size={18} />
-                        </button>
-
-                        <div className="relative">
-                            <button
-                                onClick={() => setIsMoreMenuOpen(!isMoreMenuOpen)}
-                                className={clsx(
-                                    "p-2.5 rounded-xl bg-muted border border-border text-muted-foreground hover:text-foreground active:scale-95 transition-all min-w-[44px] min-h-[44px] flex items-center justify-center cursor-pointer",
-                                    isMoreMenuOpen && "text-foreground dark:bg-black/30 bg-muted/70 dark:border-white/10 border-border"
-                                )}
-                                title="Mehr Aktionen"
-                            >
-                                <MoreHorizontal size={18} />
-                            </button>
-                            <AnimatePresence>
-                                {isMoreMenuOpen && (
-                                    <>
-                                        <div
-                                            className="fixed inset-0 z-[150]"
-                                            onClick={() => setIsMoreMenuOpen(false)}
-                                        />
-                                        <motion.div
-                                            initial={{ opacity: 0, scale: 0.95, y: 10 }}
-                                            animate={{ opacity: 1, scale: 1, y: 0 }}
-                                            exit={{ opacity: 0, scale: 0.95, y: 10 }}
-                                            transition={{ duration: 0.15 }}
-                                            className="absolute right-0 mt-2 w-48 rounded-xl bg-[#18181b] border dark:border-white/10 border-border shadow-2xl p-1.5 z-[160] flex flex-col gap-1"
-                                        >
-                                            <button
-                                                onClick={() => {
-                                                    setIsHeaderExpanded(!isHeaderExpanded);
-                                                    setIsMoreMenuOpen(false);
-                                                }}
-                                                className={clsx(
-                                                    "w-full text-left px-3 py-2 rounded-lg text-xs font-bold transition-all flex items-center gap-2 cursor-pointer",
-                                                    isHeaderExpanded
-                                                        ? "bg-emerald-500/10 dark:text-emerald-400 text-emerald-800"
-                                                        : "text-foreground/70 hover:text-foreground hover:bg-white/5"
-                                                )}
-                                            >
-                                                <Filter size={14} />
-                                                <span>{isHeaderExpanded ? 'Filter schließen' : 'Filter öffnen'}</span>
-                                            </button>
-                                            <button
-                                                onClick={() => {
-                                                    toggleSelectionMode();
-                                                    setIsMoreMenuOpen(false);
-                                                }}
-                                                className={clsx(
-                                                    "w-full text-left px-3 py-2 rounded-lg text-xs font-bold transition-all flex items-center gap-2 cursor-pointer",
-                                                    isSelectionMode
-                                                        ? "bg-emerald-500/10 dark:text-emerald-400 text-emerald-800"
-                                                        : "text-foreground/70 hover:text-foreground hover:bg-white/5"
-                                                )}
-                                            >
-                                                {isSelectionMode ? <CheckSquare size={14} /> : <ListChecks size={14} />}
-                                                <span>{isSelectionMode ? 'Auswahl beenden' : 'Mehrfachauswahl'}</span>
-                                            </button>
-                                        </motion.div>
-                                    </>
-                                )}
-                            </AnimatePresence>
-                        </div>
-                    </div>
-                )}
-            </header>
-        </>
+        <UnifiedInventoryHeader
+            warehouses={warehouses}
+            currentWarehouse={currentWarehouse}
+            onWarehouseChange={handleWarehouseChange}
+            viewMode={viewMode}
+            setViewMode={setViewMode}
+            searchTerm={searchTerm}
+            setSearchTerm={setSearchTerm}
+            activeFilter={activeFilter}
+            setActiveFilter={setActiveFilter}
+            sortConfig={sortConfig}
+            setSortConfig={setSortConfig}
+            lowStockCount={lowStockCount}
+            onOpenNewArticle={() => openNewArticleModal(selectedCategory || undefined)}
+            isSelectionMode={isSelectionMode}
+            onToggleSelectionMode={toggleSelectionMode}
+            isMobile={isMobile}
+            onOpenMobileCategories={() => setIsMobileCategoryOpen(true)}
+            selectedCategory={selectedCategory}
+        />
     );
 
     const listContent = (
@@ -748,27 +627,6 @@ const Inventory = () => {
                 </div>
             )}
 
-            {/* Floating bottom command toolbar */}
-            {(!selectedArticle && !isEditModalOpen) && (
-                <AnimatePresence>
-                    <InventoryToolbar
-                        viewMode={viewMode}
-                        setViewMode={setViewMode}
-                        currentWarehouse={currentWarehouse}
-                        warehouses={warehouses}
-                        onWarehouseChange={handleWarehouseChange}
-                        searchTerm={searchTerm}
-                        setSearchTerm={setSearchTerm}
-                        activeFilter={activeFilter}
-                        setActiveFilter={setActiveFilter}
-                        sortConfig={sortConfig}
-                        setSortConfig={setSortConfig}
-                        isExpanded={isHeaderExpanded}
-                        onToggle={() => setIsHeaderExpanded(!isHeaderExpanded)}
-                        lowStockCount={lowStockCount}
-                    />
-                </AnimatePresence>
-            )}
         </>
         </PageWrapper>
     );

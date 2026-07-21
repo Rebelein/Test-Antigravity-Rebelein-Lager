@@ -10,18 +10,18 @@ interface ThemeSelectorProps {
 
 const themes = [
     {
-        id: 'default' as const,
-        name: 'Standard',
-        description: 'Klassisches dunkles Design mit Emerald-Akzenten',
-        colors: ['#10b981', '#14b8a6', '#030712'],
-        bgPreview: 'bg-card',
+        id: 'glass' as const,
+        name: 'Titanium Stealth Glass',
+        description: 'Flaggschiff OLED-Pitch Black mit metallischen Micro-Bordern & Smaragd-Glow',
+        colors: ['#10b981', '#3b82f6', '#0a0a0c'],
+        bgPreview: 'bg-[#0a0a0c]',
     },
     {
-        id: 'glass' as const,
-        name: 'Glass Dark',
-        description: 'Luxuriöses Glasmorphismus-Design mit Emerald & Gold',
-        colors: ['#059669', '#d4a574', '#0a0f0d'],
-        bgPreview: 'bg-[#0a0f0d]',
+        id: 'default' as const,
+        name: 'Standard Dark',
+        description: 'Klassisches flaches Design mit Smaragd-Akzenten',
+        colors: ['#10b981', '#64748b', '#18181b'],
+        bgPreview: 'bg-[#18181b]',
     },
 ];
 
