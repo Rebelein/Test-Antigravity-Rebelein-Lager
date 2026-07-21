@@ -576,12 +576,22 @@ const Inventory = () => {
                                     actions={(a) => (
                                         <div className="flex items-center justify-end gap-1.5" onClick={(e) => e.stopPropagation()}>
                                             <button
-                                                onClick={() => handleDecrementStock(a.id)}
+                                                onClick={async (e) => {
+                                                    e.stopPropagation();
+                                                    const newStock = Math.max(0, a.stock - 1);
+                                                    updateLocalArticle(a.id, { stock: newStock });
+                                                    await supabase.from('articles').update({ stock: newStock }).eq('id', a.id);
+                                                }}
                                                 className="w-7 h-7 rounded-lg bg-red-500/10 text-red-500 hover:bg-red-500/20 font-bold flex items-center justify-center transition-colors cursor-pointer"
                                             >-</button>
                                             <span className="w-8 text-center font-bold text-xs">{a.stock}</span>
                                             <button
-                                                onClick={() => handleIncrementStock(a.id)}
+                                                onClick={async (e) => {
+                                                    e.stopPropagation();
+                                                    const newStock = a.stock + 1;
+                                                    updateLocalArticle(a.id, { stock: newStock });
+                                                    await supabase.from('articles').update({ stock: newStock }).eq('id', a.id);
+                                                }}
                                                 className="w-7 h-7 rounded-lg bg-emerald-500/10 text-emerald-500 hover:bg-emerald-500/20 font-bold flex items-center justify-center transition-colors cursor-pointer"
                                             >+</button>
                                             <button

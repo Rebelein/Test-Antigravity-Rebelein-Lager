@@ -1,5 +1,5 @@
 import React from 'react';
-import { Search, Plus, ScanLine, Printer, Clock, RotateCcw, CheckCircle2, BoxSelect, Trash2, Menu, X } from 'lucide-react';
+import { Search, Plus, ScanLine, Printer, Clock, RotateCcw, CheckCircle2, BoxSelect, Trash2, Menu, X, Table, Kanban } from 'lucide-react';
 import { clsx } from 'clsx';
 
 type CommissionTab = 'active' | 'returns' | 'withdrawn' | 'trash' | 'missing';
@@ -9,7 +9,7 @@ interface UnifiedCommissionHeaderProps {
     setActiveTab: (tab: CommissionTab) => void;
     activeSubFilter: string;
     setActiveSubFilter: (sub: any) => void;
-    tabCounts: { returns: number; trash: number; withdrawn: number; ready: number };
+    tabCounts: { returns?: number; trash?: number; withdrawn?: number; ready?: number; missing?: number };
     searchTerm: string;
     setSearchTerm: (term: string) => void;
     onOpenCreate: () => void;
@@ -19,6 +19,8 @@ interface UnifiedCommissionHeaderProps {
     queueLength: number;
     isMobile: boolean;
     onOpenMobileCategory?: () => void;
+    viewMode?: 'table' | 'kanban';
+    setViewMode?: (mode: 'table' | 'kanban') => void;
 }
 
 export const UnifiedCommissionHeader: React.FC<UnifiedCommissionHeaderProps> = ({
@@ -35,7 +37,9 @@ export const UnifiedCommissionHeader: React.FC<UnifiedCommissionHeaderProps> = (
     showPrintArea,
     queueLength,
     isMobile,
-    onOpenMobileCategory
+    onOpenMobileCategory,
+    viewMode = 'table',
+    setViewMode
 }) => {
     const tabs: { id: CommissionTab; label: string; count?: number }[] = [
         { id: 'active', label: 'Aktive' },
@@ -114,6 +118,41 @@ export const UnifiedCommissionHeader: React.FC<UnifiedCommissionHeaderProps> = (
 
                 {/* Right: Minimalist Grouped Actions */}
                 <div className="flex items-center gap-1 bg-muted/40 p-1 rounded-xl border border-border/50 shrink-0 shadow-xs">
+                    {/* View Mode Toggle (Desktop only, when activeTab === 'active') */}
+                    {!isMobile && setViewMode && activeTab === 'active' && (
+                        <>
+                            <div className="flex items-center gap-0.5 bg-muted/60 p-0.5 rounded-lg border border-border/40">
+                                <button
+                                    onClick={() => setViewMode('table')}
+                                    className={clsx(
+                                        "h-6 px-2 rounded text-xs font-semibold flex items-center gap-1 transition-all cursor-pointer",
+                                        viewMode === 'table'
+                                            ? "bg-card text-foreground shadow-xs border border-border/50 font-bold"
+                                            : "text-muted-foreground hover:text-foreground"
+                                    )}
+                                    title="Listen- / Tabellenansicht"
+                                >
+                                    <Table size={13} />
+                                    <span>Tabelle</span>
+                                </button>
+                                <button
+                                    onClick={() => setViewMode('kanban')}
+                                    className={clsx(
+                                        "h-6 px-2 rounded text-xs font-semibold flex items-center gap-1 transition-all cursor-pointer",
+                                        viewMode === 'kanban'
+                                            ? "bg-card text-foreground shadow-xs border border-border/50 font-bold"
+                                            : "text-muted-foreground hover:text-foreground"
+                                    )}
+                                    title="Kanban Board Ansicht"
+                                >
+                                    <Kanban size={13} />
+                                    <span>Kanban</span>
+                                </button>
+                            </div>
+                            <div className="w-px h-4 bg-border/60" />
+                        </>
+                    )}
+
                     {/* Print Queue Toggle */}
                     <button
                         onClick={onTogglePrintArea}

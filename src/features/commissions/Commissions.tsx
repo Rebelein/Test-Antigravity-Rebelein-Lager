@@ -14,9 +14,10 @@ import { PrintingSection } from './components/PrintingSection';
 import { useCommissionData } from './hooks/useCommissionData';
 import { MasterDetailLayout } from '../../components/MasterDetailLayout';
 import { CommissionDetailContent } from './components/CommissionDetailContent';
-import { ExtendedCommission } from '../../../types';
+import { ExtendedCommission, CommissionStatus } from '../../../types';
 import { CommissionEditContent } from './components/CommissionEditContent';
 import { UnifiedCommissionHeader } from './components/UnifiedCommissionHeader';
+import { CommissionsKanbanBoard } from './components/CommissionsKanbanBoard';
 import { useDeviceMode } from '../../../hooks/useDeviceMode';
 import { DataTable, Column } from '../../components/common/DataTable';
 import { usePersistentState } from '../../../hooks/usePersistentState';
@@ -39,6 +40,7 @@ const Commissions: React.FC = () => {
     const [activeSubFilter, setActiveSubFilter] = useState<'all' | 'ready' | 'preparing' | 'draft' | 'returnReady' | 'returnPending'>('all');
     const [selectedLocationFilter, setSelectedLocationFilter] = useState<string | null>(null);
     const [isMobileCategoryOpen, setIsMobileCategoryOpen] = useState(false);
+    const [viewMode, setViewMode] = usePersistentState<'table' | 'kanban'>('commission_view_mode', 'table');
 
     // --- CUSTOM HOOK ---
     const {
@@ -1353,6 +1355,8 @@ const Commissions: React.FC = () => {
                 queueLength={queueItems.length}
                 isMobile={isMobile}
                 onOpenMobileCategory={() => setIsMobileCategoryOpen(true)}
+                viewMode={viewMode}
+                setViewMode={setViewMode}
             />
 
             <div className="flex h-full overflow-hidden mt-2">
@@ -1409,7 +1413,38 @@ const Commissions: React.FC = () => {
 <Loader2 className="animate-spin dark:text-emerald-400 text-emerald-800" size={32} />
                             </div>
                         ) : (device.isDesktop || device.isTabletLandscape) ? (
-                            <DataTable
+                            viewMode === 'kanban' && activeTab === 'active' ? (
+                                <CommissionsKanbanBoard
+                                    commissions={desktopFilteredCommissions}
+                                    onOpenDetail={handleOpenDetail}
+                                    onEdit={handleEditCommission}
+                                    onDelete={handleDelete}
+                                    onMoveStatus={async (comm, nextStatus, e) => {
+                                        e?.stopPropagation();
+                                        if (nextStatus === 'Ready') {
+                                            setActiveCommission(comm);
+                                            setShowConfirmReadyModal(true);
+                                            return;
+                                        }
+                                        if (nextStatus === 'Withdrawn') {
+                                            setActiveCommission(comm);
+                                            setShowConfirmWithdrawModal(true);
+                                            return;
+                                        }
+                                        try {
+                                            const { error } = await supabase.from('commissions').update({ status: nextStatus }).eq('id', comm.id);
+                                            if (error) throw error;
+                                            await logCommissionEvent(comm.id, comm.name, 'status_change', `Status auf "${nextStatus}" geändert`);
+                                            toast.success(`Status von ${comm.name} auf "${nextStatus}" geändert.`);
+                                            refreshCommissions();
+                                        } catch (err: any) {
+                                            toast.error(`Fehler beim Ändern des Status: ${err.message}`);
+                                        }
+                                    }}
+                                    searchTerm={globalSearchTerm}
+                                />
+                            ) : (
+                                <DataTable
                                 data={desktopFilteredCommissions}
                                 columns={[
                                     {
@@ -1532,13 +1567,14 @@ const Commissions: React.FC = () => {
                                             className="px-3 py-1 rounded-lg bg-primary text-white text-xs font-semibold hover:bg-primary/90 transition-colors cursor-pointer"
                                         >Details</button>
                                         <button
-                                            onClick={() => handleEditCommission(c.id)}
+                                            onClick={(e) => handleEditCommission(c, e)}
                                             className="p-1.5 rounded-lg bg-muted text-muted-foreground hover:text-foreground hover:bg-muted/80 transition-colors cursor-pointer"
                                             title="Bearbeiten"
                                         ><Edit size={14} /></button>
                                     </div>
                                 )}
                             />
+                            )
                         ) : (
                             <div className="flex-1 min-h-0 pr-1">
                                 <div className="grid grid-cols-1 gap-4">
@@ -1699,7 +1735,7 @@ const Commissions: React.FC = () => {
             title={getSidePanelTitle()}
             listContent={listContent}
             detailContent={renderSidePanelContent()}
-            panelWidth={'35%'}
+            panelWidth={isWidePanel ? '65%' : '38%'}
             hideHeader={isWidePanel}
             contentClassName={isWidePanel ? 'p-0 overflow-hidden' : 'p-6 overflow-y-auto custom-scrollbar'}
         >

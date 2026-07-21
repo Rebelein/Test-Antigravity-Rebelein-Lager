@@ -62,6 +62,8 @@ export interface Article {
   location: string;
   category: string;
   price: number;
+  unit?: string;
+  sellingPrice?: number;
   supplier?: string; // Legacy/Primary supplier name
   warehouseId?: string;
   ean?: string;
@@ -140,6 +142,7 @@ export interface Commission {
   id: string;
   order_number: string; // Reference to project/Baustelle
   name: string; // Human readable name e.g. "Bad Müller OG"
+  customer_name?: string;
   notes?: string;
   warehouse_notes?: string; // NEW: Information ans Lager
   status: CommissionStatus;

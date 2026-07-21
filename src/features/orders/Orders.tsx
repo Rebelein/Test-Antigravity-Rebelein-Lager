@@ -2,6 +2,7 @@ import React, { useEffect, useState, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { clsx } from 'clsx';
 import { useDeviceMode } from '../../../hooks/useDeviceMode';
+import { useIsMobile } from '../../../hooks/useIsMobile';
 import { GlassCard, Button, GlassInput, GlassSelect, StatusBadge, GlassModal } from '../../components/UIComponents';
 import { AddArticleModal } from '../../components/AddArticleModal';
 import { Article, Order, OrderItem, Supplier, OrderProposal, WarehouseType, Warehouse } from '../../../types';
