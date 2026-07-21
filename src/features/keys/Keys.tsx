@@ -7,7 +7,7 @@ import { KeyModal, KeyHandoverModal } from '../../features/keys/components/KeyCo
 import { CategoryManagerModal } from '../../features/keys/components/CategoryManagerModal';
 import { Search, Plus, Key as KeyIcon, User, MapPin, Printer, RefreshCw, Tag, ChevronDown, Trash2, Edit, ChevronRight, Layers, Filter, Menu, X } from 'lucide-react';
 import { clsx } from 'clsx';
-import { useIsMobile } from '../../../hooks/useIsMobile';
+import { useDeviceMode } from '../../../hooks/useDeviceMode';
 import { toast } from 'sonner';
 import { useReactToPrint } from 'react-to-print';
 import { KeyExportTemplate } from '../../features/keys/components/KeyExportTemplate';
@@ -94,7 +94,8 @@ const Keys: React.FC = () => {
     const [isCategoryModalOpen, setIsCategoryModalOpen] = useState(false);
     const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
     const [isMobileCategoryOpen, setIsMobileCategoryOpen] = useState(false);
-    const isMobile = useIsMobile();
+    const device = useDeviceMode();
+    const isMobile = device.isMobile;
     const [activeTab, setActiveTab] = useState<'all' | 'available' | 'inUse'>('all');
 
     // Print

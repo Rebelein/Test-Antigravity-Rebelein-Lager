@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
-import { useIsMobile } from '../../../hooks/useIsMobile';
+import { useDeviceMode } from '../../../hooks/useDeviceMode';
+import { DataTable, Column } from '../../components/common/DataTable';
 import { usePersistentState } from '../../../hooks/usePersistentState';
 import { supabase } from '../../../supabaseClient';
 import { useInventoryData } from './hooks/useInventoryData';
@@ -26,7 +27,8 @@ interface SortConfig {
 
 const Inventory = () => {
     const navigate = useNavigate();
-    const isMobile = useIsMobile();
+    const device = useDeviceMode();
+    const isMobile = device.isMobile;
     const { loading: authLoading, user } = useAuth();
     const { primaryWarehouseId, secondaryWarehouseId, collapsedCategories, toggleCategoryCollapse } = useUserPreferences();
 
@@ -492,32 +494,133 @@ const Inventory = () => {
                 )}
 
                 <div className="flex-1 h-full overflow-hidden flex flex-col">
-                    <InventoryList
-                        groupedArticles={groupedArticles}
-                        collapsedCategories={collapsedCategories}
-                        toggleCategoryCollapse={toggleCategoryCollapse}
-                        isSelectionMode={isSelectionMode}
-                        selectedArticleIds={selectedArticleIds}
-                        toggleCategorySelection={toggleCategorySelection}
-                        toggleArticleSelection={toggleArticleSelection}
-                        handleQuickAddToCategory={handleQuickAddToCategory}
-                        expandedArticleId={expandedArticleId}
-                        quickStockAmount={quickStockAmount}
-                        isBooking={isBooking}
-                        onCardClick={handleCardClick}
-                        onQuickStockChange={setQuickStockAmount}
-                        onIncrementStock={handleIncrementStock}
-                        onDecrementStock={handleDecrementStock}
-                        onCancelQuickBook={(e) => { e.stopPropagation(); setExpandedArticleId(null); }}
-                        onQuickSave={handleQuickSave}
-                        onOpenDetail={openDetail}
-                        orderDetails={orderDetails}
-                        copiedField={copiedField}
-                        onCopy={handleCopy}
-                        useWindowScroll={false}
-                        headerContent={headerContent}
-                        hideGroupHeaders={true}
-                    />
+                    {(device.isDesktop || device.isTabletLandscape) ? (
+                        <div className="p-4 flex-1 overflow-hidden flex flex-col gap-4">
+                            {headerContent}
+                            <div className="flex-1 overflow-hidden">
+                                <DataTable
+                                    data={sortedArticles}
+                                    columns={[
+                                        {
+                                            key: 'name',
+                                            header: 'Artikel',
+                                            sortable: true,
+                                            sortValue: (a) => a.name,
+                                            accessor: (a) => (
+                                                <div className="flex flex-col">
+                                                    <span className="font-bold text-foreground">{a.name}</span>
+                                                    <span className="text-xs text-muted-foreground font-mono">{a.sku || a.ean || 'Keine SKU'}</span>
+                                                </div>
+                                            )
+                                        },
+                                        {
+                                            key: 'category',
+                                            header: 'Kategorie',
+                                            sortable: true,
+                                            sortValue: (a) => a.category || '',
+                                            accessor: (a) => (
+                                                <span className="px-2.5 py-1 rounded-lg bg-muted text-xs font-semibold text-foreground">
+                                                    {a.category || 'Allgemein'}
+                                                </span>
+                                            )
+                                        },
+                                        {
+                                            key: 'location',
+                                            header: 'Lagerort',
+                                            sortable: true,
+                                            sortValue: (a) => a.location || '',
+                                            accessor: (a) => (
+                                                <span className="text-xs font-mono font-medium text-muted-foreground">
+                                                    {a.location || '-'}
+                                                </span>
+                                            )
+                                        },
+                                        {
+                                            key: 'stock',
+                                            header: 'Bestand / Soll',
+                                            sortable: true,
+                                            sortValue: (a) => a.stock,
+                                            accessor: (a) => {
+                                                const isLow = a.stock < (a.targetStock || 0);
+                                                return (
+                                                    <div className="flex items-center gap-2">
+                                                        <span className={clsx("font-bold text-sm", isLow ? "text-amber-500" : "text-emerald-500")}>
+                                                            {a.stock} {a.unit || 'Stk'}
+                                                        </span>
+                                                        {a.targetStock ? <span className="text-xs text-muted-foreground">/ {a.targetStock}</span> : null}
+                                                    </div>
+                                                );
+                                            }
+                                        },
+                                        {
+                                            key: 'price',
+                                            header: 'VK-Preis',
+                                            sortable: true,
+                                            sortValue: (a) => a.sellingPrice || 0,
+                                            accessor: (a) => (
+                                                <span className="text-xs font-semibold text-foreground">
+                                                    {a.sellingPrice ? `${a.sellingPrice.toFixed(2)} €` : '-'}
+                                                </span>
+                                            )
+                                        }
+                                    ]}
+                                    keyExtractor={(a) => a.id}
+                                    onRowClick={(a) => openDetail(a)}
+                                    hideSearch={true}
+                                    externalSearchQuery={searchTerm}
+                                    searchFilter={(a, q) =>
+                                        a.name.toLowerCase().includes(q) ||
+                                        (a.sku || '').toLowerCase().includes(q) ||
+                                        (a.category || '').toLowerCase().includes(q)
+                                    }
+                                    actions={(a) => (
+                                        <div className="flex items-center justify-end gap-1.5" onClick={(e) => e.stopPropagation()}>
+                                            <button
+                                                onClick={() => handleDecrementStock(a.id)}
+                                                className="w-7 h-7 rounded-lg bg-red-500/10 text-red-500 hover:bg-red-500/20 font-bold flex items-center justify-center transition-colors cursor-pointer"
+                                            >-</button>
+                                            <span className="w-8 text-center font-bold text-xs">{a.stock}</span>
+                                            <button
+                                                onClick={() => handleIncrementStock(a.id)}
+                                                className="w-7 h-7 rounded-lg bg-emerald-500/10 text-emerald-500 hover:bg-emerald-500/20 font-bold flex items-center justify-center transition-colors cursor-pointer"
+                                            >+</button>
+                                            <button
+                                                onClick={() => openDetail(a)}
+                                                className="ml-2 px-3 py-1 rounded-lg bg-primary text-white text-xs font-semibold hover:bg-primary/90 transition-colors cursor-pointer"
+                                            >Details</button>
+                                        </div>
+                                    )}
+                                />
+                            </div>
+                        </div>
+                    ) : (
+                        <InventoryList
+                            groupedArticles={groupedArticles}
+                            collapsedCategories={collapsedCategories}
+                            toggleCategoryCollapse={toggleCategoryCollapse}
+                            isSelectionMode={isSelectionMode}
+                            selectedArticleIds={selectedArticleIds}
+                            toggleCategorySelection={toggleCategorySelection}
+                            toggleArticleSelection={toggleArticleSelection}
+                            handleQuickAddToCategory={handleQuickAddToCategory}
+                            expandedArticleId={expandedArticleId}
+                            quickStockAmount={quickStockAmount}
+                            isBooking={isBooking}
+                            onCardClick={handleCardClick}
+                            onQuickStockChange={setQuickStockAmount}
+                            onIncrementStock={handleIncrementStock}
+                            onDecrementStock={handleDecrementStock}
+                            onCancelQuickBook={(e) => { e.stopPropagation(); setExpandedArticleId(null); }}
+                            onQuickSave={handleQuickSave}
+                            onOpenDetail={openDetail}
+                            orderDetails={orderDetails}
+                            copiedField={copiedField}
+                            onCopy={handleCopy}
+                            useWindowScroll={false}
+                            headerContent={headerContent}
+                            hideGroupHeaders={true}
+                        />
+                    )}
                 </div>
             </div>
 

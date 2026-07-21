@@ -59,10 +59,6 @@ export const UnifiedCommissionHeader: React.FC<UnifiedCommissionHeaderProps> = (
                         </button>
                     )}
 
-                    <h1 className="font-bold text-base sm:text-lg text-foreground truncate shrink-0">
-                        Kommissionen
-                    </h1>
-
                     {/* Main Tabs */}
                     <div className="hidden md:flex items-center gap-1 bg-muted/50 p-1 rounded-lg border border-border/50">
                         {tabs.map(tab => {
@@ -116,42 +112,34 @@ export const UnifiedCommissionHeader: React.FC<UnifiedCommissionHeaderProps> = (
                     )}
                 </div>
 
-                {/* Right: Quick Action Buttons */}
-                <div className="flex items-center gap-1.5 shrink-0">
-                    {/* QR Scanner Trigger */}
-                    <button
-                        onClick={onStartScan}
-                        className="h-8 px-2.5 rounded-lg bg-muted/60 hover:bg-muted border border-border/60 text-xs font-medium text-foreground flex items-center gap-1.5 transition-colors cursor-pointer"
-                        title="QR-Code Scannen"
-                    >
-                        <ScanLine size={15} className="text-primary" />
-                        <span className="hidden sm:inline">Scan</span>
-                    </button>
-
+                {/* Right: Minimalist Grouped Actions */}
+                <div className="flex items-center gap-1 bg-muted/40 p-1 rounded-xl border border-border/50 shrink-0 shadow-xs">
                     {/* Print Queue Toggle */}
                     <button
                         onClick={onTogglePrintArea}
                         className={clsx(
-                            "h-8 px-2.5 rounded-lg border text-xs font-medium flex items-center gap-1.5 transition-colors cursor-pointer relative",
+                            "h-7 px-2.5 rounded-lg text-xs font-medium flex items-center gap-1.5 transition-all cursor-pointer relative",
                             showPrintArea
-                                ? "bg-amber-500/20 border-amber-500/40 dark:text-amber-300 text-amber-800 font-bold"
-                                : "bg-muted/60 border-border/60 text-muted-foreground hover:text-foreground"
+                                ? "bg-amber-500/20 text-amber-300 font-bold border border-amber-500/30"
+                                : "text-muted-foreground hover:text-foreground hover:bg-card"
                         )}
                         title="Druckbereich"
                     >
-                        <Printer size={15} />
+                        <Printer size={14} />
                         <span className="hidden sm:inline">Druck</span>
                         {queueLength > 0 && (
                             <span className="w-2 h-2 rounded-full bg-amber-500 animate-pulse" />
                         )}
                     </button>
 
+                    <div className="w-px h-4 bg-border/60" />
+
                     {/* New Commission Button */}
                     <button
                         onClick={onOpenCreate}
-                        className="h-8 px-3 rounded-lg bg-primary hover:bg-primary/90 text-white text-xs font-bold flex items-center gap-1 shadow-sm transition-colors cursor-pointer"
+                        className="h-7 px-3 rounded-lg bg-primary hover:bg-primary/90 text-white text-xs font-bold flex items-center gap-1 shadow-xs transition-all cursor-pointer"
                     >
-                        <Plus size={15} />
+                        <Plus size={14} />
                         <span className="hidden sm:inline">Neu</span>
                     </button>
                 </div>

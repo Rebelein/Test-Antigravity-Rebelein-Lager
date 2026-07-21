@@ -5,7 +5,7 @@ import { supabase } from '../../../supabaseClient';
 import { useAuth } from '../../../contexts/AuthContext';
 import { useUserPreferences } from '../../../contexts/UserPreferencesContext';
 import { Commission, CommissionItem, Article, Supplier } from '../../../types';
-import { Plus, Search, CheckCircle2, Printer, X, Loader2, History, Trash2, BoxSelect, ArrowRight, Clock, LogOut, Undo2, RotateCcw, AlertTriangle, Layers, Tag, ScanLine, Truck, Calendar, Menu, Filter, ChevronRight, FileText } from 'lucide-react';
+import { Plus, Search, CheckCircle2, Printer, X, Loader2, History, Trash2, BoxSelect, ArrowRight, Clock, LogOut, Undo2, RotateCcw, AlertTriangle, Layers, Tag, ScanLine, Truck, Calendar, Menu, Filter, ChevronRight, FileText, Edit } from 'lucide-react';
 import { clsx } from 'clsx';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { CommissionCleanupModal } from './components/CommissionCleanupModal';
@@ -17,7 +17,8 @@ import { CommissionDetailContent } from './components/CommissionDetailContent';
 import { ExtendedCommission } from '../../../types';
 import { CommissionEditContent } from './components/CommissionEditContent';
 import { UnifiedCommissionHeader } from './components/UnifiedCommissionHeader';
-import { useIsMobile } from '../../../hooks/useIsMobile';
+import { useDeviceMode } from '../../../hooks/useDeviceMode';
+import { DataTable, Column } from '../../components/common/DataTable';
 import { usePersistentState } from '../../../hooks/usePersistentState';
 import { toast } from 'sonner';
 import UnifiedScanner from '../../components/UnifiedScanner';
@@ -36,6 +37,7 @@ const Commissions: React.FC = () => {
 
     const [activeTab, setActiveTab] = useState<CommissionTab>('active');
     const [activeSubFilter, setActiveSubFilter] = useState<'all' | 'ready' | 'preparing' | 'draft' | 'returnReady' | 'returnPending'>('all');
+    const [selectedLocationFilter, setSelectedLocationFilter] = useState<string | null>(null);
     const [isMobileCategoryOpen, setIsMobileCategoryOpen] = useState(false);
 
     // --- CUSTOM HOOK ---
@@ -950,6 +952,58 @@ const Commissions: React.FC = () => {
 
     // --- LIST CONTENT ---
 
+    const [selectedSubFilters, setSelectedSubFilters] = useState<string[]>(['ready', 'preparing', 'draft', 'returnReady', 'returnPending']);
+
+    const toggleSubFilter = (key: string) => {
+        setSelectedSubFilters(prev =>
+            prev.includes(key) ? prev.filter(k => k !== key) : [...prev, key]
+        );
+    };
+
+    const distinctLocations = useMemo(() => {
+        const set = new Set<string>();
+        commissions.forEach(c => {
+            if (c.staging_locations && Array.isArray(c.staging_locations)) {
+                c.staging_locations.forEach(loc => {
+                    if (loc && loc.trim()) set.add(loc.trim());
+                });
+            }
+        });
+        return Array.from(set).sort();
+    }, [commissions]);
+
+    const desktopFilteredCommissions = useMemo(() => {
+        return commissions.filter(c => {
+            if (activeTab === 'withdrawn' && !['Withdrawn', 'ReturnComplete'].includes(c.status)) return false;
+            if (activeTab === 'missing' && c.status !== 'Missing') return false;
+            if (activeTab === 'returns' && !['ReturnReady', 'ReturnPending', 'ReturnComplete'].includes(c.status)) return false;
+            if (activeTab === 'active' && !['Preparing', 'Ready', 'Draft'].includes(c.status)) return false;
+            if (activeTab === 'trash' && !c.deleted_at) return false;
+
+            if (activeTab === 'active') {
+                const map: Record<string, string> = { Ready: 'ready', Preparing: 'preparing', Draft: 'draft' };
+                const sub = map[c.status];
+                if (sub && selectedSubFilters.length > 0 && !selectedSubFilters.includes(sub)) {
+                    return false;
+                }
+            } else if (activeTab === 'returns') {
+                const map: Record<string, string> = { ReturnReady: 'returnReady', ReturnPending: 'returnPending' };
+                const sub = map[c.status];
+                if (sub && selectedSubFilters.length > 0 && !selectedSubFilters.includes(sub)) {
+                    return false;
+                }
+            }
+
+            if (selectedLocationFilter) {
+                if (!c.staging_locations || !c.staging_locations.includes(selectedLocationFilter)) {
+                    return false;
+                }
+            }
+
+            return true;
+        });
+    }, [commissions, activeTab, selectedSubFilters, selectedLocationFilter]);
+
     const filteredGroups = useMemo(() => {
         const groups = { ready: [] as ExtendedCommission[], preparing: [] as ExtendedCommission[], draft: [] as ExtendedCommission[], returnReady: [] as ExtendedCommission[], returnPending: [] as ExtendedCommission[] };
         commissions.forEach(c => {
@@ -1025,19 +1079,24 @@ const Commissions: React.FC = () => {
         } catch (err) { console.error(err); }
     };
 
-    const isMobile = useIsMobile();
+    const device = useDeviceMode();
+    const isMobile = device.isMobile;
 
     const CommissionSidebar = () => (
         <div className="flex flex-col gap-1 py-2 h-full overflow-y-auto custom-scrollbar pr-2 pb-24 md:pb-2">
             <button
-                onClick={() => { setActiveTab('active'); setActiveSubFilter('all'); setIsMobileCategoryOpen(false); }}
+                onClick={() => {
+                    setActiveTab('active');
+                    setSelectedSubFilters(['ready', 'preparing', 'draft']);
+                    setIsMobileCategoryOpen(false);
+                }}
                 className={clsx(
-                    "flex items-center justify-between px-4 py-3 rounded-xl transition-all duration-200 text-left group w-full gap-3",
-                    activeTab === 'active' && activeSubFilter === 'all' ? "bg-primary/20 dark:text-emerald-400 text-emerald-800 border border-emerald-500/30" : "text-muted-foreground hover:text-foreground hover:bg-muted"
+                    "flex items-center justify-between px-4 py-3 rounded-xl transition-all duration-200 text-left group w-full gap-3 cursor-pointer",
+                    activeTab === 'active' ? "bg-primary/20 dark:text-emerald-400 text-emerald-800 border border-emerald-500/30 font-bold" : "text-muted-foreground hover:text-foreground hover:bg-muted"
                 )}
             >
                 <div className="flex items-center gap-3">
-                    <Clock size={18} className={clsx(activeTab === 'active' && activeSubFilter === 'all' ? "dark:text-emerald-400 text-emerald-800" : "text-muted-foreground group-hover:text-muted-foreground")} />
+                    <Clock size={18} className={clsx(activeTab === 'active' ? "dark:text-emerald-400 text-emerald-800" : "text-muted-foreground group-hover:text-muted-foreground")} />
                     <span className="font-medium text-sm">Aktive</span>
                 </div>
             </button>
@@ -1046,47 +1105,74 @@ const Commissions: React.FC = () => {
                 <div className="flex flex-col gap-1 pl-4 mb-2">
                     <div className="w-px h-2 bg-muted ml-4"></div>
                     <button
-                        onClick={() => { setActiveSubFilter('ready'); setIsMobileCategoryOpen(false); }}
+                        onClick={() => { toggleSubFilter('ready'); setIsMobileCategoryOpen(false); }}
                         className={clsx(
-                            "flex items-center justify-between px-3 py-2 rounded-xl transition-all duration-200 text-left group w-full gap-2",
-                            activeSubFilter === 'ready' ? "bg-primary/10 dark:text-emerald-300 text-emerald-800 border border-emerald-500/20" : "text-muted-foreground hover:text-foreground hover:bg-muted"
+                            "flex items-center justify-between px-3 py-2 rounded-xl transition-all duration-200 text-left group w-full gap-2 cursor-pointer",
+                            selectedSubFilters.includes('ready')
+                                ? "bg-primary/20 dark:text-emerald-300 text-emerald-800 border border-emerald-500/30 font-bold"
+                                : "text-muted-foreground hover:text-foreground hover:bg-muted opacity-60"
                         )}
                     >
-                        <span className="text-xs font-medium truncate">Bereitgestellt</span>
-                        <span className="bg-muted text-muted-foreground text-[10px] px-1.5 py-0.5 rounded-full">{filteredGroups.ready.length}</span>
+                        <div className="flex items-center gap-2 min-w-0">
+                            <div className={clsx("w-3.5 h-3.5 rounded border flex items-center justify-center text-[9px] shrink-0", selectedSubFilters.includes('ready') ? "bg-emerald-500 text-black border-emerald-500 font-bold" : "border-muted-foreground/40")}>
+                                {selectedSubFilters.includes('ready') ? "✓" : ""}
+                            </div>
+                            <span className="text-xs truncate">Bereitgestellt</span>
+                        </div>
+                        <span className="bg-muted text-muted-foreground text-[10px] px-1.5 py-0.5 rounded-full font-mono">{filteredGroups.ready.length}</span>
                     </button>
+
                     <button
-                        onClick={() => { setActiveSubFilter('preparing'); setIsMobileCategoryOpen(false); }}
+                        onClick={() => { toggleSubFilter('preparing'); setIsMobileCategoryOpen(false); }}
                         className={clsx(
-                            "flex items-center justify-between px-3 py-2 rounded-xl transition-all duration-200 text-left group w-full gap-2",
-                            activeSubFilter === 'preparing' ? "bg-blue-500/10 dark:text-blue-300 text-blue-800 border border-blue-500/20" : "text-muted-foreground hover:text-foreground hover:bg-muted"
+                            "flex items-center justify-between px-3 py-2 rounded-xl transition-all duration-200 text-left group w-full gap-2 cursor-pointer",
+                            selectedSubFilters.includes('preparing')
+                                ? "bg-blue-500/20 dark:text-blue-300 text-blue-800 border border-blue-500/30 font-bold"
+                                : "text-muted-foreground hover:text-foreground hover:bg-muted opacity-60"
                         )}
                     >
-                        <span className="text-xs font-medium truncate">In Vorbereitung</span>
-                        <span className="bg-muted text-muted-foreground text-[10px] px-1.5 py-0.5 rounded-full">{filteredGroups.preparing.length}</span>
+                        <div className="flex items-center gap-2 min-w-0">
+                            <div className={clsx("w-3.5 h-3.5 rounded border flex items-center justify-center text-[9px] shrink-0", selectedSubFilters.includes('preparing') ? "bg-blue-500 text-white border-blue-500 font-bold" : "border-muted-foreground/40")}>
+                                {selectedSubFilters.includes('preparing') ? "✓" : ""}
+                            </div>
+                            <span className="text-xs truncate">In Vorbereitung</span>
+                        </div>
+                        <span className="bg-muted text-muted-foreground text-[10px] px-1.5 py-0.5 rounded-full font-mono">{filteredGroups.preparing.length}</span>
                     </button>
+
                     <button
-                        onClick={() => { setActiveSubFilter('draft'); setIsMobileCategoryOpen(false); }}
+                        onClick={() => { toggleSubFilter('draft'); setIsMobileCategoryOpen(false); }}
                         className={clsx(
-                            "flex items-center justify-between px-3 py-2 rounded-xl transition-all duration-200 text-left group w-full gap-2",
-                            activeSubFilter === 'draft' ? "bg-gray-500/10 dark:text-gray-300 text-gray-800 border border-gray-500/20" : "text-muted-foreground hover:text-foreground hover:bg-muted"
+                            "flex items-center justify-between px-3 py-2 rounded-xl transition-all duration-200 text-left group w-full gap-2 cursor-pointer",
+                            selectedSubFilters.includes('draft')
+                                ? "bg-gray-500/20 dark:text-gray-300 text-gray-800 border border-gray-500/30 font-bold"
+                                : "text-muted-foreground hover:text-foreground hover:bg-muted opacity-60"
                         )}
                     >
-                        <span className="text-xs font-medium truncate">Entwürfe</span>
-                        <span className="bg-muted text-muted-foreground text-[10px] px-1.5 py-0.5 rounded-full">{filteredGroups.draft.length}</span>
+                        <div className="flex items-center gap-2 min-w-0">
+                            <div className={clsx("w-3.5 h-3.5 rounded border flex items-center justify-center text-[9px] shrink-0", selectedSubFilters.includes('draft') ? "bg-gray-500 text-white border-gray-500 font-bold" : "border-muted-foreground/40")}>
+                                {selectedSubFilters.includes('draft') ? "✓" : ""}
+                            </div>
+                            <span className="text-xs truncate">Entwürfe</span>
+                        </div>
+                        <span className="bg-muted text-muted-foreground text-[10px] px-1.5 py-0.5 rounded-full font-mono">{filteredGroups.draft.length}</span>
                     </button>
                 </div>
             )}
 
             <button
-                onClick={() => { setActiveTab('returns'); setActiveSubFilter('all'); setIsMobileCategoryOpen(false); }}
+                onClick={() => {
+                    setActiveTab('returns');
+                    setSelectedSubFilters(['returnReady', 'returnPending']);
+                    setIsMobileCategoryOpen(false);
+                }}
                 className={clsx(
-                    "flex items-center justify-between px-4 py-3 rounded-xl transition-all duration-200 text-left group w-full gap-3",
-                    activeTab === 'returns' && activeSubFilter === 'all' ? "bg-purple-500/20 text-purple-400 border border-purple-500/30" : "text-muted-foreground hover:text-foreground hover:bg-muted"
+                    "flex items-center justify-between px-4 py-3 rounded-xl transition-all duration-200 text-left group w-full gap-3 cursor-pointer",
+                    activeTab === 'returns' ? "bg-purple-500/20 text-purple-400 border border-purple-500/30 font-bold" : "text-muted-foreground hover:text-foreground hover:bg-muted"
                 )}
             >
                 <div className="flex items-center gap-3">
-                    <RotateCcw size={18} className={clsx(activeTab === 'returns' && activeSubFilter === 'all' ? "text-purple-400" : "text-muted-foreground group-hover:text-muted-foreground")} />
+                    <RotateCcw size={18} className={clsx(activeTab === 'returns' ? "text-purple-400" : "text-muted-foreground group-hover:text-muted-foreground")} />
                     <span className="font-medium text-sm">Retouren</span>
                 </div>
                 {tabCounts.returns > 0 && <span className="bg-purple-500 text-white text-[10px] px-1.5 py-0.5 rounded-full">{tabCounts.returns}</span>}
@@ -1096,24 +1182,38 @@ const Commissions: React.FC = () => {
                 <div className="flex flex-col gap-1 pl-4 mb-2">
                     <div className="w-px h-2 bg-muted ml-4"></div>
                     <button
-                        onClick={() => { setActiveSubFilter('returnReady'); setIsMobileCategoryOpen(false); }}
+                        onClick={() => { toggleSubFilter('returnReady'); setIsMobileCategoryOpen(false); }}
                         className={clsx(
-                            "flex items-center justify-between px-3 py-2 rounded-xl transition-all duration-200 text-left group w-full gap-2",
-                            activeSubFilter === 'returnReady' ? "bg-purple-500/10 dark:text-purple-300 text-purple-800 border border-purple-500/20" : "text-muted-foreground hover:text-foreground hover:bg-muted"
+                            "flex items-center justify-between px-3 py-2 rounded-xl transition-all duration-200 text-left group w-full gap-2 cursor-pointer",
+                            selectedSubFilters.includes('returnReady')
+                                ? "bg-purple-500/20 dark:text-purple-300 text-purple-800 border border-purple-500/30 font-bold"
+                                : "text-muted-foreground hover:text-foreground hover:bg-muted opacity-60"
                         )}
                     >
-                        <span className="text-xs font-medium truncate">Abholbereit</span>
-                        <span className="bg-muted text-muted-foreground text-[10px] px-1.5 py-0.5 rounded-full">{filteredGroups.returnReady.length}</span>
+                        <div className="flex items-center gap-2 min-w-0">
+                            <div className={clsx("w-3.5 h-3.5 rounded border flex items-center justify-center text-[9px] shrink-0", selectedSubFilters.includes('returnReady') ? "bg-purple-500 text-white border-purple-500 font-bold" : "border-muted-foreground/40")}>
+                                {selectedSubFilters.includes('returnReady') ? "✓" : ""}
+                            </div>
+                            <span className="text-xs truncate">Abholbereit</span>
+                        </div>
+                        <span className="bg-muted text-muted-foreground text-[10px] px-1.5 py-0.5 rounded-full font-mono">{filteredGroups.returnReady.length}</span>
                     </button>
                     <button
-                        onClick={() => { setActiveSubFilter('returnPending'); setIsMobileCategoryOpen(false); }}
+                        onClick={() => { toggleSubFilter('returnPending'); setIsMobileCategoryOpen(false); }}
                         className={clsx(
-                            "flex items-center justify-between px-3 py-2 rounded-xl transition-all duration-200 text-left group w-full gap-2",
-                            activeSubFilter === 'returnPending' ? "bg-orange-500/10 text-orange-300 border border-orange-500/20" : "text-muted-foreground hover:text-foreground hover:bg-muted"
+                            "flex items-center justify-between px-3 py-2 rounded-xl transition-all duration-200 text-left group w-full gap-2 cursor-pointer",
+                            selectedSubFilters.includes('returnPending')
+                                ? "bg-orange-500/20 text-orange-300 border border-orange-500/30 font-bold"
+                                : "text-muted-foreground hover:text-foreground hover:bg-muted opacity-60"
                         )}
                     >
-                        <span className="text-xs font-medium truncate">Angemeldet</span>
-                        <span className="bg-muted text-muted-foreground text-[10px] px-1.5 py-0.5 rounded-full">{filteredGroups.returnPending.length}</span>
+                        <div className="flex items-center gap-2 min-w-0">
+                            <div className={clsx("w-3.5 h-3.5 rounded border flex items-center justify-center text-[9px] shrink-0", selectedSubFilters.includes('returnPending') ? "bg-orange-500 text-white border-orange-500 font-bold" : "border-muted-foreground/40")}>
+                                {selectedSubFilters.includes('returnPending') ? "✓" : ""}
+                            </div>
+                            <span className="text-xs truncate">Angemeldet</span>
+                        </div>
+                        <span className="bg-muted text-muted-foreground text-[10px] px-1.5 py-0.5 rounded-full font-mono">{filteredGroups.returnPending.length}</span>
                     </button>
                 </div>
             )}
@@ -1158,6 +1258,55 @@ const Commissions: React.FC = () => {
                     <span className="font-medium text-sm">Papierkorb</span>
                 </div>
             </button>
+
+            {/* Bereiche / Standorte Filter */}
+            {distinctLocations.length > 0 && (
+                <div className="flex flex-col gap-1 mt-3 pt-3 border-t border-border/50">
+                    <div className="px-3 py-1 flex items-center justify-between text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
+                        <div className="flex items-center gap-1.5">
+                            <Layers size={12} />
+                            <span>Bereiche / Standorte</span>
+                        </div>
+                        {selectedLocationFilter && (
+                            <button
+                                onClick={() => setSelectedLocationFilter(null)}
+                                className="text-[10px] text-primary hover:underline font-normal normal-case"
+                            >
+                                Zurücksetzen
+                            </button>
+                        )}
+                    </div>
+
+                    <button
+                        onClick={() => { setSelectedLocationFilter(null); setIsMobileCategoryOpen(false); }}
+                        className={clsx(
+                            "flex items-center justify-between px-3 py-2 rounded-xl transition-all duration-200 text-left group w-full gap-2 text-xs font-medium cursor-pointer",
+                            !selectedLocationFilter ? "bg-primary/20 text-primary font-bold border border-primary/30" : "text-muted-foreground hover:text-foreground hover:bg-muted"
+                        )}
+                    >
+                        <span>Alle Bereiche</span>
+                        <span className="bg-muted text-muted-foreground text-[10px] px-1.5 py-0.5 rounded-full font-mono">{commissions.length}</span>
+                    </button>
+
+                    {distinctLocations.map(loc => {
+                        const count = commissions.filter(c => c.staging_locations?.includes(loc)).length;
+                        const isSelected = selectedLocationFilter === loc;
+                        return (
+                            <button
+                                key={loc}
+                                onClick={() => { setSelectedLocationFilter(loc); setIsMobileCategoryOpen(false); }}
+                                className={clsx(
+                                    "flex items-center justify-between px-3 py-2 rounded-xl transition-all duration-200 text-left group w-full gap-2 text-xs font-medium cursor-pointer",
+                                    isSelected ? "bg-primary/20 text-primary font-bold border border-primary/30" : "text-muted-foreground hover:text-foreground hover:bg-muted"
+                                )}
+                            >
+                                <span className="truncate">{loc}</span>
+                                <span className="bg-muted text-muted-foreground text-[10px] px-1.5 py-0.5 rounded-full font-mono">{count}</span>
+                            </button>
+                        );
+                    })}
+                </div>
+            )}
 
             {/* Device-specific print panel toggle switch */}
             <div className="mt-auto pt-4 border-t border-border/40 dark:border-white/5 flex items-center justify-between px-2 py-2 select-none">
@@ -1255,293 +1404,286 @@ const Commissions: React.FC = () => {
                 {/* Content Area */}
                 <div className="flex-1 h-full overflow-hidden flex flex-col lg:pl-4">
                     <div className="flex-1 overflow-y-auto custom-scrollbar pb-24 pr-2 flex flex-col space-y-4">
-
-
                         {loading ? (
                             <div className="flex-1 flex items-center justify-center">
-                                <Loader2 className="animate-spin dark:text-emerald-400 text-emerald-800" size={32} />
+<Loader2 className="animate-spin dark:text-emerald-400 text-emerald-800" size={32} />
                             </div>
-                        ) : (
-                            <div className="flex-1 min-h-0 pr-1">
-                                <div className="grid grid-cols-1 gap-4">
-                        {commissions.length === 0 && <div className="text-muted-foreground text-center py-10">Keine Einträge.</div>}
+                        ) : (device.isDesktop || device.isTabletLandscape) ? (
+                            <DataTable
+                                data={desktopFilteredCommissions}
+                                columns={[
+                                    {
+                                        key: 'name',
+                                        header: 'Kommission & Allgemeine Infos',
+                                        sortable: true,
+                                        sortValue: (c) => c.name,
+                                        accessor: (c) => {
+                                            const backorders = c.commission_items?.filter(i => i.is_backorder) || [];
+                                            const hasBackorder = backorders.length > 0;
+                                            const generalNotes = c.warehouse_notes || c.notes || c.office_notes || '';
 
-                        {activeTab === 'active' && (
-                            <>
-                                {(activeSubFilter === 'all' || activeSubFilter === 'ready') && renderCategory("Bereitgestellt", 'ready', filteredGroups.ready, 'dark:text-emerald-400 text-emerald-800')}
-                                {(activeSubFilter === 'all' || activeSubFilter === 'preparing') && renderCategory("In Vorbereitung", 'preparing', filteredGroups.preparing, 'dark:text-blue-400 text-blue-800')}
-                                {(activeSubFilter === 'all' || activeSubFilter === 'draft') && renderCategory("Entwürfe", 'draft', filteredGroups.draft, 'text-muted-foreground')}
-                            </>
-                        )}
+                                            return (
+                                                <div className="flex flex-col gap-1 py-1 min-w-[260px]">
+                                                    {/* 1st Line: Title, Order Number, Backorder Pill */}
+                                                    <div className="flex items-center gap-2 flex-wrap">
+                                                        <span className="font-bold text-foreground hover:underline cursor-pointer text-sm" onClick={() => handleOpenDetail(c)}>
+                                                            {c.name}
+                                                        </span>
+                                                        {c.order_number && (
+                                                            <span className="text-xs text-muted-foreground font-mono bg-muted/80 px-1.5 py-0.5 rounded border border-border/50">
+                                                                {c.order_number}
+                                                            </span>
+                                                        )}
+                                                        {hasBackorder && (
+                                                            <span className="px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-rose-500/20 text-rose-300 border border-rose-500/40 animate-pulse flex items-center gap-1 shadow-xs">
+                                                                <AlertTriangle size={11} className="text-rose-400" />
+                                                                <span>Rückstand ({backorders.length})</span>
+                                                            </span>
+                                                        )}
+                                                    </div>
 
-                        {activeTab === 'returns' && (
-                            <>
-                                {(activeSubFilter === 'all' || activeSubFilter === 'returnReady') && renderCategory("Abholbereit", 'returnReady', filteredGroups.returnReady, 'text-purple-400')}
-                                {(activeSubFilter === 'all' || activeSubFilter === 'returnPending') && renderCategory("Angemeldet", 'returnPending', filteredGroups.returnPending, 'text-orange-400')}
-                            </>
-                        )}
-
-
-                        {activeTab === 'withdrawn' && (
-                            <div className="grid grid-cols-[repeat(auto-fill,minmax(320px,1fr))] gap-4">
-                                {commissions.filter(c => ['Withdrawn', 'ReturnComplete'].includes(c.status)).map(c => <CommissionCard key={c.id} commission={c} onClick={handleOpenDetail} onEdit={handleEditCommission} onDelete={handleDelete} className="opacity-80 hover:opacity-100" colorClass="border-blue-500/20" statusKey="withdrawn" />)}
-                            </div>
-                        )}
-
-                        {activeTab === 'missing' && (
-                            <div className="flex flex-col h-full gap-6 overflow-hidden">
-
-                                {/* SECTION 1: ACTION REQUIRED (MISSING ITEMS) */}
-                                {(() => {
-                                    const missing = commissions.filter(c => c.status === 'Missing');
-                                    // Filter for Overdue: Not withdrawn/returned, older than 31 days
-                                    const overdue = commissions.filter(c => {
-                                        if (['Withdrawn', 'ReturnComplete'].includes(c.status) || c.status === 'Missing') return false;
-                                        const createdDate = new Date(c.created_at);
-                                        const diffTime = Math.abs(new Date().getTime() - createdDate.getTime());
-                                        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-                                        return diffDays > 31;
-                                    });
-                                    const verified = commissions.filter(c => (c.status === 'Ready' || c.status === 'ReturnReady') && !!c.last_scanned_at);
-                                    const open = commissions.filter(c => (c.status === 'Ready' || c.status === 'ReturnReady') && !c.last_scanned_at && !overdue.includes(c));
-
-                                    return (
-                                        <>
-                                            {/* TOP PRIORITY: MISSING ITEMS */}
-                                            <div className="flex-none max-h-[50%] flex flex-col">
-                                                <div className="flex justify-between items-center mb-3 px-1">
-                                                    <h3 className="text-xl font-bold dark:text-rose-400 text-rose-800 flex items-center gap-2">
-                                                        <AlertTriangle className="animate-pulse" />
-                                                        Handlung Erforderlich ({missing.length})
-                                                    </h3>
-                                                    {missing.length === 0 && (
-                                                        <span className="dark:text-emerald-400 text-emerald-800 font-bold flex items-center gap-1 text-sm bg-primary/10 px-3 py-1 rounded-full border border-emerald-500/20">
-                                                            <CheckCircle2 size={16} /> Alles sauber
+                                                    {/* 2nd Line: General Info / Notes / Items preview */}
+                                                    {generalNotes ? (
+                                                        <div className="text-xs dark:text-amber-300 text-amber-900 flex items-center gap-1.5 bg-amber-500/10 px-2 py-0.5 rounded border border-amber-500/20 max-w-lg truncate">
+                                                            <FileText size={11} className="text-amber-500 shrink-0" />
+                                                            <span className="truncate italic">{generalNotes}</span>
+                                                        </div>
+                                                    ) : (
+                                                        <div className="text-[11px] text-muted-foreground/70 flex items-center gap-2">
+                                                            <span>📦 {c.commission_items?.length || 0} Artikel</span>
+                                                            {c.customer_name && <span>• Kunde: {c.customer_name}</span>}
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            );
+                                        }
+                                    },
+                                    {
+                                        key: 'customer',
+                                        header: 'Kunde / Kommissionär',
+                                        sortable: true,
+                                        sortValue: (c) => c.customer_name || '',
+                                        accessor: (c) => (
+                                            <span className="text-xs font-semibold text-foreground">{c.customer_name || '-'}</span>
+                                        )
+                                    },
+                                    {
+                                        key: 'status',
+                                        header: 'Status & Rückstände',
+                                        sortable: true,
+                                        sortValue: (c) => c.status,
+                                        accessor: (c) => {
+                                            const hasBackorder = c.commission_items?.some(i => i.is_backorder);
+                                            return (
+                                                <div className="flex flex-col items-start gap-1">
+                                                    <StatusBadge status={c.status} />
+                                                    {hasBackorder && (
+                                                        <span className="text-[10px] text-rose-400 font-bold flex items-center gap-1">
+                                                            ⚠️ Rückstand
                                                         </span>
                                                     )}
                                                 </div>
-
-                                                {missing.length === 0 ? (
-                                                    <div className="bg-muted border dark:border-white/5 border-border rounded-2xl p-6 text-center text-muted-foreground italic flex flex-col items-center gap-2">
-                                                        <CheckCircle2 size={32} className="opacity-20" />
-                                                        <div>Keine vermissten Kommissionen.</div>
-                                                    </div>
+                                            );
+                                        }
+                                    },
+                                    {
+                                        key: 'locations',
+                                        header: 'Lager-Standorte',
+                                        sortable: false,
+                                        accessor: (c) => (
+                                            <div className="flex flex-wrap gap-1">
+                                                {c.staging_locations && c.staging_locations.length > 0 ? (
+                                                    c.staging_locations.map(loc => (
+                                                        <span key={loc} className="px-2 py-0.5 rounded-md bg-muted text-[11px] font-mono font-medium text-foreground">
+                                                            {loc}
+                                                        </span>
+                                                    ))
                                                 ) : (
-                                                    <div className="overflow-y-auto custom-scrollbar p-1 grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-                                                        {missing.map(c => (
-                                                            <div key={c.id} className="bg-rose-500/10 backdrop-blur-sm border border-rose-500/30 rounded-2xl p-4 flex flex-col gap-3 shadow-lg shadow-black/20 group hover:shadow-rose-900/20 transition-all">
-                                                                <div className="flex justify-between items-start">
-                                                                    <div>
-                                                                        <div className="font-bold text-foreground text-lg cursor-pointer hover:underline" onClick={() => handleOpenDetail(c)}>{c.name}</div>
-                                                                        <div className="dark:text-rose-300 text-rose-800 font-mono text-sm mb-1">{c.order_number || 'Keine Auftragsnr.'}</div>
-                                                                        <div className="dark:text-rose-300 text-rose-800/60 text-[10px] flex items-center gap-1">
-                                                                            <Calendar size={10} /> Erstellt: {new Date(c.created_at).toLocaleDateString('de-DE')}
-                                                                        </div>
-                                                                    </div>
-                                                                    <StatusBadge status="Missing" />
-                                                                </div>
-
-                                                                <div className="p-3 bg-rose-900/20 rounded-lg text-rose-200 text-sm border border-rose-500/10">
-                                                                    <div className="font-bold mb-1 flex items-center gap-2"><ScanLine size={14} /> Nicht im Regal gefunden!</div>
-                                                                    <div className="dark:text-rose-300 text-rose-800/70 text-xs">Bitte prüfen, ob Auftrag bereits abgeholt wurde.</div>
-                                                                </div>
-
-                                                                <div className="flex gap-2 mt-auto pt-2">
-                                                                    <Button
-                                                                        onClick={async (e) => {
-                                                                            e.stopPropagation();
-                                                                            if (!confirm(`${c.name} als 'Entnommen' abschließen?`)) return;
-                                                                            await supabase.from('commissions').update({ status: 'Withdrawn', withdrawn_at: new Date().toISOString() }).eq('id', c.id);
-                                                                            await logCommissionEvent(c.id, c.name, 'status_change', 'Aus "Vermisst" als ENTDOMMEN gebucht');
-                                                                            refreshCommissions();
-                                                                        }}
-                                                                        className="flex-1 bg-purple-600 hover:bg-purple-500 justify-center shadow-lg shadow-purple-900/20"
-                                                                        icon={<Truck size={16} />}
-                                                                    >
-                                                                        Entnommen
-                                                                    </Button>
-                                                                    <Button
-                                                                        variant="secondary"
-                                                                        onClick={async (e) => {
-                                                                            e.stopPropagation();
-                                                                            if (!confirm("Status zurücksetzen?")) return;
-                                                                            await supabase.from('commissions').update({ status: 'Preparing' }).eq('id', c.id);
-                                                                            refreshCommissions();
-                                                                        }}
-                                                                        className="bg-muted hover:bg-muted text-muted-foreground"
-                                                                        icon={<RotateCcw size={16} />}
-                                                                    />
-                                                                    <Button
-                                                                        variant="secondary"
-                                                                        onClick={(e) => handleDelete(c.id, c.name, 'trash', e)}
-                                                                        className="bg-rose-500/10 hover:bg-rose-500/20 dark:text-rose-400 text-rose-800"
-                                                                        icon={<Trash2 size={16} />}
-                                                                    />
-                                                                </div>
-                                                            </div>
-                                                        ))}
-                                                    </div>
+                                                    <span className="text-xs text-muted-foreground italic">Keine Angabe</span>
                                                 )}
                                             </div>
+                                        )
+                                    },
+                                    {
+                                        key: 'created_at',
+                                        header: 'Erstellt am',
+                                        sortable: true,
+                                        sortValue: (c) => new Date(c.created_at).getTime(),
+                                        accessor: (c) => (
+                                            <span className="text-xs text-muted-foreground">
+                                                {new Date(c.created_at).toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' })}
+                                            </span>
+                                        )
+                                    }
+                                ]}
+                                keyExtractor={(c) => c.id}
+                                onRowClick={(c) => handleOpenDetail(c)}
+                                hideSearch={true}
+                                externalSearchQuery={globalSearchTerm}
+                                searchFilter={(c, q) =>
+                                    c.name.toLowerCase().includes(q) ||
+                                    (c.order_number || '').toLowerCase().includes(q) ||
+                                    (c.customer_name || '').toLowerCase().includes(q)
+                                }
+                                actions={(c) => (
+                                    <div className="flex items-center justify-end gap-1.5" onClick={(e) => e.stopPropagation()}>
+                                        <button
+                                            onClick={() => handleOpenDetail(c)}
+                                            className="px-3 py-1 rounded-lg bg-primary text-white text-xs font-semibold hover:bg-primary/90 transition-colors cursor-pointer"
+                                        >Details</button>
+                                        <button
+                                            onClick={() => handleEditCommission(c.id)}
+                                            className="p-1.5 rounded-lg bg-muted text-muted-foreground hover:text-foreground hover:bg-muted/80 transition-colors cursor-pointer"
+                                            title="Bearbeiten"
+                                        ><Edit size={14} /></button>
+                                    </div>
+                                )}
+                            />
+                        ) : (
+                            <div className="flex-1 min-h-0 pr-1">
+                                <div className="grid grid-cols-1 gap-4">
+                                    {commissions.length === 0 && <div className="text-muted-foreground text-center py-10">Keine Einträge.</div>}
 
-                                            {/* 1B. OVERDUE (>31 Days) */}
-                                            <div className="flex flex-col flex-1 min-h-0 pt-4 border-t border-border mt-4 mb-4">
-                                                <div className="flex justify-between items-center mb-2 px-1">
-                                                    <h3 className="text-lg font-bold text-orange-400 flex items-center gap-2">
-                                                        <Clock className={overdue.length > 0 ? "animate-pulse" : ""} />
-                                                        Überfällig {'>'} 31 Tage ({overdue.length})
-                                                    </h3>
-                                                </div>
+                                    {activeTab === 'active' && (
+                                        <>
+                                            {(activeSubFilter === 'all' || activeSubFilter === 'ready') && renderCategory("Bereitgestellt", 'ready', filteredGroups.ready, 'dark:text-emerald-400 text-emerald-800')}
+                                            {(activeSubFilter === 'all' || activeSubFilter === 'preparing') && renderCategory("In Vorbereitung", 'preparing', filteredGroups.preparing, 'dark:text-blue-400 text-blue-800')}
+                                            {(activeSubFilter === 'all' || activeSubFilter === 'draft') && renderCategory("Entwürfe", 'draft', filteredGroups.draft, 'text-muted-foreground')}
+                                        </>
+                                    )}
 
-                                                {overdue.length === 0 ? (
-                                                    null
-                                                ) : (
-                                                    <div className="overflow-y-auto custom-scrollbar p-1 grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-                                                        {overdue.map(c => {
-                                                            const daysOld = Math.floor((new Date().getTime() - new Date(c.created_at).getTime()) / (1000 * 60 * 60 * 24));
-                                                            return (
-                                                                <div key={c.id} className="bg-orange-500/10 backdrop-blur-sm border border-orange-500/30 rounded-xl p-3 flex flex-col gap-2 shadow-lg hover:shadow-orange-900/10 transition-all">
-                                                                    <div className="flex justify-between items-start">
-                                                                        <div>
-                                                                            <div className="font-bold text-foreground text-base cursor-pointer hover:underline" onClick={() => handleOpenDetail(c)}>{c.name}</div>
-                                                                            <div className="text-orange-300 font-mono text-xs mb-1">{c.order_number}</div>
-                                                                            <div className="text-orange-300/60 text-[10px] flex items-center gap-1">
-                                                                                <Calendar size={10} /> Erstellt: {new Date(c.created_at).toLocaleDateString('de-DE')}
+                                    {activeTab === 'returns' && (
+                                        <>
+                                            {(activeSubFilter === 'all' || activeSubFilter === 'returnReady') && renderCategory("Abholbereit", 'returnReady', filteredGroups.returnReady, 'text-purple-400')}
+                                            {(activeSubFilter === 'all' || activeSubFilter === 'returnPending') && renderCategory("Angemeldet", 'returnPending', filteredGroups.returnPending, 'text-orange-400')}
+                                        </>
+                                    )}
+
+                                    {activeTab === 'withdrawn' && (
+                                        <div className="grid grid-cols-[repeat(auto-fill,minmax(320px,1fr))] gap-4">
+                                            {commissions.filter(c => ['Withdrawn', 'ReturnComplete'].includes(c.status)).map(c => <CommissionCard key={c.id} commission={c} onClick={handleOpenDetail} onEdit={handleEditCommission} onDelete={handleDelete} className="opacity-80 hover:opacity-100" colorClass="border-blue-500/20" statusKey="withdrawn" />)}
+                                        </div>
+                                    )}
+
+                                    {activeTab === 'missing' && (
+                                        <div className="flex flex-col h-full gap-6 overflow-hidden">
+                                            {/* SECTION 1: ACTION REQUIRED (MISSING ITEMS) */}
+                                            {(() => {
+                                                const missing = commissions.filter(c => c.status === 'Missing');
+                                                const overdue = commissions.filter(c => {
+                                                    if (['Withdrawn', 'ReturnComplete'].includes(c.status) || c.status === 'Missing') return false;
+                                                    const createdDate = new Date(c.created_at);
+                                                    const diffTime = Math.abs(new Date().getTime() - createdDate.getTime());
+                                                    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+                                                    return diffDays > 31;
+                                                });
+                                                const verified = commissions.filter(c => (c.status === 'Ready' || c.status === 'ReturnReady') && !!c.last_scanned_at);
+                                                const open = commissions.filter(c => (c.status === 'Ready' || c.status === 'ReturnReady') && !c.last_scanned_at && !overdue.includes(c));
+
+                                                return (
+                                                    <>
+                                                        <div className="flex-none max-h-[50%] flex flex-col">
+                                                            <div className="flex justify-between items-center mb-3 px-1">
+                                                                <h3 className="text-xl font-bold dark:text-rose-400 text-rose-800 flex items-center gap-2">
+                                                                    <AlertTriangle className="animate-pulse" />
+                                                                    Handlung Erforderlich ({missing.length})
+                                                                </h3>
+                                                                {missing.length === 0 && (
+                                                                    <span className="dark:text-emerald-400 text-emerald-800 font-bold flex items-center gap-1 text-sm bg-primary/10 px-3 py-1 rounded-full border border-emerald-500/20">
+                                                                        <CheckCircle2 size={16} /> Alles sauber
+                                                                    </span>
+                                                                )}
+                                                            </div>
+
+                                                            {missing.length === 0 ? (
+                                                                <div className="bg-muted border dark:border-white/5 border-border rounded-2xl p-6 text-center text-muted-foreground italic flex flex-col items-center gap-2">
+                                                                    <CheckCircle2 size={32} className="opacity-20" />
+                                                                    <div>Keine vermissten Kommissionen.</div>
+                                                                </div>
+                                                            ) : (
+                                                                <div className="overflow-y-auto custom-scrollbar p-1 grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+                                                                    {missing.map(c => (
+                                                                        <div key={c.id} className="bg-rose-500/10 backdrop-blur-sm border border-rose-500/30 rounded-2xl p-4 flex flex-col gap-3 shadow-lg shadow-black/20 group hover:shadow-rose-900/20 transition-all">
+                                                                            <div className="flex justify-between items-start">
+                                                                                <div>
+                                                                                    <div className="font-bold text-foreground text-lg cursor-pointer hover:underline" onClick={() => handleOpenDetail(c)}>{c.name}</div>
+                                                                                    <div className="dark:text-rose-300 text-rose-800 font-mono text-sm mb-1">{c.order_number || 'Keine Auftragsnr.'}</div>
+                                                                                    <div className="dark:text-rose-300 text-rose-800/60 text-[10px] flex items-center gap-1">
+                                                                                        <Calendar size={10} /> Erstellt: {new Date(c.created_at).toLocaleDateString('de-DE')}
+                                                                                    </div>
+                                                                                </div>
+                                                                                <StatusBadge status="Missing" />
+                                                                            </div>
+
+                                                                            <div className="p-3 bg-rose-900/20 rounded-lg text-rose-200 text-sm border border-rose-500/10">
+                                                                                <div className="font-bold mb-1 flex items-center gap-2"><ScanLine size={14} /> Nicht im Regal gefunden!</div>
+                                                                                <div className="dark:text-rose-300 text-rose-800/70 text-xs">Bitte prüfen, ob Auftrag bereits abgeholt wurde.</div>
+                                                                            </div>
+
+                                                                            <div className="flex gap-2 mt-auto pt-2">
+                                                                                <Button
+                                                                                    onClick={async (e) => {
+                                                                                        e.stopPropagation();
+                                                                                        if (!confirm(`${c.name} als 'Entnommen' abschließen?`)) return;
+                                                                                        await supabase.from('commissions').update({ status: 'Withdrawn', withdrawn_at: new Date().toISOString() }).eq('id', c.id);
+                                                                                        await logCommissionEvent(c.id, c.name, 'status_change', 'Aus "Vermisst" als ENTDOMMEN gebucht');
+                                                                                        refreshCommissions();
+                                                                                    }}
+                                                                                    className="flex-1 bg-purple-600 hover:bg-purple-500 justify-center shadow-lg shadow-purple-900/20"
+                                                                                    icon={<Truck size={16} />}
+                                                                                >
+                                                                                    Entnommen
+                                                                                </Button>
+                                                                                <Button
+                                                                                    variant="secondary"
+                                                                                    onClick={async (e) => {
+                                                                                        e.stopPropagation();
+                                                                                        if (!confirm("Status zurücksetzen?")) return;
+                                                                                        await supabase.from('commissions').update({ status: 'Preparing' }).eq('id', c.id);
+                                                                                        refreshCommissions();
+                                                                                    }}
+                                                                                    className="bg-muted hover:bg-muted text-muted-foreground"
+                                                                                    icon={<RotateCcw size={16} />}
+                                                                                />
+                                                                                <Button
+                                                                                    variant="secondary"
+                                                                                    onClick={(e) => handleDelete(c.id, c.name, 'trash', e)}
+                                                                                    className="bg-rose-500/10 hover:bg-rose-500/20 dark:text-rose-400 text-rose-800"
+                                                                                    icon={<Trash2 size={16} />}
+                                                                                />
                                                                             </div>
                                                                         </div>
-                                                                        <div className="bg-orange-500/20 text-orange-300 px-2 py-0.5 rounded text-xs font-bold border border-orange-500/30 flex items-center gap-1">
-                                                                            <Clock size={12} /> {daysOld} Tage
-                                                                        </div>
-                                                                    </div>
-
-                                                                    <div className="flex gap-2 mt-auto pt-1">
-                                                                        <Button
-                                                                            onClick={async (e) => {
-                                                                                e.stopPropagation();
-                                                                                if (!confirm(`${c.name} als 'Entnommen' abschließen (da überfällig)?`)) return;
-                                                                                await supabase.from('commissions').update({ status: 'Withdrawn', withdrawn_at: new Date().toISOString() }).eq('id', c.id);
-                                                                                await logCommissionEvent(c.id, c.name, 'status_change', 'Automatisch Überfällig: Als ENTDOMMEN gebucht');
-                                                                                refreshCommissions();
-                                                                            }}
-                                                                            className="flex-1 bg-purple-600 hover:bg-purple-500 h-8 text-xs justify-center shadow-lg shadow-purple-900/20"
-                                                                            icon={<Truck size={14} />}
-                                                                        >
-                                                                            Entnehmen
-                                                                        </Button>
-                                                                        <Button
-                                                                            variant="secondary"
-                                                                            onClick={(e) => handleDelete(c.id, c.name, 'trash', e)}
-                                                                            className="bg-orange-500/10 hover:bg-orange-500/20 text-orange-400 h-8 w-8 p-0"
-                                                                            icon={<Trash2 size={14} />}
-                                                                        />
-                                                                    </div>
+                                                                    ))}
                                                                 </div>
-                                                            );
-                                                        })}
-                                                    </div>
-                                                )}
-                                            </div>
-
-                                            {/* SECTION 2: AUDIT STATUS & CONTEXT */}
-                                            <div className="h-px bg-muted shrink-0 mx-2" />
-
-                                            <div className="flex-1 flex flex-col min-h-0">
-                                                <div className="flex justify-between items-center mb-3 px-1">
-                                                    <h3 className="text-lg font-bold text-muted-foreground flex items-center gap-2">
-                                                        <BoxSelect size={20} className="dark:text-blue-400 text-blue-800" />
-                                                        Inventur Status & Prüfung
-                                                    </h3>
-                                                    <Button onClick={() => setShowCleanupModal(true)} icon={<ScanLine size={18} />} className="bg-blue-600 hover:bg-blue-500 shadow-lg shadow-blue-500/20">
-                                                        Bestand prüfen (Start)
-                                                    </Button>
-                                                </div>
-
-                                                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 flex-1 min-h-0">
-
-                                                    {/* STATUS CARD 1: VERIFIED */}
-                                                    <div className="bg-primary/5 border border-emerald-500/10 rounded-2xl flex flex-col overflow-hidden">
-                                                        <div className="p-4 bg-primary/10 border-b border-emerald-500/10 flex justify-between items-center">
-                                                            <div className="font-bold dark:text-emerald-400 text-emerald-800">Verwirifiziert (Im Regal)</div>
-                                                            <div className="bg-primary text-black font-bold px-2 py-0.5 rounded text-sm">{verified.length}</div>
+                                                            )}
                                                         </div>
-                                                        <div className="p-2 overflow-y-auto flex-1 custom-scrollbar space-y-2">
-                                                            {verified.map(c => (
-                                                                <div key={c.id} onClick={() => handleOpenDetail(c)} className="p-3 bg-primary/5 hover:bg-primary/10 border border-emerald-500/10 rounded-xl cursor-pointer transition-colors flex justify-between items-center">
-                                                                    <div className="font-medium text-muted-foreground">{c.name}</div>
-                                                                    <div className="text-[10px] dark:text-emerald-300 text-emerald-800 opacity-60 flex items-center gap-1">
-                                                                        <CheckCircle2 size={10} />
-                                                                        {new Date(c.last_scanned_at!).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                                                                    </div>
-                                                                </div>
-                                                            ))}
-                                                            {verified.length === 0 && <div className="text-center text-muted-foreground py-8 italic text-sm">Heute noch nichts gescannt</div>}
-                                                        </div>
-                                                    </div>
-
-                                                    {/* STATUS CARD 2: OPEN / UNVERIFIED */}
-                                                    <div className="bg-muted border dark:border-white/5 border-border rounded-2xl flex flex-col overflow-hidden">
-                                                        <div className="p-4 bg-muted border-b dark:border-white/5 border-border flex justify-between items-center">
-                                                            <div className="font-bold text-muted-foreground">Offen / Ungeprüft</div>
-                                                            <div className="bg-muted text-foreground font-bold px-2 py-0.5 rounded text-sm">{open.length}</div>
-                                                        </div>
-                                                        <div className="p-2 overflow-y-auto flex-1 custom-scrollbar space-y-2">
-                                                            {open.map(c => (
-                                                                <div key={c.id} onClick={() => handleOpenDetail(c)} className="p-3 bg-muted hover:bg-muted border dark:border-white/5 border-border rounded-xl cursor-pointer transition-colors flex justify-between items-center opacity-60 hover:opacity-100">
-                                                                    <div>
-                                                                        <div className="font-medium text-foreground">{c.name}</div>
-                                                                        <div className="text-xs text-muted-foreground">{c.status}</div>
-                                                                    </div>
-                                                                    <div className="w-2 h-2 rounded-full bg-muted" />
-                                                                </div>
-                                                            ))}
-                                                            {open.length === 0 && <div className="text-center text-muted-foreground py-8 italic text-sm">Alles geprüft!</div>}
-                                                        </div>
-                                                        <div className="p-2 border-t dark:border-white/5 border-border bg-muted">
-                                                            <button
-                                                                onClick={async () => {
-                                                                    if (!confirm("Prüfung wirklich neu starten? Alle 'Geprüft'-Markierungen werden entfernt.")) return;
-                                                                    const candidateIds = commissions.filter(c => ['Ready', 'ReturnReady'].includes(c.status) && c.last_scanned_at).map(c => c.id);
-                                                                    if (candidateIds.length === 0) return;
-                                                                    const { error } = await supabase.from('commissions').update({ last_scanned_at: null }).in('id', candidateIds);
-                                                                    if (error) toast.error("Fehler");
-                                                                    else { toast.success("Prüfung neu gestartet!"); refreshCommissions(); }
-                                                                }}
-                                                                className="w-full py-2 text-xs text-muted-foreground hover:text-muted-foreground hover:bg-muted rounded transition-colors flex items-center justify-center gap-2"
-                                                            >
-                                                                <RotateCcw size={12} /> Prüfung/Status zurücksetzen (Reset)
-                                                            </button>
-                                                        </div>
-                                                    </div>
-
-                                                </div>
-                                            </div>
-                                        </>
-                                    );
-                                })()}
-                            </div>
-                        )}
-
-                        {activeTab === 'trash' && (
-                            <div className="grid grid-cols-[repeat(auto-fill,minmax(320px,1fr))] gap-4">
-                                {commissions.map(c => (
-                                    <GlassCard key={c.id} className="opacity-60 border-rose-500/20">
-                                        <div className="p-3 flex justify-between items-center">
-                                            <div>
-                                                <h3 className="font-bold text-muted-foreground">{c.name}</h3>
-                                                <span className="text-xs dark:text-rose-400 text-rose-800">Gelöscht: {c.deleted_at}</span>
-                                            </div>
-                                            <div className="flex gap-2">
-                                                <button onClick={(e) => handleRestore(c.id, c.name, e)} className="p-2 bg-primary/20 dark:text-emerald-300 text-emerald-800 rounded"><RotateCcw size={16} /></button>
-                                                <button onClick={(e) => handleDelete(c.id, c.name, 'permanent', e)} className="p-2 bg-rose-500/20 dark:text-rose-300 text-rose-800 rounded"><X size={16} /></button>
-                                            </div>
+                                                    </>
+                                                );
+                                            })()}
                                         </div>
-                                    </GlassCard>
-                                ))}
+                                    )}
+
+                                    {activeTab === 'trash' && (
+                                        <div className="grid grid-cols-[repeat(auto-fill,minmax(320px,1fr))] gap-4">
+                                            {commissions.map(c => (
+                                                <GlassCard key={c.id} className="opacity-60 border-rose-500/20">
+                                                    <div className="p-3 flex justify-between items-center">
+                                                        <div>
+                                                            <h3 className="font-bold text-muted-foreground">{c.name}</h3>
+                                                            <span className="text-xs dark:text-rose-400 text-rose-800">Gelöscht: {c.deleted_at}</span>
+                                                        </div>
+                                                        <div className="flex gap-2">
+                                                            <button onClick={(e) => handleRestore(c.id, c.name, e)} className="p-2 bg-primary/20 dark:text-emerald-300 text-emerald-800 rounded"><RotateCcw size={16} /></button>
+                                                            <button onClick={(e) => handleDelete(c.id, c.name, 'permanent', e)} className="p-2 bg-rose-500/20 dark:text-rose-300 text-rose-800 rounded"><X size={16} /></button>
+                                                        </div>
+                                                    </div>
+                                                </GlassCard>
+                                            ))}
+                                        </div>
+                                    )}
+                                </div>
                             </div>
                         )}
-                    </div>
-                </div>
-            )}
                     </div>
                 </div>
             </div>

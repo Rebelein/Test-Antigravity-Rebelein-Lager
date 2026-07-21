@@ -355,377 +355,429 @@ export const CommissionEditContent: React.FC<CommissionEditContentProps> = ({
 
     return (
         <div className="flex flex-col h-full overflow-hidden bg-transparent">
-            {/* SCROLL CONTAINER */}
-            <div className="flex-1 overflow-y-auto p-4 md:p-6 custom-scrollbar space-y-6 @container">
-                
-                {/* HEADER BENTO CARD (Basic Info) */}
-                <motion.div 
-                    initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3 }}
-                    className="bg-card border border-border rounded-2xl p-5 shadow-sm relative overflow-hidden"
+            {/* TOP HEADER */}
+            <div className="px-5 py-3 border-b border-border bg-card/80 backdrop-blur-md flex items-center justify-between shrink-0 z-20">
+                <div>
+                    <h2 className="text-lg font-bold text-foreground tracking-tight flex items-center gap-2">
+                        {isEditMode ? 'Kommission bearbeiten' : 'Neue Kommission anlegen'}
+                    </h2>
+                    <p className="text-xs text-muted-foreground">Stammdaten eingeben und benötigtes Material erfassen.</p>
+                </div>
+                <button
+                    onClick={onClose}
+                    className="p-1.5 rounded-xl bg-muted text-muted-foreground hover:text-foreground hover:bg-muted/80 transition-colors cursor-pointer"
+                    title="Schließen"
                 >
-                    <div className="absolute top-0 inset-x-0 h-1 bg-gradient-to-r from-emerald-500 to-blue-500" />
-                    <div className="flex justify-between items-start mb-4">
-                        <div>
-                            <h2 className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r dark:from-white dark:to-white/70 from-foreground to-foreground/70 tracking-tight">
-                                {isEditMode ? 'Kommission bearbeiten' : 'Neue Kommission'}
-                            </h2>
-                            <p className="text-sm text-muted-foreground mt-0.5">Details und benötigtes Material erfassen.</p>
-                        </div>
-                        {isMobile && <button onClick={onClose} className="p-2 -mr-2 text-muted-foreground hover:text-foreground"><X size={24} /></button>}
-                    </div>
+                    <X size={18} />
+                </button>
+            </div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div className="space-y-1.5">
-                            <label className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Auftrags-Nr.</label>
-                            <input
-                                className="w-full bg-background border border-border rounded-xl px-4 py-3 text-foreground focus:outline-none focus:border-primary/50 focus:ring-2 focus:ring-primary/20 transition-all text-sm shadow-sm"
-                                placeholder="Z.B. AB-2023-441"
-                                value={newComm.order_number}
-                                onChange={e => setNewComm({ ...newComm, order_number: e.target.value })}
-                                autoFocus={!isMobile}
-                            />
-                        </div>
-                        <div className="space-y-1.5">
-                            <label className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Name / Projekt</label>
-                            <input
-                                className="w-full bg-background border border-border rounded-xl px-4 py-3 text-foreground focus:outline-none focus:border-primary/50 focus:ring-2 focus:ring-primary/20 transition-all text-sm shadow-sm"
-                                placeholder="Z.B. Baustelle Müller"
-                                value={newComm.name}
-                                onChange={e => setNewComm({ ...newComm, name: e.target.value })}
-                            />
-                        </div>
-                        <div className="md:col-span-2 space-y-1.5">
-                            <label className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Allgemeine Notizen / Baustellen-Infos</label>
-                            <textarea
-                                className="w-full bg-background border border-border rounded-xl px-4 py-3 text-foreground focus:outline-none focus:border-primary/50 focus:ring-2 focus:ring-primary/20 transition-all text-sm min-h-[80px] resize-none shadow-sm"
-                                placeholder="Allgemeine Hinweise zur Kommission..."
-                                value={newComm.notes}
-                                onChange={e => setNewComm({ ...newComm, notes: e.target.value })}
-                            />
-                        </div>
-                        <div className="md:col-span-2 space-y-1.5">
-                            <label className="text-xs font-bold text-amber-500/80 uppercase tracking-wider flex items-center gap-1.5">
-                                ⚠️ Informationen ans Lager
-                            </label>
-                            <textarea
-                                className="w-full bg-amber-500/5 border border-amber-500/30 rounded-xl px-4 py-3 text-foreground focus:outline-none focus:border-amber-500/50 focus:ring-2 focus:ring-amber-500/20 transition-all text-sm min-h-[80px] resize-none shadow-sm"
-                                placeholder="Spezielle Hinweise für den Packer (wird groß auf dem Label gedruckt)..."
-                                value={newComm.warehouse_notes}
-                                onChange={e => setNewComm({ ...newComm, warehouse_notes: e.target.value })}
-                            />
-                        </div>
+            {/* MAIN 2-COLUMN SPLIT WORKSPACE */}
+            <div className="flex-1 overflow-y-auto p-4 md:p-5 custom-scrollbar">
+                <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 h-full items-start">
+                    
+                    {/* LEFT COLUMN (Cols 12 / LG 5): Stammdaten & Schnell-Katalog */}
+                    <div className="lg:col-span-5 flex flex-col gap-4">
+                        
+                        {/* CARD 1: STAMMDATEN & ORTE */}
+                        <motion.div
+                            initial={{ opacity: 0, y: 10 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            className="bg-card border border-border rounded-2xl p-4 shadow-sm space-y-4"
+                        >
+                            <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-wider flex items-center gap-1.5 pb-2 border-b border-border/50">
+                                <FileText size={14} className="text-primary" /> 1. Stammdaten & Bereitstellung
+                            </h3>
 
-                        <div className="md:col-span-2 space-y-2">
-                            <label className="text-xs font-bold text-muted-foreground uppercase tracking-wider flex items-center gap-1.5">
-                                <MapPin size={14} className="text-primary" /> Bereitstellungsort(e)
-                            </label>
-                            <div className="flex flex-wrap gap-2 items-center">
-                                {Array.from(new Set(['Regal', 'Garage', 'Hof', 'Palette', ...stagingLocations])).map(loc => {
-                                    const isActive = stagingLocations.includes(loc);
-                                    return (
-                                        <button
-                                            key={loc}
-                                            type="button"
-                                            onClick={() => {
-                                                let nextLocs = [...stagingLocations];
-                                                if (isActive) {
-                                                    if (nextLocs.length <= 1) {
-                                                        alert("Mindestens ein Bereitstellungsort muss aktiv bleiben.");
-                                                        return;
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                <div className="space-y-1">
+                                    <label className="text-[11px] font-bold text-muted-foreground uppercase">Auftrags-Nr.</label>
+                                    <input
+                                        className="w-full bg-background border border-border rounded-xl px-3 py-2 text-foreground focus:outline-none focus:border-primary/50 focus:ring-2 focus:ring-primary/20 text-xs font-mono shadow-xs"
+                                        placeholder="Z.B. AB-2023-441"
+                                        value={newComm.order_number}
+                                        onChange={e => setNewComm({ ...newComm, order_number: e.target.value })}
+                                        autoFocus={!isMobile}
+                                    />
+                                </div>
+                                <div className="space-y-1">
+                                    <label className="text-[11px] font-bold text-muted-foreground uppercase">Name / Projekt *</label>
+                                    <input
+                                        className="w-full bg-background border border-border rounded-xl px-3 py-2 text-foreground focus:outline-none focus:border-primary/50 focus:ring-2 focus:ring-primary/20 text-xs font-bold shadow-xs"
+                                        placeholder="Z.B. Baustelle Müller"
+                                        value={newComm.name}
+                                        onChange={e => setNewComm({ ...newComm, name: e.target.value })}
+                                    />
+                                </div>
+                            </div>
+
+                            {/* Bereitstellungsort-Chips */}
+                            <div className="space-y-1.5">
+                                <label className="text-[11px] font-bold text-muted-foreground uppercase flex items-center gap-1">
+                                    <MapPin size={12} className="text-primary" /> Bereitstellungsort(e)
+                                </label>
+                                <div className="flex flex-wrap gap-1.5 items-center">
+                                    {Array.from(new Set(['Regal', 'Garage', 'Hof', 'Palette', ...stagingLocations])).map(loc => {
+                                        const isActive = stagingLocations.includes(loc);
+                                        return (
+                                            <button
+                                                key={loc}
+                                                type="button"
+                                                onClick={() => {
+                                                    let nextLocs = [...stagingLocations];
+                                                    if (isActive) {
+                                                        if (nextLocs.length <= 1) {
+                                                            alert("Mindestens ein Bereitstellungsort muss aktiv bleiben.");
+                                                            return;
+                                                        }
+                                                        nextLocs = nextLocs.filter(l => l !== loc);
+                                                    } else {
+                                                        nextLocs.push(loc);
                                                     }
-                                                    nextLocs = nextLocs.filter(l => l !== loc);
-                                                } else {
-                                                    nextLocs.push(loc);
-                                                }
-                                                setStagingLocations(nextLocs);
-                                            }}
-                                            className={`px-3 py-2 rounded-xl text-xs font-bold transition-all duration-200 flex items-center gap-1.5 cursor-pointer border ${
-                                                isActive
-                                                    ? "bg-primary/10 border-primary/30 text-primary"
-                                                    : "bg-background border-border hover:bg-muted text-slate-500"
-                                            }`}
-                                        >
-                                            {isActive && <Check size={11} strokeWidth={3} />}
-                                            {loc}
-                                        </button>
-                                    );
-                                })}
+                                                    setStagingLocations(nextLocs);
+                                                }}
+                                                className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all flex items-center gap-1 cursor-pointer border ${
+                                                    isActive
+                                                        ? "bg-primary/20 border-primary/40 text-primary"
+                                                        : "bg-muted/50 border-border hover:bg-muted text-muted-foreground"
+                                                }`}
+                                            >
+                                                {isActive && <Check size={11} strokeWidth={3} />}
+                                                {loc}
+                                            </button>
+                                        );
+                                    })}
 
-                                {showCustomLocationInput ? (
-                                    <div className="flex items-center gap-1.5 bg-background border border-border rounded-xl px-2 py-0.5 animate-in fade-in zoom-in-95 duration-100">
-                                        <input
-                                            type="text"
-                                            className="bg-transparent border-none text-xs font-bold text-foreground focus:outline-none w-20 py-1"
-                                            placeholder="Ort..."
-                                            value={customLocationInput}
-                                            onChange={e => setCustomLocationInput(e.target.value)}
-                                            onKeyDown={e => {
-                                                if (e.key === 'Enter') {
-                                                    e.preventDefault();
+                                    {showCustomLocationInput ? (
+                                        <div className="flex items-center gap-1 bg-background border border-border rounded-lg px-2 py-0.5">
+                                            <input
+                                                type="text"
+                                                className="bg-transparent border-none text-xs font-bold text-foreground focus:outline-none w-20 py-0.5"
+                                                placeholder="Ort..."
+                                                value={customLocationInput}
+                                                onChange={e => setCustomLocationInput(e.target.value)}
+                                                onKeyDown={e => {
+                                                    if (e.key === 'Enter') {
+                                                        e.preventDefault();
+                                                        const trimmed = customLocationInput.trim();
+                                                        if (trimmed && !stagingLocations.includes(trimmed)) {
+                                                            setStagingLocations([...stagingLocations, trimmed]);
+                                                        }
+                                                        setCustomLocationInput('');
+                                                        setShowCustomLocationInput(false);
+                                                    }
+                                                }}
+                                                autoFocus
+                                            />
+                                            <button
+                                                type="button"
+                                                onClick={() => {
                                                     const trimmed = customLocationInput.trim();
                                                     if (trimmed && !stagingLocations.includes(trimmed)) {
                                                         setStagingLocations([...stagingLocations, trimmed]);
                                                     }
                                                     setCustomLocationInput('');
                                                     setShowCustomLocationInput(false);
-                                                }
-                                                if (e.key === 'Escape') {
-                                                    setShowCustomLocationInput(false);
-                                                    setCustomLocationInput('');
-                                                }
-                                            }}
-                                            autoFocus
-                                        />
+                                                }}
+                                                className="p-1 text-primary hover:bg-primary/10 rounded"
+                                            >
+                                                <Check size={11} strokeWidth={3} />
+                                            </button>
+                                        </div>
+                                    ) : (
                                         <button
                                             type="button"
-                                            onClick={() => {
-                                                const trimmed = customLocationInput.trim();
-                                                if (trimmed && !stagingLocations.includes(trimmed)) {
-                                                    setStagingLocations([...stagingLocations, trimmed]);
-                                                }
-                                                setCustomLocationInput('');
-                                                setShowCustomLocationInput(false);
-                                            }}
-                                            className="p-1 text-primary hover:bg-primary/10 rounded-lg animate-fade-in"
+                                            onClick={() => setShowCustomLocationInput(true)}
+                                            className="px-2 py-1 rounded-lg text-xs font-semibold border border-dashed border-border text-muted-foreground hover:text-foreground hover:border-primary/40 transition-colors flex items-center gap-1 cursor-pointer"
                                         >
-                                            <Check size={11} strokeWidth={3} />
+                                            <Plus size={11} strokeWidth={3} />
+                                            Ort +
                                         </button>
-                                        <button
-                                            type="button"
-                                            onClick={() => {
-                                                setShowCustomLocationInput(false);
-                                                setCustomLocationInput('');
-                                            }}
-                                            className="p-1 text-slate-400 hover:bg-muted rounded-lg"
-                                        >
-                                            <X size={11} />
-                                        </button>
-                                    </div>
-                                ) : (
-                                    <button
-                                        type="button"
-                                        onClick={() => setShowCustomLocationInput(true)}
-                                        className="px-3 py-2 rounded-xl text-xs font-bold border border-dashed border-border text-muted-foreground hover:text-foreground hover:border-primary/40 transition-colors flex items-center gap-1 cursor-pointer"
-                                    >
-                                        <Plus size={11} strokeWidth={3} />
-                                        Eigener Ort
-                                    </button>
-                                )}
+                                    )}
+                                </div>
                             </div>
-                        </div>
 
-                        {/* Checkboxes */}
-                        <div className="md:col-span-2 flex flex-wrap gap-4 pt-1">
-                            <label className="flex items-center gap-3 cursor-pointer group">
-                                <div className="relative flex items-center">
-                                    <input type="checkbox" className="peer h-5 w-5 cursor-pointer appearance-none rounded-md border-2 border-muted-foreground/30 bg-background checked:bg-amber-500 checked:border-amber-500 transition-all" checked={newComm.is_price_inquiry} onChange={e => setNewComm({ ...newComm, is_price_inquiry: e.target.checked })} />
-                                    <Check className="absolute h-3.5 w-3.5 text-foreground opacity-0 peer-checked:opacity-100 left-[3px] pointer-events-none" strokeWidth={4} />
+                            {/* Notizen */}
+                            <div className="space-y-2">
+                                <div className="space-y-1">
+                                    <label className="text-[11px] font-bold text-muted-foreground uppercase">Allgemeine Notizen</label>
+                                    <textarea
+                                        className="w-full bg-background border border-border rounded-xl px-3 py-2 text-foreground focus:outline-none focus:border-primary/50 focus:ring-2 focus:ring-primary/20 text-xs min-h-[50px] resize-none shadow-xs"
+                                        placeholder="Hinweise zur Baustelle / Lieferung..."
+                                        value={newComm.notes}
+                                        onChange={e => setNewComm({ ...newComm, notes: e.target.value })}
+                                    />
                                 </div>
-                                <span className="text-sm font-bold text-muted-foreground group-hover:text-foreground transition-colors">Preisanfrage</span>
-                            </label>
-
-                            <label className="flex items-center gap-3 cursor-pointer group">
-                                <div className="relative flex items-center">
-                                    <input type="checkbox" className="peer h-5 w-5 cursor-pointer appearance-none rounded-md border-2 border-muted-foreground/30 bg-background checked:bg-blue-500 checked:border-blue-500 transition-all" checked={newComm.delivery_date_unknown} onChange={e => setNewComm({ ...newComm, delivery_date_unknown: e.target.checked })} />
-                                    <Check className="absolute h-3.5 w-3.5 text-foreground opacity-0 peer-checked:opacity-100 left-[3px] pointer-events-none" strokeWidth={4} />
+                                <div className="space-y-1">
+                                    <label className="text-[11px] font-bold text-amber-500 uppercase flex items-center gap-1">
+                                        ⚠️ Info ans Lager (wird groß auf Etikett gedruckt)
+                                    </label>
+                                    <textarea
+                                        className="w-full bg-amber-500/5 border border-amber-500/30 rounded-xl px-3 py-2 text-foreground focus:outline-none focus:border-amber-500/50 focus:ring-2 focus:ring-amber-500/20 text-xs min-h-[50px] resize-none shadow-xs"
+                                        placeholder="Spezielle Hinweise für den Lager-Mitarbeiter..."
+                                        value={newComm.warehouse_notes}
+                                        onChange={e => setNewComm({ ...newComm, warehouse_notes: e.target.value })}
+                                    />
                                 </div>
-                                <span className="text-sm font-bold text-muted-foreground group-hover:text-foreground transition-colors">Liefertermin unbekannt</span>
-                            </label>
-                        </div>
-                    </div>
-                </motion.div>
+                            </div>
 
-                {/* BENTO GRID: Tools & Material List */}
-                <div className="flex flex-wrap gap-6 items-start">
-                    
-                    {/* LEFT COLUMN: Add Tools */}
-                    <div className="w-full lg:w-[340px] shrink-0 flex flex-col gap-4">
-                        <motion.div 
-                            initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.4, delay: 0.1 }}
-                            className="bg-card border border-border rounded-2xl p-5 shadow-sm space-y-4 flex flex-col min-h-[350px] max-h-[500px]"
+                            {/* Checkboxen */}
+                            <div className="flex flex-wrap gap-4 pt-1 border-t border-border/40">
+                                <label className="flex items-center gap-2 cursor-pointer group">
+                                    <input type="checkbox" className="h-4 w-4 rounded border-border accent-amber-500 cursor-pointer" checked={newComm.is_price_inquiry} onChange={e => setNewComm({ ...newComm, is_price_inquiry: e.target.checked })} />
+                                    <span className="text-xs font-semibold text-muted-foreground group-hover:text-foreground">Preisanfrage</span>
+                                </label>
+                                <label className="flex items-center gap-2 cursor-pointer group">
+                                    <input type="checkbox" className="h-4 w-4 rounded border-border accent-blue-500 cursor-pointer" checked={newComm.delivery_date_unknown} onChange={e => setNewComm({ ...newComm, delivery_date_unknown: e.target.checked })} />
+                                    <span className="text-xs font-semibold text-muted-foreground group-hover:text-foreground">Liefertermin unbekannt</span>
+                                </label>
+                            </div>
+                        </motion.div>
+
+                        {/* CARD 2: KATALOG & LIEFERANTEN SCHNELL-SELEKTOR */}
+                        <motion.div
+                            initial={{ opacity: 0, y: 10 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ delay: 0.1 }}
+                            className="bg-card border border-border rounded-2xl p-4 shadow-sm space-y-3 flex flex-col min-h-[260px]"
                         >
-                            <h3 className="text-sm font-bold text-muted-foreground uppercase tracking-wider flex items-center gap-2 shrink-0">
-                                <Plus size={16} /> Material Hinzufügen
-                            </h3>
+                            <div className="flex items-center justify-between pb-2 border-b border-border/50">
+                                <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-wider flex items-center gap-1.5">
+                                    <Plus size={14} className="text-primary" /> 2. Material Hinzufügen
+                                </h3>
 
-                            {/* Tabs */}
-                            <div className="flex p-1 bg-muted rounded-xl shrink-0">
-                                <button 
-                                    onClick={() => setActiveTab('supplier')}
-                                    className={`flex-1 flex items-center justify-center gap-2 py-2 px-3 rounded-lg text-xs font-bold transition-all ${activeTab === 'supplier' ? 'bg-background shadow-sm text-foreground' : 'text-muted-foreground hover:text-foreground'}`}
-                                >
-                                    <ExternalLink size={14} /> Großhändler
-                                </button>
-                                <button 
-                                    onClick={() => setActiveTab('stock')}
-                                    className={`flex-1 flex items-center justify-center gap-2 py-2 px-3 rounded-lg text-xs font-bold transition-all ${activeTab === 'stock' ? 'bg-background shadow-sm text-foreground' : 'text-muted-foreground hover:text-foreground'}`}
-                                >
-                                    <Package size={14} /> Lager
-                                </button>
-                            </div>
-
-                            <div className="h-px w-full bg-border/50 shrink-0"></div>
-
-                            {/* Tab Content: Stock */}
-                            {activeTab === 'stock' && (
-                                <div className="flex-1 flex flex-col justify-center animate-in fade-in">
-                                    <button
-                                        onClick={() => setIsStockPickerOpen(true)}
-                                        className="w-full bg-primary/10 border-2 border-primary/20 hover:bg-primary/20 hover:border-primary/40 rounded-xl p-4 flex flex-col items-center gap-3 group transition-all text-center"
+                                <div className="flex p-0.5 bg-muted rounded-lg">
+                                    <button 
+                                        onClick={() => setActiveTab('supplier')}
+                                        className={`px-2.5 py-1 rounded-md text-[11px] font-bold transition-all cursor-pointer ${activeTab === 'supplier' ? 'bg-card text-foreground shadow-xs' : 'text-muted-foreground hover:text-foreground'}`}
                                     >
-                                        <div className="w-12 h-12 rounded-2xl bg-primary text-primary-foreground shadow-lg flex items-center justify-center group-hover:scale-110 transition-transform">
-                                            <Package size={24} />
-                                        </div>
-                                        <div>
-                                            <div className="text-sm font-bold text-foreground">Aus Hauptlager picken</div>
-                                            <div className="text-xs text-muted-foreground mt-1">Lagerbestand durchsuchen & Positionen mit Bestand buchen.</div>
-                                        </div>
+                                        Großhändler / Freitext
+                                    </button>
+                                    <button 
+                                        onClick={() => setActiveTab('stock')}
+                                        className={`px-2.5 py-1 rounded-md text-[11px] font-bold transition-all cursor-pointer ${activeTab === 'stock' ? 'bg-card text-foreground shadow-xs' : 'text-muted-foreground hover:text-foreground'}`}
+                                    >
+                                        Lagerbestand
                                     </button>
                                 </div>
-                            )}
+                            </div>
 
-                            {/* Tab Content: Supplier */}
                             {activeTab === 'supplier' && (
-                                <div className="flex flex-col flex-1 overflow-hidden animate-in fade-in">
-                                    <div className="relative mb-3 shrink-0">
-                                        <Search className="absolute left-3 top-2.5 text-muted-foreground" size={14} />
-                                        <input
-                                            className="w-full bg-background border border-border rounded-lg py-2 pl-9 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500/50"
-                                            placeholder="Lieferant suchen..."
-                                            value={supplierSearchTerm}
-                                            onChange={e => setSupplierSearchTerm(e.target.value)}
-                                        />
-                                    </div>
-                                    <div className="flex-1 overflow-y-auto space-y-1 custom-scrollbar pr-1">
-                                        <button onClick={addManualItem} className="w-full text-left p-2.5 rounded-lg bg-muted hover:bg-muted/80 border-2 border-dashed border-border text-xs font-bold text-muted-foreground flex items-center gap-2 mb-2 transition-colors">
-                                            <Plus size={14} /> Freitext (Manuell)
+                                <div className="flex flex-col gap-2 flex-1">
+                                    <div className="flex items-center gap-2">
+                                        <div className="relative flex-1">
+                                            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground" size={13} />
+                                            <input
+                                                className="w-full bg-background border border-border rounded-lg py-1.5 pl-8 pr-3 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-primary/40"
+                                                placeholder="Lieferant suchen..."
+                                                value={supplierSearchTerm}
+                                                onChange={e => setSupplierSearchTerm(e.target.value)}
+                                            />
+                                        </div>
+                                        <button
+                                            onClick={addManualItem}
+                                            className="px-3 py-1.5 rounded-lg bg-primary/10 hover:bg-primary/20 text-primary border border-primary/30 text-xs font-bold flex items-center gap-1 cursor-pointer shrink-0 transition-colors"
+                                        >
+                                            <Plus size={13} /> Freitext
                                         </button>
+                                    </div>
+
+                                    <div className="max-h-[160px] overflow-y-auto custom-scrollbar space-y-1 pr-1">
                                         {suppliers.filter(s => s.name.toLowerCase().includes(supplierSearchTerm.toLowerCase())).map(sup => (
-                                            <button key={sup.id} onClick={() => addTempExternalItem(sup)} className="w-full text-left p-2.5 rounded-lg hover:bg-blue-500/10 hover:border-blue-500/30 border border-transparent flex justify-between items-center group transition-all">
-                                                <span className="text-sm font-semibold text-muted-foreground group-hover:text-blue-500 truncate">{sup.name}</span>
-                                                <Plus size={14} className="text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
+                                            <button
+                                                key={sup.id}
+                                                onClick={() => addTempExternalItem(sup)}
+                                                className="w-full text-left px-3 py-1.5 rounded-lg hover:bg-muted/80 border border-border/40 flex justify-between items-center group transition-colors cursor-pointer text-xs"
+                                            >
+                                                <span className="font-semibold text-foreground truncate">{sup.name}</span>
+                                                <span className="text-[10px] font-bold text-primary opacity-0 group-hover:opacity-100 transition-opacity">+ Hinzufügen</span>
                                             </button>
                                         ))}
                                     </div>
                                 </div>
                             )}
+
+                            {activeTab === 'stock' && (
+                                <div className="flex-1 flex flex-col items-center justify-center p-4">
+                                    <button
+                                        onClick={() => setIsStockPickerOpen(true)}
+                                        className="w-full bg-primary/10 border-2 border-dashed border-primary/30 hover:bg-primary/20 rounded-xl p-4 flex items-center justify-center gap-3 transition-all cursor-pointer text-primary"
+                                    >
+                                        <Package size={20} />
+                                        <span className="text-xs font-bold">Hauptlager-Bestand durchsuchen & Picken</span>
+                                    </button>
+                                </div>
+                            )}
                         </motion.div>
                     </div>
 
-                    {/* RIGHT COLUMN: The Material Board */}
-                    <div className="flex-1 min-w-[300px] flex flex-col h-full max-h-[1000px]">
-                        <motion.div 
-                            initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.4, delay: 0.2 }}
-                            className="bg-card border border-border rounded-2xl p-5 shadow-sm flex flex-col h-full"
+                    {/* RIGHT COLUMN (Cols 12 / LG 7): Erfasste Positionsliste & Abschluss */}
+                    <div className="lg:col-span-7 flex flex-col gap-4 h-full">
+                        <motion.div
+                            initial={{ opacity: 0, y: 10 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ delay: 0.15 }}
+                            className="bg-card border border-border rounded-2xl p-4 shadow-sm flex flex-col h-full min-h-[500px]"
                         >
-                            <div className="flex justify-between items-center mb-4 pb-2 border-b border-border/50 shrink-0">
-                                <h3 className="text-sm font-bold text-foreground flex items-center gap-2">
-                                    <ShoppingCart size={16} className="text-muted-foreground" />
-                                    Positions-Liste
-                                </h3>
-                                <span className="bg-primary/10 text-primary text-xs font-bold px-2 py-0.5 rounded-full">{tempItems.length} Elemente</span>
+                            {/* POSITIONS HEADER */}
+                            <div className="flex items-center justify-between pb-3 mb-3 border-b border-border/50 shrink-0">
+                                <div className="flex items-center gap-2">
+                                    <ShoppingCart size={16} className="text-primary" />
+                                    <h3 className="text-sm font-bold text-foreground">Erfasste Positionsliste</h3>
+                                    <span className="bg-primary/10 text-primary text-xs font-bold px-2 py-0.5 rounded-full font-mono">
+                                        {tempItems.length} Positionen
+                                    </span>
+                                </div>
+                                {tempItems.length > 0 && (
+                                    <button
+                                        onClick={() => { if (confirm("Alle Positionen entfernen?")) setTempItems([]); }}
+                                        className="text-xs text-rose-400 hover:text-rose-300 hover:underline flex items-center gap-1 cursor-pointer font-medium"
+                                    >
+                                        <Trash2 size={12} /> Liste leeren
+                                    </button>
+                                )}
                             </div>
 
-                            <div className="flex-1 overflow-y-auto custom-scrollbar pr-2 space-y-3 pb-6">
+                            {/* COMPACT POSITIONS TABLE / ROW LIST */}
+                            <div className="flex-1 overflow-y-auto custom-scrollbar space-y-2 pr-1 pb-4">
                                 {tempItems.length === 0 ? (
-                                    <div className="flex flex-col items-center justify-center py-12 text-muted-foreground gap-4 border-2 border-dashed border-border rounded-2xl bg-background/50">
-                                        <div className="p-4 bg-muted rounded-full"><BoxSelect size={32} /></div>
-                                        <p className="text-sm font-semibold">Kein Material hinzugefügt.</p>
+                                    <div className="flex flex-col items-center justify-center py-16 text-muted-foreground gap-3 border-2 border-dashed border-border rounded-xl bg-muted/20">
+                                        <BoxSelect size={32} className="opacity-30" />
+                                        <p className="text-xs font-semibold">Noch keine Material-Positionen hinzugefügt.</p>
+                                        <p className="text-[11px] text-muted-foreground">Wähle links Großhändler, Freitext oder Artikel aus dem Lagerbestand.</p>
                                     </div>
                                 ) : (
                                     tempItems.map(item => (
-                                        <div key={item.uniqueId}
-                                            className={`group relative bg-background border-2 ${item.isDragging ? 'border-primary shadow-[0_0_15px_rgba(16,185,129,0.2)] scale-105' : 'border-border hover:border-primary/30'} rounded-2xl p-4 transition-all shadow-sm`}
-                                            onDragEnter={(e) => handleDragEnter(e, item.uniqueId)} onDragOver={(e) => handleDragOver(e, item.uniqueId)} onDragLeave={(e) => handleDragLeave(e, item.uniqueId)} onDrop={(e) => handleDrop(e, item.uniqueId)}
+                                        <div
+                                            key={item.uniqueId}
+                                            className={`p-3 rounded-xl border transition-all bg-background/60 shadow-xs flex flex-col gap-2 ${
+                                                item.isBackorder ? 'border-amber-500/40 bg-amber-500/5' : 'border-border/60 hover:border-primary/30'
+                                            }`}
                                         >
-                                            <div className="flex items-start justify-between gap-3 mb-3">
-                                                <div className="flex-1 min-w-0">
-                                                    <div className="flex items-center gap-2 mb-1">
-                                                        <span className={`text-[10px] font-bold px-2 py-0.5 rounded border uppercase tracking-wider ${item.type === 'Stock' ? 'bg-primary/10 text-primary border-primary/20' : 'bg-purple-500/10 text-purple-500 border-purple-500/20'}`}>
-                                                            {item.type === 'Stock' ? 'Lager' : (item.supplierId ? 'Lieferant' : 'Manuell')}
-                                                        </span>
-                                                        {item.isBackorder && <span className="text-[10px] font-bold px-2 py-0.5 rounded border bg-amber-500/10 text-amber-500 border-amber-500/20 uppercase">Rückstand</span>}
-                                                    </div>
+                                            {/* Row 1: Item Name / Input + Quantity Counter */}
+                                            <div className="flex items-center justify-between gap-3">
+                                                <div className="flex items-center gap-2 flex-1 min-w-0">
+                                                    <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded border uppercase shrink-0 ${
+                                                        item.type === 'Stock' ? 'bg-primary/10 text-primary border-primary/20' : 'bg-purple-500/10 text-purple-400 border-purple-500/20'
+                                                    }`}>
+                                                        {item.type === 'Stock' ? 'Lager' : (item.supplierId ? 'Lieferant' : 'Freitext')}
+                                                    </span>
 
                                                     {item.type === 'Stock' ? (
-                                                        <div className="font-bold text-base text-foreground pr-2" title={item.article?.name}>{item.article?.name}</div>
+                                                        <span className="font-bold text-xs text-foreground truncate" title={item.article?.name}>
+                                                            {item.article?.name}
+                                                        </span>
                                                     ) : (
                                                         <input
-                                                            className="w-full bg-transparent border-0 border-b-2 border-border text-foreground font-bold text-base focus:outline-none focus:border-blue-500/50 pb-0.5 placeholder-muted-foreground/50 p-0 transition-colors"
+                                                            className="flex-1 bg-transparent border-b border-border/60 text-xs font-bold text-foreground focus:outline-none focus:border-primary py-0.5 placeholder:text-muted-foreground"
                                                             value={item.customName}
                                                             onChange={(e) => updateTempItem(item.uniqueId, 'customName', e.target.value)}
-                                                            placeholder="Artikelbezeichnung..."
+                                                            placeholder="Position Name..."
                                                         />
                                                     )}
                                                 </div>
 
-                                                <div className="flex items-center bg-muted rounded-xl border border-border shrink-0 shadow-inner">
-                                                    <button onClick={() => updateTempItem(item.uniqueId, 'amount', Math.max(1, item.amount - 1))} className="w-8 h-8 flex items-center justify-center hover:bg-background text-muted-foreground hover:text-foreground transition-colors rounded-l-xl"><ChevronDown size={14} /></button>
-                                                    <span className="font-black text-sm text-foreground w-8 text-center">{item.amount}</span>
-                                                    <button onClick={() => updateTempItem(item.uniqueId, 'amount', item.amount + 1)} className="w-8 h-8 flex items-center justify-center hover:bg-background text-muted-foreground hover:text-foreground transition-colors rounded-r-xl"><Plus size={14} /></button>
+                                                {/* Quantity Control */}
+                                                <div className="flex items-center bg-muted rounded-lg border border-border shrink-0">
+                                                    <button
+                                                        onClick={() => updateTempItem(item.uniqueId, 'amount', Math.max(1, item.amount - 1))}
+                                                        className="w-6 h-6 flex items-center justify-center hover:bg-card text-muted-foreground font-bold rounded-l-lg transition-colors cursor-pointer text-xs"
+                                                    >-</button>
+                                                    <span className="font-black text-xs text-foreground px-2 font-mono">{item.amount}</span>
+                                                    <button
+                                                        onClick={() => updateTempItem(item.uniqueId, 'amount', item.amount + 1)}
+                                                        className="w-6 h-6 flex items-center justify-center hover:bg-card text-muted-foreground font-bold rounded-r-lg transition-colors cursor-pointer text-xs"
+                                                    >+</button>
                                                 </div>
                                             </div>
 
-                                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3">
-                                                <div className="relative group/input">
+                                            {/* Row 2: Vorgang, Notiz, Anhang, Rückstand-Toggle & Trash */}
+                                            <div className="flex items-center justify-between gap-2 pt-2 border-t border-border/40 flex-wrap sm:flex-nowrap">
+                                                <div className="flex items-center gap-2 flex-1 min-w-[200px]">
                                                     <input
-                                                        className="w-full bg-muted border border-transparent focus:border-primary/30 rounded-lg px-3 py-2 text-xs text-foreground placeholder-muted-foreground transition-all focus:ring-2 focus:ring-primary/10"
-                                                        placeholder="Notiz / Info"
+                                                        className="flex-1 bg-muted/50 border border-border/50 rounded-md px-2 py-1 text-[11px] text-foreground focus:outline-none focus:border-primary/40 font-mono"
+                                                        placeholder={item.type === 'Stock' ? 'Lager (Kein Vorgang)' : 'Vorgang / Bestell-Nr.'}
+                                                        value={item.externalReference || ''}
+                                                        onChange={(e) => updateTempItem(item.uniqueId, 'externalReference', e.target.value)}
+                                                        disabled={item.type === 'Stock'}
+                                                    />
+                                                    <input
+                                                        className="flex-1 bg-muted/50 border border-border/50 rounded-md px-2 py-1 text-[11px] text-foreground focus:outline-none focus:border-primary/40"
+                                                        placeholder="Notiz..."
                                                         value={item.notes || ''}
                                                         onChange={(e) => updateTempItem(item.uniqueId, 'notes', e.target.value)}
                                                     />
                                                 </div>
 
-                                                <div className="relative group/input">
-                                                    <input
-                                                        className="w-full bg-muted border border-transparent focus:border-blue-500/30 rounded-lg px-3 py-2 text-xs text-foreground placeholder-muted-foreground transition-all focus:ring-2 focus:ring-blue-500/10 font-mono"
-                                                        placeholder={item.type === 'Stock' ? 'Kein Vorgang (Lager)' : 'Vorgangsnummer'}
-                                                        value={item.externalReference || ''}
-                                                        onChange={(e) => updateTempItem(item.uniqueId, 'externalReference', e.target.value)}
-                                                        disabled={item.type === 'Stock'}
-                                                    />
-                                                </div>
-                                            </div>
-
-                                            <div className="flex items-center justify-between pt-3 border-t border-border/50">
-                                                <div className="flex items-center gap-2">
+                                                <div className="flex items-center gap-1.5 shrink-0">
+                                                    {/* File Attachment */}
                                                     <div className="relative">
                                                         <input type="file" id={`file-${item.uniqueId}`} className="hidden" onChange={(e) => handleFileUpload(item.uniqueId, e.target.files)} />
-                                                        <label htmlFor={`file-${item.uniqueId}`} className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer border-2 ${item.attachmentData ? 'bg-blue-500/10 text-blue-500 border-blue-500/20' : 'text-muted-foreground border-border hover:bg-muted'}`}>
+                                                        <label
+                                                            htmlFor={`file-${item.uniqueId}`}
+                                                            className={`p-1.5 rounded-lg text-[11px] font-bold cursor-pointer border flex items-center gap-1 transition-colors ${
+                                                                item.attachmentData ? 'bg-blue-500/20 text-blue-400 border-blue-500/40' : 'bg-muted/40 text-muted-foreground border-border/50 hover:text-foreground'
+                                                            }`}
+                                                            title="Anhang (Bild/PDF) hochladen"
+                                                        >
                                                             <Paperclip size={12} />
-                                                            {item.attachmentData ? 'Anhang hochgeladen' : 'Anhang'}
                                                         </label>
-                                                        {item.attachmentData && (
-                                                            <button onClick={(e) => { e.preventDefault(); updateTempItem(item.uniqueId, 'attachmentData', undefined) }} className="absolute -top-2 -right-2 bg-rose-500 text-white rounded-full p-0.5 hover:scale-110 shadow-md transition-transform"><X size={10} /></button>
-                                                        )}
                                                     </div>
-                                                </div>
 
-                                                <div className="flex items-center gap-1 bg-muted p-1 rounded-lg">
-                                                    <button onClick={(e) => { e.stopPropagation(); updateTempItem(item.uniqueId, 'isBackorder', !item.isBackorder); }} className={`px-2 py-1 rounded text-[10px] font-bold uppercase transition-colors border ${item.isBackorder ? 'bg-amber-500 text-white border-amber-500 shadow-md' : 'bg-transparent text-muted-foreground border-transparent hover:bg-background'}`} title="Als Rückstand markieren">
-                                                        Rückstd.
+                                                    {/* Rückstand Toggle */}
+                                                    <button
+                                                        onClick={() => updateTempItem(item.uniqueId, 'isBackorder', !item.isBackorder)}
+                                                        className={`px-2 py-1 rounded-md text-[10px] font-extrabold uppercase transition-colors border cursor-pointer ${
+                                                            item.isBackorder ? 'bg-amber-500 text-white border-amber-500 shadow-xs' : 'bg-muted/40 text-muted-foreground border-border/50 hover:bg-muted'
+                                                        }`}
+                                                        title="Als Rückstand markieren"
+                                                    >
+                                                        Rückstand
                                                     </button>
-                                                    <div className="w-px h-4 bg-border mx-1"></div>
-                                                    <button onClick={() => removeTempItem(item.uniqueId)} className="p-1.5 rounded text-muted-foreground hover:bg-rose-500 hover:text-foreground transition-colors shadow-sm" title="Entfernen"><Trash2 size={14} /></button>
+
+                                                    {/* Delete Button */}
+                                                    <button
+                                                        onClick={() => removeTempItem(item.uniqueId)}
+                                                        className="p-1.5 rounded-md text-muted-foreground hover:text-rose-400 hover:bg-rose-500/10 transition-colors cursor-pointer"
+                                                        title="Position löschen"
+                                                    >
+                                                        <Trash2 size={13} />
+                                                    </button>
                                                 </div>
                                             </div>
                                         </div>
                                     ))
                                 )}
                             </div>
+
+                            {/* FOOTER ACTION BAR */}
+                            <div className="pt-3 border-t border-border flex items-center justify-between gap-3 shrink-0">
+                                <span className="text-xs text-muted-foreground font-medium">
+                                    Gesamt: <strong className="text-foreground">{tempItems.length}</strong> Positionen
+                                </span>
+
+                                <div className="flex items-center gap-2">
+                                    <Button
+                                        variant="secondary"
+                                        onClick={onClose}
+                                        className="h-10 px-4 text-xs font-bold rounded-xl border border-border"
+                                    >
+                                        Abbrechen
+                                    </Button>
+                                    <Button
+                                        onClick={handleFinalizeCreate}
+                                        disabled={isSubmitting || tempItems.length === 0}
+                                        icon={isSubmitting ? <Loader2 className="animate-spin" size={16} /> : (isEditMode ? <Save size={16} /> : <Check size={16} strokeWidth={3} />)}
+                                        className="h-10 px-6 bg-primary text-primary-foreground hover:bg-primary/90 font-bold rounded-xl text-xs shadow-md shadow-primary/20 transition-all cursor-pointer"
+                                    >
+                                        {isEditMode ? 'Änderungen Speichern' : 'Kommission Anlegen'}
+                                    </Button>
+                                </div>
+                            </div>
                         </motion.div>
                     </div>
-                </div>
-            </div>
 
-            {/* BOTTOM ACTION BAR (Sticky) */}
-            <div className="p-4 md:p-6 border-t border-border flex justify-end gap-3 bg-background/80 shrink-0 z-20 backdrop-blur-xl">
-                <Button variant="secondary" onClick={onClose} className="h-12 px-6 bg-muted hover:bg-muted/80 text-foreground font-bold rounded-xl border-border border">
-                    Abbrechen
-                </Button>
-                <Button onClick={handleFinalizeCreate} disabled={isSubmitting || tempItems.length === 0} icon={isSubmitting ? <Loader2 className="animate-spin" size={20} /> : (isEditMode ? <Save size={20} /> : <Check size={20} strokeWidth={3} />)} className="h-12 px-8 bg-primary text-primary-foreground hover:bg-primary/90 shadow-lg shadow-primary/20 font-bold rounded-xl text-sm transition-all active:scale-95">
-                    {isEditMode ? 'Änderungen Speichern' : 'Kommission Anlegen'}
-                </Button>
+                </div>
             </div>
 
             {duplicateFound && (

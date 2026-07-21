@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { GlassCard, StatusBadge, Button, GlassModal } from '../../components/UIComponents';
 import { AlertTriangle, Wrench, User, ArrowRight, Grid, X, RefreshCw, Check, Factory, Maximize2, Minimize2, Plus, MessageSquare, Lock, Unlock, History, Move, Hash, Send, CheckCheck, CheckCircle2, Circle } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import { useIsMobile } from '../../../hooks/useIsMobile';
+import { useDeviceMode } from '../../../hooks/useDeviceMode';
 import { usePersistentState } from '../../../hooks/usePersistentState';
 import { initializeDatabase, MANUAL_SETUP_SQL } from '../../../utils/dbInit';
 import { useAuth } from '../../../contexts/AuthContext';
@@ -141,7 +141,8 @@ const Dashboard: React.FC = () => {
     const [isSavingProcess, setIsSavingProcess] = useState(false);
     const [mobileTab, setMobileTab] = useState<'open' | 'backlog' | 'returns'>('open');
 
-    const isMobile = useIsMobile();
+    const device = useDeviceMode();
+    const isMobile = device.isMobile;
     // Split View Status: Only active if NOT mobile
     const isSplitView = !isMobile && (!!selectedMachine || !!selectedKey || !!viewingCommission || !!selectedDashboardTask || showChangelogHistory);
 

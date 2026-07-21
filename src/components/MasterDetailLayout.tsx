@@ -188,13 +188,13 @@ export const MasterDetailLayout: React.FC<MasterDetailLayoutProps> = ({
         );
     }
 
-    // DESKTOP LAYOUT: Split View with Slide Animation
+    // DESKTOP LAYOUT: Split View with Floating Side Panel
     return (
         <div className={`relative h-[calc(100vh-2rem)] overflow-hidden flex ${className}`}>
             {/* LIST CONTENT (Animates Width) */}
             <motion.div
                 initial={false}
-                animate={{ width: !isOpen ? "100%" : `calc(100% - ${sidebarWidth}px)` }}
+                animate={{ width: !isOpen ? "100%" : `calc(100% - ${sidebarWidth + 16}px)` }}
                 transition={{ type: "spring", damping: 30, stiffness: 350 }}
                 className="h-full overflow-hidden"
             >
@@ -203,40 +203,37 @@ export const MasterDetailLayout: React.FC<MasterDetailLayoutProps> = ({
                 </div>
             </motion.div>
 
-            {/* DETAIL DRAWER (Slides in from right, Absolute to allow slide effect) */}
+            {/* FLOATING DETAIL PANEL */}
             <AnimatePresence>
                 {isOpen && (
                     <motion.div
-                        initial={{ x: "100%", opacity: 0.5 }}
-                        animate={{ x: 0, opacity: 1 }}
-                        exit={{ x: "100%", opacity: 0.5 }}
-                        transition={{ type: "spring", damping: 30, stiffness: 350, mass: 0.8 }}
+                        initial={{ x: "105%", opacity: 0, scale: 0.95 }}
+                        animate={{ x: 0, opacity: 1, scale: 1 }}
+                        exit={{ x: "105%", opacity: 0, scale: 0.95 }}
+                        transition={{ type: "spring", damping: 28, stiffness: 320, mass: 0.7 }}
                         style={{ width: sidebarWidth }}
-                        className="absolute top-0 right-0 h-full bg-card/95 backdrop-blur-3xl shadow-[-20px_0_50px_-10px_rgba(0,0,0,0.5)] z-50 flex flex-col border-l border-border ring-1 ring-white/5"
+                        className="absolute top-2 right-2 bottom-2 h-[calc(100%-1rem)] bg-card/95 backdrop-blur-2xl shadow-[0_25px_60px_-15px_rgba(0,0,0,0.5)] rounded-3xl z-50 flex flex-col border border-border/80 ring-1 ring-white/10 overflow-hidden"
                     >
-                        {/* Highlight Overlay (Left side) */}
-                        <div className="absolute inset-y-0 left-0 w-px bg-gradient-to-b from-transparent via-primary/30 to-transparent pointer-events-none" />
-
                         {/* RESIZE HANDLE */}
                         <div
-                            className="absolute left-0 top-0 bottom-0 w-2 cursor-col-resize hover:bg-primary/20 transition-colors z-[60] -ml-[4px] group flex items-center justify-center"
+                            className="absolute left-0 top-0 bottom-0 w-3 cursor-col-resize hover:bg-primary/20 transition-colors z-[60] group flex items-center justify-center"
                             onMouseDown={startResizing}
                             onTouchStart={startResizing}
                         >
-                            <div className="h-12 w-1 bg-white/20 rounded-full opacity-0 group-hover:opacity-100 transition-opacity" />
+                            <div className="h-14 w-1.5 bg-primary/30 rounded-full opacity-40 group-hover:opacity-100 group-hover:bg-primary transition-all shadow-sm" />
                         </div>
 
-                        {/* Drawer Header */}
+                        {/* Floating Header */}
                         {!hideHeader && (
-                            <div className="flex items-center justify-between px-6 py-5 border-b border-border/50 shrink-0 bg-transparent z-10 relative">
-                                <h2 className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r dark:from-white dark:to-white/70 from-foreground to-foreground/70 truncate pr-4">
+                            <div className="flex items-center justify-between px-6 py-4.5 border-b border-border/60 shrink-0 bg-muted/30 z-10 relative">
+                                <h2 className="text-lg font-extrabold bg-clip-text text-transparent bg-gradient-to-r dark:from-white dark:to-white/80 from-foreground to-foreground/80 truncate pr-4">
                                     {title || 'Details'}
                                 </h2>
                                 <button
                                     onClick={onClose}
-                                    className="p-2 -mr-2 rounded-full hover:bg-white/10 text-muted-foreground hover:text-foreground transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-primary/50"
+                                    className="p-2 -mr-2 rounded-full hover:bg-muted text-muted-foreground hover:text-foreground transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-primary/50 cursor-pointer"
                                 >
-                                    <X size={20} />
+                                    <X size={18} />
                                 </button>
                             </div>
                         )}
