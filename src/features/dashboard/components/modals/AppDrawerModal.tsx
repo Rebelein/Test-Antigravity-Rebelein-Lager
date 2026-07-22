@@ -7,17 +7,17 @@ import { useTheme } from '../../../../../contexts/ThemeContext';
 interface AppDrawerModalProps {
     isOpen: boolean;
     onClose: () => void;
-    onResetLayout: () => void;
+    onOpenCustomize: () => void;
     onOpenSqlModal: () => void;
     onOpenPageManager: () => void;
 }
 
-export const AppDrawerModal: React.FC<AppDrawerModalProps> = ({ 
-    isOpen, 
-    onClose, 
-    onResetLayout, 
-    onOpenSqlModal, 
-    onOpenPageManager 
+export const AppDrawerModal: React.FC<AppDrawerModalProps> = ({
+    isOpen,
+    onClose,
+    onOpenCustomize,
+    onOpenSqlModal,
+    onOpenPageManager
 }) => {
     const navigate = useNavigate();
     const { viewMode, toggleViewMode, isLowPerfMode, toggleLowPerfMode } = useTheme();
@@ -55,19 +55,19 @@ export const AppDrawerModal: React.FC<AppDrawerModalProps> = ({
                             </button>
                         </div>
 
-                        {/* Reset Layout */}
+                        {/* Customize Dashboard */}
                         <div className="flex items-center justify-between">
                             <div className="flex items-center gap-3">
                                 <div className="p-2 rounded-lg bg-muted text-muted-foreground">
                                     <LayoutTemplate size={18} />
                                 </div>
                                 <div>
-                                    <div className="text-sm font-medium text-foreground">Layout zurücksetzen</div>
-                                    <div className="text-xs text-muted-foreground">Standard wiederherstellen</div>
+                                    <div className="text-sm font-medium text-foreground">Dashboard anpassen</div>
+                                    <div className="text-xs text-muted-foreground">Reihenfolge & Sichtbarkeit</div>
                                 </div>
                             </div>
-                            <Button onClick={onResetLayout} variant="secondary" className="text-xs py-1 h-8">
-                                Reset
+                            <Button onClick={onOpenCustomize} variant="secondary" className="text-xs py-1 h-8">
+                                Anpassen
                             </Button>
                         </div>
 

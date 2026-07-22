@@ -1,6 +1,6 @@
 import React from 'react';
-import { Move, Lock, Unlock, Wrench, CheckCircle2, ShoppingCart, Key as KeyIcon, StickyNote } from 'lucide-react';
-import { GlassCard } from '../../../../components/UIComponents';
+import { Wrench, CheckCircle2, ShoppingCart, Key as KeyIcon, StickyNote } from 'lucide-react';
+import { DashboardTile } from '../DashboardTile';
 import { formatDistanceToNow } from 'date-fns';
 import { de } from 'date-fns/locale';
 
@@ -16,39 +16,18 @@ interface AppEvent {
 
 interface EventsTileProps {
     recentEvents: AppEvent[];
-    isLocked: boolean;
-    onToggleLock: () => void;
 }
 
-export const EventsTile: React.FC<EventsTileProps> = ({
+export const EventsTile: React.FC<EventsTileProps> = React.memo(({
     recentEvents,
-    isLocked,
-    onToggleLock,
 }) => {
     return (
-        <GlassCard className="flex flex-col h-full p-0 overflow-hidden border-none bg-muted" contentClassName="!p-0 flex flex-col h-full">
-            <div className={`px-6 py-5 border-b border-border bg-muted backdrop-blur-sm flex items-center gap-3 shrink-0`}>
-                <button
-                    className={`drag-handle p-1.5 rounded-lg hover:bg-muted transition-colors ${isLocked ? 'cursor-default text-foreground/5 opacity-30' : 'cursor-move text-muted-foreground hover:text-muted-foreground'}`}
-                    title="Verschieben"
-                >
-                    <Move size={18} />
-                </button>
-                <div className="flex-1 flex items-center gap-2">
-                    <StickyNote size={20} className="dark:text-blue-400 text-blue-800" />
-                    <h2 className="text-xl font-bold text-foreground">Letzte Aktivitäten</h2>
-                </div>
-                <button
-                    onMouseDown={(e) => e.stopPropagation()}
-                    onTouchStart={(e) => e.stopPropagation()}
-                    onClick={onToggleLock}
-                    className="p-2 text-muted-foreground hover:text-foreground transition-colors"
-                >
-                    {isLocked ? <Lock size={16} className="text-rose-500" /> : <Unlock size={16} />}
-                </button>
-            </div>
-
-            <div className="p-0 overflow-y-auto flex-1 min-h-0 pb-12">
+        <DashboardTile
+            tileId="events"
+            title="Letzte Aktivitäten"
+            icon={<StickyNote size={18} className="dark:text-blue-400 text-blue-800" />}
+        >
+            <div className="p-0 overflow-y-auto flex-1 min-h-0 pb-4 custom-scrollbar">
                 {recentEvents.length === 0 ? (
                     <div className="p-8 text-center text-muted-foreground italic">
                         Noch keine Aktivitäten verzeichnet.
@@ -56,7 +35,7 @@ export const EventsTile: React.FC<EventsTileProps> = ({
                 ) : (
                     <div className="divide-y divide-white/5">
                         {recentEvents.map((event) => (
-                            <div key={`${event.type}-${event.id}`} className="p-4 flex items-start gap-4 hover:bg-muted transition-colors">
+                            <div key={`${event.type}-${event.id}`} className="p-4 flex items-start gap-4 hover:bg-white/5 transition-colors">
                                 {/* Icon based on type */}
                                 <div className={`mt-1 w-8 h-8 rounded-full flex items-center justify-center shrink-0 
                                     ${event.type === 'machine' ? 'bg-amber-500/10 dark:text-amber-400 text-amber-800' : ''}
@@ -94,6 +73,8 @@ export const EventsTile: React.FC<EventsTileProps> = ({
                     </div>
                 )}
             </div>
-        </GlassCard>
+        </DashboardTile>
     );
-};
+});
+
+EventsTile.displayName = 'EventsTile';

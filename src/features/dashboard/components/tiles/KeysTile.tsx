@@ -1,67 +1,35 @@
 import React from 'react';
-import { Move, Lock, Unlock, ArrowRight, User, Key as KeyIcon } from 'lucide-react';
-import { GlassCard } from '../../../../components/UIComponents';
+import { User, Key as KeyIcon } from 'lucide-react';
+import { DashboardTile } from '../DashboardTile';
 import { Key } from '../../../../../types';
-import { useNavigate } from 'react-router-dom';
 
 interface KeysTileProps {
     rentedKeys: Key[];
-    isLocked: boolean;
-    onToggleLock: () => void;
     onSelectKey: (key: Key) => void;
 }
 
-export const KeysTile: React.FC<KeysTileProps> = ({
+export const KeysTile: React.FC<KeysTileProps> = React.memo(({
     rentedKeys,
-    isLocked,
-    onToggleLock,
     onSelectKey,
 }) => {
-    const navigate = useNavigate();
-
     return (
-        <GlassCard className="flex flex-col h-full p-0 overflow-hidden border-none bg-muted" contentClassName="!p-0 flex flex-col h-full">
-            <div className={`px-6 py-5 border-b border-border bg-muted backdrop-blur-sm flex justify-between items-center shrink-0`}>
-                <div className="flex items-center gap-3">
-                    <button
-                        className={`drag-handle p-1.5 rounded-lg hover:bg-muted transition-colors ${isLocked ? 'cursor-default text-foreground/5 opacity-30' : 'cursor-move text-muted-foreground hover:text-muted-foreground'}`}
-                        title="Verschieben"
-                    >
-                        <Move size={18} />
-                    </button>
-                    <h2 className="text-xl font-bold text-foreground flex items-center gap-2">
-                        <KeyIcon size={20} className="text-amber-500" /> Ausgeliehen
-                    </h2>
-                </div>
-                <div className="flex gap-2">
-                    <button
-                        onMouseDown={(e) => e.stopPropagation()}
-                        onTouchStart={(e) => e.stopPropagation()}
-                        onClick={onToggleLock}
-                        className="p-2 text-muted-foreground hover:text-foreground transition-colors"
-                    >
-                        {isLocked ? <Lock size={16} className="text-rose-500" /> : <Unlock size={16} />}
-                    </button>
-                    <button
-                        onMouseDown={(e) => e.stopPropagation()}
-                        onTouchStart={(e) => e.stopPropagation()}
-                        onClick={() => navigate('/keys')}
-                        className="text-muted-foreground hover:text-foreground"
-                    >
-                        <ArrowRight size={20} />
-                    </button>
-                </div>
-            </div>
-
+        <DashboardTile
+            tileId="keys"
+            title="Schlüssel"
+            icon={<KeyIcon size={18} className="text-amber-500" />}
+            badgeCount={rentedKeys.length}
+            badgeClassName="bg-blue-500/10 dark:text-blue-400 text-blue-800 border-blue-500/30"
+            navigateTo="/keys"
+        >
             <div className="p-4 flex flex-col gap-3 overflow-hidden h-full">
                 <div className="flex justify-between items-center mb-2 shrink-0">
-                    <span className="text-sm font-bold text-foreground">Schlüssel in Verwendung ({rentedKeys.length})</span>
+                    <span className="text-sm font-bold text-foreground">In Verwendung ({rentedKeys.length})</span>
                 </div>
 
-                <div className="space-y-3 overflow-y-auto flex-1 min-h-0 pr-1 pb-4">
+                <div className="space-y-3 overflow-y-auto flex-1 min-h-0 pr-1 pb-4 custom-scrollbar">
                     {rentedKeys.length === 0 && <div className="text-xs text-muted-foreground italic">Alle Schlüssel im Kasten.</div>}
                     {rentedKeys.map(k => (
-                        <div key={k.id} onClick={(e) => { e.stopPropagation(); onSelectKey(k); }} className="group cursor-pointer p-2 rounded hover:bg-muted border border-transparent hover:dark:border-white/5 border-border">
+                        <div key={k.id} onClick={(e) => { e.stopPropagation(); onSelectKey(k); }} className="group cursor-pointer p-2 rounded-lg hover:bg-white/5 border border-transparent hover:border-border/60">
                             <div className="flex justify-between items-start">
                                 <div className="font-medium text-foreground text-sm group-hover:dark:text-amber-400 text-amber-800 transition-colors truncate">{k.name}</div>
                                 <span className="text-xs font-mono dark:text-emerald-400 text-emerald-800">#{k.slot_number}</span>
@@ -74,6 +42,8 @@ export const KeysTile: React.FC<KeysTileProps> = ({
                     ))}
                 </div>
             </div>
-        </GlassCard>
+        </DashboardTile>
     );
-};
+});
+
+KeysTile.displayName = 'KeysTile';

@@ -25,10 +25,6 @@ export const useDashboardData = () => {
     const [returnCommissions, setReturnCommissions] = useState<Commission[]>([]);
     
     const [recentEvents, setRecentEvents] = useState<AppEvent[]>([]);
-    
-    const [dashboardTasks, setDashboardTasks] = useState<any[]>([]);
-    const [dashboardChannels, setDashboardChannels] = useState<{ id: string, name: string, messages: any[], allMessages: any[] }[]>([]);
-    const [selectedDashboardTask, setSelectedDashboardTask] = useState<any | null>(null);
 
     const fetchMachinesData = useCallback(async () => {
         try {
@@ -201,71 +197,16 @@ export const useDashboardData = () => {
         }
     }, []);
 
-    const fetchTasksData = useCallback(async () => {
-        try {
-            const { data, error } = await supabase
-                .from('tasks')
-                .select('*, subtasks(*)')
-                .neq('status', 'done')
-                .order('created_at', { ascending: false })
-                .limit(10);
-            
-            if (error) throw error;
-            setDashboardTasks(data || []);
-            
-            if (selectedDashboardTask) {
-                const updatedTask = data?.find(t => t.id === selectedDashboardTask.id);
-                if (updatedTask) setSelectedDashboardTask(updatedTask);
-            }
-        } catch (error) {
-            console.error("Error fetching tasks:", error);
-        }
-    }, [selectedDashboardTask]);
-
-    const fetchChannelsData = useCallback(async () => {
-        try {
-            const { data: channels, error: channelsError } = await supabase
-                .from('channels')
-                .select('*')
-                .order('created_at', { ascending: false });
-            
-            if (channelsError) throw channelsError;
-
-            const { data: messages, error: messagesError } = await supabase
-                .from('messages')
-                .select('*')
-                .order('created_at', { ascending: false })
-                .limit(200);
-
-            if (messagesError) throw messagesError;
-
-            const channelsWithMessages = channels.map(c => {
-               const matches = messages.filter(m => m.channel_id === c.id);
-               return {
-                   ...c,
-                   messages: matches.slice(0, 2), 
-                   allMessages: matches 
-               };
-            });
-
-            setDashboardChannels(channelsWithMessages || []);
-        } catch (error) {
-            console.error("Error fetching channels:", error);
-        }
-    }, []);
-
     const fetchAllData = useCallback(async () => {
         setIsLoading(true);
         await Promise.all([
             fetchMachinesData(),
             fetchCommissionsData(),
             fetchRecentEvents(),
-            fetchKeysData(),
-            fetchTasksData(),
-            fetchChannelsData()
+            fetchKeysData()
         ]);
         setIsLoading(false);
-    }, [fetchMachinesData, fetchCommissionsData, fetchRecentEvents, fetchKeysData, fetchTasksData, fetchChannelsData]);
+    }, [fetchMachinesData, fetchCommissionsData, fetchRecentEvents, fetchKeysData]);
 
     useEffect(() => {
         fetchAllData();
@@ -275,9 +216,6 @@ export const useDashboardData = () => {
             .on('postgres_changes', { event: '*', schema: 'public', table: 'machines' }, fetchMachinesData)
             .on('postgres_changes', { event: '*', schema: 'public', table: 'keys' }, fetchKeysData)
             .on('postgres_changes', { event: '*', schema: 'public', table: 'commissions' }, fetchCommissionsData)
-            .on('postgres_changes', { event: '*', schema: 'public', table: 'tasks' }, fetchTasksData)
-            .on('postgres_changes', { event: '*', schema: 'public', table: 'messages' }, fetchChannelsData)
-            .on('postgres_changes', { event: '*', schema: 'public', table: 'channels' }, fetchChannelsData)
             .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'machine_events' }, fetchRecentEvents)
             .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'commission_events' }, fetchRecentEvents)
             .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'order_events' }, fetchRecentEvents)
@@ -287,7 +225,7 @@ export const useDashboardData = () => {
         return () => {
             supabase.removeChannel(channel);
         };
-    }, [fetchAllData, fetchMachinesData, fetchKeysData, fetchCommissionsData, fetchTasksData, fetchChannelsData, fetchRecentEvents]);
+    }, [fetchAllData, fetchMachinesData, fetchKeysData, fetchCommissionsData, fetchRecentEvents]);
 
     return {
         isLoading,
@@ -298,13 +236,7 @@ export const useDashboardData = () => {
         backlogCommissions,
         returnCommissions,
         recentEvents,
-        dashboardTasks,
-        dashboardChannels,
-        selectedDashboardTask,
-        setSelectedDashboardTask,
         fetchAllData,
-        fetchTasksData,
-        fetchChannelsData,
         fetchCommissionsData,
         fetchMachinesData,
         fetchKeysData,

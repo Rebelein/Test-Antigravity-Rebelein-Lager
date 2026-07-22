@@ -65,4 +65,19 @@ This document outlines the systematic code cleanup, performance optimization, de
 - [x] Ran `npm run build` - **Clean build & PWA service worker generated successfully**.
 
 ---
+
+## Dashboard v2 Redesign (Completed)
+
+Full rewrite of the dashboard per `DASHBOARD_REDESIGN_CONCEPT.md`:
+
+- **Removed `react-grid-layout`** (incl. `@types/react-grid-layout` & CSS imports). Replaced by curated CSS-Grid slot layouts per device mode (`smartphone` stack / `tablet_portrait` 2-col / `tablet_landscape` 3-col / `desktop` 12-col) via inline grid styles in `Dashboard.tsx`.
+- **Unified tile shell**: `src/features/dashboard/components/DashboardTile.tsx` (header: icon, title, count badge, actions, module link). All 5 tiles refactored to use it.
+- **Chat & communication removed**: `useDashboardData` no longer fetches `channels`/`messages` or subscribes to them. DB tables untouched.
+- **Tasks tile removed** (follow-up): `TasksTile.tsx` deleted; `tasks`/`subtasks` fetching & realtime removed from `useDashboardData`; task detail view & Tasks-App iframe (`task.rebeleinapp.de`) removed. DB tables untouched. Remaining tiles: quickActions, commissions, machines, keys, events.
+- **New `QuickActions` component**: Scanner / Neue Kommission / Inventur / Neuer Artikel + clickable status chips (Büro offen, Rückstand, Defekt, Aufgaben) that scroll to tiles.
+- **Layout customization**: `useDashboardLayout` (order/hidden persisted per device group under `dashboard-v2-layout-{smartphone|tablet|desktop}`, legacy keys auto-cleaned) + `DashboardCustomize` (framer-motion `Reorder`, hide/show, reset).
+- **Details via `MasterDetailLayout`** (bottom sheet mobile, resizable side panel tablet/desktop). `DashboardDetailPanel.tsx` now exports a pure `DashboardDetailContent` switcher.
+- Verified: `npx tsc --noEmit` (0 errors) & `npm run build` (clean, PWA generated).
+
+---
 <!-- GOAL_COMPLETE -->

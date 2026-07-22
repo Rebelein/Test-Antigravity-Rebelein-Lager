@@ -461,7 +461,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
                             ? 'pl-[7rem] pt-4 pb-4 px-6'
                             : device.isTabletPortrait
                                 ? 'pt-4 pb-24 px-6'
-                                : 'pb-20 pt-4 px-4' // Mobile
+                                : clsx('pb-20 px-4', currentPath === 'dashboard' ? 'pt-[calc(4rem+env(safe-area-inset-top))]' : 'pt-4') // Mobile (dashboard clears the floating user pill)
                 )}
             >
                 <div className="w-full h-full flex flex-col overflow-hidden">
